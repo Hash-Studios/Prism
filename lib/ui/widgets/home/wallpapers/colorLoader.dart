@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 class ColorLoader extends StatefulWidget {
   final Future future;
   final String provider;
-  const ColorLoader({@required this.future, @required this.provider});
+  const ColorLoader({required this.future, required this.provider});
   @override
   _ColorLoaderState createState() => _ColorLoaderState();
 }
 
 class _ColorLoaderState extends State<ColorLoader> {
-  Future _future;
+  Future? _future;
 
   @override
   void initState() {

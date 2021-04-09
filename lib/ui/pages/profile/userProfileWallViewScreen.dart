@@ -22,7 +22,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 
 class UserProfileWallViewScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const UserProfileWallViewScreen({this.arguments});
 
   @override
@@ -39,22 +39,22 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int index;
-  String thumb;
+  late int index;
+  late String thumb;
   bool isLoading = true;
-  PaletteGenerator paletteGenerator;
-  List<Color> colors;
-  Color accent;
+  late PaletteGenerator paletteGenerator;
+  List<Color?>? colors;
+  Color? accent;
   bool colorChanged = false;
-  String downloadLinkBackwards;
-  File _imageFile;
+  String? downloadLinkBackwards;
+  late File _imageFile;
   bool screenshotTaken = false;
   ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
-  AnimationController shakeController;
+  late AnimationController shakeController;
   bool panelClosed = true;
   bool panelCollapsed = true;
-  Future<String> _futureView;
+  Future<String>? _futureView;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -71,12 +71,12 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
     });
     colors = paletteGenerator.colors.toList();
     if (paletteGenerator.colors.length > 5) {
-      colors = colors.sublist(0, 5);
+      colors = colors!.sublist(0, 5);
     }
     setState(() {
-      accent = colors[0];
+      accent = colors![0];
     });
-    if (accent.computeLuminance() > 0.5) {
+    if (accent!.computeLuminance() > 0.5) {
       SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
           .copyWith(statusBarIconBrightness: Brightness.dark));
     } else {
@@ -86,15 +86,15 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
   }
 
   void updateAccent() {
-    if (colors.contains(accent)) {
-      final index = colors.indexOf(accent);
+    if (colors!.contains(accent)) {
+      final index = colors!.indexOf(accent);
       setState(() {
-        accent = colors[(index + 1) % 5];
+        accent = colors![(index + 1) % 5];
       });
       setState(() {
         colorChanged = true;
       });
-      if (accent.computeLuminance() > 0.5) {
+      if (accent!.computeLuminance() > 0.5) {
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
             .copyWith(statusBarIconBrightness: Brightness.dark));
       } else {
@@ -108,13 +108,13 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0] as int;
-    thumb = widget.arguments[1].toString();
+    index = widget.arguments![0] as int;
+    thumb = widget.arguments![1].toString();
     isLoading = true;
     updateViews(
-        user_data.userProfileWalls[index]["id"].toString().toUpperCase());
+        user_data.userProfileWalls![index]["id"].toString().toUpperCase());
     _futureView = getViews(
-        user_data.userProfileWalls[index]["id"].toString().toUpperCase());
+        user_data.userProfileWalls![index]["id"].toString().toUpperCase());
     _updatePaletteGenerator();
     super.initState();
   }
@@ -164,7 +164,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                     debugPrint(onError.toString());
                   });
                 } else {
-                  main.prefs.get('optimisedWallpapers') as bool ?? true
+                  main.prefs.get('optimisedWallpapers') as bool? ?? true
                       ? screenshotController
                           .capture(
                           pixelRatio: 3,
@@ -266,13 +266,13 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                         child: Row(
                                           children: [
                                             Text(
-                                              user_data.userProfileWalls[index]
+                                              user_data.userProfileWalls![index]
                                                       ["id"]
                                                   .toString()
                                                   .toUpperCase(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText1
+                                                  .bodyText1!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -298,7 +298,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                                       "",
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .bodyText1
+                                                          .bodyText1!
                                                           .copyWith(
                                                               color: Theme.of(
                                                                       context)
@@ -310,7 +310,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                                       "",
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .bodyText1
+                                                          .bodyText1!
                                                           .copyWith(
                                                               color: Theme.of(
                                                                       context)
@@ -323,7 +323,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                                         "",
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText1
+                                                            .bodyText1!
                                                             .copyWith(
                                                                 color: Theme.of(
                                                                         context)
@@ -338,7 +338,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                                         softWrap: false,
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText1
+                                                            .bodyText1!
                                                             .copyWith(
                                                                 color: Theme.of(
                                                                         context)
@@ -364,12 +364,12 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          user_data.userProfileWalls[index]
+                                          user_data.userProfileWalls![index]
                                                   ["by"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2
+                                              .bodyText2!
                                               .copyWith(
                                                   color: Theme.of(context)
                                                       .accentColor),
@@ -388,12 +388,12 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          user_data.userProfileWalls[index]
+                                          user_data.userProfileWalls![index]
                                                   ["desc"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2
+                                              .bodyText2!
                                               .copyWith(
                                                   color: Theme.of(context)
                                                       .accentColor),
@@ -412,12 +412,12 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          user_data.userProfileWalls[index]
+                                          user_data.userProfileWalls![index]
                                                   ["size"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2
+                                              .bodyText2!
                                               .copyWith(
                                                   color: Theme.of(context)
                                                       .accentColor),
@@ -433,12 +433,12 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                     Row(
                                       children: [
                                         Text(
-                                          user_data.userProfileWalls[index]
+                                          user_data.userProfileWalls![index]
                                                   ["resolution"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2
+                                              .bodyText2!
                                               .copyWith(
                                                   color: Theme.of(context)
                                                       .accentColor),
@@ -457,12 +457,12 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                     Row(
                                       children: [
                                         Text(
-                                          user_data.userProfileWalls[index]
+                                          user_data.userProfileWalls![index]
                                                   ["wallpaper_provider"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2
+                                              .bodyText2!
                                               .copyWith(
                                                   color: Theme.of(context)
                                                       .accentColor),
@@ -492,7 +492,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                 colorChanged: colorChanged,
                                 link: screenshotTaken
                                     ? _imageFile.path
-                                    : user_data.userProfileWalls[index]
+                                    : user_data.userProfileWalls![index]
                                             ["wallpaper_url"]
                                         .toString(),
                               ),
@@ -500,33 +500,33 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                 colorChanged: colorChanged,
                                 url: screenshotTaken
                                     ? _imageFile.path
-                                    : user_data.userProfileWalls[index]
+                                    : user_data.userProfileWalls![index]
                                             ["wallpaper_url"]
                                         .toString(),
                               ),
                               FavouriteWallpaperButton(
-                                id: user_data.userProfileWalls[index]["id"]
+                                id: user_data.userProfileWalls![index]["id"]
                                     .toString(),
-                                provider: user_data.userProfileWalls[index]
+                                provider: user_data.userProfileWalls![index]
                                         ["wallpaper_provider"]
                                     .toString(),
-                                prism: user_data.userProfileWalls[index] as Map,
+                                prism: user_data.userProfileWalls![index] as Map,
                                 trash: false,
                               ),
                               ShareButton(
-                                  id: user_data.userProfileWalls[index]["id"]
+                                  id: user_data.userProfileWalls![index]["id"]
                                       .toString(),
-                                  provider: user_data.userProfileWalls[index]
+                                  provider: user_data.userProfileWalls![index]
                                           ["wallpaper_provider"]
                                       .toString(),
-                                  url: user_data.userProfileWalls[index]
+                                  url: user_data.userProfileWalls![index]
                                           ["wallpaper_url"]
                                       .toString(),
-                                  thumbUrl: user_data.userProfileWalls[index]
+                                  thumbUrl: user_data.userProfileWalls![index]
                                           ["wallpaper_thumb"]
                                       .toString()),
                               EditButton(
-                                url: user_data.userProfileWalls[index]
+                                url: user_data.userProfileWalls![index]
                                         ["wallpaper_url"]
                                     .toString(),
                               ),
@@ -567,7 +567,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           shakeController.forward(from: 0.0);
                         },
                         child: CachedNetworkImage(
-                          imageUrl: user_data.userProfileWalls[index]
+                          imageUrl: user_data.userProfileWalls![index]
                                   ["wallpaper_url"]
                               .toString(),
                           imageBuilder: (context, imageProvider) => Screenshot(
@@ -581,7 +581,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                     offsetAnimation.value),
                                 image: DecorationImage(
                                   colorFilter: colorChanged
-                                      ? ColorFilter.mode(accent, BlendMode.hue)
+                                      ? ColorFilter.mode(accent!, BlendMode.hue)
                                       : null,
                                   image: imageProvider,
                                   fit: BoxFit.cover,
@@ -607,7 +607,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                               JamIcons.close_circle_f,
                               color: isLoading
                                   ? Theme.of(context).accentColor
-                                  : accent.computeLuminance() > 0.5
+                                  : accent!.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
                             ),
@@ -619,7 +619,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                   alignment: Alignment.topLeft,
                   child: Padding(
                     padding:
-                        EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                        EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                     child: IconButton(
                       onPressed: () {
                         navStack.removeLast();
@@ -628,7 +628,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                       },
                       color: isLoading
                           ? Theme.of(context).accentColor
-                          : accent.computeLuminance() > 0.5
+                          : accent!.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,
                       icon: const Icon(
@@ -641,11 +641,11 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                   alignment: Alignment.topRight,
                   child: Padding(
                     padding:
-                        EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                        EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                     child: IconButton(
                       onPressed: () {
                         final link =
-                            user_data.userProfileWalls[index]["wallpaper_url"];
+                            user_data.userProfileWalls![index]["wallpaper_url"];
                         Navigator.push(
                             context,
                             PageRouteBuilder(
@@ -669,7 +669,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                       },
                       color: isLoading
                           ? Theme.of(context).accentColor
-                          : accent.computeLuminance() > 0.5
+                          : accent!.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,
                       icon: const Icon(

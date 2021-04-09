@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class CarouselDots extends StatelessWidget {
   const CarouselDots({
-    Key key,
-    @required int current,
+    Key? key,
+    required int current,
   })  : _current = current,
         super(key: key);
 

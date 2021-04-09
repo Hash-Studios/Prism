@@ -7,12 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 class SetWallpaperButton extends StatefulWidget {
-  final String url;
+  final String? url;
   final bool colorChanged;
   const SetWallpaperButton({
-    Key key,
-    @required this.url,
-    @required this.colorChanged,
+    Key? key,
+    required this.url,
+    required this.colorChanged,
   }) : super(key: key);
 
   @override
@@ -24,24 +24,24 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   bool isLoading = false;
 
   Future<void> _setWallPaper() async {
-    bool result;
+    bool? result;
     try {
-      if (widget.url.contains("com.hash.prism")) {
+      if (widget.url!.contains("com.hash.prism")) {
         result =
             await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
           'url': widget.url,
         });
-      } else if (widget.url.contains("/0/")) {
+      } else if (widget.url!.contains("/0/")) {
         result =
             await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
-          'url': "/${widget.url.replaceAll("/0//", "/0/")}",
+          'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
         });
       } else {
         result = await platform.invokeMethod("set_wallpaper", <String, dynamic>{
           'url': widget.url,
         });
       }
-      if (result) {
+      if (result!) {
         debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
@@ -63,17 +63,17 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   }
 
   Future<void> _setBothWallPaper() async {
-    bool result;
+    bool? result;
     try {
-      if (widget.url.contains("com.hash.prism")) {
+      if (widget.url!.contains("com.hash.prism")) {
         result = await platform
             .invokeMethod("set_both_wallpaper_file", <String, dynamic>{
           'url': widget.url,
         });
-      } else if (widget.url.contains("/0/")) {
+      } else if (widget.url!.contains("/0/")) {
         result = await platform
             .invokeMethod("set_both_wallpaper_file", <String, dynamic>{
-          'url': "/${widget.url.replaceAll("/0//", "/0/")}",
+          'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
         });
       } else {
         result =
@@ -81,7 +81,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           'url': widget.url,
         });
       }
-      if (result) {
+      if (result!) {
         debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
@@ -104,17 +104,17 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   }
 
   Future<void> _setLockWallPaper() async {
-    bool result;
+    bool? result;
     try {
-      if (widget.url.contains("com.hash.prism")) {
+      if (widget.url!.contains("com.hash.prism")) {
         result = await platform
             .invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
           'url': widget.url,
         });
-      } else if (widget.url.contains("/0/")) {
+      } else if (widget.url!.contains("/0/")) {
         result = await platform
             .invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
-          'url': "/${widget.url.replaceAll("/0//", "/0/")}",
+          'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
         });
       } else {
         result =
@@ -122,7 +122,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           'url': widget.url,
         });
       }
-      if (result) {
+      if (result!) {
         debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
@@ -145,17 +145,17 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   }
 
   Future<void> _setHomeWallPaper() async {
-    bool result;
+    bool? result;
     try {
-      if (widget.url.contains("com.hash.prism")) {
+      if (widget.url!.contains("com.hash.prism")) {
         result = await platform
             .invokeMethod("set_home_wallpaper_file", <String, dynamic>{
           'url': widget.url,
         });
-      } else if (widget.url.contains("/0/")) {
+      } else if (widget.url!.contains("/0/")) {
         result = await platform
             .invokeMethod("set_home_wallpaper_file", <String, dynamic>{
-          'url': "/${widget.url.replaceAll("/0//", "/0/")}",
+          'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
         });
       } else {
         result =
@@ -163,7 +163,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           'url': widget.url,
         });
       }
-      if (result) {
+      if (result!) {
         debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
@@ -313,11 +313,11 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
 }
 
 class SetOptionsPanel extends StatefulWidget {
-  final Function onTap1;
-  final Function onTap2;
-  final Function onTap3;
+  final Function? onTap1;
+  final Function? onTap2;
+  final Function? onTap3;
   const SetOptionsPanel({
-    Key key,
+    Key? key,
     this.onTap1,
     this.onTap2,
     this.onTap3,
@@ -378,7 +378,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                 padding: const EdgeInsets.all(8.0),
                 child: GestureDetector(
                   onTap: () {
-                    widget.onTap1();
+                    widget.onTap1!();
                   },
                   child: Container(
                     width: width - 20,
@@ -409,7 +409,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                 padding: const EdgeInsets.all(8.0),
                 child: GestureDetector(
                   onTap: () {
-                    widget.onTap2();
+                    widget.onTap2!();
                   },
                   child: Container(
                     width: width - 20,
@@ -440,7 +440,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                 padding: const EdgeInsets.all(8.0),
                 child: GestureDetector(
                   onTap: () {
-                    widget.onTap3();
+                    widget.onTap3!();
                   },
                   child: Container(
                     width: width - 20,

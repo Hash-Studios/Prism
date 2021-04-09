@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/main.dart' as main;
 
-Map<String, ThemeData> darkThemes = {
+Map<String, ThemeData?> darkThemes = {
   "kDMaterial Dark": kDarkTheme,
   "kDAMOLED": kDarkTheme2,
   "kDOlive": kDarkTheme3,
@@ -14,17 +14,17 @@ Map<String, ThemeData> darkThemes = {
 };
 
 class DarkThemeModel extends ChangeNotifier {
-  ThemeData currentTheme = kDarkTheme;
+  ThemeData? currentTheme = kDarkTheme;
 
   DarkThemeModel(
     this.currentTheme,
-    Color accentColor,
+    Color? accentColor,
   ) {
     changeAccent(accentColor);
   }
 
-  void changeAccent(Color accentColor) {
-    ThemeData newTheme = currentTheme;
+  void changeAccent(Color? accentColor) {
+    ThemeData newTheme = currentTheme!;
     newTheme = newTheme.copyWith(errorColor: accentColor);
     currentTheme = newTheme;
     main.prefs.put(
@@ -36,7 +36,7 @@ class DarkThemeModel extends ChangeNotifier {
     return notifyListeners();
   }
 
-  int getIndex(ThemeData currentThemeData) {
+  int? getIndex(ThemeData? currentThemeData) {
     return darkThemes.values.toList().contains(currentThemeData)
         ? darkThemes.values.toList().indexOf(currentThemeData)
         : null;
@@ -52,7 +52,7 @@ class DarkThemeModel extends ChangeNotifier {
     main.prefs.put("darkThemeID", themeID);
     main.prefs.put(
         "darkAccent",
-        int.parse(currentTheme.errorColor
+        int.parse(currentTheme!.errorColor
             .toString()
             .replaceAll("Color(", "")
             .replaceAll(")", "")));

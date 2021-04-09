@@ -3,11 +3,11 @@ import 'package:Prism/main.dart' as main;
 import 'package:flutter/material.dart';
 
 final Firestore databaseReference = Firestore.instance;
-List userProfileWalls;
-List userProfileSetups;
+List? userProfileWalls;
+List? userProfileSetups;
 int len = 0;
 int len2 = 0;
-Future<List> getuserProfileWalls(String email) async {
+Future<List?> getuserProfileWalls(String? email) async {
   userProfileWalls = [];
   await databaseReference
       .collection("walls")
@@ -18,9 +18,9 @@ Future<List> getuserProfileWalls(String email) async {
       .then((value) {
     userProfileWalls = [];
     for (final f in value.documents) {
-      userProfileWalls.add(f.data);
+      userProfileWalls!.add(f.data);
     }
-    len = userProfileWalls.length;
+    len = userProfileWalls!.length;
     debugPrint(len.toString());
   }).catchError((e) {
     debugPrint(e.toString());
@@ -29,7 +29,7 @@ Future<List> getuserProfileWalls(String email) async {
   return userProfileWalls;
 }
 
-Future<List> getUserProfileSetups(String email) async {
+Future<List?> getUserProfileSetups(String? email) async {
   userProfileSetups = [];
   await databaseReference
       .collection("setups")
@@ -40,9 +40,9 @@ Future<List> getUserProfileSetups(String email) async {
       .then((value) {
     userProfileSetups = [];
     for (final f in value.documents) {
-      userProfileSetups.add(f.data);
+      userProfileSetups!.add(f.data);
     }
-    len2 = userProfileSetups.length;
+    len2 = userProfileSetups!.length;
     debugPrint(len.toString());
   }).catchError((e) {
     debugPrint(e.toString());
@@ -51,7 +51,7 @@ Future<List> getUserProfileSetups(String email) async {
   return userProfileSetups;
 }
 
-Future<int> getProfileWallsLength(String email) async {
+Future<int> getProfileWallsLength(String? email) async {
   var tempList = [];
   await databaseReference
       .collection("walls")
@@ -73,7 +73,7 @@ Future<int> getProfileWallsLength(String email) async {
   return len;
 }
 
-Future<int> getProfileSetupsLength(String email) async {
+Future<int> getProfileSetupsLength(String? email) async {
   var tempList = [];
   await databaseReference
       .collection("setups")

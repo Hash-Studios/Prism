@@ -31,7 +31,7 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 class ShareSetupViewScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const ShareSetupViewScreen({this.arguments});
 
   @override
@@ -47,25 +47,25 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String name;
-  String image;
-  Future<Map> _future;
+  String? name;
+  String? image;
+  Future<Map?>? _future;
   bool isLoading = true;
-  List<Color> colors;
+  List<Color>? colors;
   PanelController panelController = PanelController();
-  AnimationController shakeController;
+  late AnimationController shakeController;
   bool panelCollapsed = true;
-  bool viewCounted;
-  Future<String> _futureView;
-  Box box;
+  bool? viewCounted;
+  Future<String>? _futureView;
+  late Box box;
 
   @override
   void initState() {
     viewCounted = false;
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    name = widget.arguments[0].toString();
-    image = widget.arguments[1].toString();
+    name = widget.arguments![0].toString();
+    image = widget.arguments![1].toString();
     _future = sdata.getSetupFromName(name);
     isLoading = true;
     box = Hive.box('localFav');
@@ -84,7 +84,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
     super.dispose();
   }
 
-  Future<void> onFavSetup(String id, Map setupMap) async {
+  Future<void> onFavSetup(String id, Map? setupMap) async {
     setState(() {
       isLoading = true;
     });
@@ -120,7 +120,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
         backgroundColor: Theme.of(context).primaryColor,
         body: FutureBuilder(
           future: _future,
-          builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
+          builder: (BuildContext context, AsyncSnapshot<Map?> snapshot) {
             debugPrint(snapshot.connectionState.toString());
             switch (snapshot.connectionState) {
               case ConnectionState.waiting:
@@ -135,9 +135,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                 } else {
                   if (viewCounted == false) {
                     updateViewsSetup(
-                        sdata.setup["id"].toString().toUpperCase());
+                        sdata.setup!["id"].toString().toUpperCase());
                     _futureView = getViewsSetup(
-                        sdata.setup["id"].toString().toUpperCase());
+                        sdata.setup!["id"].toString().toUpperCase());
                     viewCounted = true;
                   }
                   return SlidingUpPanel(
@@ -257,14 +257,14 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                 slideSide:
                                                     SlideFromSlide.bottom,
                                                 child: Text(
-                                                  sdata.setup["name"]
+                                                  sdata.setup!["name"]
                                                       .toString()
                                                       .toUpperCase(),
                                                   maxLines: 1,
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .headline1
+                                                      .headline1!
                                                       .copyWith(
                                                           fontSize: 30,
                                                           color:
@@ -285,13 +285,13 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                 delay: const Duration(
                                                     milliseconds: 50),
                                                 child: Text(
-                                                  sdata.setup["desc"]
+                                                  sdata.setup!["desc"]
                                                       .toString(),
                                                   maxLines: 2,
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .headline6
+                                                      .headline6!
                                                       .copyWith(
                                                           color:
                                                               Theme.of(context)
@@ -341,7 +341,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                         child: Row(
                                                           children: [
                                                             Text(
-                                                              sdata.setup["id"]
+                                                              sdata.setup!["id"]
                                                                   .toString()
                                                                   .toUpperCase(),
                                                               overflow:
@@ -350,7 +350,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -385,7 +385,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                       style: Theme.of(
                                                                               context)
                                                                           .textTheme
-                                                                          .bodyText1
+                                                                          .bodyText1!
                                                                           .copyWith(
                                                                               color: Theme.of(context).accentColor,
                                                                               fontSize: 16),
@@ -397,7 +397,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                       style: Theme.of(
                                                                               context)
                                                                           .textTheme
-                                                                          .bodyText1
+                                                                          .bodyText1!
                                                                           .copyWith(
                                                                               color: Theme.of(context).accentColor,
                                                                               fontSize: 16),
@@ -409,7 +409,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                         "",
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .bodyText1
+                                                                            .bodyText1!
                                                                             .copyWith(
                                                                                 color: Theme.of(context).accentColor,
                                                                                 fontSize: 16),
@@ -423,7 +423,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                             false,
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .bodyText1
+                                                                            .bodyText1!
                                                                             .copyWith(
                                                                                 color: Theme.of(context).accentColor,
                                                                                 fontSize: 16),
@@ -447,7 +447,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                 CopyrightPopUp(
                                                                   setup: true,
                                                                   shortlink:
-                                                                      "Setup ID - ${sdata.setup["id"]}",
+                                                                      "Setup ID - ${sdata.setup!["id"]}",
                                                                 ));
                                                       },
                                                       child: Row(
@@ -471,7 +471,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText2
+                                                                .bodyText2!
                                                                 .copyWith(
                                                                     decoration:
                                                                         TextDecoration
@@ -504,7 +504,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                       .topRight,
                                                               child: ActionChip(
                                                                   label: Text(
-                                                                    sdata.setup[
+                                                                    sdata
+                                                                        .setup![
                                                                             "by"]
                                                                         .toString(),
                                                                     overflow:
@@ -513,7 +514,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                     style: Theme.of(
                                                                             context)
                                                                         .textTheme
-                                                                        .bodyText2
+                                                                        .bodyText2!
                                                                         .copyWith(
                                                                             color:
                                                                                 Theme.of(context).accentColor),
@@ -527,7 +528,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                   avatar:
                                                                       CircleAvatar(
                                                                     backgroundImage: CachedNetworkImageProvider(sdata
-                                                                        .setup[
+                                                                        .setup![
                                                                             "userPhoto"]
                                                                         .toString()),
                                                                   ),
@@ -544,21 +545,21 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                         context,
                                                                         photographerProfileRoute,
                                                                         arguments: [
-                                                                          sdata.setup[
+                                                                          sdata.setup![
                                                                               "by"],
-                                                                          sdata.setup[
+                                                                          sdata.setup![
                                                                               "email"],
-                                                                          sdata.setup[
+                                                                          sdata.setup![
                                                                               "userPhoto"],
                                                                           false,
-                                                                          if (sdata.setup["twitter"] != null &&
-                                                                              sdata.setup["twitter"] != "")
-                                                                            sdata.setup["twitter"].toString().split("https://www.twitter.com/")[1]
+                                                                          if (sdata.setup!["twitter"] != null &&
+                                                                              sdata.setup!["twitter"] != "")
+                                                                            sdata.setup!["twitter"].toString().split("https://www.twitter.com/")[1]
                                                                           else
                                                                             "",
-                                                                          if (sdata.setup["instagram"] != null &&
-                                                                              sdata.setup["instagram"] != "")
-                                                                            sdata.setup["instagram"].toString().split("https://www.instagram.com/")[1]
+                                                                          if (sdata.setup!["instagram"] != null &&
+                                                                              sdata.setup!["instagram"] != "")
+                                                                            sdata.setup!["instagram"].toString().split("https://www.instagram.com/")[1]
                                                                           else
                                                                             "",
                                                                         ]);
@@ -567,7 +568,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                             if (globals
                                                                 .verifiedUsers
                                                                 .contains(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "email"]
                                                                     .toString()))
                                                               Align(
@@ -610,8 +611,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                     child: Padding(
                                       padding: const EdgeInsets.fromLTRB(
                                           35, 0, 35, 0),
-                                      child: sdata.setup["widget"] == "" ||
-                                              sdata.setup["widget"] == null
+                                      child: sdata.setup!["widget"] == "" ||
+                                              sdata.setup!["widget"] == null
                                           ? Column(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.spaceEvenly,
@@ -621,52 +622,52 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                   isInstalled:
                                                       Future.value(false),
                                                   onTap: () async {
-                                                    if (sdata.setup[
+                                                    if (sdata.setup![
                                                                 "wallpaper_url"]
                                                             .toString()[0] !=
                                                         "[") {
-                                                      if (sdata.setup[
+                                                      if (sdata.setup![
                                                                   "wall_id"] ==
                                                               null ||
-                                                          sdata.setup[
+                                                          sdata.setup![
                                                                   "wall_id"] ==
                                                               "") {
                                                         debugPrint(
                                                             "Id Not Found!");
-                                                        launch(sdata.setup[
+                                                        launch(sdata.setup![
                                                                 "wallpaper_url"]
                                                             .toString());
                                                       } else {
                                                         Navigator.pushNamed(
                                                             context, shareRoute,
                                                             arguments: [
-                                                              sdata.setup[
+                                                              sdata.setup![
                                                                       "wall_id"]
                                                                   .toString(),
-                                                              sdata.setup[
+                                                              sdata.setup![
                                                                       "wallpaper_provider"]
                                                                   .toString(),
-                                                              sdata.setup[
+                                                              sdata.setup![
                                                                       "wallpaper_url"]
                                                                   .toString(),
-                                                              sdata.setup[
+                                                              sdata.setup![
                                                                       "wallpaper_url"]
                                                                   .toString(),
                                                             ]);
                                                       }
                                                     } else {
-                                                      launch(sdata.setup[
+                                                      launch(sdata.setup![
                                                               "wallpaper_url"]
                                                               [1]
                                                           .toString());
                                                     }
                                                   },
-                                                  tileText: sdata.setup[
+                                                  tileText: sdata.setup![
                                                                   "wallpaper_url"]
                                                               .toString()[0] !=
                                                           "["
                                                       ? "Prism"
-                                                      : "${sdata.setup["wallpaper_url"][0]} - ${(sdata.setup["wallpaper_url"] as List).length > 2 ? sdata.setup["wallpaper_url"][2].toString() : ""}",
+                                                      : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
                                                   tileType: "Wallpaper",
                                                   panelCollapsed:
                                                       panelCollapsed,
@@ -675,27 +676,28 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                 ),
                                                 SetupDetailsTile(
                                                   isInstalled: sdata
-                                                          .setup["icon_url"]
+                                                          .setup!["icon_url"]
                                                           .toString()
                                                           .contains(
                                                               'play.google.com/store/apps/details?id=')
                                                       ? DeviceApps
                                                           .isAppInstalled(sdata
-                                                              .setup["icon_url"]
+                                                              .setup![
+                                                                  "icon_url"]
                                                               .toString()
                                                               .split(
                                                                   "details?id=")[1]
                                                               .split("&")[0])
                                                       : Future.value(false),
                                                   onTap: () async {
-                                                    if (sdata.setup["icon_url"]
+                                                    if (sdata.setup!["icon_url"]
                                                         .toString()
                                                         .contains(
                                                             'play.google.com/store/apps/details?id=')) {
                                                       final isInstalled =
                                                           await DeviceApps
                                                               .isAppInstalled(sdata
-                                                                  .setup[
+                                                                  .setup![
                                                                       "icon_url"]
                                                                   .toString()
                                                                   .split("details?id=")[
@@ -704,21 +706,22 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                       "&")[0]);
                                                       isInstalled
                                                           ? DeviceApps.openApp(sdata
-                                                              .setup["icon_url"]
+                                                              .setup![
+                                                                  "icon_url"]
                                                               .toString()
                                                               .split("details?id=")[
                                                                   1]
                                                               .split("&")[0])
-                                                          : launch(sdata
-                                                              .setup["icon_url"]
+                                                          : launch(sdata.setup![
+                                                                  "icon_url"]
                                                               .toString());
                                                     } else {
                                                       launch(sdata
-                                                          .setup["icon_url"]
+                                                          .setup!["icon_url"]
                                                           .toString());
                                                     }
                                                   },
-                                                  tileText: sdata.setup["icon"]
+                                                  tileText: sdata.setup!["icon"]
                                                       .toString(),
                                                   tileType: "Icons",
                                                   panelCollapsed:
@@ -728,8 +731,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                 ),
                                               ],
                                             )
-                                          : sdata.setup["widget2"] == "" ||
-                                                  sdata.setup["widget2"] == null
+                                          : sdata.setup!["widget2"] == "" ||
+                                                  sdata.setup!["widget2"] ==
+                                                      null
                                               ? Column(
                                                   mainAxisAlignment:
                                                       MainAxisAlignment
@@ -741,19 +745,19 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                       isInstalled:
                                                           Future.value(false),
                                                       onTap: () async {
-                                                        if (sdata.setup[
+                                                        if (sdata.setup![
                                                                     "wallpaper_url"]
                                                                 .toString()[0] !=
                                                             "[") {
-                                                          if (sdata.setup[
+                                                          if (sdata.setup![
                                                                       "wall_id"] ==
                                                                   null ||
-                                                              sdata.setup[
+                                                              sdata.setup![
                                                                       "wall_id"] ==
                                                                   "") {
                                                             debugPrint(
                                                                 "Id Not Found!");
-                                                            launch(sdata.setup[
+                                                            launch(sdata.setup![
                                                                     "wallpaper_url"]
                                                                 .toString());
                                                           } else {
@@ -761,33 +765,33 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                 context,
                                                                 shareRoute,
                                                                 arguments: [
-                                                                  sdata.setup[
+                                                                  sdata.setup![
                                                                           "wall_id"]
                                                                       .toString(),
-                                                                  sdata.setup[
+                                                                  sdata.setup![
                                                                           "wallpaper_provider"]
                                                                       .toString(),
-                                                                  sdata.setup[
+                                                                  sdata.setup![
                                                                           "wallpaper_url"]
                                                                       .toString(),
-                                                                  sdata.setup[
+                                                                  sdata.setup![
                                                                           "wallpaper_url"]
                                                                       .toString(),
                                                                 ]);
                                                           }
                                                         } else {
-                                                          launch(sdata.setup[
+                                                          launch(sdata.setup![
                                                                   "wallpaper_url"]
                                                                   [1]
                                                               .toString());
                                                         }
                                                       },
-                                                      tileText: sdata.setup[
+                                                      tileText: sdata.setup![
                                                                       "wallpaper_url"]
                                                                   .toString()[0] !=
                                                               "["
                                                           ? "Prism"
-                                                          : "${sdata.setup["wallpaper_url"][0]} - ${(sdata.setup["wallpaper_url"] as List).length > 2 ? sdata.setup["wallpaper_url"][2].toString() : ""}",
+                                                          : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
                                                       tileType: "Wallpaper",
                                                       panelCollapsed:
                                                           panelCollapsed,
@@ -795,29 +799,28 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                           milliseconds: 150),
                                                     ),
                                                     SetupDetailsTile(
-                                                      isInstalled: sdata
-                                                              .setup["icon_url"]
+                                                      isInstalled: sdata.setup![
+                                                                  "icon_url"]
                                                               .toString()
                                                               .contains(
                                                                   'play.google.com/store/apps/details?id=')
-                                                          ? DeviceApps
-                                                              .isAppInstalled(sdata
-                                                                  .setup[
-                                                                      "icon_url"]
-                                                                  .toString()
-                                                                  .split(
-                                                                      "details?id=")[1]
-                                                                  .split("&")[0])
+                                                          ? DeviceApps.isAppInstalled(sdata
+                                                              .setup![
+                                                                  "icon_url"]
+                                                              .toString()
+                                                              .split(
+                                                                  "details?id=")[1]
+                                                              .split("&")[0])
                                                           : Future.value(false),
                                                       onTap: () async {
                                                         if (sdata
-                                                            .setup["icon_url"]
+                                                            .setup!["icon_url"]
                                                             .toString()
                                                             .contains(
                                                                 'play.google.com/store/apps/details?id=')) {
                                                           final isInstalled = await DeviceApps
                                                               .isAppInstalled(sdata
-                                                                  .setup[
+                                                                  .setup![
                                                                       "icon_url"]
                                                                   .toString()
                                                                   .split("details?id=")[
@@ -826,7 +829,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                       "&")[0]);
                                                           isInstalled
                                                               ? DeviceApps.openApp(sdata
-                                                                  .setup[
+                                                                  .setup![
                                                                       "icon_url"]
                                                                   .toString()
                                                                   .split("details?id=")[
@@ -834,17 +837,17 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                   .split(
                                                                       "&")[0])
                                                               : launch(sdata
-                                                                  .setup[
+                                                                  .setup![
                                                                       "icon_url"]
                                                                   .toString());
                                                         } else {
-                                                          launch(sdata
-                                                              .setup["icon_url"]
+                                                          launch(sdata.setup![
+                                                                  "icon_url"]
                                                               .toString());
                                                         }
                                                       },
                                                       tileText: sdata
-                                                          .setup["icon"]
+                                                          .setup!["icon"]
                                                           .toString(),
                                                       tileType: "Icons",
                                                       panelCollapsed:
@@ -853,13 +856,13 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                           milliseconds: 200),
                                                     ),
                                                     SetupDetailsTile(
-                                                      isInstalled: sdata.setup[
+                                                      isInstalled: sdata.setup![
                                                                   "widget_url"]
                                                               .toString()
                                                               .contains(
                                                                   'play.google.com/store/apps/details?id=')
                                                           ? DeviceApps.isAppInstalled(sdata
-                                                              .setup[
+                                                              .setup![
                                                                   "widget_url"]
                                                               .toString()
                                                               .split(
@@ -867,14 +870,14 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                               .split("&")[0])
                                                           : Future.value(false),
                                                       onTap: () async {
-                                                        if (sdata
-                                                            .setup["widget_url"]
+                                                        if (sdata.setup![
+                                                                "widget_url"]
                                                             .toString()
                                                             .contains(
                                                                 'play.google.com/store/apps/details?id=')) {
                                                           final isInstalled = await DeviceApps
                                                               .isAppInstalled(sdata
-                                                                  .setup[
+                                                                  .setup![
                                                                       "widget_url"]
                                                                   .toString()
                                                                   .split("details?id=")[
@@ -883,7 +886,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                       "&")[0]);
                                                           isInstalled
                                                               ? DeviceApps.openApp(sdata
-                                                                  .setup[
+                                                                  .setup![
                                                                       "widget_url"]
                                                                   .toString()
                                                                   .split("details?id=")[
@@ -891,17 +894,17 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                   .split(
                                                                       "&")[0])
                                                               : launch(sdata
-                                                                  .setup[
+                                                                  .setup![
                                                                       "widget_url"]
                                                                   .toString());
                                                         } else {
-                                                          launch(sdata.setup[
+                                                          launch(sdata.setup![
                                                                   "widget_url"]
                                                               .toString());
                                                         }
                                                       },
                                                       tileText: sdata
-                                                          .setup["widget"]
+                                                          .setup!["widget"]
                                                           .toString(),
                                                       tileType: "Widget",
                                                       panelCollapsed:
@@ -921,20 +924,20 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                         isInstalled:
                                                             Future.value(false),
                                                         onTap: () async {
-                                                          if (sdata.setup[
+                                                          if (sdata.setup![
                                                                       "wallpaper_url"]
                                                                   .toString()[0] !=
                                                               "[") {
-                                                            if (sdata.setup[
+                                                            if (sdata.setup![
                                                                         "wall_id"] ==
                                                                     null ||
-                                                                sdata.setup[
+                                                                sdata.setup![
                                                                         "wall_id"] ==
                                                                     "") {
                                                               debugPrint(
                                                                   "Id Not Found!");
                                                               launch(sdata
-                                                                  .setup[
+                                                                  .setup![
                                                                       "wallpaper_url"]
                                                                   .toString());
                                                             } else {
@@ -942,33 +945,37 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                   context,
                                                                   shareRoute,
                                                                   arguments: [
-                                                                    sdata.setup[
+                                                                    sdata
+                                                                        .setup![
                                                                             "wall_id"]
                                                                         .toString(),
-                                                                    sdata.setup[
+                                                                    sdata
+                                                                        .setup![
                                                                             "wallpaper_provider"]
                                                                         .toString(),
-                                                                    sdata.setup[
+                                                                    sdata
+                                                                        .setup![
                                                                             "wallpaper_url"]
                                                                         .toString(),
-                                                                    sdata.setup[
+                                                                    sdata
+                                                                        .setup![
                                                                             "wallpaper_url"]
                                                                         .toString(),
                                                                   ]);
                                                             }
                                                           } else {
-                                                            launch(sdata.setup[
+                                                            launch(sdata.setup![
                                                                     "wallpaper_url"]
                                                                     [1]
                                                                 .toString());
                                                           }
                                                         },
-                                                        tileText: sdata.setup[
+                                                        tileText: sdata.setup![
                                                                         "wallpaper_url"]
                                                                     .toString()[0] !=
                                                                 "["
                                                             ? "Prism"
-                                                            : "${sdata.setup["wallpaper_url"][0]} - ${(sdata.setup["wallpaper_url"] as List).length > 2 ? sdata.setup["wallpaper_url"][2].toString() : ""}",
+                                                            : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
                                                         tileType: "Wallpaper",
                                                         panelCollapsed:
                                                             panelCollapsed,
@@ -977,14 +984,14 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                       ),
                                                       SetupDetailsTile(
                                                         isInstalled: sdata
-                                                                .setup[
+                                                                .setup![
                                                                     "icon_url"]
                                                                 .toString()
                                                                 .contains(
                                                                     'play.google.com/store/apps/details?id=')
                                                             ? DeviceApps
                                                                 .isAppInstalled(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "icon_url"]
                                                                     .toString()
                                                                     .split("details?id=")[
@@ -994,14 +1001,14 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                             : Future.value(
                                                                 false),
                                                         onTap: () async {
-                                                          if (sdata
-                                                              .setup["icon_url"]
+                                                          if (sdata.setup![
+                                                                  "icon_url"]
                                                               .toString()
                                                               .contains(
                                                                   'play.google.com/store/apps/details?id=')) {
                                                             final isInstalled =
                                                                 await DeviceApps.isAppInstalled(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "icon_url"]
                                                                     .toString()
                                                                     .split("details?id=")[
@@ -1010,7 +1017,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                         "&")[0]);
                                                             isInstalled
                                                                 ? DeviceApps.openApp(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "icon_url"]
                                                                     .toString()
                                                                     .split("details?id=")[
@@ -1018,17 +1025,17 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                     .split(
                                                                         "&")[0])
                                                                 : launch(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "icon_url"]
                                                                     .toString());
                                                           } else {
-                                                            launch(sdata.setup[
+                                                            launch(sdata.setup![
                                                                     "icon_url"]
                                                                 .toString());
                                                           }
                                                         },
                                                         tileText: sdata
-                                                            .setup["icon"]
+                                                            .setup!["icon"]
                                                             .toString(),
                                                         tileType: "Icons",
                                                         panelCollapsed:
@@ -1038,13 +1045,13 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                       ),
                                                       SetupDetailsTile(
                                                         isInstalled: sdata
-                                                                .setup[
+                                                                .setup![
                                                                     "widget_url"]
                                                                 .toString()
                                                                 .contains(
                                                                     'play.google.com/store/apps/details?id=')
                                                             ? DeviceApps.isAppInstalled(sdata
-                                                                .setup[
+                                                                .setup![
                                                                     "widget_url"]
                                                                 .toString()
                                                                 .split("details?id=")[
@@ -1053,14 +1060,14 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                             : Future.value(
                                                                 false),
                                                         onTap: () async {
-                                                          if (sdata.setup[
+                                                          if (sdata.setup![
                                                                   "widget_url"]
                                                               .toString()
                                                               .contains(
                                                                   'play.google.com/store/apps/details?id=')) {
                                                             final isInstalled =
                                                                 await DeviceApps.isAppInstalled(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "widget_url"]
                                                                     .toString()
                                                                     .split("details?id=")[
@@ -1069,7 +1076,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                         "&")[0]);
                                                             isInstalled
                                                                 ? DeviceApps.openApp(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "widget_url"]
                                                                     .toString()
                                                                     .split("details?id=")[
@@ -1077,17 +1084,17 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                     .split(
                                                                         "&")[0])
                                                                 : launch(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "widget_url"]
                                                                     .toString());
                                                           } else {
-                                                            launch(sdata.setup[
+                                                            launch(sdata.setup![
                                                                     "widget_url"]
                                                                 .toString());
                                                           }
                                                         },
                                                         tileText: sdata
-                                                            .setup["widget"]
+                                                            .setup!["widget"]
                                                             .toString(),
                                                         tileType: "Widget",
                                                         panelCollapsed:
@@ -1097,13 +1104,13 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                       ),
                                                       SetupDetailsTile(
                                                         isInstalled: sdata
-                                                                .setup[
+                                                                .setup![
                                                                     "widget_url2"]
                                                                 .toString()
                                                                 .contains(
                                                                     'play.google.com/store/apps/details?id=')
                                                             ? DeviceApps.isAppInstalled(sdata
-                                                                .setup[
+                                                                .setup![
                                                                     "widget_url2"]
                                                                 .toString()
                                                                 .split("details?id=")[
@@ -1112,14 +1119,14 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                             : Future.value(
                                                                 false),
                                                         onTap: () async {
-                                                          if (sdata.setup[
+                                                          if (sdata.setup![
                                                                   "widget_url2"]
                                                               .toString()
                                                               .contains(
                                                                   'play.google.com/store/apps/details?id=')) {
                                                             final isInstalled =
                                                                 await DeviceApps.isAppInstalled(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "widget_url2"]
                                                                     .toString()
                                                                     .split("details?id=")[
@@ -1128,7 +1135,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                         "&")[0]);
                                                             isInstalled
                                                                 ? DeviceApps.openApp(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "widget_url2"]
                                                                     .toString()
                                                                     .split("details?id=")[
@@ -1136,17 +1143,17 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                     .split(
                                                                         "&")[0])
                                                                 : launch(sdata
-                                                                    .setup[
+                                                                    .setup![
                                                                         "widget_url2"]
                                                                     .toString());
                                                           } else {
-                                                            launch(sdata.setup[
+                                                            launch(sdata.setup![
                                                                     "widget_url2"]
                                                                 .toString());
                                                           }
                                                         },
                                                         tileText: sdata
-                                                            .setup["widget2"]
+                                                            .setup!["widget2"]
                                                             .toString(),
                                                         tileType: "Widget",
                                                         panelCollapsed:
@@ -1192,13 +1199,13 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                   false) {
                                                 googleSignInPopUp(context, () {
                                                   onFavSetup(
-                                                      sdata.setup["id"]
+                                                      sdata.setup!["id"]
                                                           .toString(),
                                                       sdata.setup);
                                                 });
                                               } else {
                                                 onFavSetup(
-                                                    sdata.setup["id"]
+                                                    sdata.setup!["id"]
                                                         .toString(),
                                                     sdata.setup);
                                               }
@@ -1207,7 +1214,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                 Theme.of(context).accentColor,
                                             iconSize: 30,
                                             isFavorite: box.get(
-                                                sdata.setup["id"].toString(),
+                                                sdata.setup!["id"].toString(),
                                                 defaultValue: false) as bool,
                                           ),
                                         ),
@@ -1223,7 +1230,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                       children: [
                                         GestureDetector(
                                           onTap: () async {
-                                            if (main.prefs.get("isLoggedin")
+                                            if (main.prefs.get("isLoggedin",
+                                                        defaultValue: false)
                                                     as bool ==
                                                 true) {
                                               Navigator.pushNamed(
@@ -1307,7 +1315,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                   shakeController.forward(from: 0.0);
                                 },
                                 child: CachedNetworkImage(
-                                  imageUrl: sdata.setup["image"].toString(),
+                                  imageUrl: sdata.setup!["image"].toString(),
                                   imageBuilder: (context, imageProvider) =>
                                       Container(
                                     margin: EdgeInsets.symmetric(
@@ -1352,7 +1360,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                           alignment: Alignment.topLeft,
                           child: Padding(
                             padding: EdgeInsets.fromLTRB(
-                                8.0, globals.notchSize + 8, 8, 8),
+                                8.0, globals.notchSize! + 8, 8, 8),
                             child: IconButton(
                               onPressed: () {
                                 navStack.removeLast();
@@ -1415,13 +1423,13 @@ class SetupDetailsTile extends StatelessWidget {
   final Function onTap;
   final Future<bool> isInstalled;
   const SetupDetailsTile({
-    Key key,
-    @required this.delay,
-    @required this.tileText,
-    @required this.tileType,
-    @required this.onTap,
-    @required this.panelCollapsed,
-    @required this.isInstalled,
+    Key? key,
+    required this.delay,
+    required this.tileText,
+    required this.tileType,
+    required this.onTap,
+    required this.panelCollapsed,
+    required this.isInstalled,
   }) : super(key: key);
 
   @override
@@ -1530,15 +1538,15 @@ class SetupDetailsTile extends StatelessWidget {
 class ModifiedShareDownloadButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return sdata.setup["wallpaper_url"].toString()[0] != "["
-        ? sdata.setup["wall_id"] != null && sdata.setup["wall_id"] != ""
+    return sdata.setup!["wallpaper_url"].toString()[0] != "["
+        ? sdata.setup!["wall_id"] != null && sdata.setup!["wall_id"] != ""
             ? DownloadButton(
-                link: sdata.setup["wallpaper_url"].toString(),
+                link: sdata.setup!["wallpaper_url"].toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(sdata.setup["wallpaper_url"].toString());
+                  launch(sdata.setup!["wallpaper_url"].toString());
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -1561,7 +1569,7 @@ class ModifiedShareDownloadButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(sdata.setup["wallpaper_url"][1].toString());
+              launch(sdata.setup!["wallpaper_url"][1].toString());
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1588,15 +1596,15 @@ class ModifiedShareDownloadButton extends StatelessWidget {
 class ModifiedShareSetWallpaperButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return sdata.setup["wallpaper_url"].toString()[0] != "["
-        ? sdata.setup["wall_id"] != null && sdata.setup["wall_id"] != ""
+    return sdata.setup!["wallpaper_url"].toString()[0] != "["
+        ? sdata.setup!["wall_id"] != null && sdata.setup!["wall_id"] != ""
             ? SetWallpaperButton(
-                url: sdata.setup["wallpaper_url"].toString(),
+                url: sdata.setup!["wallpaper_url"].toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(sdata.setup["wallpaper_url"].toString());
+                  launch(sdata.setup!["wallpaper_url"].toString());
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -1619,7 +1627,7 @@ class ModifiedShareSetWallpaperButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(sdata.setup["wallpaper_url"][1].toString());
+              launch(sdata.setup!["wallpaper_url"][1].toString());
             },
             child: Container(
               decoration: BoxDecoration(

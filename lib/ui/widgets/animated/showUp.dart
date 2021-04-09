@@ -11,10 +11,10 @@ class ShowUpTransition extends StatefulWidget {
   final Widget child;
 
   /// Animation Duration, default is 200 Milliseconds
-  final Duration duration;
+  final Duration? duration;
 
   /// Delay before starting Animation, default is Zero
-  final Duration delay;
+  final Duration? delay;
 
   /// Bring forward/reverse the Animation
   final bool forward;
@@ -23,11 +23,11 @@ class ShowUpTransition extends StatefulWidget {
   final SlideFromSlide slideSide;
 
   const ShowUpTransition(
-      {@required this.child,
+      {required this.child,
       this.duration,
       this.delay,
       this.slideSide = SlideFromSlide.left,
-      @required this.forward});
+      required this.forward});
 
   @override
   _ShowUpTransitionState createState() => _ShowUpTransitionState();
@@ -35,8 +35,8 @@ class ShowUpTransition extends StatefulWidget {
 
 class _ShowUpTransitionState extends State<ShowUpTransition>
     with SingleTickerProviderStateMixin {
-  AnimationController _animController;
-  Animation<Offset> _animOffset;
+  late AnimationController _animController;
+  late Animation<Offset> _animOffset;
 
   List<Offset> slideSides = const [
     Offset(-0.35, 0.0), // LEFT
@@ -44,7 +44,7 @@ class _ShowUpTransitionState extends State<ShowUpTransition>
     Offset(0.0, 0.35), // BOTTOM
     Offset(0.0, -0.35), // TOP
   ];
-  Offset selectedSlide;
+  Offset? selectedSlide;
 
   @override
   void initState() {

@@ -32,7 +32,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:hive/hive.dart';
 
 class ProfileSetupViewScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const ProfileSetupViewScreen({this.arguments});
 
   @override
@@ -48,28 +48,28 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int index;
-  String thumb;
+  int? index;
+  String? thumb;
   bool isLoading = true;
   PanelController panelController = PanelController();
-  AnimationController shakeController;
+  late AnimationController shakeController;
   bool panelCollapsed = true;
-  Future<String> _futureView;
-  Box box;
+  Future<String>? _futureView;
+  late Box box;
 
   static const platform = MethodChannel('flutter.prism.set_wallpaper');
   @override
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0] as int;
+    index = widget.arguments![0] as int;
     updateViewsSetup(Provider.of<ProfileSetupProvider>(context, listen: false)
-        .profileSetups[index]["id"]
+        .profileSetups![index!]["id"]
         .toString()
         .toUpperCase());
     _futureView = getViewsSetup(
         Provider.of<ProfileSetupProvider>(context, listen: false)
-            .profileSetups[index]["id"]
+            .profileSetups![index!]["id"]
             .toString()
             .toUpperCase());
     isLoading = true;
@@ -223,14 +223,14 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                         Provider.of<ProfileSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .profileSetups[index]["name"]
+                                            .profileSetups![index!]["name"]
                                             .toString()
                                             .toUpperCase(),
                                         maxLines: 1,
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline1
+                                            .headline1!
                                             .copyWith(
                                                 fontSize: 30,
                                                 color: Theme.of(context)
@@ -250,13 +250,13 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                         Provider.of<ProfileSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .profileSetups[index]["desc"]
+                                            .profileSetups![index!]["desc"]
                                             .toString(),
                                         maxLines: 2,
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline6
+                                            .headline6!
                                             .copyWith(
                                                 color: Theme.of(context)
                                                     .accentColor),
@@ -301,14 +301,14 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                     Provider.of<ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["id"]
                                                         .toString()
                                                         .toUpperCase(),
                                                     overflow: TextOverflow.fade,
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText1
+                                                        .bodyText1!
                                                         .copyWith(
                                                             color: Theme.of(
                                                                     context)
@@ -339,7 +339,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText1
+                                                                .bodyText1!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -354,7 +354,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText1
+                                                                .bodyText1!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -370,7 +370,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -388,7 +388,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -413,14 +413,14 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["name"]
                                                       .toString(),
                                                   thumbUrl: Provider.of<
                                                               ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["image"]
                                                       .toString());
                                             },
@@ -439,7 +439,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           decoration:
                                                               TextDecoration
@@ -472,15 +472,15 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           Provider.of<ProfileSetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .profileSetups[
-                                                                  index]["by"]
+                                                              .profileSetups![
+                                                                  index!]["by"]
                                                               .toString(),
                                                           overflow:
                                                               TextOverflow.fade,
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -498,8 +498,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .profileSetups[
-                                                                      index][
+                                                                  .profileSetups![
+                                                                      index!][
                                                                       "userPhoto"]
                                                                   .toString()),
                                                         ),
@@ -516,48 +516,48 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .profileSetups[index]["by"],
+                                                                    .profileSetups![index!]["by"],
                                                                 Provider.of<ProfileSetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .profileSetups[index]["email"],
+                                                                    .profileSetups![index!]["email"],
                                                                 Provider.of<ProfileSetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .profileSetups[index]["userPhoto"],
+                                                                    .profileSetups![index!]["userPhoto"],
                                                                 false,
-                                                                if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index][
+                                                                if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
                                                                             "twitter"] !=
                                                                         null &&
-                                                                    Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index][
+                                                                    Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
                                                                             "twitter"] !=
                                                                         "")
                                                                   Provider.of<ProfileSetupProvider>(
                                                                           context,
                                                                           listen:
                                                                               false)
-                                                                      .profileSetups[
-                                                                          index][
+                                                                      .profileSetups![
+                                                                          index!][
                                                                           "twitter"]
                                                                       .toString()
                                                                       .split(
                                                                           "https://www.twitter.com/")[1]
                                                                 else
                                                                   "",
-                                                                if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index][
+                                                                if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
                                                                             "instagram"] !=
                                                                         null &&
-                                                                    Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index][
+                                                                    Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
                                                                             "instagram"] !=
                                                                         "")
                                                                   Provider.of<ProfileSetupProvider>(
                                                                           context,
                                                                           listen:
                                                                               false)
-                                                                      .profileSetups[
-                                                                          index][
+                                                                      .profileSetups![
+                                                                          index!][
                                                                           "instagram"]
                                                                       .toString()
                                                                       .split(
@@ -572,7 +572,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                   ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups[index]
+                                                          .profileSetups![index!]
                                                               ["email"]
                                                           .toString()))
                                                     Align(
@@ -617,11 +617,11 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
                           child: Provider.of<ProfileSetupProvider>(context, listen: false)
-                                          .profileSetups[index]["widget"] ==
+                                          .profileSetups![index!]["widget"] ==
                                       "" ||
                                   Provider.of<ProfileSetupProvider>(context,
                                               listen: false)
-                                          .profileSetups[index]["widget"] ==
+                                          .profileSetups![index!]["widget"] ==
                                       null
                               ? Column(
                                   mainAxisAlignment:
@@ -634,20 +634,20 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                         if (Provider.of<ProfileSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .profileSetups[index]
+                                                .profileSetups![index!]
                                                     ["wallpaper_url"]
                                                 .toString()[0] !=
                                             "[") {
                                           if (Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups[index]
+                                                          .profileSetups![index!]
                                                       ["wall_id"] ==
                                                   null ||
                                               Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups[index]
+                                                          .profileSetups![index!]
                                                       ["wall_id"] ==
                                                   "") {
                                             debugPrint("Id Not Found!");
@@ -655,7 +655,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         ProfileSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .profileSetups[index]
+                                                .profileSetups![index!]
                                                     ["wallpaper_url"]
                                                 .toString());
                                           } else {
@@ -665,25 +665,25 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   Provider.of<ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["wall_id"]
                                                       .toString(),
                                                   Provider.of<ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["wallpaper_provider"]
                                                       .toString(),
                                                   Provider.of<ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["wallpaper_url"]
                                                       .toString(),
                                                   Provider.of<ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["wallpaper_url"]
                                                       .toString(),
                                                 ]);
@@ -693,7 +693,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                               Provider.of<ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["wallpaper_url"][1]
                                                   .toString());
                                         }
@@ -702,12 +702,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
                                           ? "Prism"
-                                          : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][2].toString() : ""}",
+                                          : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
@@ -717,7 +717,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                       ProfileSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileSetups[index]["icon_url"]
+                                              .profileSetups![index!]["icon_url"]
                                               .toString()
                                               .contains(
                                                   'play.google.com/store/apps/details?id=')
@@ -725,7 +725,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                               Provider.of<ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
@@ -735,7 +735,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                         if (Provider.of<ProfileSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .profileSetups[index]["icon_url"]
+                                            .profileSetups![index!]["icon_url"]
                                             .toString()
                                             .contains(
                                                 'play.google.com/store/apps/details?id=')) {
@@ -744,7 +744,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
@@ -754,7 +754,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
@@ -763,7 +763,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["icon_url"]
                                                   .toString());
                                         } else {
@@ -771,7 +771,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                               Provider.of<ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["icon_url"]
                                                   .toString());
                                         }
@@ -780,7 +780,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                           Provider.of<ProfileSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileSetups[index]["icon"]
+                                              .profileSetups![index!]["icon"]
                                               .toString(),
                                       tileType: "Icons",
                                       panelCollapsed: panelCollapsed,
@@ -789,12 +789,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                   ],
                                 )
                               : Provider.of<ProfileSetupProvider>(context, listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                               ["widget2"] ==
                                           "" ||
                                       Provider.of<ProfileSetupProvider>(context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                               ["widget2"] ==
                                           null
                                   ? Column(
@@ -808,28 +808,28 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                             if (Provider.of<ProfileSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileSetups[index]
+                                                    .profileSetups![index!]
                                                         ["wallpaper_url"]
                                                     .toString()[0] !=
                                                 "[") {
                                               if (Provider.of<ProfileSetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .profileSetups[
-                                                          index]["wall_id"] ==
+                                                              .profileSetups![
+                                                          index!]["wall_id"] ==
                                                       null ||
                                                   Provider.of<ProfileSetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .profileSetups[
-                                                          index]["wall_id"] ==
+                                                              .profileSetups![
+                                                          index!]["wall_id"] ==
                                                       "") {
                                                 debugPrint("Id Not Found!");
                                                 launch(Provider.of<
                                                             ProfileSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileSetups[index]
+                                                    .profileSetups![index!]
                                                         ["wallpaper_url"]
                                                     .toString());
                                               } else {
@@ -839,25 +839,25 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                       Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups[index]
+                                                          .profileSetups![index!]
                                                               ["wall_id"]
                                                           .toString(),
                                                       Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups[index][
+                                                          .profileSetups![index!][
                                                               "wallpaper_provider"]
                                                           .toString(),
                                                       Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups[index]
+                                                          .profileSetups![index!]
                                                               ["wallpaper_url"]
                                                           .toString(),
                                                       Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups[index]
+                                                          .profileSetups![index!]
                                                               ["wallpaper_url"]
                                                           .toString(),
                                                     ]);
@@ -867,7 +867,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["wallpaper_url"][1]
                                                   .toString());
                                             }
@@ -876,12 +876,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                               Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups[index]
+                                                          .profileSetups![index!]
                                                               ["wallpaper_url"]
                                                           .toString()[0] !=
                                                       "["
                                                   ? "Prism"
-                                                  : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][2].toString() : ""}",
+                                                  : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay:
@@ -892,7 +892,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["icon_url"]
                                                   .toString()
                                                   .contains(
@@ -901,7 +901,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                       .of<ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
@@ -912,7 +912,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         ProfileSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .profileSetups[index]
+                                                .profileSetups![index!]
                                                     ["icon_url"]
                                                 .toString()
                                                 .contains(
@@ -922,7 +922,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
@@ -932,7 +932,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           .of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
@@ -941,7 +941,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["icon_url"]
                                                       .toString());
                                             } else {
@@ -949,7 +949,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["icon_url"]
                                                   .toString());
                                             }
@@ -958,7 +958,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                               Provider.of<ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]["icon"]
+                                                  .profileSetups![index!]["icon"]
                                                   .toString(),
                                           tileType: "Icons",
                                           panelCollapsed: panelCollapsed,
@@ -970,7 +970,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["widget_url"]
                                                   .toString()
                                                   .contains(
@@ -979,7 +979,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                       .of<ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["widget_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
@@ -990,7 +990,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         ProfileSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .profileSetups[index]
+                                                .profileSetups![index!]
                                                     ["widget_url"]
                                                 .toString()
                                                 .contains(
@@ -1000,7 +1000,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
@@ -1010,7 +1010,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           .of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
@@ -1019,7 +1019,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["widget_url"]
                                                       .toString());
                                             } else {
@@ -1027,7 +1027,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["widget_url"]
                                                   .toString());
                                             }
@@ -1036,7 +1036,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                               Provider.of<ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["widget"]
                                                   .toString(),
                                           tileType: "Widget",
@@ -1057,28 +1057,28 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                               if (Provider.of<ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "[") {
                                                 if (Provider.of<ProfileSetupProvider>(
                                                                     context,
                                                                     listen: false)
-                                                                .profileSetups[
-                                                            index]["wall_id"] ==
+                                                                .profileSetups![
+                                                            index!]["wall_id"] ==
                                                         null ||
                                                     Provider.of<ProfileSetupProvider>(
                                                                     context,
                                                                     listen: false)
-                                                                .profileSetups[
-                                                            index]["wall_id"] ==
+                                                                .profileSetups![
+                                                            index!]["wall_id"] ==
                                                         "") {
                                                   debugPrint("Id Not Found!");
                                                   launch(Provider.of<
                                                               ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]
+                                                      .profileSetups![index!]
                                                           ["wallpaper_url"]
                                                       .toString());
                                                 } else {
@@ -1088,29 +1088,29 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         Provider.of<ProfileSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .profileSetups[
-                                                                index]
+                                                            .profileSetups![
+                                                                index!]
                                                                 ["wall_id"]
                                                             .toString(),
                                                         Provider.of<ProfileSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .profileSetups[
-                                                                index][
+                                                            .profileSetups![
+                                                                index!][
                                                                 "wallpaper_provider"]
                                                             .toString(),
                                                         Provider.of<ProfileSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .profileSetups[
-                                                                index][
+                                                            .profileSetups![
+                                                                index!][
                                                                 "wallpaper_url"]
                                                             .toString(),
                                                         Provider.of<ProfileSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .profileSetups[
-                                                                index][
+                                                            .profileSetups![
+                                                                index!][
                                                                 "wallpaper_url"]
                                                             .toString(),
                                                       ]);
@@ -1120,7 +1120,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             ProfileSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileSetups[index]
+                                                    .profileSetups![index!]
                                                         ["wallpaper_url"][1]
                                                     .toString());
                                               }
@@ -1129,12 +1129,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                 ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
                                                 ? "Prism"
-                                                : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][2].toString() : ""}",
+                                                : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(
@@ -1145,7 +1145,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             ProfileSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileSetups[index]
+                                                    .profileSetups![index!]
                                                         ["icon_url"]
                                                     .toString()
                                                     .contains(
@@ -1154,7 +1154,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                     Provider.of<ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1165,7 +1165,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["icon_url"]
                                                   .toString()
                                                   .contains(
@@ -1175,7 +1175,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                 ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1185,7 +1185,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             .of<ProfileSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1194,7 +1194,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                 ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["icon_url"]
                                                         .toString());
                                               } else {
@@ -1202,7 +1202,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             ProfileSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileSetups[index]
+                                                    .profileSetups![index!]
                                                         ["icon_url"]
                                                     .toString());
                                               }
@@ -1211,7 +1211,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         ProfileSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .profileSetups[index]["icon"]
+                                                .profileSetups![index!]["icon"]
                                                 .toString(),
                                             tileType: "Icons",
                                             panelCollapsed: panelCollapsed,
@@ -1223,7 +1223,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             ProfileSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileSetups[index]
+                                                    .profileSetups![index!]
                                                         ["widget_url"]
                                                     .toString()
                                                     .contains(
@@ -1232,7 +1232,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                     Provider.of<ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1243,7 +1243,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["widget_url"]
                                                   .toString()
                                                   .contains(
@@ -1253,7 +1253,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                 ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1263,7 +1263,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             .of<ProfileSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1272,7 +1272,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                 ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["widget_url"]
                                                         .toString());
                                               } else {
@@ -1280,7 +1280,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             ProfileSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileSetups[index]
+                                                    .profileSetups![index!]
                                                         ["widget_url"]
                                                     .toString());
                                               }
@@ -1289,7 +1289,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         ProfileSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .profileSetups[index]["widget"]
+                                                .profileSetups![index!]["widget"]
                                                 .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
@@ -1301,7 +1301,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             ProfileSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileSetups[index]
+                                                    .profileSetups![index!]
                                                         ["widget_url2"]
                                                     .toString()
                                                     .contains(
@@ -1310,7 +1310,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                     Provider.of<ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1321,7 +1321,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups[index]
+                                                  .profileSetups![index!]
                                                       ["widget_url2"]
                                                   .toString()
                                                   .contains(
@@ -1331,7 +1331,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                 ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1341,7 +1341,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             .of<ProfileSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1350,7 +1350,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                 ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileSetups[index]
+                                                        .profileSetups![index!]
                                                             ["widget_url2"]
                                                         .toString());
                                               } else {
@@ -1358,7 +1358,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             ProfileSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileSetups[index]
+                                                    .profileSetups![index!]
                                                         ["widget_url2"]
                                                     .toString());
                                               }
@@ -1367,7 +1367,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         ProfileSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .profileSetups[index]["widget2"]
+                                                .profileSetups![index!]["widget2"]
                                                 .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
@@ -1406,24 +1406,24 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                           Provider.of<ProfileSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileSetups[index]["id"]
+                                              .profileSetups![index!]["id"]
                                               .toString(),
                                           Provider.of<ProfileSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileSetups[index] as Map);
+                                              .profileSetups![index!] as Map);
                                     });
                                   } else {
                                     onFavSetup(
                                         Provider.of<ProfileSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .profileSetups[index]["id"]
+                                            .profileSetups![index!]["id"]
                                             .toString(),
                                         Provider.of<ProfileSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .profileSetups[index] as Map);
+                                            .profileSetups![index!] as Map);
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,
@@ -1431,7 +1431,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                 isFavorite: box.get(
                                     Provider.of<ProfileSetupProvider>(context,
                                             listen: false)
-                                        .profileSetups[index]["id"]
+                                        .profileSetups![index!]["id"]
                                         .toString(),
                                     defaultValue: false) as bool,
                               ),
@@ -1442,11 +1442,11 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                     index.toString(),
                                     Provider.of<ProfileSetupProvider>(context,
                                             listen: false)
-                                        .profileSetups[index]["name"]
+                                        .profileSetups![index!]["name"]
                                         .toString(),
                                     Provider.of<ProfileSetupProvider>(context,
                                             listen: false)
-                                        .profileSetups[index]["image"]
+                                        .profileSetups![index!]["image"]
                                         .toString());
                               },
                               child: Container(
@@ -1503,7 +1503,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                       child: CachedNetworkImage(
                         imageUrl: Provider.of<ProfileSetupProvider>(context,
                                 listen: false)
-                            .profileSetups[index]["image"]
+                            .profileSetups![index!]["image"]
                             .toString(),
                         imageBuilder: (context, imageProvider) => Container(
                           margin: EdgeInsets.symmetric(
@@ -1548,7 +1548,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                 alignment: Alignment.topLeft,
                 child: Padding(
                   padding:
-                      EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
@@ -1566,7 +1566,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                 alignment: Alignment.topRight,
                 child: Padding(
                   padding:
-                      EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                   child: IconButton(
                     onPressed: () async {
                       final status = await Permission.storage.status;
@@ -1575,7 +1575,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                       }
                       final link = Provider.of<ProfileSetupProvider>(context,
                               listen: false)
-                          .profileSetups[index]["image"]
+                          .profileSetups![index!]["image"]
                           .toString();
                       // setState(() {
                       //   isLoading = true;
@@ -1649,13 +1649,13 @@ class SetupDetailsTile extends StatelessWidget {
   final Function onTap;
   final Future<bool> isInstalled;
   const SetupDetailsTile({
-    Key key,
-    @required this.delay,
-    @required this.tileText,
-    @required this.tileType,
-    @required this.onTap,
-    @required this.panelCollapsed,
-    @required this.isInstalled,
+    Key? key,
+    required this.delay,
+    required this.tileText,
+    required this.tileType,
+    required this.onTap,
+    required this.panelCollapsed,
+    required this.isInstalled,
   }) : super(key: key);
 
   @override
@@ -1762,23 +1762,23 @@ class SetupDetailsTile extends StatelessWidget {
 }
 
 class ModifiedDownloadButton extends StatelessWidget {
-  final int index;
-  const ModifiedDownloadButton({@required this.index});
+  final int? index;
+  const ModifiedDownloadButton({required this.index});
   @override
   Widget build(BuildContext context) {
     return Provider.of<ProfileSetupProvider>(context, listen: false)
-                .profileSetups[index]["wallpaper_url"]
+                .profileSetups![index!]["wallpaper_url"]
                 .toString()[0] !=
             "["
         ? Provider.of<ProfileSetupProvider>(context, listen: false)
-                        .profileSetups[index]["wall_id"] !=
+                        .profileSetups![index!]["wall_id"] !=
                     null &&
                 Provider.of<ProfileSetupProvider>(context, listen: false)
-                        .profileSetups[index]["wall_id"] !=
+                        .profileSetups![index!]["wall_id"] !=
                     ""
             ? DownloadButton(
                 link: Provider.of<ProfileSetupProvider>(context, listen: false)
-                    .profileSetups[index]["wallpaper_url"]
+                    .profileSetups![index!]["wallpaper_url"]
                     .toString(),
                 colorChanged: false,
               )
@@ -1786,7 +1786,7 @@ class ModifiedDownloadButton extends StatelessWidget {
                 onTap: () async {
                   launch(
                       Provider.of<ProfileSetupProvider>(context, listen: false)
-                          .profileSetups[index]["wallpaper_url"]
+                          .profileSetups![index!]["wallpaper_url"]
                           .toString());
                 },
                 child: Container(
@@ -1811,7 +1811,7 @@ class ModifiedDownloadButton extends StatelessWidget {
         : GestureDetector(
             onTap: () async {
               launch(Provider.of<ProfileSetupProvider>(context, listen: false)
-                  .profileSetups[index]["wallpaper_url"][1]
+                  .profileSetups![index!]["wallpaper_url"][1]
                   .toString());
             },
             child: Container(
@@ -1837,23 +1837,23 @@ class ModifiedDownloadButton extends StatelessWidget {
 }
 
 class ModifiedSetWallpaperButton extends StatelessWidget {
-  final int index;
-  const ModifiedSetWallpaperButton({@required this.index});
+  final int? index;
+  const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
     return Provider.of<ProfileSetupProvider>(context, listen: false)
-                .profileSetups[index]["wallpaper_url"]
+                .profileSetups![index!]["wallpaper_url"]
                 .toString()[0] !=
             "["
         ? Provider.of<ProfileSetupProvider>(context, listen: false)
-                        .profileSetups[index]["wall_id"] !=
+                        .profileSetups![index!]["wall_id"] !=
                     null &&
                 Provider.of<ProfileSetupProvider>(context, listen: false)
-                        .profileSetups[index]["wall_id"] !=
+                        .profileSetups![index!]["wall_id"] !=
                     ""
             ? SetWallpaperButton(
                 url: Provider.of<ProfileSetupProvider>(context, listen: false)
-                    .profileSetups[index]["wallpaper_url"]
+                    .profileSetups![index!]["wallpaper_url"]
                     .toString(),
                 colorChanged: false,
               )
@@ -1861,7 +1861,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 onTap: () async {
                   launch(
                       Provider.of<ProfileSetupProvider>(context, listen: false)
-                          .profileSetups[index]["wallpaper_url"]
+                          .profileSetups![index!]["wallpaper_url"]
                           .toString());
                 },
                 child: Container(
@@ -1886,7 +1886,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
         : GestureDetector(
             onTap: () async {
               launch(Provider.of<ProfileSetupProvider>(context, listen: false)
-                  .profileSetups[index]["wallpaper_url"][1]
+                  .profileSetups![index!]["wallpaper_url"][1]
                   .toString());
             },
             child: Container(

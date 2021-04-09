@@ -26,8 +26,8 @@ class _SearchScreenState extends State<SearchScreen> {
     return true;
   }
 
-  String selectedProvider;
-  SearchProviderMenuItem selectedProviders;
+  String? selectedProvider;
+  SearchProviderMenuItem? selectedProviders;
   final List providers = [
     SearchProviderMenuItem(title: 'WallHaven', icon: JamIcons.arrow_right),
     SearchProviderMenuItem(title: 'Pexels', icon: JamIcons.arrow_right)
@@ -63,9 +63,9 @@ class _SearchScreenState extends State<SearchScreen> {
     'Winter',
     'Beach',
   ];
-  bool isSubmitted;
+  late bool isSubmitted;
   TextEditingController searchController = TextEditingController();
-  Future _future;
+  Future? _future;
   @override
   void initState() {
     isSubmitted = false;
@@ -103,7 +103,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               cursorColor: Theme.of(context).errorColor,
                               style: Theme.of(context)
                                   .textTheme
-                                  .headline5
+                                  .headline5!
                                   .copyWith(
                                       color: Theme.of(context).accentColor),
                               controller: searchController,
@@ -117,7 +117,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 hintText: "Search",
                                 hintStyle: Theme.of(context)
                                     .textTheme
-                                    .headline5
+                                    .headline5!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 suffixIcon: Icon(
@@ -132,8 +132,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                     wdata.wallsS = [];
                                     _future = wdata.getWallsbyQuery(
                                         tex,
-                                        main.prefs.get('WHcategories') as int,
-                                        main.prefs.get('WHpurity') as int);
+                                        main.prefs.get('WHcategories') as int?,
+                                        main.prefs.get('WHpurity') as int?);
                                   } else if (selectedProvider == "Pexels") {
                                     pdata.wallsPS = [];
                                     _future = pdata.getWallsPbyQuery(tex);
@@ -160,7 +160,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     },
                     color: Theme.of(context).hintColor,
                     tooltip: 'Providers',
-                    onSelected: (choice) {
+                    onSelected: (dynamic choice) {
                       setState(() {
                         selectedProviders = choice as SearchProviderMenuItem;
                         selectedProvider = choice.title.toString();
@@ -170,8 +170,8 @@ class _SearchScreenState extends State<SearchScreen> {
                             wdata.wallsS = [];
                             _future = wdata.getWallsbyQuery(
                                 searchController.text,
-                                main.prefs.get('WHcategories') as int,
-                                main.prefs.get('WHpurity') as int);
+                                main.prefs.get('WHcategories') as int?,
+                                main.prefs.get('WHpurity') as int?);
                           } else if (choice.title == "Pexels") {
                             pdata.wallsPS = [];
                             _future =
@@ -185,12 +185,12 @@ class _SearchScreenState extends State<SearchScreen> {
                         return PopupMenuItem(
                           textStyle: Theme.of(context)
                               .textTheme
-                              .headline4
+                              .headline4!
                               .copyWith(color: Theme.of(context).accentColor),
                           value: choice,
                           child: Row(
                             children: <Widget>[
-                              Icon(choice.icon as IconData,
+                              Icon(choice.icon as IconData?,
                                   color: Theme.of(context).accentColor),
                               const SizedBox(width: 10),
                               Text(choice.title.toString()),
@@ -229,7 +229,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 label: Text(tags[index],
                                     style: Theme.of(context)
                                         .textTheme
-                                        .headline4
+                                        .headline4!
                                         .copyWith(
                                             color: searchController.text
                                                         .toLowerCase() ==
@@ -245,8 +245,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                       wdata.wallsS = [];
                                       _future = wdata.getWallsbyQuery(
                                           tags[index],
-                                          main.prefs.get('WHcategories') as int,
-                                          main.prefs.get('WHpurity') as int);
+                                          main.prefs.get('WHcategories') as int?,
+                                          main.prefs.get('WHpurity') as int?);
                                     } else if (selectedProvider == "Pexels") {
                                       pdata.wallsPS = [];
                                       _future =
@@ -392,19 +392,19 @@ class _SearchScreenState extends State<SearchScreen> {
 }
 
 class SearchLoader extends StatefulWidget {
-  final Future future;
+  final Future? future;
   final String query;
-  final String selectedProvider;
+  final String? selectedProvider;
   const SearchLoader(
-      {@required this.future,
-      @required this.query,
-      @required this.selectedProvider});
+      {required this.future,
+      required this.query,
+      required this.selectedProvider});
   @override
   _SearchLoaderState createState() => _SearchLoaderState();
 }
 
 class _SearchLoaderState extends State<SearchLoader> {
-  Future _future;
+  Future? _future;
 
   @override
   void initState() {

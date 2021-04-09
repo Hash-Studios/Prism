@@ -76,7 +76,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: photographerProfileRoute);
       return CupertinoPageRoute(
-          builder: (context) => UserProfile(settings.arguments as List));
+          builder: (context) => UserProfile(settings.arguments as List?));
     case downloadRoute:
       navStack.add("Downloads");
       debugPrint(navStack.toString());
@@ -118,21 +118,21 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: colorRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              ColorScreen(arguments: settings.arguments as List));
+              ColorScreen(arguments: settings.arguments as List?));
     case collectionViewRoute:
       navStack.add("CollectionsView");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: collectionViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              CollectionViewScreen(arguments: settings.arguments as List));
+              CollectionViewScreen(arguments: settings.arguments as List?));
     case wallpaperRoute:
       navStack.add("Wallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: wallpaperRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              WallpaperScreen(arguments: settings.arguments as List),
+              WallpaperScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case searchWallpaperRoute:
       navStack.add("Search Wallpaper");
@@ -140,7 +140,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: searchWallpaperRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              SearchWallpaperScreen(arguments: settings.arguments as List),
+              SearchWallpaperScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case downloadWallpaperRoute:
       navStack.add("DownloadedWallpaper");
@@ -148,7 +148,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: downloadWallpaperRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              DownloadWallpaperScreen(arguments: settings.arguments as List),
+              DownloadWallpaperScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case shareRoute:
       navStack.add("SharedWallpaper");
@@ -156,7 +156,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: shareRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              ShareWallpaperViewScreen(arguments: settings.arguments as List),
+              ShareWallpaperViewScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case shareSetupViewRoute:
       navStack.add("SharedSetup");
@@ -164,7 +164,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: shareSetupViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              ShareSetupViewScreen(arguments: settings.arguments as List),
+              ShareSetupViewScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case favWallViewRoute:
       navStack.add("FavouriteWallpaper");
@@ -172,7 +172,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: favWallViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              FavWallpaperViewScreen(arguments: settings.arguments as List),
+              FavWallpaperViewScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case favSetupViewRoute:
       navStack.add("Favourite Setup View");
@@ -180,7 +180,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: favSetupViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              FavSetupViewScreen(arguments: settings.arguments as List),
+              FavSetupViewScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case setupRoute:
       navStack.add("Setups");
@@ -195,7 +195,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: setupViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              SetupViewScreen(arguments: settings.arguments as List),
+              SetupViewScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case profileSetupViewRoute:
       navStack.add("ProfileSetupView");
@@ -203,7 +203,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: profileSetupViewRoute);
       return CupertinoPageRoute(
           builder: (context) => ProfileSetupViewScreen(
-                arguments: settings.arguments as List,
+                arguments: settings.arguments as List?,
               ),
           fullscreenDialog: true);
     case profileWallViewRoute:
@@ -212,7 +212,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: profileWallViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              ProfileWallViewScreen(arguments: settings.arguments as List),
+              ProfileWallViewScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case userProfileWallViewRoute:
       navStack.add("User ProfileWallpaper");
@@ -220,7 +220,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: userProfileWallViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              UserProfileWallViewScreen(arguments: settings.arguments as List),
+              UserProfileWallViewScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case userProfileSetupViewRoute:
       navStack.add("User ProfileSetup");
@@ -228,7 +228,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: userProfileSetupViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              UserProfileSetupViewScreen(arguments: settings.arguments as List),
+              UserProfileSetupViewScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case themeViewRoute:
       navStack.add("Themes");
@@ -241,7 +241,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: editWallRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              EditWallScreen(arguments: settings.arguments as List),
+              EditWallScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case uploadSetupRoute:
       navStack.add("Upload Setup");
@@ -249,7 +249,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: uploadSetupRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              UploadSetupScreen(arguments: settings.arguments as List),
+              UploadSetupScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case editSetupDetailsRoute:
       navStack.add("Edit Setup Details");
@@ -257,7 +257,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: editSetupDetailsRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              EditSetupReviewScreen(arguments: settings.arguments as List),
+              EditSetupReviewScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case setupGuidelinesRoute:
       navStack.add("Setup Guidelines");
@@ -272,7 +272,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: setupTagRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              TagSetupScreen(arguments: settings.arguments as List),
+              TagSetupScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case uploadWallRoute:
       navStack.add("Add");
@@ -280,7 +280,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: uploadWallRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              UploadWallScreen(arguments: settings.arguments as List),
+              UploadWallScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case aboutRoute:
       navStack.add("About Prism");
@@ -325,7 +325,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: followersRoute);
       return CupertinoPageRoute(
           builder: (context) => FollowersScreen(
-                arguments: settings.arguments as List,
+                arguments: settings.arguments as List?,
               ));
     default:
       navStack.add("undefined");

@@ -4,15 +4,15 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class ClockOverlay extends StatefulWidget {
-  final String link;
+  final String? link;
   final bool file;
-  final Color accent;
+  final Color? accent;
   final bool colorChanged;
   const ClockOverlay({
-    @required this.link,
-    @required this.file,
-    @required this.accent,
-    @required this.colorChanged,
+    required this.link,
+    required this.file,
+    required this.accent,
+    required this.colorChanged,
   });
   @override
   _ClockOverlayState createState() => _ClockOverlayState();
@@ -36,12 +36,12 @@ class _ClockOverlayState extends State<ClockOverlay> {
         children: <Widget>[
           if (!widget.file)
             CachedNetworkImage(
-              imageUrl: widget.link,
+              imageUrl: widget.link!,
               imageBuilder: (context, imageProvider) => Container(
                 decoration: BoxDecoration(
                   image: DecorationImage(
                     colorFilter: widget.colorChanged
-                        ? ColorFilter.mode(widget.accent, BlendMode.hue)
+                        ? ColorFilter.mode(widget.accent!, BlendMode.hue)
                         : null,
                     image: imageProvider,
                     fit: BoxFit.cover,
@@ -54,7 +54,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
               height: MediaQuery.of(context).size.height,
               width: MediaQuery.of(context).size.width,
               child: Image.file(
-                File(widget.link),
+                File(widget.link!),
                 color: widget.accent,
                 colorBlendMode: widget.colorChanged ? BlendMode.color : null,
                 fit: BoxFit.cover,
@@ -73,7 +73,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     style: TextStyle(
                       color: widget.accent == null
                           ? Theme.of(context).accentColor
-                          : widget.accent.computeLuminance() > 0.5
+                          : widget.accent!.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,
                       fontFamily: "Roboto",
@@ -90,7 +90,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     style: TextStyle(
                       color: widget.accent == null
                           ? Theme.of(context).accentColor
-                          : widget.accent.computeLuminance() > 0.5
+                          : widget.accent!.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,
                       fontFamily: "Roboto",

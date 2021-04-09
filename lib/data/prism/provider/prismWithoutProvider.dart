@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/routes/router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -6,15 +8,15 @@ import 'package:intl/intl.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 
 final Firestore databaseReference = Firestore.instance;
-List prismWalls;
-List subPrismWalls;
-List sortedData;
-List subSortedData;
-List wallsDataL;
-Map wall;
+List? prismWalls;
+List? subPrismWalls;
+List? sortedData;
+List? subSortedData;
+late List wallsDataL;
+Map wall = {};
 int page = 1;
 int pageTrending = 1;
-Future<List> getPrismWalls() async {
+Future<List?> getPrismWalls() async {
   if (navStack.last == "Home") {
     final box = Hive.box('wallpapers');
     if ((box.get('wallpapers') == null) ||
@@ -37,7 +39,7 @@ Future<List> getPrismWalls() async {
           Map<String, dynamic> map;
           map = f.data;
           map['createdAt'] = map['createdAt'].toString();
-          prismWalls.add(map);
+          prismWalls!.add(map);
         }
         box.delete('wallpapers');
         if (prismWalls != []) {
@@ -49,8 +51,8 @@ Future<List> getPrismWalls() async {
               DateTime.now(),
             ),
           );
-          debugPrint(prismWalls.length.toString());
-          subPrismWalls = box.get('wallpapers').sublist(0, 24) as List;
+          debugPrint(prismWalls!.length.toString());
+          subPrismWalls = box.get('wallpapers').sublist(0, 24) as List?;
         } else {
           debugPrint("Not connected to Internet");
           subPrismWalls = [];
@@ -63,8 +65,8 @@ Future<List> getPrismWalls() async {
       debugPrint("Community : Data Fetched from cache");
       prismWalls = [];
       subPrismWalls = [];
-      prismWalls = box.get('wallpapers') as List;
-      subPrismWalls = prismWalls.sublist(0, 24);
+      prismWalls = box.get('wallpapers') as List?;
+      subPrismWalls = prismWalls!.sublist(0, 24);
     }
   } else {
     debugPrint("Refresh blocked");
@@ -72,24 +74,24 @@ Future<List> getPrismWalls() async {
   return subPrismWalls;
 }
 
-List seeMorePrism() {
-  final int len = prismWalls.length;
+List? seeMorePrism() {
+  final int len = prismWalls!.length;
   final double pages = len / 24;
   debugPrint(len.toString());
   debugPrint(pages.toString());
   debugPrint(page.toString());
   if (page < pages.floor()) {
-    subPrismWalls.addAll(
-        prismWalls.sublist(subPrismWalls.length, subPrismWalls.length + 24));
+    subPrismWalls!.addAll(
+        prismWalls!.sublist(subPrismWalls!.length, subPrismWalls!.length + 24));
     page += 1;
   } else {
-    subPrismWalls.addAll(prismWalls.sublist(subPrismWalls.length));
+    subPrismWalls!.addAll(prismWalls!.sublist(subPrismWalls!.length));
   }
   return subPrismWalls;
 }
 
-Future<Map> getDataByID(String id) async {
-  wall = null;
+Future<Map> getDataByID(String? id) async {
+  wall = {};
   await databaseReference.collection("walls").getDocuments().then((value) {
     for (final element in value.documents) {
       if (element.data["id"] == id) {
@@ -98,14 +100,16 @@ Future<Map> getDataByID(String id) async {
     }
     return wall;
   });
+  return wall;
 }
 
-Future<List> getTrendingWalls() async {
+Future<List?> getTrendingWalls() async {
   prismWalls = [];
   subPrismWalls = [];
   await getPrismWalls();
-  final List walls = prismWalls;
-  final Map viewData = await getMapFromGitHub();
+  final List? walls = prismWalls;
+  final Map viewData =
+      await (getMapFromGitHub() as FutureOr<Map<dynamic, dynamic>>);
   final Map wallsData = viewData["wallpapers"] as Map;
   wallsDataL = [];
   prismWalls = [];
@@ -117,28 +121,28 @@ Future<List> getTrendingWalls() async {
         .compareTo(int.parse(b.values.toList()[0].toString()));
   });
   wallsDataL.forEach((wallData) {
-    walls.forEach((element) {
+    walls!.forEach((element) {
       if (element["id"] == wallData.keys.toList()[0]) {
-        prismWalls.add(element);
+        prismWalls!.add(element);
       }
     });
   });
-  subPrismWalls = prismWalls.sublist(0, 24);
+  subPrismWalls = prismWalls!.sublist(0, 24);
   return subPrismWalls;
 }
 
-List seeMoreTrending() {
-  final int len = prismWalls.length;
+List? seeMoreTrending() {
+  final int len = prismWalls!.length;
   final double pages = len / 24;
   debugPrint(len.toString());
   debugPrint(pages.toString());
   debugPrint(pageTrending.toString());
   if (pageTrending < pages.floor()) {
-    subPrismWalls.addAll(
-        prismWalls.sublist(subPrismWalls.length, subPrismWalls.length + 24));
+    subPrismWalls!.addAll(
+        prismWalls!.sublist(subPrismWalls!.length, subPrismWalls!.length + 24));
     pageTrending += 1;
   } else {
-    subPrismWalls.addAll(prismWalls.sublist(subPrismWalls.length));
+    subPrismWalls!.addAll(prismWalls!.sublist(subPrismWalls!.length));
   }
   return subPrismWalls;
 }

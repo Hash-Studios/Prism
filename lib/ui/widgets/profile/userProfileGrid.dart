@@ -15,10 +15,10 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 
 class UserProfileGrid extends StatefulWidget {
-  final String email;
+  final String? email;
   const UserProfileGrid({
     this.email,
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -27,8 +27,8 @@ class UserProfileGrid extends StatefulWidget {
 
 class _UserProfileGridState extends State<UserProfileGrid>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+  AnimationController? _controller;
+  Animation<Color?>? animation;
   GlobalKey<RefreshIndicatorState> refreshProfileKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -41,9 +41,9 @@ class _UserProfileGridState extends State<UserProfileGrid>
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -60,8 +60,8 @@ class _UserProfileGridState extends State<UserProfileGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
+          ).animate(_controller!)
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -78,11 +78,11 @@ class _UserProfileGridState extends State<UserProfileGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
+          ).animate(_controller!)
       ..addListener(() {
         setState(() {});
       });
-    _controller.repeat();
+    _controller!.repeat();
   }
 
   @override
@@ -104,7 +104,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
         key: refreshProfileKey,
         onRefresh: refreshList,
         child: userdata.userProfileWalls != null
-            ? userdata.userProfileWalls.isEmpty
+            ? userdata.userProfileWalls!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -225,7 +225,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
                     shrinkWrap: true,
                     cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: userdata.userProfileWalls.length,
+                    itemCount: userdata.userProfileWalls!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
                             MediaQuery.of(context).orientation ==
@@ -240,8 +240,8 @@ class _UserProfileGridState extends State<UserProfileGrid>
                           ? PremiumBannerWalls(
                               comparator: !globals.isPremiumWall(
                                   globals.premiumCollections,
-                                  userdata.userProfileWalls[index]
-                                          ["collections"] as List ??
+                                  userdata.userProfileWalls![index]
+                                          ["collections"] as List? ??
                                       []),
                               defaultChild: FocusedMenuHolder(
                                 provider: "UserProfileWall",
@@ -267,12 +267,12 @@ class _UserProfileGridState extends State<UserProfileGrid>
 
 class PhotographerWallTile extends StatelessWidget {
   const PhotographerWallTile({
-    Key key,
-    @required this.animation,
-    @required this.index,
+    Key? key,
+    required this.animation,
+    required this.index,
   }) : super(key: key);
 
-  final Animation<Color> animation;
+  final Animation<Color?>? animation;
   final int index;
 
   void showGooglePopUp(BuildContext context, Function func) {
@@ -290,11 +290,11 @@ class PhotographerWallTile extends StatelessWidget {
       children: [
         Container(
           decoration: BoxDecoration(
-              color: animation.value,
+              color: animation!.value,
               borderRadius: BorderRadius.circular(20),
               image: DecorationImage(
                   image: CachedNetworkImageProvider(
-                    userdata.userProfileWalls[index]["wallpaper_thumb"]
+                    userdata.userProfileWalls![index]["wallpaper_thumb"]
                         .toString(),
                   ),
                   fit: BoxFit.cover)),
@@ -311,8 +311,8 @@ class PhotographerWallTile extends StatelessWidget {
                 } else {
                   globals.isPremiumWall(
                                   globals.premiumCollections,
-                                  userdata.userProfileWalls[index]
-                                          ["collections"] as List ??
+                                  userdata.userProfileWalls![index]
+                                          ["collections"] as List? ??
                                       []) ==
                               true &&
                           main.prefs.get('premium') != true
@@ -325,7 +325,7 @@ class PhotographerWallTile extends StatelessWidget {
                       : Navigator.pushNamed(context, userProfileWallViewRoute,
                           arguments: [
                               index,
-                              userdata.userProfileWalls[index]
+                              userdata.userProfileWalls![index]
                                   ["wallpaper_thumb"],
                             ]);
                 }

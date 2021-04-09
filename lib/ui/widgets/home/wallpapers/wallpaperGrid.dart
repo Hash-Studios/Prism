@@ -18,8 +18,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/main.dart' as main;
 
 class WallpaperGrid extends StatefulWidget {
-  final String provider;
-  const WallpaperGrid({@required this.provider});
+  final String? provider;
+  const WallpaperGrid({required this.provider});
   @override
   _WallpaperGridState createState() => _WallpaperGridState();
 }
@@ -116,8 +116,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+    final ScrollController? controller =
+        InheritedDataProvider.of(context)!.scrollController;
     final CarouselController carouselController = CarouselController();
     return Padding(
       padding: const EdgeInsets.only(top: 5.0),
@@ -187,7 +187,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                         maxLines: 1,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline2
+                                            .headline2!
                                             .copyWith(
                                                 fontSize: 20,
                                                 color: Colors.white,
@@ -208,9 +208,9 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                 } else {
                                   globals.isPremiumWall(
                                                   globals.premiumCollections,
-                                                  Data.subPrismWalls[i]
+                                                  Data.subPrismWalls![i]
                                                               ["collections"]
-                                                          as List ??
+                                                          as List? ??
                                                       []) ==
                                               true &&
                                           main.prefs.get('premium') != true
@@ -225,12 +225,12 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                           arguments: [
                                               widget.provider,
                                               i,
-                                              Data.subPrismWalls[i]
+                                              Data.subPrismWalls![i]
                                                   ["wallpaper_thumb"],
                                             ]);
                                 }
                               },
-                              child: Data.subPrismWalls.isEmpty
+                              child: Data.subPrismWalls!.isEmpty
                                   ? Container(
                                       decoration: BoxDecoration(
                                         color: Provider.of<ThemeModeExtended>(
@@ -247,8 +247,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                   : PremiumBannerWallsCarousel(
                                       comparator: !globals.isPremiumWall(
                                           globals.premiumCollections,
-                                          Data.subPrismWalls[i]["collections"]
-                                                  as List ??
+                                          Data.subPrismWalls![i]["collections"]
+                                                  as List? ??
                                               []),
                                       child: Container(
                                         decoration: BoxDecoration(
@@ -264,7 +264,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                                 BorderRadius.circular(20),
                                             image: DecorationImage(
                                                 image: CachedNetworkImageProvider(
-                                                    Data.subPrismWalls[i]
+                                                    Data.subPrismWalls![i]
                                                             ["wallpaper_thumb"]
                                                         .toString()),
                                                 fit: BoxFit.cover)),
@@ -283,7 +283,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                                 maxLines: 1,
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .headline2
+                                                    .headline2!
                                                     .copyWith(
                                                         color: Colors.white,
                                                         fontSize: 20,
@@ -326,9 +326,9 @@ class _WallpaperGridState extends State<WallpaperGrid> {
             child: GridView.builder(
               physics: const ScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-              itemCount: Data.subPrismWalls.isEmpty
+              itemCount: Data.subPrismWalls!.isEmpty
                   ? 20
-                  : Data.subPrismWalls.length - 4,
+                  : Data.subPrismWalls!.length - 4,
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                   maxCrossAxisExtent:
@@ -340,7 +340,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                   crossAxisSpacing: 8),
               itemBuilder: (context, index) {
                 index = index + 4;
-                if (index == Data.subPrismWalls.length - 1) {
+                if (index == Data.subPrismWalls!.length - 1) {
                   return SeeMoreButton(
                     seeMoreLoader: seeMoreLoader,
                     func: () {
@@ -368,7 +368,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     : PremiumBannerWalls(
                         comparator: !globals.isPremiumWall(
                             globals.premiumCollections,
-                            Data.subPrismWalls[index]["collections"] as List ??
+                            Data.subPrismWalls![index]["collections"] as List? ??
                                 []),
                         defaultChild: FocusedMenuHolder(
                           provider: widget.provider,

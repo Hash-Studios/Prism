@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 
 class UserProfileLoader extends StatefulWidget {
   final Future future;
-  final String email;
-  const UserProfileLoader({@required this.future, @required this.email});
+  final String? email;
+  const UserProfileLoader({required this.future, required this.email});
   @override
   _UserProfileLoaderState createState() => _UserProfileLoaderState();
 }
 
 class _UserProfileLoaderState extends State<UserProfileLoader> {
-  Future _future;
+  Future? _future;
 
   @override
   void initState() {

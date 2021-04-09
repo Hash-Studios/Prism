@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 
 List<WallPaper> walls = [];
 List<WallPaper> wallsS = [];
-WallPaper wall;
+WallPaper wall = WallPaper();
 int pageGetData = 1;
 int pageGetQuery = 1;
 int pageGetTag = 1;
@@ -20,14 +20,14 @@ List<Map<String, int>> pageNumbers = categories
     .toList();
 
 Future<List<WallPaper>> categoryDataFetcher(
-    String categoryName, String mode, int categories, int purity) async {
+    String categoryName, String mode, int? categories, int? purity) async {
   final int index = pageNumbers.indexOf(pageNumbers
       .firstWhere((element) => element.keys.toList()[0] == categoryName));
   if (mode == "r") {
     walls = [];
     pageNumbers[index] = {categoryName: 1};
   } else {
-    final int origPageNumber = pageNumbers[index][categoryName];
+    final int origPageNumber = pageNumbers[index][categoryName]!;
     pageNumbers[index] = {categoryName: origPageNumber + 1};
   }
   if (navStack.last == "Home") {
@@ -51,10 +51,10 @@ Future<List<WallPaper>> categoryDataFetcher(
                 dimension_y: resp["data"][i]["dimension_y"].toString(),
                 resolution: resp["data"][i]["resolution"].toString(),
                 file_size: resp["data"][i]["file_size"].toString(),
-                colors: resp["data"][i]["colors"] as List,
+                colors: resp["data"][i]["colors"] as List?,
                 path: resp["data"][i]["path"].toString(),
-                thumbs: resp["data"][i]["thumbs"] as Map,
-                current_page: resp["meta"]["current_page"] as int),
+                thumbs: resp["data"][i]["thumbs"] as Map?,
+                current_page: resp["meta"]["current_page"] as int?),
           );
         }
         pageNumbers[index][categoryName] =
@@ -66,9 +66,11 @@ Future<List<WallPaper>> categoryDataFetcher(
   } else {
     debugPrint("Refresh Blocked");
   }
+  return walls;
 }
 
-Future<List<WallPaper>> getData(String mode, int categories, int purity) async {
+Future<List<WallPaper>> getData(
+    String mode, int? categories, int? purity) async {
   if (mode == "r") {
     walls = [];
     pageGetData = 1;
@@ -95,10 +97,10 @@ Future<List<WallPaper>> getData(String mode, int categories, int purity) async {
                 dimension_y: resp["data"][i]["dimension_y"].toString(),
                 resolution: resp["data"][i]["resolution"].toString(),
                 file_size: resp["data"][i]["file_size"].toString(),
-                colors: resp["data"][i]["colors"] as List,
+                colors: resp["data"][i]["colors"] as List?,
                 path: resp["data"][i]["path"].toString(),
-                thumbs: resp["data"][i]["thumbs"] as Map,
-                current_page: resp["meta"]["current_page"] as int),
+                thumbs: resp["data"][i]["thumbs"] as Map?,
+                current_page: resp["meta"]["current_page"] as int?),
           );
         }
         pageGetData = (resp["meta"]["current_page"] as int) + 1;
@@ -112,12 +114,13 @@ Future<List<WallPaper>> getData(String mode, int categories, int purity) async {
   } else {
     debugPrint("Refresh Blocked");
   }
+  return walls;
 }
 
 Future<WallPaper> getWallbyID(String idU) async {
   final String id = idU.toLowerCase();
   debugPrint("https://wallhaven.cc/api/v1/w/$id");
-  wall = null;
+  wall = WallPaper();
   http.get("https://wallhaven.cc/api/v1/w/$id").then(
     (http.Response response) {
       final resp = json.decode(response.body)["data"];
@@ -132,9 +135,9 @@ Future<WallPaper> getWallbyID(String idU) async {
         dimension_y: resp["dimension_y"].toString(),
         resolution: resp["resolution"].toString(),
         file_size: resp["file_size"].toString(),
-        colors: resp["colors"] as List,
+        colors: resp["colors"] as List?,
         path: resp["path"].toString(),
-        thumbs: resp["thumbs"] as Map,
+        thumbs: resp["thumbs"] as Map?,
         tags: List<Tag>.generate(
           resp["tags"].length as int,
           (tag) => Tag(
@@ -150,10 +153,11 @@ Future<WallPaper> getWallbyID(String idU) async {
       return wall;
     },
   );
+  return wall;
 }
 
 Future<List<WallPaper>> getWallsbyQuery(
-    String query, int categories, int purity) async {
+    String query, int? categories, int? purity) async {
   debugPrint(
       "https://wallhaven.cc/api/v1/search?q=$query&page=1&categories=$categories&purity=$purity");
   http
@@ -177,20 +181,21 @@ Future<List<WallPaper>> getWallsbyQuery(
               dimension_y: resp["data"][i]["dimension_y"].toString(),
               resolution: resp["data"][i]["resolution"].toString(),
               file_size: resp["data"][i]["file_size"].toString(),
-              colors: resp["data"][i]["colors"] as List,
+              colors: resp["data"][i]["colors"] as List?,
               path: resp["data"][i]["path"].toString(),
-              thumbs: resp["data"][i]["thumbs"] as Map,
-              current_page: resp["meta"]["current_page"] as int),
+              thumbs: resp["data"][i]["thumbs"] as Map?,
+              current_page: resp["meta"]["current_page"] as int?),
         );
       }
       pageGetQuery = 2;
       return wallsS;
     },
   );
+  return wallsS;
 }
 
 Future<List<WallPaper>> getWallsbyQueryPage(
-    String query, int categories, int purity) async {
+    String query, int? categories, int? purity) async {
   debugPrint(
       "https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery&categories=$categories&purity=$purity");
   http
@@ -212,14 +217,15 @@ Future<List<WallPaper>> getWallsbyQueryPage(
               dimension_y: resp["data"][i]["dimension_y"].toString(),
               resolution: resp["data"][i]["resolution"].toString(),
               file_size: resp["data"][i]["file_size"].toString(),
-              colors: resp["data"][i]["colors"] as List,
+              colors: resp["data"][i]["colors"] as List?,
               path: resp["data"][i]["path"].toString(),
-              thumbs: resp["data"][i]["thumbs"] as Map,
-              current_page: resp["meta"]["current_page"] as int),
+              thumbs: resp["data"][i]["thumbs"] as Map?,
+              current_page: resp["meta"]["current_page"] as int?),
         );
       }
       pageGetQuery = pageGetQuery + 1;
       return wallsS;
     },
   );
+  return wallsS;
 }

@@ -13,16 +13,16 @@ import 'package:provider/provider.dart';
 
 class ColorGrid extends StatefulWidget {
   final String provider;
-  const ColorGrid({@required this.provider});
+  const ColorGrid({required this.provider});
   @override
   _ColorGridState createState() => _ColorGridState();
 }
 
 class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
-  AnimationController _controller;
-  AnimationController shakeController;
-  Animation<Color> animation;
-  int longTapIndex;
+  AnimationController? _controller;
+  late AnimationController shakeController;
+  late Animation<Color?> animation;
+  int? longTapIndex;
   GlobalKey<RefreshIndicatorState> refreshHomeKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -38,9 +38,9 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -57,8 +57,8 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                 ),
               ),
             ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
+          ).animate(_controller!)
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -75,11 +75,11 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                 ),
               ),
             ],
-          ).animate(_controller)
+          ).animate(_controller!)
       ..addListener(() {
         setState(() {});
       });
-    _controller.repeat();
+    _controller!.repeat();
   }
 
   @override
@@ -106,8 +106,8 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               shakeController.reverse();
             }
           });
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+    final ScrollController? controller =
+        InheritedDataProvider.of(context)!.scrollController;
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshHomeKey,
@@ -124,7 +124,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               });
             }
           }
-        },
+        } as bool Function(ScrollNotification)?,
         child: GridView.builder(
           controller: controller,
           padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
@@ -190,7 +190,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                       borderRadius: BorderRadius.circular(20),
                                       image: DecorationImage(
                                           image: CachedNetworkImageProvider(
-                                              PData.wallsC[index].src["medium"]
+                                              PData.wallsC[index].src!["medium"]
                                                   .toString()),
                                           fit: BoxFit.cover)),
                             ),
@@ -212,7 +212,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                           context, wallpaperRoute, arguments: [
                                         widget.provider,
                                         index,
-                                        PData.wallsC[index].src["small"]
+                                        PData.wallsC[index].src!["small"]
                                       ]);
                                     }
                                   },
@@ -225,11 +225,11 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                     } else {
                                       HapticFeedback.vibrate();
                                       createDynamicLink(
-                                          PData.wallsC[index].id,
+                                          PData.wallsC[index].id!,
                                           "Pexels",
-                                          PData.wallsC[index].src["original"]
+                                          PData.wallsC[index].src!["original"]
                                               .toString(),
-                                          PData.wallsC[index].src["medium"]
+                                          PData.wallsC[index].src!["medium"]
                                               .toString());
                                     }
                                   },

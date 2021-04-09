@@ -8,9 +8,9 @@ class GoogleButton extends StatefulWidget {
   final bool login;
   final String text;
   const GoogleButton({
-    @required this.login,
-    @required this.text,
-    Key key,
+    required this.login,
+    required this.text,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -20,7 +20,7 @@ class GoogleButton extends StatefulWidget {
 class _GoogleButtonState extends State<GoogleButton> {
   bool loader = false;
   bool isError = false;
-  Map<String, dynamic> res;
+  Map<String, dynamic>? res;
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
@@ -76,9 +76,9 @@ class _GoogleButtonState extends State<GoogleButton> {
                         style: widget.login
                             ? Theme.of(context)
                                 .textTheme
-                                .button
+                                .button!
                                 .copyWith(color: config.Colors().mainColor(1))
-                            : Theme.of(context).textTheme.button.copyWith(
+                            : Theme.of(context).textTheme.button!.copyWith(
                                 color: Theme.of(context).primaryColor)),
                   ),
                 ],

@@ -12,22 +12,22 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SearchFocusedMenuDetails extends StatelessWidget {
-  final String selectedProvider;
+  final String? selectedProvider;
   final String query;
   final Offset childOffset;
-  final Size childSize;
+  final Size? childSize;
   final int index;
 
   final Widget child;
 
   const SearchFocusedMenuDetails({
-    Key key,
-    @required this.selectedProvider,
-    @required this.query,
-    @required this.childOffset,
-    @required this.childSize,
-    @required this.child,
-    @required this.index,
+    Key? key,
+    required this.selectedProvider,
+    required this.query,
+    required this.childOffset,
+    required this.childSize,
+    required this.child,
+    required this.index,
   }) : super(key: key);
 
   @override
@@ -38,25 +38,25 @@ class SearchFocusedMenuDetails extends StatelessWidget {
     final menuHeight = size.height * 0.14;
     final leftOffset = (childOffset.dx + maxMenuWidth) < size.width
         ? MediaQuery.of(context).orientation == Orientation.portrait
-            ? childOffset.dx + childSize.width + size.width * 0.015
-            : childOffset.dx + childSize.width + size.width * 0.01
+            ? childOffset.dx + childSize!.width + size.width * 0.015
+            : childOffset.dx + childSize!.width + size.width * 0.01
         : MediaQuery.of(context).orientation == Orientation.portrait
-            ? (childOffset.dx - maxMenuWidth + childSize.width)
+            ? (childOffset.dx - maxMenuWidth + childSize!.width)
             : (childOffset.dx -
                 maxMenuWidth +
-                childSize.width +
+                childSize!.width +
                 size.width * 0.3);
     final topOffset =
-        (childOffset.dy + menuHeight + childSize.height) < size.height
+        (childOffset.dy + menuHeight + childSize!.height) < size.height
             ? MediaQuery.of(context).orientation == Orientation.portrait
-                ? childOffset.dy + childSize.height + size.width * 0.015
-                : childOffset.dy + childSize.height + size.width * 0.015
+                ? childOffset.dy + childSize!.height + size.width * 0.015
+                : childOffset.dy + childSize!.height + size.width * 0.015
             : MediaQuery.of(context).orientation == Orientation.portrait
                 ? childOffset.dy - menuHeight + size.width * 0.125
                 : childOffset.dy - menuHeight;
 
     final fabHeartTopOffset =
-        (childOffset.dy + menuHeight + childSize.height) < size.height
+        (childOffset.dy + menuHeight + childSize!.height) < size.height
             ? MediaQuery.of(context).orientation == Orientation.portrait
                 ? size.width * 0.175
                 : size.width * 0.1
@@ -72,7 +72,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
             : size.width * 0.1;
 
     final fabWallTopOffset =
-        (childOffset.dy + menuHeight + childSize.height) < size.height
+        (childOffset.dy + menuHeight + childSize!.height) < size.height
             ? MediaQuery.of(context).orientation == Orientation.portrait
                 ? size.width * 0.05
                 : size.width * 0.02
@@ -113,17 +113,17 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                   },
                   child: AbsorbPointer(
                       child: Container(
-                          width: childSize.width,
-                          height: childSize.height,
+                          width: childSize!.width,
+                          height: childSize!.height,
                           child: child)),
                 )),
             if (selectedProvider == "WallHaven")
               Positioned(
-                top: childOffset.dy + childSize.height * 2 / 8,
+                top: childOffset.dy + childSize!.height * 2 / 8,
                 left: childOffset.dx,
                 child: TweenAnimationBuilder(
                   duration: const Duration(milliseconds: 200),
-                  builder: (BuildContext context, double value, Widget child) {
+                  builder: (BuildContext context, double value, Widget? child) {
                     return Transform.scale(
                       scale: value,
                       alignment: Alignment.bottomRight,
@@ -132,8 +132,8 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                   },
                   tween: Tween(begin: 0.0, end: 1.0),
                   child: Container(
-                    width: childSize.width,
-                    height: childSize.height * 6 / 8,
+                    width: childSize!.width,
+                    height: childSize!.height * 6 / 8,
                     decoration: BoxDecoration(
                       color: Theme.of(context).hintColor,
                       borderRadius:
@@ -158,9 +158,9 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     avatar: Icon(JamIcons.ordered_list,
                                         color: HexColor(wdata
                                                         .wallsS[index]
-                                                        .colors[wdata
+                                                        .colors![wdata
                                                                 .wallsS[index]
-                                                                .colors
+                                                                .colors!
                                                                 .length -
                                                             1]
                                                         .toString())
@@ -171,7 +171,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                         size: 20),
                                     backgroundColor: HexColor(wdata
                                         .wallsS[index]
-                                        .colors[wdata.wallsS[index].colors.length - 1]
+                                        .colors![wdata.wallsS[index].colors!.length - 1]
                                         .toString()),
                                     label: Text(
                                       wdata.wallsS[index].category
@@ -182,14 +182,14 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                               .substring(1),
                                       style: Theme.of(context)
                                           .textTheme
-                                          .headline4
+                                          .headline4!
                                           .copyWith(
                                             color: HexColor(wdata
                                                             .wallsS[index]
-                                                            .colors[wdata
+                                                            .colors![wdata
                                                                     .wallsS[
                                                                         index]
-                                                                    .colors
+                                                                    .colors!
                                                                     .length -
                                                                 1]
                                                             .toString())
@@ -209,7 +209,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                         .toUpperCase(),
                                     style: Theme.of(context)
                                         .textTheme
-                                        .headline5
+                                        .headline5!
                                         .copyWith(
                                             color:
                                                 Theme.of(context).accentColor),
@@ -227,7 +227,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                       "Views: ${wdata.wallsS[index].views.toString()}",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               color: Theme.of(context)
                                                   .accentColor),
@@ -243,10 +243,10 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      wdata.wallsS[index].resolution,
+                                      wdata.wallsS[index].resolution!,
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               color: Theme.of(context)
                                                   .accentColor),
@@ -288,11 +288,11 @@ class SearchFocusedMenuDetails extends StatelessWidget {
               )
             else
               Positioned(
-                top: childOffset.dy + childSize.height * 4 / 10,
+                top: childOffset.dy + childSize!.height * 4 / 10,
                 left: childOffset.dx,
                 child: TweenAnimationBuilder(
                   duration: const Duration(milliseconds: 200),
-                  builder: (BuildContext context, double value, Widget child) {
+                  builder: (BuildContext context, double value, Widget? child) {
                     return Transform.scale(
                       scale: value,
                       alignment: Alignment.bottomRight,
@@ -301,8 +301,8 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                   },
                   tween: Tween(begin: 0.0, end: 1.0),
                   child: Container(
-                    width: childSize.width,
-                    height: childSize.height * 6 / 10,
+                    width: childSize!.width,
+                    height: childSize!.height * 6 / 10,
                     decoration: BoxDecoration(
                       color: Theme.of(context).hintColor,
                       borderRadius:
@@ -332,13 +332,13 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                           .toString(),
                                       style: Theme.of(context)
                                           .textTheme
-                                          .headline4
+                                          .headline4!
                                           .copyWith(
                                             color: Colors.white,
                                           ),
                                     ),
                                     onPressed: () {
-                                      launch(pdata.wallsPS[index].url);
+                                      launch(pdata.wallsPS[index].url!);
                                     }),
                                 Padding(
                                   padding:
@@ -386,7 +386,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                                 .substring(1),
                                     style: Theme.of(context)
                                         .textTheme
-                                        .headline5
+                                        .headline5!
                                         .copyWith(
                                             color:
                                                 Theme.of(context).accentColor),
@@ -404,7 +404,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                       "${pdata.wallsPS[index].width.toString()}x${pdata.wallsPS[index].height.toString()}",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .headline6
+                                          .headline6!
                                           .copyWith(
                                               color: Theme.of(context)
                                                   .accentColor),
@@ -451,7 +451,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                 colorChanged: false,
                 url: selectedProvider == "WallHaven"
                     ? wdata.wallsS[index].path.toString()
-                    : pdata.wallsPS[index].src["original"].toString(),
+                    : pdata.wallsPS[index].src!["original"].toString(),
               ),
             ),
             Positioned(
@@ -478,7 +478,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                 colorChanged: false,
                 link: selectedProvider == "WallHaven"
                     ? wdata.wallsS[index].path.toString()
-                    : pdata.wallsPS[index].src["original"].toString(),
+                    : pdata.wallsPS[index].src!["original"].toString(),
               ),
             ),
           ],
@@ -495,7 +495,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
 class HexColor extends Color {
   static int _getColorFromHex(String hexColor) {
     final String heColor = hexColor.toUpperCase().replaceAll("#", "");
-    String hColor;
+    late String hColor;
     if (heColor.length == 6) {
       hColor = "FF$heColor";
     }

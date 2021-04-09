@@ -15,8 +15,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
 class PexelsGrid extends StatefulWidget {
-  final String provider;
-  const PexelsGrid({@required this.provider});
+  final String? provider;
+  const PexelsGrid({required this.provider});
   @override
   _PexelsGridState createState() => _PexelsGridState();
 }
@@ -99,8 +99,8 @@ class _PexelsGridState extends State<PexelsGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+    final ScrollController? controller =
+        InheritedDataProvider.of(context)!.scrollController;
     final CarouselController carouselController = CarouselController();
     return Padding(
       padding: const EdgeInsets.only(top: 5.0),
@@ -169,7 +169,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                         maxLines: 1,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline2
+                                            .headline2!
                                             .copyWith(
                                                 fontSize: 20,
                                                 color: Colors.white,
@@ -192,7 +192,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                       arguments: [
                                         widget.provider,
                                         i,
-                                        PData.wallsP[i].src["small"]
+                                        PData.wallsP[i].src!["small"]
                                       ]);
                                 }
                               },
@@ -224,7 +224,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                               BorderRadius.circular(20),
                                           image: DecorationImage(
                                               image: CachedNetworkImageProvider(
-                                                  PData.wallsP[i].src["medium"]
+                                                  PData.wallsP[i].src!["medium"]
                                                       .toString()),
                                               fit: BoxFit.cover)),
                                       child: Center(
@@ -240,7 +240,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                               maxLines: 1,
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .headline2
+                                                  .headline2!
                                                   .copyWith(
                                                       color: Colors.white,
                                                       fontSize: 20,

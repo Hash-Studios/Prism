@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 class CopyrightPopUp extends StatelessWidget {
   final bool setup;
   final String shortlink;
-  const CopyrightPopUp({@required this.setup, @required this.shortlink});
+  const CopyrightPopUp({required this.setup, required this.shortlink});
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -13,7 +13,7 @@ class CopyrightPopUp extends StatelessWidget {
         "LICENSE",
         style: Theme.of(context)
             .textTheme
-            .headline6
+            .headline6!
             .copyWith(color: Theme.of(context).accentColor),
       ),
       content: SingleChildScrollView(
@@ -23,7 +23,7 @@ class CopyrightPopUp extends StatelessWidget {
               : "This wallpaper is a property of their respective owner. You can use it for your personal use only. Any distribution or sharing is not allowed without the permission of the owner.",
           style: Theme.of(context)
               .textTheme
-              .headline6
+              .headline6!
               .copyWith(color: Theme.of(context).accentColor),
         ),
       ),

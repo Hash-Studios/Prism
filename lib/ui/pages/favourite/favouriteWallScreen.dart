@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 
 class FavouriteWallpaperScreen extends StatelessWidget {
   const FavouriteWallpaperScreen({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override

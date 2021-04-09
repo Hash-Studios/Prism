@@ -10,10 +10,10 @@ class Loader extends StatefulWidget {
 }
 
 class _LoaderState extends State<Loader> with TickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<double> animation;
-  AnimationController _controller2;
-  Animation<double> animation2;
+  late AnimationController _controller;
+  late Animation<double> animation;
+  late AnimationController _controller2;
+  late Animation<double> animation2;
 
   @override
   void initState() {

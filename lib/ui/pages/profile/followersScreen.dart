@@ -8,21 +8,21 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 
 class FollowersScreen extends StatefulWidget {
-  final List arguments;
-  const FollowersScreen({@required this.arguments});
+  final List? arguments;
+  const FollowersScreen({required this.arguments});
 
   @override
   _FollowersScreenState createState() => _FollowersScreenState();
 }
 
 class _FollowersScreenState extends State<FollowersScreen> {
-  List followers;
-  Stream<QuerySnapshot> _stream;
-  CollectionReference users;
+  List? followers;
+  Stream<QuerySnapshot>? _stream;
+  late CollectionReference users;
   final Firestore firestore = Firestore.instance;
   @override
   void initState() {
-    followers = widget.arguments[0] as List;
+    followers = widget.arguments![0] as List;
     users = firestore.collection('users');
     _stream = users.snapshots();
     super.initState();
@@ -54,11 +54,11 @@ class _FollowersScreenState extends State<FollowersScreen> {
                 );
               } else {
                 return ListView.builder(
-                    itemCount: followers.length,
+                    itemCount: followers!.length,
                     itemBuilder: (BuildContext context, int index) {
                       return FutureBuilder(
                         future: compute(processingFollowers, <String, dynamic>{
-                          "documents": snapshot.data.documents,
+                          "documents": snapshot.data!.documents,
                           "followers": followers,
                           "index": index,
                         }),
@@ -69,14 +69,14 @@ class _FollowersScreenState extends State<FollowersScreen> {
                               ? ListTile(
                                   leading: CircleAvatar(
                                     backgroundImage: CachedNetworkImageProvider(
-                                        user["userPhoto"] as String ??
+                                        user["userPhoto"] as String? ??
                                             "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2FnoUser.png?alt=media"),
                                   ),
                                   title: Text(
                                     user['name'].toString(),
                                     style: Theme.of(context)
                                         .textTheme
-                                        .bodyText2
+                                        .bodyText2!
                                         .copyWith(
                                             color:
                                                 Theme.of(context).accentColor),
@@ -85,7 +85,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
                                     user['email'].toString(),
                                     style: Theme.of(context)
                                         .textTheme
-                                        .bodyText2
+                                        .bodyText2!
                                         .copyWith(
                                             color: Theme.of(context)
                                                 .accentColor
@@ -131,10 +131,10 @@ Map processingFollowers(
 ) {
   final List<DocumentSnapshot> documents =
       params["documents"] as List<DocumentSnapshot>;
-  final List followers = params["followers"] as List;
-  final int index = params["index"] as int;
+  final List? followers = params["followers"] as List?;
+  final int? index = params["index"] as int?;
   final List<DocumentSnapshot> users = documents
-      .where((element) => element.data['email'] == followers[index])
+      .where((element) => element.data['email'] == followers![index!])
       .toList();
   final Map user = users == null ? {} : users[0].data;
   return user;

@@ -15,6 +15,7 @@ import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -29,17 +30,17 @@ import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
-Box prefs;
-Directory dir;
-String currentThemeID;
-String currentDarkThemeID;
-String currentMode;
-Color lightAccent;
-Color darkAccent;
-bool hqThumbs;
-bool optimisedWallpapers;
-int categories;
-int purity;
+late Box prefs;
+Directory? dir;
+String? currentThemeID;
+String? currentDarkThemeID;
+String? currentMode;
+Color? lightAccent;
+Color? darkAccent;
+bool? hqThumbs;
+late bool optimisedWallpapers;
+int? categories;
+int? purity;
 void main() {
   //! Uncomment next line before release
   // debugPrint = (String message, {int wrapWidth}) {};
@@ -54,7 +55,7 @@ void main() {
   );
   flutterLocalNotificationsPlugin.initialize(initializationSettings).then((_) {
     InAppPurchaseConnection.enablePendingPurchases();
-    GestureBinding.instance.resamplingEnabled = true;
+    GestureBinding.instance!.resamplingEnabled = true;
     getApplicationDocumentsDirectory().then(
       (dir) async {
         Hive.init(dir.path);
@@ -80,8 +81,7 @@ void main() {
         currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
         prefs.put("themeMode", currentMode);
         lightAccent = Color(int.parse(
-                prefs.get('lightAccent')?.toString() ?? "0xffe57697")) ??
-            const Color(0xffe57697);
+            prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
         prefs.put(
             "lightAccent",
             int.parse(lightAccent
@@ -89,27 +89,26 @@ void main() {
                 .replaceAll("Color(", "")
                 .replaceAll(")", "")));
         darkAccent = Color(int.parse(
-                prefs.get('darkAccent')?.toString() ?? "0xffe57697")) ??
-            const Color(0xffe57697);
+            prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
         prefs.put(
             "darkAccent",
             int.parse(darkAccent
                 .toString()
                 .replaceAll("Color(", "")
                 .replaceAll(")", "")));
-        optimisedWallpapers = prefs.get('optimisedWallpapers') == true ?? false;
+        optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
         if (optimisedWallpapers) {
           prefs.put('optimisedWallpapers', true);
         } else {
           prefs.put('optimisedWallpapers', false);
         }
-        categories = prefs.get('WHcategories') as int ?? 100;
+        categories = prefs.get('WHcategories') as int? ?? 100;
         if (categories == 100) {
           prefs.put('WHcategories', 100);
         } else {
           prefs.put('WHcategories', 111);
         }
-        purity = prefs.get('WHpurity') as int ?? 100;
+        purity = prefs.get('WHpurity') as int? ?? 100;
         if (purity == 100) {
           prefs.put('WHpurity', 100);
         } else {
@@ -149,28 +148,28 @@ void main() {
                       ),
                       ChangeNotifierProvider<ThemeModel>(
                         create: (context) => ThemeModel(
-                            themes[currentThemeID]
+                            themes[currentThemeID!]
                             // ?? kLightTheme
                             ,
                             lightAccent),
                       ),
                       ChangeNotifierProvider<DarkThemeModel>(
                         create: (context) => DarkThemeModel(
-                            darkThemes[currentDarkThemeID]
+                            darkThemes[currentDarkThemeID!]
                             // ?? kDarkTheme
                             ,
                             darkAccent),
                       ),
                       ChangeNotifierProvider<ThemeModeExtended>(
                         create: (context) =>
-                            ThemeModeExtended(modes[currentMode]),
+                            ThemeModeExtended(modes[currentMode!]),
                       ),
                     ],
                     child: MyApp(),
                   ),
                 ),
               );
-            },
+            } as Future<void> Function(),
           ),
         );
       },
@@ -209,7 +208,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   List<DisplayMode> modes = <DisplayMode>[];
-  DisplayMode selected;
+  DisplayMode? selected;
   Future<void> fetchModes() async {
     try {
       modes = await FlutterDisplayMode.supported;
@@ -217,8 +216,7 @@ class _MyAppState extends State<MyApp> {
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     }
-    selected =
-        modes.firstWhere((DisplayMode m) => m.selected, orElse: () => null);
+    selected = modes.firstWhereOrNull((DisplayMode m) => m.selected);
   }
 
   Future<DisplayMode> getCurrentMode() async {
@@ -268,17 +266,16 @@ class _MyAppState extends State<MyApp> {
         await FlutterDisplayMode.setMode(maxDisplayModes[0]);
       }
     }
-    selected =
-        modes.firstWhere((DisplayMode m) => m.selected, orElse: () => null);
+    selected = modes.firstWhereOrNull((DisplayMode m) => m.selected);
   }
 
   Future<bool> getLoginStatus() async {
-    prefs = await Hive.openBox('prefs');
-    globals.gAuth.googleSignIn.isSignedIn().then((value) {
+    await globals.gAuth.googleSignIn.isSignedIn().then((value) {
       if (value) checkPremium();
       prefs.put("isLoggedin", value);
       return value;
     });
+    return false;
   }
 
   @override
@@ -307,7 +304,7 @@ class _MyAppState extends State<MyApp> {
       darkTheme: Provider.of<DarkThemeModel>(context).currentTheme,
       themeMode: Provider.of<ThemeModeExtended>(context).currentMode,
       // debugShowCheckedModeBanner: false,
-      home: ((prefs.get('onboarded_new') as bool) ?? false)
+      home: ((prefs.get('onboarded_new') as bool?) ?? false)
           ? SplashWidget()
           : OnboardingScreen(),
     );
@@ -316,14 +313,14 @@ class _MyAppState extends State<MyApp> {
 
 class RestartWidget extends StatefulWidget {
   const RestartWidget({this.child});
-  final Widget child;
+  final Widget? child;
   static void restartApp(BuildContext context) {
     router.navStack = ["Home"];
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       systemNavigationBarColor: Color(prefs.get('systemOverlayColor') as int),
     ));
     observer = FirebaseAnalyticsObserver(analytics: analytics);
-    context.findAncestorStateOfType<_RestartWidgetState>().restartApp();
+    context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
   }
 
   @override
@@ -347,17 +344,15 @@ class _RestartWidgetState extends State<RestartWidget> {
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);
       lightAccent = Color(int.parse(
-              prefs.get('lightAccent')?.toString() ?? "0xffe57697")) ??
-          const Color(0xffe57697);
+          prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
       prefs.put(
           "lightAccent",
           int.parse(lightAccent
               .toString()
               .replaceAll("Color(", "")
               .replaceAll(")", "")));
-      darkAccent = Color(
-              int.parse(prefs.get('darkAccent')?.toString() ?? "0xffe57697")) ??
-          const Color(0xffe57697);
+      darkAccent = Color(int.parse(
+          prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
       prefs.put(
           "darkAccent",
           int.parse(darkAccent
@@ -371,7 +366,7 @@ class _RestartWidgetState extends State<RestartWidget> {
   Widget build(BuildContext context) {
     return KeyedSubtree(
       key: key,
-      child: widget.child,
+      child: widget.child!,
     );
   }
 }

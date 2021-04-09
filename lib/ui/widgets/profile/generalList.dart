@@ -8,7 +8,7 @@ import 'package:hive/hive.dart';
 
 class GeneralList extends StatefulWidget {
   final bool expanded;
-  const GeneralList({@required this.expanded});
+  const GeneralList({required this.expanded});
   @override
   _GeneralListState createState() => _GeneralListState();
 }
@@ -75,7 +75,7 @@ class _GeneralListState extends State<GeneralList> {
             ),
             onTap: () async {
               DefaultCacheManager().emptyCache();
-              PaintingBinding.instance.imageCache.clear();
+              PaintingBinding.instance!.imageCache!.clear();
               await Hive.box('wallpapers').deleteFromDisk();
               await Hive.openBox('wallpapers');
               await Hive.box('collections').deleteFromDisk();

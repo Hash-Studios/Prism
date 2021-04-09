@@ -18,7 +18,7 @@ import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 
 class FollowingScreen extends StatefulWidget {
   const FollowingScreen({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -26,12 +26,12 @@ class FollowingScreen extends StatefulWidget {
 }
 
 class _FollowingScreenState extends State<FollowingScreen> {
-  StreamController<QuerySnapshot> _streamController;
-  QuerySnapshot finalQuery;
+  StreamController<QuerySnapshot>? _streamController;
+  late QuerySnapshot finalQuery;
   List<DocumentSnapshot> finalDocs = [];
-  List following;
+  late List following;
   final Firestore databaseReference = Firestore.instance;
-  CollectionReference walls;
+  CollectionReference? walls;
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
@@ -43,7 +43,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
   void initState() {
     super.initState();
     _streamController = StreamController.broadcast();
-    _streamController.stream.listen((p) {
+    _streamController!.stream.listen((p) {
       setState(() {
         finalQuery = p;
         finalDocs = [];
@@ -54,7 +54,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         }
       });
     });
-    load(_streamController);
+    load(_streamController!);
   }
 
   Future<void> load(StreamController<QuerySnapshot> sc) async {
@@ -63,7 +63,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         .where("email", isEqualTo: main.prefs.get('email'))
         .getDocuments()
         .then((value) {
-      following = value.documents[0].data["following"] as List ?? [];
+      following = value.documents[0].data["following"] as List? ?? [];
     });
     databaseReference
         .collection("walls")
@@ -84,7 +84,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
   @override
   Widget build(BuildContext context) {
     final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+        InheritedDataProvider.of(context)!.scrollController!;
     return WillPopScope(
       onWillPop: onWillPop,
       child: Padding(
@@ -137,7 +137,7 @@ class FollowingTile extends StatefulWidget {
 class _FollowingTileState extends State<FollowingTile> {
   final now = DateTime.now();
   // final GlobalKey _globalKey = GlobalKey(debugLabel: "following_element");
-  double height;
+  double? height;
 
   @override
   void initState() {
@@ -174,7 +174,7 @@ class _FollowingTileState extends State<FollowingTile> {
         children: [
           PremiumBannerFollowingFeed(
             comparator: !globals.isPremiumWall(globals.premiumCollections,
-                widget.finalDocs[widget.index]["collections"] as List ?? []),
+                widget.finalDocs[widget.index]["collections"] as List? ?? []),
             child: Stack(
               children: [
                 GestureDetector(
@@ -182,7 +182,7 @@ class _FollowingTileState extends State<FollowingTile> {
                     globals.isPremiumWall(
                                     globals.premiumCollections,
                                     widget.finalDocs[widget.index]
-                                            ["collections"] as List ??
+                                            ["collections"] as List? ??
                                         []) ==
                                 true &&
                             main.prefs.get('premium') != true
@@ -340,7 +340,7 @@ class _FollowingTileState extends State<FollowingTile> {
                               maxLines: 1,
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodyText2
+                                  .bodyText2!
                                   .copyWith(
                                       color: Theme.of(context).accentColor,
                                       fontWeight: FontWeight.bold,
@@ -363,7 +363,7 @@ class _FollowingTileState extends State<FollowingTile> {
                               maxLines: 1,
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodyText2
+                                  .bodyText2!
                                   .copyWith(
                                       color: Theme.of(context)
                                           .accentColor
@@ -378,7 +378,7 @@ class _FollowingTileState extends State<FollowingTile> {
                 ),
                 const Spacer(),
                 FavIconButton(
-                  id: widget.finalDocs[widget.index]["id"] as String,
+                  id: widget.finalDocs[widget.index]["id"] as String?,
                   prism: widget.finalDocs[widget.index].data,
                 ),
               ],

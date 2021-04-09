@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 List<WallPaperP> wallsP = [];
 List<WallPaperP> wallsPS = [];
 List<WallPaperP> wallsC = [];
-WallPaperP wall;
+WallPaperP? wall;
 int pageGetDataP = 1;
 int pageGetQueryP = 1;
 List<Map<String, int>> pageNumbersP = categories
@@ -26,7 +26,7 @@ Future<List<WallPaperP>> categoryDataFetcherP(
     wallsP = [];
     pageNumbersP[index] = {categoryName: 1};
   } else {
-    final int origPageNumber = pageNumbersP[index][categoryName];
+    final int origPageNumber = pageNumbersP[index][categoryName]!;
     pageNumbersP[index] = {categoryName: origPageNumber + 1};
   }
   if (navStack.last == "Home") {
@@ -45,8 +45,8 @@ Future<List<WallPaperP>> categoryDataFetcherP(
                 width: resp["photos"][i]["width"].toString(),
                 height: resp["photos"][i]["height"].toString(),
                 photographer: resp["photos"][i]["photographer"].toString(),
-                src: resp["photos"][i]["src"] as Map,
-                currentPage: resp["page"] as int),
+                src: resp["photos"][i]["src"] as Map?,
+                currentPage: resp["page"] as int?),
           );
         }
         pageNumbersP[index][categoryName] = (resp["page"] as int) + 1;
@@ -57,6 +57,7 @@ Future<List<WallPaperP>> categoryDataFetcherP(
   } else {
     debugPrint("Refresh Blocked");
   }
+  return wallsP;
 }
 
 int pageColorsP = 1;
@@ -80,8 +81,8 @@ Future<List<WallPaperP>> getDataP(String mode) async {
                 width: resp["photos"][i]["width"].toString(),
                 height: resp["photos"][i]["height"].toString(),
                 photographer: resp["photos"][i]["photographer"].toString(),
-                src: resp["photos"][i]["src"] as Map,
-                currentPage: resp["page"] as int),
+                src: resp["photos"][i]["src"] as Map?,
+                currentPage: resp["page"] as int?),
           );
         }
         pageGetDataP = (resp["page"] as int) + 1;
@@ -92,9 +93,10 @@ Future<List<WallPaperP>> getDataP(String mode) async {
   } else {
     debugPrint("Refresh Blocked");
   }
+  return wallsP;
 }
 
-Future<WallPaperP> getWallbyIDP(String id) async {
+Future<WallPaperP> getWallbyIDP(String? id) async {
   debugPrint("https://api.pexels.com/v1/photos/$id");
   wall = null;
   http.get("https://api.pexels.com/v1/photos/$id",
@@ -107,9 +109,10 @@ Future<WallPaperP> getWallbyIDP(String id) async {
           width: resp["width"].toString(),
           height: resp["height"].toString(),
           photographer: resp["photographer"].toString(),
-          src: resp["category"] as Map);
+          src: resp["category"] as Map?);
     },
   );
+  return WallPaperP();
 }
 
 Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
@@ -125,8 +128,8 @@ Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
               width: resp["photos"][i]["width"].toString(),
               height: resp["photos"][i]["height"].toString(),
               photographer: resp["photos"][i]["photographer"].toString(),
-              src: resp["photos"][i]["src"] as Map,
-              currentPage: resp["page"] as int),
+              src: resp["photos"][i]["src"] as Map?,
+              currentPage: resp["page"] as int?),
         );
       }
       pageGetQueryP = (resp["page"] as int) + 1;
@@ -134,6 +137,7 @@ Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
       return wallsPS;
     },
   );
+  return wallsPS;
 }
 
 Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
@@ -150,8 +154,8 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
               width: resp["photos"][i]["width"].toString(),
               height: resp["photos"][i]["height"].toString(),
               photographer: resp["photos"][i]["photographer"].toString(),
-              src: resp["photos"][i]["src"] as Map,
-              currentPage: resp["page"] as int),
+              src: resp["photos"][i]["src"] as Map?,
+              currentPage: resp["page"] as int?),
         );
       }
       pageGetQueryP = (resp["page"] as int) + 1;
@@ -159,6 +163,7 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
       return wallsPS;
     },
   );
+  return wallsPS;
 }
 
 Future<List<WallPaperP>> getWallsPbyColor(String query) async {
@@ -176,8 +181,8 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
               width: resp["photos"][i]["width"].toString(),
               height: resp["photos"][i]["height"].toString(),
               photographer: resp["photos"][i]["photographer"].toString(),
-              src: resp["photos"][i]["src"] as Map,
-              currentPage: resp["page"] as int),
+              src: resp["photos"][i]["src"] as Map?,
+              currentPage: resp["page"] as int?),
         );
       }
       pageColorsP = (resp["page"] as int) + 1;
@@ -185,6 +190,7 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
       return wallsC;
     },
   );
+  return wallsC;
 }
 
 Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
@@ -203,8 +209,8 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
               width: resp["photos"][i]["width"].toString(),
               height: resp["photos"][i]["height"].toString(),
               photographer: resp["photos"][i]["photographer"].toString(),
-              src: resp["photos"][i]["src"] as Map,
-              currentPage: resp["page"] as int),
+              src: resp["photos"][i]["src"] as Map?,
+              currentPage: resp["page"] as int?),
         );
       }
       pageColorsP = (resp["page"] as int) + 1;
@@ -212,4 +218,5 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
       return wallsC;
     },
   );
+  return wallsC;
 }

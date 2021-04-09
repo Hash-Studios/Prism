@@ -110,14 +110,14 @@ class DownloadList extends StatelessWidget {
                               msg: "Deleted all downloads!",
                               toastLength: Toast.LENGTH_LONG,
                               textColor: Colors.white,
-                              backgroundColor: Colors.green[400],
+                              backgroundColor: Colors.green[400]!,
                             );
                           } else {
                             Fluttertoast.showToast(
                               msg: "No downloads!",
                               toastLength: Toast.LENGTH_LONG,
                               textColor: Colors.white,
-                              backgroundColor: Colors.red[400],
+                              backgroundColor: Colors.red[400]!,
                             );
                           }
                         },

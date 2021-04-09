@@ -83,7 +83,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     "The ability to favourite wallpapers.",
                     style: Theme.of(context)
                         .textTheme
-                        .headline6
+                        .headline6!
                         .copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
@@ -113,7 +113,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     "The ability to upload wallpapers.",
                     style: Theme.of(context)
                         .textTheme
-                        .headline6
+                        .headline6!
                         .copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
@@ -143,7 +143,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     "The ability to upload setups.",
                     style: Theme.of(context)
                         .textTheme
-                        .headline6
+                        .headline6!
                         .copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
@@ -173,7 +173,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     "The ability to buy premium.",
                     style: Theme.of(context)
                         .textTheme
-                        .headline6
+                        .headline6!
                         .copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
@@ -203,7 +203,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     "The ability to cloud sync data.",
                     style: Theme.of(context)
                         .textTheme
-                        .headline6
+                        .headline6!
                         .copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),

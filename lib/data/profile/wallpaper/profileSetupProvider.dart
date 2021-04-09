@@ -4,9 +4,9 @@ import 'package:Prism/main.dart' as main;
 
 class ProfileSetupProvider extends ChangeNotifier {
   final Firestore databaseReference = Firestore.instance;
-  List profileSetups;
+  List? profileSetups;
   int len = 0;
-  Future<List> getProfileSetups() async {
+  Future<List?> getProfileSetups() async {
     profileSetups = [];
     Query db;
     if (main.prefs.get('premium') == true) {
@@ -24,9 +24,9 @@ class ProfileSetupProvider extends ChangeNotifier {
     await db.getDocuments().then((value) {
       profileSetups = [];
       for (final f in value.documents) {
-        profileSetups.add(f.data);
+        profileSetups!.add(f.data);
       }
-      len = profileSetups.length;
+      len = profileSetups!.length;
       debugPrint(len.toString());
     }).catchError((e) {
       debugPrint(e.toString());

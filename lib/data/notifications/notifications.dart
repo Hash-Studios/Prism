@@ -115,17 +115,16 @@ Future<void> getNotifications() async {
 
 void writeNotifications(Map<String, dynamic> message) {
   final Box<List> box = Hive.box('notifications');
-  var notifications = box.get('notifications');
-  notifications ??= [];
+  final notifications = box.get('notifications', defaultValue: []);
   notifications.add(
     NotifData(
-      title: message['notification']['title'] as String ?? "Notification",
-      desc: message['notification']['body'] as String ?? "",
-      imageUrl: message['data']['imageUrl'] as String ??
+      title: message['notification']['title'] as String? ?? "Notification",
+      desc: message['notification']['body'] as String? ?? "",
+      imageUrl: message['data']['imageUrl'] as String? ??
           "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
-      pageName: message['data']['pageName'] as String,
-      arguments: message['data']['arguments'] as List ?? [],
-      url: message['data']['url'] as String ?? "",
+      pageName: message['data']['pageName'] as String?,
+      arguments: message['data']['arguments'] as List? ?? [],
+      url: message['data']['url'] as String? ?? "",
       createdAt: (message['createdAt'] as Timestamp).toDate(),
     ),
   );

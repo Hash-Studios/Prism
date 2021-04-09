@@ -31,8 +31,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 class WallpaperScreen extends StatefulWidget {
-  final List arguments;
-  const WallpaperScreen({@required this.arguments});
+  final List? arguments;
+  const WallpaperScreen({required this.arguments});
   @override
   _WallpaperScreenState createState() => _WallpaperScreenState();
 }
@@ -46,22 +46,22 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String provider;
-  int index;
-  String link;
-  AnimationController shakeController;
+  String? provider;
+  late int index;
+  late String link;
+  late AnimationController shakeController;
   bool isLoading = true;
-  PaletteGenerator paletteGenerator;
-  List<Color> colors;
-  Color accent;
+  late PaletteGenerator paletteGenerator;
+  List<Color?>? colors;
+  Color? accent;
   bool colorChanged = false;
-  File _imageFile;
+  late File _imageFile;
   bool screenshotTaken = false;
   ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
   bool panelClosed = true;
   bool panelCollapsed = true;
-  Future<String> _futureView;
+  Future<String>? _futureView;
   int firstTime = 0;
 
   Future<void> _updatePaletteGenerator() async {
@@ -80,12 +80,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     });
     colors = paletteGenerator.colors.toList();
     if (paletteGenerator.colors.length > 5) {
-      colors = colors.sublist(0, 5);
+      colors = colors!.sublist(0, 5);
     }
     setState(() {
-      accent = colors[0];
+      accent = colors![0];
     });
-    if (accent.computeLuminance() > 0.5) {
+    if (accent!.computeLuminance() > 0.5) {
       SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
           .copyWith(statusBarIconBrightness: Brightness.dark));
     } else {
@@ -95,15 +95,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   }
 
   void updateAccent() {
-    if (colors.contains(accent)) {
-      final index = colors.indexOf(accent);
+    if (colors!.contains(accent)) {
+      final index = colors!.indexOf(accent);
       setState(() {
-        accent = colors[(index + 1) % 5];
+        accent = colors![(index + 1) % 5];
       });
       setState(() {
         colorChanged = true;
       });
-      if (accent.computeLuminance() > 0.5) {
+      if (accent!.computeLuminance() > 0.5) {
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
             .copyWith(statusBarIconBrightness: Brightness.dark));
       } else {
@@ -122,14 +122,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    provider = widget.arguments[0] as String;
-    index = widget.arguments[1] as int;
-    link = widget.arguments[2] as String;
+    provider = widget.arguments![0] as String;
+    index = widget.arguments![1] as int;
+    link = widget.arguments![2] as String;
     isLoading = true;
     if (provider == "Prism") {
-      updateViews(data.subPrismWalls[index]["id"].toString().toUpperCase());
+      updateViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
       _futureView =
-          getViews(data.subPrismWalls[index]["id"].toString().toUpperCase());
+          getViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
     }
     _updatePaletteGenerator();
   }
@@ -186,7 +186,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         debugPrint(onError as String);
                       });
                     } else {
-                      main.prefs.get('optimisedWallpapers') == true ?? true
+                      main.prefs.get('optimisedWallpapers',
+                                  defaultValue: false) ==
+                              true
                           ? screenshotController
                               .capture(
                               pixelRatio: 3,
@@ -290,7 +292,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 .toUpperCase(),
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .bodyText1
+                                                .bodyText1!
                                                 .copyWith(
                                                     color: Theme.of(context)
                                                         .accentColor),
@@ -311,7 +313,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   .toString(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -334,7 +336,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   .toString(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -356,7 +358,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               "${double.parse((double.parse(wdata.walls[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -384,7 +386,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         .substring(1),
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2
+                                                    .bodyText2!
                                                     .copyWith(
                                                         color: Theme.of(context)
                                                             .accentColor),
@@ -408,7 +410,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   .toString(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -430,7 +432,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               provider.toString(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -478,7 +480,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       provider: provider,
                                       url: wdata.walls[index].path,
                                       thumbUrl: wdata
-                                          .walls[index].thumbs["original"]
+                                          .walls[index].thumbs!["original"]
                                           .toString()),
                                   EditButton(
                                     url: wdata.walls[index].path,
@@ -520,7 +522,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
-                              imageUrl: wdata.walls[index].path,
+                              imageUrl: wdata.walls[index].path!,
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
                                 controller: screenshotController,
@@ -534,7 +536,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     image: DecorationImage(
                                       colorFilter: colorChanged
                                           ? ColorFilter.mode(
-                                              accent, BlendMode.hue)
+                                              accent!, BlendMode.hue)
                                           : null,
                                       image: imageProvider,
                                       fit: BoxFit.cover,
@@ -560,7 +562,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   JamIcons.close_circle_f,
                                   color: isLoading
                                       ? Theme.of(context).accentColor
-                                      : accent.computeLuminance() > 0.5
+                                      : accent!.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
                                 ),
@@ -572,7 +574,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       alignment: Alignment.topLeft,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize + 8, 8, 8),
+                            8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
@@ -581,7 +583,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
+                              : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: const Icon(
@@ -594,7 +596,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       alignment: Alignment.topRight,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize + 8, 8, 8),
+                            8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             final link = wdata.walls[index].path;
@@ -621,7 +623,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
+                              : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: const Icon(
@@ -779,13 +781,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 child: Row(
                                                   children: [
                                                     Text(
-                                                      data.subPrismWalls[index]
+                                                      data.subPrismWalls![index]
                                                               ["id"]
                                                           .toString()
                                                           .toUpperCase(),
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .bodyText1
+                                                          .bodyText1!
                                                           .copyWith(
                                                               color: Theme.of(
                                                                       context)
@@ -816,7 +818,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -831,7 +833,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -847,7 +849,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                 style: Theme.of(
                                                                         context)
                                                                     .textTheme
-                                                                    .bodyText1
+                                                                    .bodyText1!
                                                                     .copyWith(
                                                                         color: Theme.of(context)
                                                                             .accentColor,
@@ -864,7 +866,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                 style: Theme.of(
                                                                         context)
                                                                     .textTheme
-                                                                    .bodyText1
+                                                                    .bodyText1!
                                                                     .copyWith(
                                                                         color: Theme.of(context)
                                                                             .accentColor,
@@ -891,12 +893,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
-                                                  data.subPrismWalls[index]
+                                                  data.subPrismWalls![index]
                                                           ["desc"]
                                                       .toString(),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           color:
                                                               Theme.of(context)
@@ -916,12 +918,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
-                                                  data.subPrismWalls[index]
+                                                  data.subPrismWalls![index]
                                                           ["size"]
                                                       .toString(),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           color:
                                                               Theme.of(context)
@@ -952,25 +954,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                               context,
                                                               photographerProfileRoute,
                                                               arguments: [
-                                                                data.subPrismWalls[
+                                                                data.subPrismWalls![
                                                                         index]
                                                                     ["by"],
-                                                                data.subPrismWalls[
+                                                                data.subPrismWalls![
                                                                         index]
                                                                     ["email"],
-                                                                data.subPrismWalls[
+                                                                data.subPrismWalls![
                                                                         index][
                                                                     "userPhoto"],
                                                                 false,
-                                                                if (data.subPrismWalls[index]
+                                                                if (data.subPrismWalls![index]
                                                                             [
                                                                             "twitter"] !=
                                                                         null &&
-                                                                    data.subPrismWalls[index]
+                                                                    data.subPrismWalls![index]
                                                                             [
                                                                             "twitter"] !=
                                                                         "")
-                                                                  data.subPrismWalls[
+                                                                  data.subPrismWalls![
                                                                           index]
                                                                           [
                                                                           "twitter"]
@@ -979,15 +981,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                           "https://www.twitter.com/")[1]
                                                                 else
                                                                   "",
-                                                                if (data.subPrismWalls[index]
+                                                                if (data.subPrismWalls![index]
                                                                             [
                                                                             "instagram"] !=
                                                                         null &&
-                                                                    data.subPrismWalls[index]
+                                                                    data.subPrismWalls![index]
                                                                             [
                                                                             "instagram"] !=
                                                                         "")
-                                                                  data.subPrismWalls[
+                                                                  data.subPrismWalls![
                                                                           index]
                                                                           [
                                                                           "instagram"]
@@ -1006,7 +1008,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         avatar: CircleAvatar(
                                                           backgroundImage:
                                                               CachedNetworkImageProvider(data
-                                                                  .subPrismWalls[
+                                                                  .subPrismWalls![
                                                                       index][
                                                                       "userPhoto"]
                                                                   .toString()),
@@ -1016,13 +1018,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                     .fromLTRB(
                                                                 7, 3, 7, 3),
                                                         label: Text(
-                                                          data.subPrismWalls[
+                                                          data.subPrismWalls![
                                                                   index]["by"]
                                                               .toString(),
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -1036,7 +1038,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                     ),
                                                     if (globals.verifiedUsers
                                                         .contains(data
-                                                            .subPrismWalls[
+                                                            .subPrismWalls![
                                                                 index]["email"]
                                                             .toString()))
                                                       Align(
@@ -1074,12 +1076,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             Row(
                                               children: [
                                                 Text(
-                                                  data.subPrismWalls[index]
+                                                  data.subPrismWalls![index]
                                                           ["resolution"]
                                                       .toString(),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           color:
                                                               Theme.of(context)
@@ -1101,16 +1103,16 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 await createCopyrightLink(
                                                     false, context,
                                                     id: data
-                                                        .subPrismWalls[index]
+                                                        .subPrismWalls![index]
                                                             ["id"]
                                                         .toString(),
                                                     provider: provider,
                                                     url: data
-                                                        .subPrismWalls[index]
+                                                        .subPrismWalls![index]
                                                             ["wallpaper_url"]
                                                         .toString(),
                                                     thumbUrl: data
-                                                        .subPrismWalls[index]
+                                                        .subPrismWalls![index]
                                                             ["wallpaper_thumb"]
                                                         .toString());
                                               },
@@ -1120,7 +1122,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                     "Copyright",
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText2
+                                                        .bodyText2!
                                                         .copyWith(
                                                             decoration:
                                                                 TextDecoration
@@ -1156,35 +1158,36 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           colorChanged: colorChanged,
                                           link: screenshotTaken
                                               ? _imageFile.path
-                                              : data.subPrismWalls[index]
+                                              : data.subPrismWalls![index]
                                                       ["wallpaper_url"]
                                                   .toString()),
                                       SetWallpaperButton(
                                           colorChanged: colorChanged,
                                           url: screenshotTaken
                                               ? _imageFile.path
-                                              : data.subPrismWalls[index]
+                                              : data.subPrismWalls![index]
                                                       ["wallpaper_url"]
                                                   .toString()),
                                       FavouriteWallpaperButton(
-                                        id: data.subPrismWalls[index]["id"]
+                                        id: data.subPrismWalls![index]["id"]
                                             .toString(),
                                         provider: "Prism",
-                                        prism: data.subPrismWalls[index] as Map,
+                                        prism:
+                                            data.subPrismWalls![index] as Map,
                                         trash: false,
                                       ),
                                       ShareButton(
-                                          id: data.subPrismWalls[index]["id"]
+                                          id: data.subPrismWalls![index]["id"]
                                               .toString(),
                                           provider: provider,
-                                          url: data.subPrismWalls[index]
+                                          url: data.subPrismWalls![index]
                                                   ["wallpaper_url"]
                                               .toString(),
-                                          thumbUrl: data.subPrismWalls[index]
+                                          thumbUrl: data.subPrismWalls![index]
                                                   ["wallpaper_thumb"]
                                               .toString()),
                                       EditButton(
-                                          url: data.subPrismWalls[index]
+                                          url: data.subPrismWalls![index]
                                                   ["wallpaper_url"]
                                               .toString()),
                                     ],
@@ -1224,7 +1227,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   shakeController.forward(from: 0.0);
                                 },
                                 child: CachedNetworkImage(
-                                  imageUrl: data.subPrismWalls[index]
+                                  imageUrl: data.subPrismWalls![index]
                                           ["wallpaper_url"]
                                       .toString(),
                                   imageBuilder: (context, imageProvider) =>
@@ -1242,7 +1245,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         image: DecorationImage(
                                           colorFilter: colorChanged
                                               ? ColorFilter.mode(
-                                                  accent, BlendMode.hue)
+                                                  accent!, BlendMode.hue)
                                               : null,
                                           image: imageProvider,
                                           fit: BoxFit.cover,
@@ -1268,7 +1271,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       JamIcons.close_circle_f,
                                       color: isLoading
                                           ? Theme.of(context).accentColor
-                                          : accent.computeLuminance() > 0.5
+                                          : accent!.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
                                     ),
@@ -1280,7 +1283,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           alignment: Alignment.topLeft,
                           child: Padding(
                             padding: EdgeInsets.fromLTRB(
-                                8.0, globals.notchSize + 8, 8, 8),
+                                8.0, globals.notchSize! + 8, 8, 8),
                             child: IconButton(
                               onPressed: () {
                                 navStack.removeLast();
@@ -1289,7 +1292,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               },
                               color: isLoading
                                   ? Theme.of(context).accentColor
-                                  : accent.computeLuminance() > 0.5
+                                  : accent!.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
                               icon: const Icon(
@@ -1302,11 +1305,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           alignment: Alignment.topRight,
                           child: Padding(
                             padding: EdgeInsets.fromLTRB(
-                                8.0, globals.notchSize + 8, 8, 8),
+                                8.0, globals.notchSize! + 8, 8, 8),
                             child: IconButton(
                               onPressed: () {
                                 final link =
-                                    data.subPrismWalls[index]["wallpaper_url"];
+                                    data.subPrismWalls![index]["wallpaper_url"];
                                 Navigator.push(
                                     context,
                                     PageRouteBuilder(
@@ -1331,7 +1334,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               },
                               color: isLoading
                                   ? Theme.of(context).accentColor
-                                  : accent.computeLuminance() > 0.5
+                                  : accent!.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
                               icon: const Icon(
@@ -1516,7 +1519,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                               .substring(1),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText1
+                                                      .bodyText1!
                                                       .copyWith(
                                                           color:
                                                               Theme.of(context)
@@ -1558,7 +1561,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -1584,7 +1587,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -1609,7 +1612,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           onPressed: () {
                                                             launch(pdata
                                                                 .wallsP[index]
-                                                                .url);
+                                                                .url!);
                                                           },
                                                           padding:
                                                               const EdgeInsets
@@ -1633,7 +1636,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText2
+                                                                .bodyText2!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -1655,7 +1658,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -1692,14 +1695,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               link: screenshotTaken
                                                   ? _imageFile.path
                                                   : pdata.wallsP[index]
-                                                      .src["original"]
+                                                      .src!["original"]
                                                       .toString()),
                                           SetWallpaperButton(
                                               colorChanged: colorChanged,
                                               url: screenshotTaken
                                                   ? _imageFile.path
                                                   : pdata.wallsP[index]
-                                                      .src["original"]
+                                                      .src!["original"]
                                                       .toString()),
                                           FavouriteWallpaperButton(
                                             id: pdata.wallsP[index].id
@@ -1711,15 +1714,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           ShareButton(
                                               id: pdata.wallsP[index].id,
                                               provider: provider,
-                                              url: pdata
-                                                  .wallsP[index].src["original"]
+                                              url: pdata.wallsP[index]
+                                                  .src!["original"]
                                                   .toString(),
                                               thumbUrl: pdata
-                                                  .wallsP[index].src["medium"]
+                                                  .wallsP[index].src!["medium"]
                                                   .toString()),
                                           EditButton(
                                             url: pdata
-                                                .wallsP[index].src["original"]
+                                                .wallsP[index].src!["original"]
                                                 .toString(),
                                           ),
                                         ],
@@ -1763,7 +1766,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     },
                                     child: CachedNetworkImage(
                                       imageUrl: pdata
-                                          .wallsP[index].src["original"]
+                                          .wallsP[index].src!["original"]
                                           .toString(),
                                       imageBuilder: (context, imageProvider) =>
                                           Screenshot(
@@ -1780,7 +1783,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             image: DecorationImage(
                                               colorFilter: colorChanged
                                                   ? ColorFilter.mode(
-                                                      accent, BlendMode.hue)
+                                                      accent!, BlendMode.hue)
                                                   : null,
                                               image: imageProvider,
                                               fit: BoxFit.cover,
@@ -1811,7 +1814,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           JamIcons.close_circle_f,
                                           color: isLoading
                                               ? Theme.of(context).accentColor
-                                              : accent.computeLuminance() > 0.5
+                                              : accent!.computeLuminance() > 0.5
                                                   ? Colors.black
                                                   : Colors.white,
                                         ),
@@ -1823,7 +1826,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               alignment: Alignment.topLeft,
                               child: Padding(
                                 padding: EdgeInsets.fromLTRB(
-                                    8.0, globals.notchSize + 8, 8, 8),
+                                    8.0, globals.notchSize! + 8, 8, 8),
                                 child: IconButton(
                                   onPressed: () {
                                     navStack.removeLast();
@@ -1832,7 +1835,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   },
                                   color: isLoading
                                       ? Theme.of(context).accentColor
-                                      : accent.computeLuminance() > 0.5
+                                      : accent!.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
                                   icon: const Icon(
@@ -1845,11 +1848,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               alignment: Alignment.topRight,
                               child: Padding(
                                 padding: EdgeInsets.fromLTRB(
-                                    8.0, globals.notchSize + 8, 8, 8),
+                                    8.0, globals.notchSize! + 8, 8, 8),
                                 child: IconButton(
                                   onPressed: () {
                                     final link =
-                                        pdata.wallsP[index].src["original"];
+                                        pdata.wallsP[index].src!["original"];
                                     Navigator.push(
                                         context,
                                         PageRouteBuilder(
@@ -1874,7 +1877,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   },
                                   color: isLoading
                                       ? Theme.of(context).accentColor
-                                      : accent.computeLuminance() > 0.5
+                                      : accent!.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
                                   icon: const Icon(
@@ -1887,7 +1890,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         ),
                       ),
                     )
-                  : provider.length > 6 && provider.substring(0, 6) == "Colors"
+                  : provider!.length > 6 &&
+                          provider!.substring(0, 6) == "Colors"
                       ? Scaffold(
                           key: _scaffoldKey,
                           backgroundColor: isLoading
@@ -1920,7 +1924,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   });
                                 } else {
                                   main.prefs.get('optimisedWallpapers')
-                                              as bool ??
+                                              as bool? ??
                                           true
                                       ? screenshotController
                                           .capture(
@@ -2065,7 +2069,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           : pdata.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() + pdata.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .bodyText1
+                                                          .bodyText1!
                                                           .copyWith(
                                                               color: Theme.of(
                                                                       context)
@@ -2111,7 +2115,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText2
+                                                                  .bodyText2!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -2140,7 +2144,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText2
+                                                                  .bodyText2!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -2167,7 +2171,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                 launch(pdata
                                                                     .wallsC[
                                                                         index]
-                                                                    .url);
+                                                                    .url!);
                                                               },
                                                               padding: const EdgeInsets
                                                                       .symmetric(
@@ -2196,7 +2200,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                 style: Theme.of(
                                                                         context)
                                                                     .textTheme
-                                                                    .bodyText2
+                                                                    .bodyText2!
                                                                     .copyWith(
                                                                         color: Theme.of(context)
                                                                             .accentColor)
@@ -2217,7 +2221,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText2
+                                                                  .bodyText2!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -2255,7 +2259,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 link: screenshotTaken
                                                     ? _imageFile.path
                                                     : pdata.wallsC[index]
-                                                        .src["original"]
+                                                        .src!["original"]
                                                         .toString(),
                                               ),
                                               SetWallpaperButton(
@@ -2263,7 +2267,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   url: screenshotTaken
                                                       ? _imageFile.path
                                                       : pdata.wallsC[index]
-                                                          .src["original"]
+                                                          .src!["original"]
                                                           .toString()),
                                               FavouriteWallpaperButton(
                                                 id: pdata.wallsC[index].id
@@ -2276,14 +2280,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   id: pdata.wallsC[index].id,
                                                   provider: "Pexels",
                                                   url: pdata.wallsC[index]
-                                                      .src["original"]
+                                                      .src!["original"]
                                                       .toString(),
                                                   thumbUrl: pdata.wallsC[index]
-                                                      .src["medium"]
+                                                      .src!["medium"]
                                                       .toString()),
                                               EditButton(
                                                 url: pdata.wallsC[index]
-                                                    .src["original"]
+                                                    .src!["original"]
                                                     .toString(),
                                               ),
                                             ],
@@ -2330,7 +2334,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           },
                                           child: CachedNetworkImage(
                                             imageUrl: pdata
-                                                .wallsC[index].src["original"]
+                                                .wallsC[index].src!["original"]
                                                 .toString(),
                                             imageBuilder:
                                                 (context, imageProvider) =>
@@ -2352,7 +2356,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   image: DecorationImage(
                                                     colorFilter: colorChanged
                                                         ? ColorFilter.mode(
-                                                            accent,
+                                                            accent!,
                                                             BlendMode.hue)
                                                         : null,
                                                     image: imageProvider,
@@ -2388,7 +2392,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 color: isLoading
                                                     ? Theme.of(context)
                                                         .accentColor
-                                                    : accent.computeLuminance() >
+                                                    : accent!.computeLuminance() >
                                                             0.5
                                                         ? Colors.black
                                                         : Colors.white,
@@ -2401,7 +2405,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   alignment: Alignment.topLeft,
                                   child: Padding(
                                     padding: EdgeInsets.fromLTRB(
-                                        8.0, globals.notchSize + 8, 8, 8),
+                                        8.0, globals.notchSize! + 8, 8, 8),
                                     child: IconButton(
                                       onPressed: () {
                                         navStack.removeLast();
@@ -2410,7 +2414,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       },
                                       color: isLoading
                                           ? Theme.of(context).accentColor
-                                          : accent.computeLuminance() > 0.5
+                                          : accent!.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
                                       icon: const Icon(
@@ -2423,11 +2427,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   alignment: Alignment.topRight,
                                   child: Padding(
                                     padding: EdgeInsets.fromLTRB(
-                                        8.0, globals.notchSize + 8, 8, 8),
+                                        8.0, globals.notchSize! + 8, 8, 8),
                                     child: IconButton(
                                       onPressed: () {
-                                        final link =
-                                            pdata.wallsC[index].src["original"];
+                                        final link = pdata
+                                            .wallsC[index].src!["original"];
                                         Navigator.push(
                                             context,
                                             PageRouteBuilder(
@@ -2455,7 +2459,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       },
                                       color: isLoading
                                           ? Theme.of(context).accentColor
-                                          : accent.computeLuminance() > 0.5
+                                          : accent!.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
                                       icon: const Icon(
@@ -2500,7 +2504,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   });
                                 } else {
                                   main.prefs.get('optimisedWallpapers')
-                                              as bool ??
+                                              as bool? ??
                                           true
                                       ? screenshotController
                                           .capture(
@@ -2618,7 +2622,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                             .toUpperCase(),
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText1
+                                                            .bodyText1!
                                                             .copyWith(
                                                                 color: Theme.of(
                                                                         context)
@@ -2644,7 +2648,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -2672,7 +2676,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -2698,7 +2702,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -2735,7 +2739,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText2
+                                                                .bodyText2!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -2766,7 +2770,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -2788,7 +2792,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                     Row(
                                                       children: [
                                                         Text(
-                                                          provider.isNotEmpty
+                                                          provider!.isNotEmpty
                                                               ? provider
                                                                       .toString()[
                                                                           0]
@@ -2801,7 +2805,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -2856,7 +2860,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   provider: "WallHaven",
                                                   url: wdata.wallsS[index].path,
                                                   thumbUrl: wdata.wallsS[index]
-                                                      .thumbs["original"]
+                                                      .thumbs!["original"]
                                                       .toString()),
                                               EditButton(
                                                 url: wdata.wallsS[index].path,
@@ -2901,7 +2905,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           shakeController.forward(from: 0.0);
                                         },
                                         child: CachedNetworkImage(
-                                          imageUrl: wdata.wallsS[index].path,
+                                          imageUrl: wdata.wallsS[index].path!,
                                           imageBuilder:
                                               (context, imageProvider) =>
                                                   Screenshot(
@@ -2921,7 +2925,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 image: DecorationImage(
                                                   colorFilter: colorChanged
                                                       ? ColorFilter.mode(
-                                                          accent, BlendMode.hue)
+                                                          accent!,
+                                                          BlendMode.hue)
                                                       : null,
                                                   image: imageProvider,
                                                   fit: BoxFit.cover,
@@ -2955,7 +2960,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               color: isLoading
                                                   ? Theme.of(context)
                                                       .accentColor
-                                                  : accent.computeLuminance() >
+                                                  : accent!.computeLuminance() >
                                                           0.5
                                                       ? Colors.black
                                                       : Colors.white,
@@ -2968,7 +2973,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   alignment: Alignment.topLeft,
                                   child: Padding(
                                     padding: EdgeInsets.fromLTRB(
-                                        8.0, globals.notchSize + 8, 8, 8),
+                                        8.0, globals.notchSize! + 8, 8, 8),
                                     child: IconButton(
                                       onPressed: () {
                                         navStack.removeLast();
@@ -2977,7 +2982,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       },
                                       color: isLoading
                                           ? Theme.of(context).accentColor
-                                          : accent.computeLuminance() > 0.5
+                                          : accent!.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
                                       icon: const Icon(
@@ -2990,7 +2995,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   alignment: Alignment.topRight,
                                   child: Padding(
                                     padding: EdgeInsets.fromLTRB(
-                                        8.0, globals.notchSize + 8, 8, 8),
+                                        8.0, globals.notchSize! + 8, 8, 8),
                                     child: IconButton(
                                       onPressed: () {
                                         final link = wdata.wallsS[index].path;
@@ -3021,7 +3026,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       },
                                       color: isLoading
                                           ? Theme.of(context).accentColor
-                                          : accent.computeLuminance() > 0.5
+                                          : accent!.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
                                       icon: const Icon(

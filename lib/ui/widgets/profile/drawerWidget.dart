@@ -36,24 +36,28 @@ class ProfileDrawer extends StatelessWidget {
                       Container(
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
-                          main.prefs.get('premium') as bool == true
+                          main.prefs.get('premium', defaultValue: false)
+                                      as bool ==
+                                  true
                               ? "Prism Pro"
                               : "Prism",
                           style: Theme.of(context)
                               .textTheme
-                              .headline3
+                              .headline3!
                               .copyWith(color: Theme.of(context).accentColor),
                         ),
                       ),
                       Container(
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
-                          main.prefs.get('premium') as bool == true
+                          main.prefs.get('premium', defaultValue: false)
+                                      as bool ==
+                                  true
                               ? "Exclusive premium walls & setups!"
                               : "Exclusive wallpapers & setups!",
                           style: Theme.of(context)
                               .textTheme
-                              .bodyText2
+                              .bodyText2!
                               .copyWith(color: Theme.of(context).accentColor),
                         ),
                       ),
@@ -67,10 +71,10 @@ class ProfileDrawer extends StatelessWidget {
   }
 
   Widget createDrawerBodyItem(
-      {IconData icon,
-      String text,
-      GestureTapCallback onTap,
-      BuildContext context}) {
+      {IconData? icon,
+      required String text,
+      GestureTapCallback? onTap,
+      required BuildContext context}) {
     return ListTile(
       dense: true,
       trailing: Icon(
@@ -86,7 +90,7 @@ class ProfileDrawer extends StatelessWidget {
         width: MediaQuery.of(context).size.width / 2,
         child: Text(
           text,
-          style: Theme.of(context).textTheme.caption.copyWith(
+          style: Theme.of(context).textTheme.caption!.copyWith(
               fontFamily: "Proxima Nova", color: Theme.of(context).accentColor),
         ),
       ),
@@ -94,13 +98,14 @@ class ProfileDrawer extends StatelessWidget {
     );
   }
 
-  Widget createDrawerBodyHeader({String text, BuildContext context}) {
+  Widget createDrawerBodyHeader(
+      {required String text, required BuildContext context}) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
       child: Container(
         width: MediaQuery.of(context).size.width / 2,
         child: Text(text,
-            style: Theme.of(context).textTheme.headline3.copyWith(
+            style: Theme.of(context).textTheme.headline3!.copyWith(
                 fontSize: 12,
                 color: Theme.of(context).accentColor.withOpacity(0.4))),
       ),
@@ -116,11 +121,11 @@ class ProfileDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: <Widget>[
             createDrawerHeader(context),
-            if (main.prefs.get('premium') as bool == true)
+            if (main.prefs.get('premium', defaultValue: false) as bool == true)
               Container()
             else
               createDrawerBodyHeader(text: "PREMIUM", context: context),
-            if (main.prefs.get('premium') as bool == true)
+            if (main.prefs.get('premium', defaultValue: false) as bool == true)
               Container()
             else
               createDrawerBodyItem(
@@ -131,7 +136,7 @@ class ProfileDrawer extends StatelessWidget {
                     Navigator.pushNamed(context, premiumRoute);
                   },
                   context: context),
-            if (main.prefs.get('premium') as bool == true)
+            if (main.prefs.get('premium', defaultValue: false) as bool == true)
               Container()
             else
               const Divider(),
@@ -219,14 +224,14 @@ class ProfileDrawer extends StatelessWidget {
                               msg: "Deleted all downloads!",
                               toastLength: Toast.LENGTH_LONG,
                               textColor: Colors.white,
-                              backgroundColor: Colors.green[400],
+                              backgroundColor: Colors.green[400]!,
                             );
                           } else {
                             Fluttertoast.showToast(
                               msg: "No downloads!",
                               toastLength: Toast.LENGTH_LONG,
                               textColor: Colors.white,
-                              backgroundColor: Colors.red[400],
+                              backgroundColor: Colors.red[400]!,
                             );
                           }
                         },
@@ -309,7 +314,7 @@ class ProfileDrawer extends StatelessWidget {
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5
+                                    .headline5!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 controller: _twitterController,
@@ -323,7 +328,7 @@ class ProfileDrawer extends StatelessWidget {
                                   hintText: "Ex - PrismWallpapers",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5
+                                      .headline5!
                                       .copyWith(
                                           fontSize: 14,
                                           color: Theme.of(context).accentColor),
@@ -415,7 +420,7 @@ class ProfileDrawer extends StatelessWidget {
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5
+                                    .headline5!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 controller: _igController,
@@ -429,7 +434,7 @@ class ProfileDrawer extends StatelessWidget {
                                   hintText: "Ex - PrismWallpapers",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5
+                                      .headline5!
                                       .copyWith(
                                           fontSize: 14,
                                           color: Theme.of(context).accentColor),
@@ -516,7 +521,7 @@ class ProfileDrawer extends StatelessWidget {
                         main.prefs.get("name").toString(),
                         main.prefs.get("email").toString(),
                         main.prefs.get("googleimage").toString(),
-                        main.prefs.get("premium") as bool,
+                        main.prefs.get("premium") as bool?,
                         main.prefs.get("twitter") != ""
                             ? main.prefs
                                 .get("twitter")
@@ -551,7 +556,7 @@ class ProfileDrawer extends StatelessWidget {
               onTap: () async {
                 Navigator.pop(context);
                 DefaultCacheManager().emptyCache();
-                PaintingBinding.instance.imageCache.clear();
+                PaintingBinding.instance!.imageCache!.clear();
                 await Hive.box('wallpapers').deleteFromDisk();
                 await Hive.openBox('wallpapers');
                 await Hive.box('collections').deleteFromDisk();

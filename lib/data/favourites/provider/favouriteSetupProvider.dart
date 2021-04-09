@@ -5,8 +5,8 @@ import 'package:hive/hive.dart';
 
 class FavouriteSetupProvider extends ChangeNotifier {
   final Firestore databaseReference = Firestore.instance;
-  List liked;
-  Future<List> getDataBase() async {
+  List? liked;
+  Future<List?> getDataBase() async {
     final String uid = main.prefs.get("id") as String;
     liked = [];
     await databaseReference
@@ -17,7 +17,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
         .then((value) {
       liked = [];
       for (final f in value.documents) {
-        liked.add(f.data);
+        liked!.add(f.data);
       }
     }).catchError((e) {
       debugPrint("data done with error");
@@ -73,18 +73,18 @@ class FavouriteSetupProvider extends ChangeNotifier {
     return true;
   }
 
-  Future favCheck(String id, Map setup) async {
-    int index;
+  Future favCheck(String id, Map? setup) async {
+    int? index;
     await getDataBase().then(
       (value) {
-        for (final element in value) {
+        for (final element in value!) {
           if (element["id"] == id) {
             index = value.indexOf(element);
           }
         }
         if (index == null) {
           debugPrint("Fav");
-          createFavSetup(setup);
+          createFavSetup(setup!);
           localFavSave(id);
         } else {
           localFavDelete(id);
@@ -111,7 +111,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
     int favs = 0;
     debugPrint("in countfavsetup");
     await getDataBase().then((value) {
-      debugPrint(value.length.toString());
+      debugPrint(value!.length.toString());
       favs = value.length;
     });
     return favs;

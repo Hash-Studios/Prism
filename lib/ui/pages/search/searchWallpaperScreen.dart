@@ -24,8 +24,8 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 
 class SearchWallpaperScreen extends StatefulWidget {
-  final List arguments;
-  const SearchWallpaperScreen({@required this.arguments});
+  final List? arguments;
+  const SearchWallpaperScreen({required this.arguments});
   @override
   _SearchWallpaperScreenState createState() => _SearchWallpaperScreenState();
 }
@@ -39,17 +39,17 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String selectedProvider;
-  String query;
-  int index;
-  String link;
-  AnimationController shakeController;
+  String? selectedProvider;
+  String? query;
+  late int index;
+  late String link;
+  late AnimationController shakeController;
   bool isLoading = true;
-  PaletteGenerator paletteGenerator;
-  List<Color> colors;
-  Color accent;
+  late PaletteGenerator paletteGenerator;
+  List<Color?>? colors;
+  Color? accent;
   bool colorChanged = false;
-  File _imageFile;
+  late File _imageFile;
   bool screenshotTaken = false;
   ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
@@ -71,12 +71,12 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     });
     colors = paletteGenerator.colors.toList();
     if (paletteGenerator.colors.length > 5) {
-      colors = colors.sublist(0, 5);
+      colors = colors!.sublist(0, 5);
     }
     setState(() {
-      accent = colors[0];
+      accent = colors![0];
     });
-    if (accent.computeLuminance() > 0.5) {
+    if (accent!.computeLuminance() > 0.5) {
       SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
           .copyWith(statusBarIconBrightness: Brightness.dark));
     } else {
@@ -86,15 +86,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
   }
 
   void updateAccent() {
-    if (colors.contains(accent)) {
-      final index = colors.indexOf(accent);
+    if (colors!.contains(accent)) {
+      final index = colors!.indexOf(accent);
       setState(() {
-        accent = colors[(index + 1) % 5];
+        accent = colors![(index + 1) % 5];
       });
       setState(() {
         colorChanged = true;
       });
-      if (accent.computeLuminance() > 0.5) {
+      if (accent!.computeLuminance() > 0.5) {
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
             .copyWith(statusBarIconBrightness: Brightness.dark));
       } else {
@@ -109,10 +109,10 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    selectedProvider = widget.arguments[0].toString();
-    query = widget.arguments[1].toString();
-    index = widget.arguments[2] as int;
-    link = widget.arguments[3].toString();
+    selectedProvider = widget.arguments![0].toString();
+    query = widget.arguments![1].toString();
+    index = widget.arguments![2] as int;
+    link = widget.arguments![3].toString();
     isLoading = true;
     _updatePaletteGenerator();
   }
@@ -167,7 +167,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         debugPrint(onError.toString());
                       });
                     } else {
-                      main.prefs.get('optimisedWallpapers') as bool ?? true
+                      main.prefs.get('optimisedWallpapers') as bool? ?? true
                           ? screenshotController
                               .capture(
                               pixelRatio: 3,
@@ -271,7 +271,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                 .toUpperCase(),
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .bodyText1
+                                                .bodyText1!
                                                 .copyWith(
                                                     color: Theme.of(context)
                                                         .accentColor),
@@ -292,7 +292,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                   .toString(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -315,7 +315,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                   .toString(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -337,7 +337,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                               "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -365,7 +365,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                         .substring(1),
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2
+                                                    .bodyText2!
                                                     .copyWith(
                                                         color: Theme.of(context)
                                                             .accentColor),
@@ -389,7 +389,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                   .toString(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -414,7 +414,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                   query.toString().substring(1),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -463,7 +463,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                       provider: "WallHaven",
                                       url: wdata.wallsS[index].path,
                                       thumbUrl: wdata
-                                          .wallsS[index].thumbs["original"]
+                                          .wallsS[index].thumbs!["original"]
                                           .toString()),
                                   EditButton(
                                     url: wdata.wallsS[index].path,
@@ -505,7 +505,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
-                              imageUrl: wdata.wallsS[index].path,
+                              imageUrl: wdata.wallsS[index].path!,
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
                                 controller: screenshotController,
@@ -519,7 +519,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                     image: DecorationImage(
                                       colorFilter: colorChanged
                                           ? ColorFilter.mode(
-                                              accent, BlendMode.hue)
+                                              accent!, BlendMode.hue)
                                           : null,
                                       image: imageProvider,
                                       fit: BoxFit.cover,
@@ -545,7 +545,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                   JamIcons.close_circle_f,
                                   color: isLoading
                                       ? Theme.of(context).accentColor
-                                      : accent.computeLuminance() > 0.5
+                                      : accent!.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
                                 ),
@@ -557,7 +557,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                       alignment: Alignment.topLeft,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize + 8, 8, 8),
+                            8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
@@ -566,7 +566,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
+                              : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: const Icon(
@@ -579,7 +579,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                       alignment: Alignment.topRight,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize + 8, 8, 8),
+                            8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             final link = wdata.wallsS[index].path;
@@ -606,7 +606,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
+                              : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: const Icon(
@@ -650,7 +650,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         debugPrint(onError.toString());
                       });
                     } else {
-                      main.prefs.get('optimisedWallpapers') as bool ?? true
+                      main.prefs.get('optimisedWallpapers') as bool? ?? true
                           ? screenshotController
                               .capture(
                               pixelRatio: 3,
@@ -788,7 +788,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                       .substring(1),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText1
+                                              .bodyText1!
                                               .copyWith(
                                                   color: Theme.of(context)
                                                       .accentColor),
@@ -823,7 +823,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                       .toString(),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           color:
                                                               Theme.of(context)
@@ -846,7 +846,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                   "${pdata.wallsPS[index].width.toString()}x${pdata.wallsPS[index].height.toString()}",
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           color:
                                                               Theme.of(context)
@@ -869,7 +869,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                 child: ActionChip(
                                                   onPressed: () {
                                                     launch(pdata
-                                                        .wallsPS[index].url);
+                                                        .wallsPS[index].url!);
                                                   },
                                                   padding: const EdgeInsets
                                                           .symmetric(
@@ -887,7 +887,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                         .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText2
+                                                        .bodyText2!
                                                         .copyWith(
                                                             color: Theme.of(
                                                                     context)
@@ -904,7 +904,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                   query.toString(),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           color:
                                                               Theme.of(context)
@@ -938,13 +938,13 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                       colorChanged: colorChanged,
                                       link: screenshotTaken
                                           ? _imageFile.path
-                                          : pdata.wallsPS[index].src["original"]
+                                          : pdata.wallsPS[index].src!["original"]
                                               .toString()),
                                   SetWallpaperButton(
                                       colorChanged: colorChanged,
                                       url: screenshotTaken
                                           ? _imageFile.path
-                                          : pdata.wallsPS[index].src["original"]
+                                          : pdata.wallsPS[index].src!["original"]
                                               .toString()),
                                   FavouriteWallpaperButton(
                                     id: pdata.wallsPS[index].id.toString(),
@@ -955,13 +955,13 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                   ShareButton(
                                       id: pdata.wallsPS[index].id,
                                       provider: selectedProvider,
-                                      url: pdata.wallsPS[index].src["original"]
+                                      url: pdata.wallsPS[index].src!["original"]
                                           .toString(),
                                       thumbUrl: pdata
-                                          .wallsPS[index].src["medium"]
+                                          .wallsPS[index].src!["medium"]
                                           .toString()),
                                   EditButton(
-                                    url: pdata.wallsPS[index].src["original"]
+                                    url: pdata.wallsPS[index].src!["original"]
                                         .toString(),
                                   ),
                                 ],
@@ -1001,7 +1001,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
-                              imageUrl: pdata.wallsPS[index].src["original"]
+                              imageUrl: pdata.wallsPS[index].src!["original"]
                                   .toString(),
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
@@ -1016,7 +1016,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                     image: DecorationImage(
                                       colorFilter: colorChanged
                                           ? ColorFilter.mode(
-                                              accent, BlendMode.hue)
+                                              accent!, BlendMode.hue)
                                           : null,
                                       image: imageProvider,
                                       fit: BoxFit.cover,
@@ -1042,7 +1042,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                   JamIcons.close_circle_f,
                                   color: isLoading
                                       ? Theme.of(context).accentColor
-                                      : accent.computeLuminance() > 0.5
+                                      : accent!.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
                                 ),
@@ -1054,7 +1054,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                       alignment: Alignment.topLeft,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize + 8, 8, 8),
+                            8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
@@ -1063,7 +1063,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
+                              : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: const Icon(
@@ -1076,10 +1076,10 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                       alignment: Alignment.topRight,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize + 8, 8, 8),
+                            8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
-                            final link = pdata.wallsPS[index].src["original"];
+                            final link = pdata.wallsPS[index].src!["original"];
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
@@ -1103,7 +1103,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
+                              : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: const Icon(

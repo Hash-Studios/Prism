@@ -7,9 +7,9 @@ class ConnectivityWidget extends StatefulWidget {
 
 class _ConnectivityWidgetState extends State<ConnectivityWidget>
     with SingleTickerProviderStateMixin {
-  bool dontAnimate;
+  bool? dontAnimate;
 
-  AnimationController animationController;
+  late AnimationController animationController;
 
   @override
   @mustCallSuper

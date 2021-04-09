@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 
 class ProfileLoader extends StatefulWidget {
   final Future future;
-  const ProfileLoader({@required this.future});
+  const ProfileLoader({required this.future});
   @override
   _ProfileLoaderState createState() => _ProfileLoaderState();
 }
 
 class _ProfileLoaderState extends State<ProfileLoader> {
-  Future _future;
+  Future? _future;
 
   @override
   void initState() {

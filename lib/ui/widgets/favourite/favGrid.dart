@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 
 class FavouriteGrid extends StatefulWidget {
   const FavouriteGrid({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -22,8 +22,8 @@ class FavouriteGrid extends StatefulWidget {
 
 class _FavouriteGridState extends State<FavouriteGrid>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+  AnimationController? _controller;
+  late Animation<Color?> animation;
   GlobalKey<RefreshIndicatorState> refreshFavKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -36,9 +36,9 @@ class _FavouriteGridState extends State<FavouriteGrid>
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -55,8 +55,8 @@ class _FavouriteGridState extends State<FavouriteGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
+          ).animate(_controller!)
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -73,11 +73,11 @@ class _FavouriteGridState extends State<FavouriteGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
+          ).animate(_controller!)
       ..addListener(() {
         setState(() {});
       });
-    _controller.repeat();
+    _controller!.repeat();
   }
 
   @override
@@ -94,8 +94,8 @@ class _FavouriteGridState extends State<FavouriteGrid>
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+    final ScrollController? controller =
+        InheritedDataProvider.of(context)!.scrollController;
     return RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshFavKey,
@@ -103,7 +103,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
         child: Provider.of<FavouriteProvider>(context, listen: false).liked !=
                 null
             ? Provider.of<FavouriteProvider>(context, listen: false)
-                    .liked
+                    .liked!
                     .isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -227,7 +227,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
                     padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
                     controller: controller,
                     itemCount:
-                        Provider.of<FavouriteProvider>(context).liked.length,
+                        Provider.of<FavouriteProvider>(context).liked!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
                             MediaQuery.of(context).orientation ==
@@ -250,7 +250,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
                                         Provider.of<FavouriteProvider>(context)
-                                            .liked[index]["thumb"]
+                                            .liked![index]["thumb"]
                                             .toString(),
                                       ),
                                       fit: BoxFit.cover)),
@@ -279,7 +279,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
                                             Provider.of<FavouriteProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["thumb"],
+                                                .liked![index]["thumb"],
                                           ]);
                                     }
                                   },

@@ -13,7 +13,7 @@ class UserList extends StatelessWidget {
   final TextEditingController _twitterController = TextEditingController();
   final TextEditingController _igController = TextEditingController();
   final bool expanded;
-  UserList({@required this.expanded});
+  UserList({required this.expanded});
   @override
   Widget build(BuildContext context) {
     if (main.prefs.get("isLoggedin") == false) {
@@ -289,7 +289,7 @@ class UserList extends StatelessWidget {
                                       cursorColor: Theme.of(context).errorColor,
                                       style: Theme.of(context)
                                           .textTheme
-                                          .headline5
+                                          .headline5!
                                           .copyWith(
                                               color: Theme.of(context)
                                                   .accentColor),
@@ -304,7 +304,7 @@ class UserList extends StatelessWidget {
                                         hintText: "Ex - PrismWallpapers",
                                         hintStyle: Theme.of(context)
                                             .textTheme
-                                            .headline5
+                                            .headline5!
                                             .copyWith(
                                                 fontSize: 14,
                                                 color: Theme.of(context)
@@ -409,7 +409,7 @@ class UserList extends StatelessWidget {
                                       cursorColor: Theme.of(context).errorColor,
                                       style: Theme.of(context)
                                           .textTheme
-                                          .headline5
+                                          .headline5!
                                           .copyWith(
                                               color: Theme.of(context)
                                                   .accentColor),
@@ -424,7 +424,7 @@ class UserList extends StatelessWidget {
                                         hintText: "Ex - PrismWallpapers",
                                         hintStyle: Theme.of(context)
                                             .textTheme
-                                            .headline5
+                                            .headline5!
                                             .copyWith(
                                                 fontSize: 14,
                                                 color: Theme.of(context)

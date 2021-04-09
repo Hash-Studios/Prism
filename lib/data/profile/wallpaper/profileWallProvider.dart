@@ -4,9 +4,9 @@ import 'package:Prism/main.dart' as main;
 
 class ProfileWallProvider extends ChangeNotifier {
   final Firestore databaseReference = Firestore.instance;
-  List profileWalls;
+  List? profileWalls;
   int len = 0;
-  Future<List> getProfileWalls() async {
+  Future<List?> getProfileWalls() async {
     profileWalls = [];
     Query db;
     if (main.prefs.get('premium') == true) {
@@ -24,9 +24,9 @@ class ProfileWallProvider extends ChangeNotifier {
     await db.getDocuments().then((value) {
       profileWalls = [];
       for (final f in value.documents) {
-        profileWalls.add(f.data);
+        profileWalls!.add(f.data);
       }
-      len = profileWalls.length;
+      len = profileWalls!.length;
       debugPrint(len.toString());
     }).catchError((e) {
       debugPrint(e.toString());

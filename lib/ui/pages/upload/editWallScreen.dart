@@ -9,7 +9,7 @@ import 'package:extended_image/extended_image.dart';
 import 'package:image_editor/image_editor.dart' hide ImageSource;
 
 class EditWallScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const EditWallScreen({this.arguments});
   @override
   _EditWallScreenState createState() => _EditWallScreenState();
@@ -73,11 +73,11 @@ class _EditWallScreenState extends State<EditWallScreen> {
     return m;
   }
 
-  File image;
+  File? image;
   @override
   void initState() {
     super.initState();
-    image = widget.arguments[0] as File;
+    image = widget.arguments![0] as File;
   }
 
   Future<bool> onWillPop() async {
@@ -113,7 +113,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
               "Edit Wallpaper",
               style: Theme.of(context)
                   .textTheme
-                  .headline3
+                  .headline3!
                   .copyWith(color: Theme.of(context).accentColor),
             ),
             leading: IconButton(
@@ -173,7 +173,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                                 "Saturation",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2
+                                    .bodyText2!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                               )
@@ -190,7 +190,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                                 "Brightness",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2
+                                    .bodyText2!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                               )
@@ -207,7 +207,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                                 "Contrast",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2
+                                    .bodyText2!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                               )
@@ -242,7 +242,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                             sat.toStringAsFixed(2),
                             style: Theme.of(context)
                                 .textTheme
-                                .bodyText2
+                                .bodyText2!
                                 .copyWith(color: Theme.of(context).accentColor),
                           ),
                           const Spacer(flex: 2),
@@ -250,7 +250,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                             bright.toStringAsFixed(2),
                             style: Theme.of(context)
                                 .textTheme
-                                .bodyText2
+                                .bodyText2!
                                 .copyWith(color: Theme.of(context).accentColor),
                           ),
                           const Spacer(flex: 2),
@@ -258,7 +258,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                             con.toStringAsFixed(2),
                             style: Theme.of(context)
                                 .textTheme
-                                .bodyText2
+                                .bodyText2!
                                 .copyWith(color: Theme.of(context).accentColor),
                           ),
                           const Spacer(flex: 3),
@@ -286,7 +286,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
               ? Colors.white.withOpacity(bright)
               : Colors.black.withOpacity(-bright),
           colorBlendMode: bright > 0 ? BlendMode.lighten : BlendMode.darken,
-          image: ExtendedFileImageProvider(image),
+          image: ExtendedFileImageProvider(image!),
           height: MediaQuery.of(context).size.width,
           width: MediaQuery.of(context).size.width,
           extendedImageEditorKey: editorKey,
@@ -316,7 +316,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
           ),
           title: Text(
             'Flip',
-            style: Theme.of(context).textTheme.bodyText2.copyWith(
+            style: Theme.of(context).textTheme.bodyText2!.copyWith(
                   color: Theme.of(context).accentColor,
                 ),
           ),
@@ -328,7 +328,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
           ),
           title: Text(
             'Rotate Left',
-            style: Theme.of(context).textTheme.bodyText2.copyWith(
+            style: Theme.of(context).textTheme.bodyText2!.copyWith(
                   color: Theme.of(context).accentColor,
                 ),
           ),
@@ -340,7 +340,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
           ),
           title: Text(
             'Rotate Right',
-            style: Theme.of(context).textTheme.bodyText2.copyWith(
+            style: Theme.of(context).textTheme.bodyText2!.copyWith(
                   color: Theme.of(context).accentColor,
                 ),
           ),
@@ -360,7 +360,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                         : cropRatio == 9 / 19.5
                             ? "9:19.5"
                             : "9:18",
-            style: Theme.of(context).textTheme.bodyText2.copyWith(
+            style: Theme.of(context).textTheme.bodyText2!.copyWith(
                   color: Theme.of(context).accentColor,
                 ),
           ),
@@ -388,7 +388,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
   }
 
   Future<void> crop([bool test = false]) async {
-    final ExtendedImageEditorState state = editorKey.currentState;
+    final ExtendedImageEditorState state = editorKey.currentState!;
     final Rect rect = state.getCropRect();
     final EditActionDetails action = state.editAction;
     final double radian = action.rotateAngle;
@@ -423,7 +423,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     debugPrint('result.length = ${result.length}');
 
     final Duration diff = DateTime.now().difference(start);
-    image.writeAsBytesSync(result);
+    image!.writeAsBytesSync(result);
     debugPrint('image_editor time : $diff');
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
@@ -433,11 +433,11 @@ class _EditWallScreenState extends State<EditWallScreen> {
   }
 
   void flip() {
-    editorKey.currentState.flip();
+    editorKey.currentState!.flip();
   }
 
   void rotate(bool right) {
-    editorKey.currentState.rotate(right: right);
+    editorKey.currentState!.rotate(right: right);
   }
 
   Widget _buildSat() {

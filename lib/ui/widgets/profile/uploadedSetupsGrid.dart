@@ -14,7 +14,7 @@ import 'package:provider/provider.dart';
 
 class UploadedSetupsGrid extends StatefulWidget {
   const UploadedSetupsGrid({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -23,12 +23,12 @@ class UploadedSetupsGrid extends StatefulWidget {
 
 class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+  AnimationController? _controller;
+  late Animation<Color?> animation;
   GlobalKey<RefreshIndicatorState> refreshProfileSetupKey =
       GlobalKey<RefreshIndicatorState>();
-  PaletteGenerator paletteGenerator;
-  List<Color> colors;
+  PaletteGenerator? paletteGenerator;
+  List<Color>? colors;
 
   @override
   void initState() {
@@ -39,9 +39,9 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -58,8 +58,8 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
+          ).animate(_controller!)
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -76,11 +76,11 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
+          ).animate(_controller!)
       ..addListener(() {
         setState(() {});
       });
-    _controller.repeat();
+    _controller!.repeat();
   }
 
   @override
@@ -106,7 +106,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                     .profileSetups !=
                 null
             ? Provider.of<ProfileSetupProvider>(context, listen: false)
-                    .profileSetups
+                    .profileSetups!
                     .isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -229,7 +229,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                     cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
                     itemCount: Provider.of<ProfileSetupProvider>(context)
-                        .profileSetups
+                        .profileSetups!
                         .length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
@@ -250,7 +250,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                                 image: DecorationImage(
                                     image: CachedNetworkImageProvider(
                                       Provider.of<ProfileSetupProvider>(context)
-                                          .profileSetups[index]["image"]
+                                          .profileSetups![index]["image"]
                                           .toString(),
                                     ),
                                     fit: BoxFit.cover)),

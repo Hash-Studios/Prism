@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 class WallpaperLoader extends StatefulWidget {
   final Future future;
   final String provider;
-  const WallpaperLoader({@required this.future, @required this.provider});
+  const WallpaperLoader({required this.future, required this.provider});
   @override
   _WallpaperLoaderState createState() => _WallpaperLoaderState();
 }
 
 class _WallpaperLoaderState extends State<WallpaperLoader> {
-  Future _future;
+  Future? _future;
 
   @override
   void initState() {

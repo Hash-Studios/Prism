@@ -11,7 +11,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
 
-RemoteConfig remoteConfig;
+late RemoteConfig remoteConfig;
 
 class SplashWidget extends StatelessWidget {
   bool notchChecked = false;
@@ -89,7 +89,7 @@ class SplashWidget extends StatelessWidget {
   }
 
   SplashWidget({
-    Key key,
+    Key? key,
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {

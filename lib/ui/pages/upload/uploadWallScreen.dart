@@ -19,38 +19,38 @@ import 'package:Prism/main.dart' as main;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class UploadWallScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const UploadWallScreen({this.arguments});
   @override
   _UploadWallScreenState createState() => _UploadWallScreenState();
 }
 
 class _UploadWallScreenState extends State<UploadWallScreen> {
-  bool isUploading;
-  bool isProcessing;
-  bool fromSetupRoute;
-  File image;
-  String id;
-  String tempid;
-  String wallpaperUrl;
-  String wallpaperResolution;
-  String wallpaperProvider;
-  String wallpaperSize;
-  String wallpaperDesc;
-  String wallpaperCategory;
-  String wallpaperThumb;
-  String wallpaperSha;
-  String thumbSha;
-  String wallpaperPath;
-  String thumbPath;
-  bool review;
-  List<int> imageBytes;
-  List<int> imageBytesThumb;
+  late bool isUploading;
+  late bool isProcessing;
+  late bool fromSetupRoute;
+  late File image;
+  String? id;
+  String? tempid;
+  String? wallpaperUrl;
+  String? wallpaperResolution;
+  String? wallpaperProvider;
+  String? wallpaperSize;
+  String? wallpaperDesc;
+  String? wallpaperCategory;
+  String? wallpaperThumb;
+  late String wallpaperSha;
+  late String thumbSha;
+  late String wallpaperPath;
+  late String thumbPath;
+  bool? review;
+  late List<int> imageBytes;
+  late List<int> imageBytesThumb;
   @override
   void initState() {
     super.initState();
-    image = widget.arguments[0] as File;
-    fromSetupRoute = widget.arguments[1] as bool;
+    image = widget.arguments![0] as File;
+    fromSetupRoute = widget.arguments![1] as bool;
     isUploading = false;
     isProcessing = true;
     randomId();
@@ -69,10 +69,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     for (var i = 0; i < 4; i++) {
       if (choice == i) {
         final ran = r.nextInt(10);
-        tempid = tempid + ran.toString();
+        tempid = tempid! + ran.toString();
       } else {
         final ran = r.nextInt(26);
-        tempid = tempid + alp[ran].toString();
+        tempid = tempid! + alp[ran].toString();
       }
     }
     setState(() {

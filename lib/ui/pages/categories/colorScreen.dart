@@ -7,10 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 class ColorScreen extends StatelessWidget {
-  final List arguments;
+  final List? arguments;
   const ColorScreen({
-    Key key,
-    @required this.arguments,
+    Key? key,
+    required this.arguments,
   }) : super(key: key);
 
   @override
@@ -44,8 +44,8 @@ class ColorScreen extends StatelessWidget {
           ),
           body: BottomBar(
             child: ColorLoader(
-              future: pdata.getWallsPbyColor("color: ${arguments[0]}"),
-              provider: "Colors - color: ${arguments[0]}",
+              future: pdata.getWallsPbyColor("color: ${arguments![0]}"),
+              provider: "Colors - color: ${arguments![0]}",
             ),
           )),
     );

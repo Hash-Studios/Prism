@@ -6,11 +6,11 @@ import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 
 final Firestore databaseReference = Firestore.instance;
-List wallpapersForCollections;
-Set collectionNames;
-Map collections;
-Map wall;
-Future<Map> getCollections() async {
+List? wallpapersForCollections;
+late Set collectionNames;
+Map? collections;
+Map? wall;
+Future<Map?> getCollections() async {
   if (navStack.last == "Home") {
     final box = Hive.box('collections');
     // debugPrint(box.get('collections').toString());
@@ -37,10 +37,10 @@ Future<Map> getCollections() async {
           Map<String, dynamic> map;
           map = f.data;
           map['createdAt'] = map['createdAt'].toString();
-          if (map['collections'] != null) wallpapersForCollections.add(map);
+          if (map['collections'] != null) wallpapersForCollections!.add(map);
         }
         debugPrint("Data added to list");
-        for (final wall in wallpapersForCollections) {
+        for (final wall in wallpapersForCollections!) {
           for (final collectionName in wall['collections']) {
             if (!collectionNames.contains(collectionName)) {
               collectionNames.add(collectionName);
@@ -53,23 +53,23 @@ Future<Map> getCollections() async {
         randomList = [];
         var count = 0;
         for (var i = 0; i < 10; i++) {
-          randomList.add(r.nextInt(wallpapersForCollections.length));
+          randomList.add(r.nextInt(wallpapersForCollections!.length));
         }
-        for (final wall in wallpapersForCollections) {
+        for (final wall in wallpapersForCollections!) {
           for (final collectionName in wall['collections']) {
-            if (!collections.containsKey(collectionName)) {
-              collections[collectionName] = [];
-              collections[collectionName].add(wall);
+            if (!collections!.containsKey(collectionName)) {
+              collections![collectionName] = [];
+              collections![collectionName].add(wall);
             } else {
-              collections[collectionName].add(wall);
+              collections![collectionName].add(wall);
             }
             if (count == 0) {
-              collections["random"] = [];
+              collections!["random"] = [];
               collectionNames.add("random");
             }
 
             if (randomList.contains(count)) {
-              collections["random"].add(wall);
+              collections!["random"].add(wall);
             }
             count++;
           }
@@ -102,8 +102,8 @@ Future<Map> getCollections() async {
       wallpapersForCollections = [];
       collectionNames = {};
       collections = {};
-      wallpapersForCollections = box.get('collections') as List;
-      for (final wall in wallpapersForCollections) {
+      wallpapersForCollections = box.get('collections') as List?;
+      for (final wall in wallpapersForCollections!) {
         for (final collectionName in wall['collections']) {
           if (!collectionNames.contains(collectionName)) {
             collectionNames.add(collectionName);
@@ -116,23 +116,23 @@ Future<Map> getCollections() async {
       randomList = [];
       var count = 0;
       for (var i = 0; i < 10; i++) {
-        randomList.add(r.nextInt(wallpapersForCollections.length));
+        randomList.add(r.nextInt(wallpapersForCollections!.length));
       }
-      for (final wall in wallpapersForCollections) {
+      for (final wall in wallpapersForCollections!) {
         for (final collectionName in wall['collections']) {
-          if (!collections.containsKey(collectionName)) {
-            collections[collectionName] = [];
-            collections[collectionName].add(wall);
+          if (!collections!.containsKey(collectionName)) {
+            collections![collectionName] = [];
+            collections![collectionName].add(wall);
           } else {
-            collections[collectionName].add(wall);
+            collections![collectionName].add(wall);
           }
           if (count == 0) {
-            collections["random"] = [];
+            collections!["random"] = [];
             collectionNames.add("random");
           }
 
           if (randomList.contains(count)) {
-            collections["random"].add(wall);
+            collections!["random"].add(wall);
           }
           count++;
         }

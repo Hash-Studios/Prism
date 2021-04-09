@@ -12,7 +12,7 @@ import 'package:provider/provider.dart';
 
 class ProfileGrid extends StatefulWidget {
   const ProfileGrid({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -21,8 +21,8 @@ class ProfileGrid extends StatefulWidget {
 
 class _ProfileGridState extends State<ProfileGrid>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+  AnimationController? _controller;
+  late Animation<Color?> animation;
   GlobalKey<RefreshIndicatorState> refreshProfileKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -35,9 +35,9 @@ class _ProfileGridState extends State<ProfileGrid>
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -54,8 +54,8 @@ class _ProfileGridState extends State<ProfileGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
+          ).animate(_controller!)
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -72,11 +72,11 @@ class _ProfileGridState extends State<ProfileGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
+          ).animate(_controller!)
       ..addListener(() {
         setState(() {});
       });
-    _controller.repeat();
+    _controller!.repeat();
   }
 
   @override
@@ -101,7 +101,7 @@ class _ProfileGridState extends State<ProfileGrid>
                     .profileWalls !=
                 null
             ? Provider.of<ProfileWallProvider>(context, listen: false)
-                    .profileWalls
+                    .profileWalls!
                     .isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -224,7 +224,7 @@ class _ProfileGridState extends State<ProfileGrid>
                     cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
                     itemCount: Provider.of<ProfileWallProvider>(context)
-                        .profileWalls
+                        .profileWalls!
                         .length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
@@ -249,7 +249,7 @@ class _ProfileGridState extends State<ProfileGrid>
                                       image: CachedNetworkImageProvider(
                                         Provider.of<ProfileWallProvider>(
                                                 context)
-                                            .profileWalls[index]
+                                            .profileWalls![index]
                                                 ["wallpaper_thumb"]
                                             .toString(),
                                       ),
@@ -280,7 +280,7 @@ class _ProfileGridState extends State<ProfileGrid>
                                             Provider.of<ProfileWallProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileWalls[index]
+                                                    .profileWalls![index]
                                                 ["wallpaper_thumb"],
                                           ]);
                                     }

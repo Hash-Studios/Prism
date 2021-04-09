@@ -15,13 +15,13 @@ import 'package:provider/provider.dart';
 
 final FirebaseMessaging f = FirebaseMessaging();
 
-Future<dynamic> myBackgroundMessageHandler(Map<String, dynamic> message) {
+Future<void> myBackgroundMessageHandler(Map<String, dynamic> message) async {
   writeNotifications(message);
 }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -29,7 +29,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Future<List> _future;
+  Future<List?>? _future;
 
   Future<bool> onWillPop() async {
     final choice = choices[0];
@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Provider.of<CategorySupplier>(context, listen: false)
           .changeSelectedChoice(choice as CategoryMenu);
       Provider.of<CategorySupplier>(context, listen: false)
-          .changeWallpaperFuture(choice as CategoryMenu, "r");
+          .changeWallpaperFuture(choice, "r");
       return false;
     }
     if (navStack.length > 1) navStack.removeLast();
@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return true;
   }
 
-  bool isNew;
+  late bool isNew;
   @override
   void initState() {
     super.initState();
@@ -115,9 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return WillPopScope(
       onWillPop: onWillPop,
-      child: FutureBuilder<List>(
+      child: FutureBuilder<List?>(
         future: _future, // async work
-        builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
+        builder: (BuildContext context, AsyncSnapshot<List?> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
               return Center(child: Loader());

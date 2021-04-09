@@ -8,13 +8,13 @@ Map<String, ThemeMode> modes = {
 };
 
 class ThemeModeExtended extends ChangeNotifier {
-  ThemeMode currentMode = ThemeMode.dark;
+  ThemeMode? currentMode = ThemeMode.dark;
 
   ThemeModeExtended(
     this.currentMode,
   );
 
-  ThemeMode getCurrentThemeMode() {
+  ThemeMode? getCurrentThemeMode() {
     return currentMode;
   }
 
@@ -37,6 +37,7 @@ class ThemeModeExtended extends ChangeNotifier {
       }
       // MediaQuery.of(context).platformBrightness
     }
+    return "Dark";
   }
 
   String getCurrentModeAbs() {
@@ -47,5 +48,6 @@ class ThemeModeExtended extends ChangeNotifier {
     } else if (currentMode == ThemeMode.system) {
       return "System (Light/Dark)";
     }
+    return "Dark";
   }
 }

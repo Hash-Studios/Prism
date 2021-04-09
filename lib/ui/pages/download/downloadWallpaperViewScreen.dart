@@ -8,8 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
 class DownloadWallpaperScreen extends StatefulWidget {
-  final List arguments;
-  const DownloadWallpaperScreen({@required this.arguments});
+  final List? arguments;
+  const DownloadWallpaperScreen({required this.arguments});
   @override
   _DownloadWallpaperScreenState createState() =>
       _DownloadWallpaperScreenState();
@@ -23,18 +23,18 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
     return true;
   }
 
-  AnimationController shakeController;
+  late AnimationController shakeController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String provider;
-  File file;
+  String? provider;
+  late File file;
 
   @override
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    provider = widget.arguments[0] as String;
-    file = widget.arguments[1] as File;
+    provider = widget.arguments![0] as String;
+    file = widget.arguments![1] as File;
   }
 
   @override
@@ -102,7 +102,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     navStack.removeLast();
@@ -119,7 +119,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
             Align(
               alignment: Alignment.topRight,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     final link = file.path;

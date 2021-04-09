@@ -10,12 +10,12 @@ import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
 class FavIconButton extends StatefulWidget {
-  final String id;
-  final Map prism;
+  final String? id;
+  final Map? prism;
   const FavIconButton({
-    @required this.id,
+    required this.id,
     this.prism,
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -23,7 +23,7 @@ class FavIconButton extends StatefulWidget {
 }
 
 class _FavIconButtonState extends State<FavIconButton> {
-  Box box;
+  late Box box;
 
   @override
   void initState() {
@@ -53,8 +53,8 @@ class _FavIconButtonState extends State<FavIconButton> {
     );
   }
 
-  Future<void> onFav(String id, String provider, WallPaper wallhaven,
-      WallPaperP pexels, Map prism) async {
+  Future<void> onFav(String? id, String provider, WallPaper? wallhaven,
+      WallPaperP? pexels, Map? prism) async {
     setState(() {});
     Provider.of<FavouriteProvider>(context, listen: false)
         .favCheck(id, provider, wallhaven, pexels, prism)

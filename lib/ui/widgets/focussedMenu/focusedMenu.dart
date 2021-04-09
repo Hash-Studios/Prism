@@ -4,12 +4,12 @@ import 'package:Prism/ui/widgets/focussedMenu/focusedMenuDetails.dart';
 import 'package:flutter/material.dart';
 
 class FocusedMenuHolder extends StatefulWidget {
-  final String provider;
+  final String? provider;
   final Widget child;
   final int index;
 
   const FocusedMenuHolder(
-      {@required this.provider, @required this.child, @required this.index});
+      {required this.provider, required this.child, required this.index});
 
   @override
   _FocusedMenuHolderState createState() => _FocusedMenuHolderState();
@@ -18,11 +18,11 @@ class FocusedMenuHolder extends StatefulWidget {
 class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
   GlobalKey containerKey = GlobalKey();
   Offset childOffset = const Offset(0, 0);
-  Size childSize;
+  Size? childSize;
 
   void getOffset() {
     final RenderBox renderBox =
-        containerKey.currentContext.findRenderObject() as RenderBox;
+        containerKey.currentContext!.findRenderObject() as RenderBox;
     final Size size = renderBox.size;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     setState(() {

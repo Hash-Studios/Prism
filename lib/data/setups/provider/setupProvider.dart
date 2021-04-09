@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 
 class SetupProvider extends ChangeNotifier {
   final Firestore databaseReference = Firestore.instance;
-  List setups;
-  Future<List> getDataBase() async {
+  List? setups;
+  Future<List?> getDataBase() async {
     final box = Hive.box('setups');
     if ((box.get('setups') == null) ||
         (box.get('setups').toString() == "[]") ||
@@ -26,7 +26,7 @@ class SetupProvider extends ChangeNotifier {
           Map<String, dynamic> map;
           map = f.data;
           map['created_at'] = map['created_at'].toDate();
-          setups.add(map);
+          setups!.add(map);
         }
         box.delete('setups');
         if (setups != []) {
@@ -42,7 +42,7 @@ class SetupProvider extends ChangeNotifier {
             'dateTime',
             DateTime.now().toString(),
           );
-          debugPrint(setups.length.toString());
+          debugPrint(setups!.length.toString());
         } else {
           debugPrint("Not connected to Internet");
         }
@@ -53,16 +53,16 @@ class SetupProvider extends ChangeNotifier {
     } else {
       debugPrint("Setups : Data Fetched from cache");
       setups = [];
-      setups = box.get('setups') as List;
-      debugPrint(setups.length.toString());
+      setups = box.get('setups') as List?;
+      debugPrint(setups!.length.toString());
     }
     return setups;
   }
 }
 
 final databaseReference2 = Firestore.instance;
-Map setup;
-Future<Map> getSetupFromName(String name) async {
+Map? setup;
+Future<Map?> getSetupFromName(String? name) async {
   setup = {};
   await databaseReference2
       .collection("setups")

@@ -5,14 +5,14 @@ import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
 
 class CollectionViewScreen extends StatelessWidget {
-  final List arguments;
+  final List? arguments;
   const CollectionViewScreen({
-    Key key,
-    @required this.arguments,
+    Key? key,
+    required this.arguments,
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    debugPrint(arguments[1].toString());
+    debugPrint(arguments![1].toString());
     return WillPopScope(
       onWillPop: () async {
         if (navStack.length > 1) navStack.removeLast();
@@ -24,11 +24,11 @@ class CollectionViewScreen extends StatelessWidget {
           appBar: PreferredSize(
             preferredSize: const Size(double.infinity, 55),
             child: HeadingChipBar(
-              current: arguments[0] as String,
+              current: arguments![0] as String,
             ),
           ),
           body: BottomBar(
-            child: CollectionViewGrid(arguments: arguments[1] as List),
+            child: CollectionViewGrid(arguments: arguments![1] as List),
           )),
     );
   }

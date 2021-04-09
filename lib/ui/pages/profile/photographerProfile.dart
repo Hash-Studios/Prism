@@ -18,30 +18,30 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 
 class UserProfile extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const UserProfile(this.arguments);
   @override
   _UserProfileState createState() => _UserProfileState();
 }
 
 class _UserProfileState extends State<UserProfile> {
-  String name;
-  String email;
-  String userPhoto;
-  bool premium;
-  String twitter;
-  String instagram;
+  String? name;
+  String? email;
+  String? userPhoto;
+  bool? premium;
+  String? twitter;
+  String? instagram;
   final ScrollController scrollController = ScrollController();
   final Firestore firestore = Firestore.instance;
   final key = GlobalKey();
   @override
   void initState() {
-    name = widget.arguments[0].toString();
-    email = widget.arguments[1].toString();
-    userPhoto = widget.arguments[2].toString();
-    premium = widget.arguments[3] as bool;
-    twitter = widget.arguments[4].toString();
-    instagram = widget.arguments[5].toString();
+    name = widget.arguments![0].toString();
+    email = widget.arguments![1].toString();
+    userPhoto = widget.arguments![2].toString();
+    premium = widget.arguments![3] as bool;
+    twitter = widget.arguments![4].toString();
+    instagram = widget.arguments![5].toString();
     super.initState();
   }
 
@@ -228,7 +228,7 @@ class _UserProfileState extends State<UserProfile> {
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText2
+                                                                .bodyText2!
                                                                 .copyWith(
                                                                   fontSize: 9,
                                                                   color: Theme.of(
@@ -385,17 +385,17 @@ class _UserProfileState extends State<UserProfile> {
                                                     ],
                                                   );
                                                 } else if (snapshot
-                                                            .data.documents !=
+                                                            .data!.documents !=
                                                         null &&
-                                                    snapshot.data.documents
+                                                    snapshot.data!.documents
                                                         .isNotEmpty) {
                                                   List followers = [];
 
                                                   followers = snapshot
-                                                              .data
+                                                              .data!
                                                               .documents[0]
                                                               .data['followers']
-                                                          as List ??
+                                                          as List? ??
                                                       [];
 
                                                   return Row(
@@ -457,8 +457,11 @@ class _UserProfileState extends State<UserProfile> {
                     },
                   ),
                   actions: [
-                    if (main.prefs.get("isLoggedin") as bool == true &&
-                        main.prefs.get('email') as String != email)
+                    if (main.prefs.get("isLoggedin", defaultValue: false)
+                                as bool ==
+                            true &&
+                        main.prefs.get('email', defaultValue: "") as String !=
+                            email)
                       StreamBuilder<QuerySnapshot>(
                         stream: users
                             .where("email", isEqualTo: main.prefs.get('email'))
@@ -468,15 +471,15 @@ class _UserProfileState extends State<UserProfile> {
                           if (!snapshot.hasData) {
                             return Container();
                           } else {
-                            final List following = snapshot.data.documents[0]
-                                    .data['following'] as List ??
+                            final List following = snapshot.data!.documents[0]
+                                    .data['following'] as List? ??
                                 [];
                             if (following.contains(email)) {
                               return IconButton(
                                 icon: const Icon(JamIcons.user_remove),
                                 onPressed: () {
                                   following.removeAt(following.indexOf(email));
-                                  snapshot.data.documents[0].reference
+                                  snapshot.data!.documents[0].reference
                                       .updateData({'following': following});
                                   users
                                       .where("email", isEqualTo: email)
@@ -486,7 +489,7 @@ class _UserProfileState extends State<UserProfile> {
                                         value.documents == null) {
                                     } else {
                                       final List followers = value.documents[0]
-                                              .data['followers'] as List ??
+                                              .data['followers'] as List? ??
                                           [];
                                       followers.removeAt(followers
                                           .indexOf(main.prefs.get('email')));
@@ -514,7 +517,7 @@ class _UserProfileState extends State<UserProfile> {
                                   icon: const Icon(JamIcons.user_plus),
                                   onPressed: () {
                                     following.add(email);
-                                    snapshot.data.documents[0].reference
+                                    snapshot.data!.documents[0].reference
                                         .updateData({'following': following});
                                     users
                                         .where("email", isEqualTo: email)
@@ -525,7 +528,7 @@ class _UserProfileState extends State<UserProfile> {
                                       } else {
                                         final List followers = value
                                                 .documents[0]
-                                                .data['followers'] as List ??
+                                                .data['followers'] as List? ??
                                             [];
                                         followers.add(main.prefs.get('email'));
                                         value.documents[0].reference.updateData(
@@ -559,7 +562,8 @@ class _UserProfileState extends State<UserProfile> {
                                             'id': '1',
                                             'status': 'done'
                                           },
-                                          'to': "/topics/${email.split("@")[0]}"
+                                          'to':
+                                              "/topics/${email!.split("@")[0]}"
                                         },
                                       ),
                                     );
@@ -598,7 +602,7 @@ class _UserProfileState extends State<UserProfile> {
                                 "Wallpapers",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2
+                                    .bodyText2!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                               ),
@@ -606,7 +610,7 @@ class _UserProfileState extends State<UserProfile> {
                                 "Setups",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2
+                                    .bodyText2!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                               ),

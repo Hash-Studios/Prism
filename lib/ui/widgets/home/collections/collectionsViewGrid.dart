@@ -10,17 +10,17 @@ import 'package:provider/provider.dart';
 
 class CollectionViewGrid extends StatefulWidget {
   final List arguments;
-  const CollectionViewGrid({@required this.arguments});
+  const CollectionViewGrid({required this.arguments});
   @override
   _CollectionViewGridState createState() => _CollectionViewGridState();
 }
 
 class _CollectionViewGridState extends State<CollectionViewGrid>
     with TickerProviderStateMixin {
-  AnimationController _controller;
-  AnimationController shakeController;
-  Animation<Color> animation;
-  int longTapIndex;
+  AnimationController? _controller;
+  late AnimationController shakeController;
+  late Animation<Color?> animation;
+  int? longTapIndex;
   GlobalKey<RefreshIndicatorState> refreshHomeKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -36,9 +36,9 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -55,8 +55,8 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
+          ).animate(_controller!)
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -73,11 +73,11 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
+          ).animate(_controller!)
       ..addListener(() {
         setState(() {});
       });
-    _controller.repeat();
+    _controller!.repeat();
   }
 
   @override
@@ -97,8 +97,8 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
               shakeController.reverse();
             }
           });
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+    final ScrollController? controller =
+        InheritedDataProvider.of(context)!.scrollController;
     return GridView.builder(
       controller: controller,
       padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),

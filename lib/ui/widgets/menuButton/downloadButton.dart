@@ -15,13 +15,13 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
 class DownloadButton extends StatefulWidget {
-  final String link;
+  final String? link;
   final bool colorChanged;
 
   const DownloadButton({
-    @required this.link,
-    @required this.colorChanged,
-    Key key,
+    required this.link,
+    required this.colorChanged,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -29,7 +29,7 @@ class DownloadButton extends StatefulWidget {
 }
 
 class _DownloadButtonState extends State<DownloadButton> {
-  bool isLoading;
+  late bool isLoading;
 
   @override
   void initState() {
@@ -120,7 +120,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     toasts.codeSend("Starting Download");
 
     if (sdkInt >= 30) {
-      if (widget.link.contains("com.hash.prism")) {
+      if (widget.link!.contains("com.hash.prism")) {
         await platform.invokeMethod(
             'save_image_file', {"link": widget.link}).then((value) {
           if (value as bool) {
@@ -160,7 +160,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         });
       }
     } else {
-      GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
+      GallerySaver.saveImage(widget.link!, albumName: "Prism").then((value) {
         analytics.logEvent(
             name: 'download_wallpaper', parameters: {'link': widget.link});
         toasts.codeSend("Wall Downloaded in Internal Storage/Prism!");
@@ -195,7 +195,7 @@ void showDownloadPopup(BuildContext context, Function rewardFunc) {
 class DownloadDialogContent extends StatefulWidget {
   final Function rewardFunc;
 
-  const DownloadDialogContent({@required this.rewardFunc});
+  const DownloadDialogContent({required this.rewardFunc});
 
   @override
   _DownloadDialogContentState createState() => _DownloadDialogContentState();
@@ -220,7 +220,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
     FirebaseAdMob.instance
         .initialize(appId: "ca-app-pub-4649644680694757~6175744196");
     videoAd.listener =
-        (RewardedVideoAdEvent event, {String rewardType, int rewardAmount}) {
+        (RewardedVideoAdEvent event, {String? rewardType, int? rewardAmount}) {
       debugPrint("REWARDED VIDEO AD $event");
       switch (event) {
         case RewardedVideoAdEvent.loaded:
@@ -240,7 +240,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
         case RewardedVideoAdEvent.started:
           break;
         case RewardedVideoAdEvent.rewarded:
-          reward(rewardAmount);
+          reward(rewardAmount!);
           break;
         case RewardedVideoAdEvent.closed:
           if (downloadCoins >= 10) widget.rewardFunc();
@@ -297,7 +297,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                       "Watch a small video ad to download this wallpaper.",
                       style: Theme.of(context)
                           .textTheme
-                          .headline6
+                          .headline6!
                           .copyWith(color: Theme.of(context).accentColor),
                     ),
                   ),
