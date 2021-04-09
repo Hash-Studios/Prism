@@ -333,18 +333,18 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                                     color: Colors.white),
                                             textAlign: TextAlign.center,
                                           ),
-                                          lifetime.product.title
-                                                  .contains("SALE")
-                                              ? Text(
-                                                  'SALE',
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .headline6
-                                                      .copyWith(
-                                                          color: Colors.red),
-                                                  textAlign: TextAlign.center,
-                                                )
-                                              : Container(),
+                                          if (lifetime.product.title
+                                              .contains("SALE"))
+                                            Text(
+                                              'SALE',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .headline6
+                                                  .copyWith(color: Colors.red),
+                                              textAlign: TextAlign.center,
+                                            )
+                                          else
+                                            Container(),
                                         ],
                                       ),
                                       const Spacer(flex: 4),

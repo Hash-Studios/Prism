@@ -56,7 +56,6 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
-        resizeToAvoidBottomPadding: false,
         key: _scaffoldKey,
         backgroundColor: Theme.of(context).primaryColor,
         body: Stack(

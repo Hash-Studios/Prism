@@ -137,7 +137,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
       onWillPop: onWillPop,
       child: selectedProvider == "WallHaven"
           ? Scaffold(
-              resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
@@ -621,7 +620,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
               ),
             )
           : Scaffold(
-              resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,

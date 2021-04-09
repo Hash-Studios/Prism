@@ -97,33 +97,32 @@ void showContributorDetails(BuildContext context, String username) {
                             const SizedBox(
                               height: 5,
                             ),
-                            snapshot.data.location != null
-                                ? Row(
-                                    children: [
-                                      Icon(JamIcons.map_marker,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(0.5)),
-                                      Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.3,
-                                          child: Text(
-                                            snapshot.data.location,
-                                            textAlign: TextAlign.center,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2
-                                                .copyWith(
-                                                    color: Theme.of(context)
-                                                        .accentColor
-                                                        .withOpacity(0.5)),
-                                          )),
-                                    ],
-                                  )
-                                : Container(),
+                            if (snapshot.data.location != null)
+                              Row(
+                                children: [
+                                  Icon(JamIcons.map_marker,
+                                      color: Theme.of(context)
+                                          .accentColor
+                                          .withOpacity(0.5)),
+                                  Container(
+                                      width: MediaQuery.of(context).size.width *
+                                          0.3,
+                                      child: Text(
+                                        snapshot.data.location,
+                                        textAlign: TextAlign.center,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2
+                                            .copyWith(
+                                                color: Theme.of(context)
+                                                    .accentColor
+                                                    .withOpacity(0.5)),
+                                      )),
+                                ],
+                              )
+                            else
+                              Container(),
                           ],
                         )
                       ],
@@ -150,23 +149,26 @@ void showContributorDetails(BuildContext context, String username) {
                   Wrap(
                     alignment: WrapAlignment.center,
                     children: [
-                      snapshot.data.blog != null && snapshot.data.blog != ""
-                          ? ActionButton(
-                              icon: JamIcons.link,
-                              link: "https://${snapshot.data.blog}",
-                              text: "WEBSITE")
-                          : Container(),
+                      if (snapshot.data.blog != null &&
+                          snapshot.data.blog != "")
+                        ActionButton(
+                            icon: JamIcons.link,
+                            link: "https://${snapshot.data.blog}",
+                            text: "WEBSITE")
+                      else
+                        Container(),
                       ActionButton(
                           icon: JamIcons.github,
                           link: snapshot.data.htmlUrl,
                           text: "GITHUB"),
-                      snapshot.data.twitterUsername != null
-                          ? ActionButton(
-                              icon: JamIcons.twitter,
-                              link:
-                                  "https://www.twitter.com/${snapshot.data.twitterUsername}",
-                              text: "TWITTER")
-                          : Container(),
+                      if (snapshot.data.twitterUsername != null)
+                        ActionButton(
+                            icon: JamIcons.twitter,
+                            link:
+                                "https://www.twitter.com/${snapshot.data.twitterUsername}",
+                            text: "TWITTER")
+                      else
+                        Container(),
                     ],
                   ),
                 ],

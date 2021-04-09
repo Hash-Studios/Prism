@@ -279,36 +279,37 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               }),
           backgroundColor: Theme.of(context).primaryColor,
           actions: <Widget>[
-            loading
-                ? Container()
-                : IconButton(
-                    icon: const Icon(JamIcons.check),
-                    onPressed: () async {
-                      toasts.codeSend("Processing Wallpaper");
-                      final imageFile = await saveFilteredImage();
-                      showModalBottomSheet(
-                        isScrollControlled: true,
-                        context: context,
-                        builder: (context) => SetOptionsPanel(
-                          onTap1: () {
-                            HapticFeedback.vibrate();
-                            Navigator.of(context).pop();
-                            _setHomeWallPaper(imageFile.path);
-                          },
-                          onTap2: () {
-                            HapticFeedback.vibrate();
-                            Navigator.of(context).pop();
-                            _setLockWallPaper(imageFile.path);
-                          },
-                          onTap3: () {
-                            HapticFeedback.vibrate();
-                            Navigator.of(context).pop();
-                            _setBothWallPaper(imageFile.path);
-                          },
-                        ),
-                      );
-                    },
-                  )
+            if (loading)
+              Container()
+            else
+              IconButton(
+                icon: const Icon(JamIcons.check),
+                onPressed: () async {
+                  toasts.codeSend("Processing Wallpaper");
+                  final imageFile = await saveFilteredImage();
+                  showModalBottomSheet(
+                    isScrollControlled: true,
+                    context: context,
+                    builder: (context) => SetOptionsPanel(
+                      onTap1: () {
+                        HapticFeedback.vibrate();
+                        Navigator.of(context).pop();
+                        _setHomeWallPaper(imageFile.path);
+                      },
+                      onTap2: () {
+                        HapticFeedback.vibrate();
+                        Navigator.of(context).pop();
+                        _setLockWallPaper(imageFile.path);
+                      },
+                      onTap3: () {
+                        HapticFeedback.vibrate();
+                        Navigator.of(context).pop();
+                        _setBothWallPaper(imageFile.path);
+                      },
+                    ),
+                  );
+                },
+              )
           ],
         ),
         backgroundColor: Theme.of(context).primaryColor,
@@ -359,19 +360,19 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                             selectedFilters[index],
                                             image,
                                             filename),
-                                        _filter == selectedFilters[index]
-                                            ? Container(
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          500),
-                                                  color: Colors.white,
-                                                ),
-                                                child: const Icon(
-                                                  JamIcons.check,
-                                                  color: Colors.black,
-                                                ))
-                                            : Container(),
+                                        if (_filter == selectedFilters[index])
+                                          Container(
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(500),
+                                                color: Colors.white,
+                                              ),
+                                              child: const Icon(
+                                                JamIcons.check,
+                                                color: Colors.black,
+                                              ))
+                                        else
+                                          Container(),
                                       ],
                                     ),
                                     const SizedBox(

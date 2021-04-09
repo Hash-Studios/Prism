@@ -107,7 +107,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
-        resizeToAvoidBottomPadding: false,
         key: _scaffoldKey,
         backgroundColor: Theme.of(context).primaryColor,
         body: SlidingUpPanel(
@@ -374,7 +373,9 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           } else {
                                                             return Text(
                                                               "${snapshot.data} views",
-                                                              overflow: TextOverflow.fade,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .fade,
                                                               softWrap: false,
                                                               style: Theme.of(
                                                                       context)
@@ -517,74 +518,81 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                             false)
                                                                     .setups[index]["userPhoto"],
                                                                 false,
-                                                                Provider.of<SetupProvider>(context, listen: false).setups[index]["twitter"] !=
-                                                                            null &&
-                                                                        Provider.of<SetupProvider>(context, listen: false).setups[index]["twitter"] !=
-                                                                            ""
-                                                                    ? Provider.of<SetupProvider>(
-                                                                            context,
-                                                                            listen:
-                                                                                false)
-                                                                        .setups[
-                                                                            index]
-                                                                            [
-                                                                            "twitter"]
-                                                                        .toString()
-                                                                        .split(
-                                                                            "https://www.twitter.com/")[1]
-                                                                    : "",
-                                                                Provider.of<SetupProvider>(context, listen: false).setups[index]["instagram"] !=
-                                                                            null &&
-                                                                        Provider.of<SetupProvider>(context, listen: false).setups[index]["instagram"] !=
-                                                                            ""
-                                                                    ? Provider.of<SetupProvider>(
-                                                                            context,
-                                                                            listen:
-                                                                                false)
-                                                                        .setups[
-                                                                            index]
-                                                                            [
-                                                                            "instagram"]
-                                                                        .toString()
-                                                                        .split(
-                                                                            "https://www.instagram.com/")[1]
-                                                                    : "",
+                                                                if (Provider.of<SetupProvider>(context, listen: false).setups[index][
+                                                                            "twitter"] !=
+                                                                        null &&
+                                                                    Provider.of<SetupProvider>(context, listen: false).setups[index][
+                                                                            "twitter"] !=
+                                                                        "")
+                                                                  Provider.of<SetupProvider>(
+                                                                          context,
+                                                                          listen:
+                                                                              false)
+                                                                      .setups[
+                                                                          index]
+                                                                          [
+                                                                          "twitter"]
+                                                                      .toString()
+                                                                      .split(
+                                                                          "https://www.twitter.com/")[1]
+                                                                else
+                                                                  "",
+                                                                if (Provider.of<SetupProvider>(context, listen: false).setups[index][
+                                                                            "instagram"] !=
+                                                                        null &&
+                                                                    Provider.of<SetupProvider>(context, listen: false).setups[index][
+                                                                            "instagram"] !=
+                                                                        "")
+                                                                  Provider.of<SetupProvider>(
+                                                                          context,
+                                                                          listen:
+                                                                              false)
+                                                                      .setups[
+                                                                          index]
+                                                                          [
+                                                                          "instagram"]
+                                                                      .toString()
+                                                                      .split(
+                                                                          "https://www.instagram.com/")[1]
+                                                                else
+                                                                  "",
                                                               ]);
                                                         }),
                                                   ),
-                                                  globals.verifiedUsers
-                                                          .contains(Provider.of<
-                                                                      SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .setups[index]
-                                                                  ["email"]
-                                                              .toString())
-                                                      ? Align(
-                                                          alignment: Alignment
-                                                              .topRight,
-                                                          child: Container(
-                                                            width: 20,
-                                                            height: 20,
-                                                            child: SvgPicture.string(verifiedIcon.replaceAll(
-                                                                "E57697",
-                                                                Theme.of(context).errorColor ==
-                                                                        Colors
-                                                                            .black
-                                                                    ? "E57697"
-                                                                    : Theme.of(
-                                                                            context)
-                                                                        .errorColor
-                                                                        .toString()
-                                                                        .replaceAll(
-                                                                            "Color(0xff",
-                                                                            "")
-                                                                        .replaceAll(
-                                                                            ")",
-                                                                            ""))),
-                                                          ),
-                                                        )
-                                                      : Container(),
+                                                  if (globals.verifiedUsers
+                                                      .contains(Provider.of<
+                                                                  SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                              ["email"]
+                                                          .toString()))
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.topRight,
+                                                      child: Container(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                            "E57697",
+                                                            Theme.of(context)
+                                                                        .errorColor ==
+                                                                    Colors.black
+                                                                ? "E57697"
+                                                                : Theme.of(
+                                                                        context)
+                                                                    .errorColor
+                                                                    .toString()
+                                                                    .replaceAll(
+                                                                        "Color(0xff",
+                                                                        "")
+                                                                    .replaceAll(
+                                                                        ")",
+                                                                        ""))),
+                                                      ),
+                                                    )
+                                                  else
+                                                    Container(),
                                                 ],
                                               ),
                                             ),
@@ -676,26 +684,15 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<SetupProvider>(context,
+                                      tileText: Provider.of<SetupProvider>(
+                                                      context,
                                                       listen: false)
                                                   .setups[index]
                                                       ["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
                                           ? "Prism"
-                                          : Provider.of<SetupProvider>(context, listen: false)
-                                                  .setups[index]
-                                                      ["wallpaper_url"][0]
-                                                  .toString() +
-                                              " - " +
-                                              ((Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2
-                                                  ? Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups[index]
-                                                          ["wallpaper_url"][2]
-                                                      .toString()
-                                                  : ""),
+                                          : "${Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
@@ -849,26 +846,15 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<SetupProvider>(context, listen: false)
+                                          tileText: Provider.of<SetupProvider>(
+                                                          context,
+                                                          listen: false)
                                                       .setups[index]
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
                                               ? "Prism"
-                                              : Provider.of<SetupProvider>(context,
-                                                          listen: false)
-                                                      .setups[index]
-                                                          ["wallpaper_url"][0]
-                                                      .toString() +
-                                                  " - " +
-                                                  ((Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2
-                                                      ? Provider.of<SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .setups[index]
-                                                              ["wallpaper_url"][2]
-                                                          .toString()
-                                                      : ""),
+                                              : "${Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay:
@@ -1096,26 +1082,16 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                         .toString());
                                               }
                                             },
-                                            tileText: Provider.of<SetupProvider>(context, listen: false)
+                                            tileText: Provider.of<
+                                                                SetupProvider>(
+                                                            context,
+                                                            listen: false)
                                                         .setups[index]
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
                                                 ? "Prism"
-                                                : Provider.of<SetupProvider>(context,
-                                                            listen: false)
-                                                        .setups[index]
-                                                            ["wallpaper_url"][0]
-                                                        .toString() +
-                                                    " - " +
-                                                    ((Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2
-                                                        ? Provider.of<SetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .setups[index]
-                                                                ["wallpaper_url"][2]
-                                                            .toString()
-                                                        : ""),
+                                                : "${Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(

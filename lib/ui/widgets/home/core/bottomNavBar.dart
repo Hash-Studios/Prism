@@ -106,30 +106,31 @@ class _BottomBarState extends State<BottomBar>
             child: BottomNavBar(),
           ),
         ),
-        isOnTop == true
-            ? Container()
-            : Positioned(
-                right: 10,
-                bottom: 10,
-                child: FloatingActionButton(
-                  mini: true,
-                  onPressed: () {
-                    scrollBottomBarController
-                        .animateTo(
-                            scrollBottomBarController.position.minScrollExtent,
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.easeIn)
-                        .then((value) {
-                      setState(() {
-                        isOnTop = true;
-                        isScrollingDown = false;
-                      });
-                      showBottomBar();
-                    });
-                  },
-                  child: const Icon(JamIcons.arrow_up),
-                ),
-              )
+        if (isOnTop == true)
+          Container()
+        else
+          Positioned(
+            right: 10,
+            bottom: 10,
+            child: FloatingActionButton(
+              mini: true,
+              onPressed: () {
+                scrollBottomBarController
+                    .animateTo(
+                        scrollBottomBarController.position.minScrollExtent,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeIn)
+                    .then((value) {
+                  setState(() {
+                    isOnTop = true;
+                    isScrollingDown = false;
+                  });
+                  showBottomBar();
+                });
+              },
+              child: const Icon(JamIcons.arrow_up),
+            ),
+          )
       ],
     );
   }
@@ -422,35 +423,35 @@ class _BottomNavBarState extends State<BottomNavBar>
                     Container(
                       height: navStack.last == "Profile" ? 9 : 0,
                     ),
-                    main.prefs.get("isLoggedin") == true
-                        ? imageNotFound
-                            ? Icon(
-                                JamIcons.user_circle,
-                                color: Theme.of(context).primaryColor,
-                              )
-                            : Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(500),
-                                    color: Theme.of(context).accentColor),
-                                child: CircleAvatar(
-                                  backgroundColor:
-                                      Theme.of(context).accentColor,
-                                  radius: 11,
-                                  backgroundImage: NetworkImage(
-                                    main.prefs.get('googleimage').toString(),
-                                  ),
-                                  onBackgroundImageError: (_, st) {
-                                    setState(() {
-                                      imageNotFound = true;
-                                    });
-                                  },
+                    if (main.prefs.get("isLoggedin") == true)
+                      imageNotFound
+                          ? Icon(
+                              JamIcons.user_circle,
+                              color: Theme.of(context).primaryColor,
+                            )
+                          : Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(500),
+                                  color: Theme.of(context).accentColor),
+                              child: CircleAvatar(
+                                backgroundColor: Theme.of(context).accentColor,
+                                radius: 11,
+                                backgroundImage: NetworkImage(
+                                  main.prefs.get('googleimage').toString(),
                                 ),
-                              )
-                        : Icon(
-                            JamIcons.cog_f,
-                            color: Theme.of(context).accentColor,
-                          ),
+                                onBackgroundImageError: (_, st) {
+                                  setState(() {
+                                    imageNotFound = true;
+                                  });
+                                },
+                              ),
+                            )
+                    else
+                      Icon(
+                        JamIcons.cog_f,
+                        color: Theme.of(context).accentColor,
+                      ),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),

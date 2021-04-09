@@ -138,7 +138,6 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
     return WillPopScope(
         onWillPop: onWillPop,
         child: Scaffold(
-          resizeToAvoidBottomPadding: false,
           key: _scaffoldKey,
           backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
           body: SlidingUpPanel(

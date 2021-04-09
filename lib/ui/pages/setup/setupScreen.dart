@@ -350,64 +350,64 @@ class _SetupPageState extends State<SetupPage> {
                 }
               }),
         ),
-        pageNumber == 0
-            ? Container()
-            : Align(
-                alignment: Alignment.centerLeft,
-                child: ArrowBounceAnimation(
-                  onTap: () {
-                    widget.controller.animateToPage(
-                        widget.controller.page.toInt() - 1,
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.fastOutSlowIn);
-                    HapticFeedback.vibrate();
-                  },
-                  child: Icon(
-                    JamIcons.chevron_left,
-                    color: Provider.of<ThemeModeExtended>(context)
-                                    .getCurrentModeStyle(MediaQuery.of(context)
-                                        .platformBrightness) ==
-                                "Dark" &&
-                            Provider.of<DarkThemeModel>(context).currentTheme ==
-                                kDarkTheme2
-                        ? Theme.of(context).errorColor == Colors.black
-                            ? Theme.of(context).accentColor
-                            : Theme.of(context).errorColor
-                        : Theme.of(context).errorColor,
-                  ),
-                ),
+        if (pageNumber == 0)
+          Container()
+        else
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ArrowBounceAnimation(
+              onTap: () {
+                widget.controller.animateToPage(
+                    widget.controller.page.toInt() - 1,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.fastOutSlowIn);
+                HapticFeedback.vibrate();
+              },
+              child: Icon(
+                JamIcons.chevron_left,
+                color: Provider.of<ThemeModeExtended>(context)
+                                .getCurrentModeStyle(MediaQuery.of(context)
+                                    .platformBrightness) ==
+                            "Dark" &&
+                        Provider.of<DarkThemeModel>(context).currentTheme ==
+                            kDarkTheme2
+                    ? Theme.of(context).errorColor == Colors.black
+                        ? Theme.of(context).accentColor
+                        : Theme.of(context).errorColor
+                    : Theme.of(context).errorColor,
               ),
-        pageNumber ==
-                Provider.of<SetupProvider>(context, listen: false)
-                        .setups
-                        .length -
-                    1
-            ? Container()
-            : Align(
-                alignment: Alignment.centerRight,
-                child: ArrowBounceAnimation(
-                  onTap: () {
-                    widget.controller.animateToPage(
-                        widget.controller.page.toInt() + 1,
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.fastOutSlowIn);
-                    HapticFeedback.vibrate();
-                  },
-                  child: Icon(
-                    JamIcons.chevron_right,
-                    color: Provider.of<ThemeModeExtended>(context)
-                                    .getCurrentModeStyle(MediaQuery.of(context)
-                                        .platformBrightness) ==
-                                "Dark" &&
-                            Provider.of<DarkThemeModel>(context).currentTheme ==
-                                kDarkTheme2
-                        ? Theme.of(context).errorColor == Colors.black
-                            ? Theme.of(context).accentColor
-                            : Theme.of(context).errorColor
-                        : Theme.of(context).errorColor,
-                  ),
-                ),
+            ),
+          ),
+        if (pageNumber ==
+            Provider.of<SetupProvider>(context, listen: false).setups.length -
+                1)
+          Container()
+        else
+          Align(
+            alignment: Alignment.centerRight,
+            child: ArrowBounceAnimation(
+              onTap: () {
+                widget.controller.animateToPage(
+                    widget.controller.page.toInt() + 1,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.fastOutSlowIn);
+                HapticFeedback.vibrate();
+              },
+              child: Icon(
+                JamIcons.chevron_right,
+                color: Provider.of<ThemeModeExtended>(context)
+                                .getCurrentModeStyle(MediaQuery.of(context)
+                                    .platformBrightness) ==
+                            "Dark" &&
+                        Provider.of<DarkThemeModel>(context).currentTheme ==
+                            kDarkTheme2
+                    ? Theme.of(context).errorColor == Colors.black
+                        ? Theme.of(context).accentColor
+                        : Theme.of(context).errorColor
+                    : Theme.of(context).errorColor,
               ),
+            ),
+          ),
       ],
     );
   }

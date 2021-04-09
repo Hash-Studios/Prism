@@ -74,7 +74,7 @@ class _UserProfileState extends State<UserProfile> {
         }
       });
     }
-    CollectionReference users = firestore.collection('users');
+    final CollectionReference users = firestore.collection('users');
     return WillPopScope(
         onWillPop: onWillPop,
         child: DefaultTabController(
@@ -135,22 +135,23 @@ class _UserProfileState extends State<UserProfile> {
                                                             .toString()),
                                                   ),
                                                 ),
-                                                globals.verifiedUsers.contains(
-                                                        email.toString())
-                                                    ? Positioned(
-                                                        top: 5,
-                                                        left: 100,
-                                                        child: Container(
-                                                          width: 30,
-                                                          height: 30,
-                                                          child: SvgPicture
-                                                              .string(verifiedIcon
-                                                                  .replaceAll(
-                                                                      "E57697",
-                                                                      "FFFFFF")),
-                                                        ),
-                                                      )
-                                                    : Container(),
+                                                if (globals.verifiedUsers
+                                                    .contains(email.toString()))
+                                                  Positioned(
+                                                    top: 5,
+                                                    left: 100,
+                                                    child: Container(
+                                                      width: 30,
+                                                      height: 30,
+                                                      child: SvgPicture.string(
+                                                          verifiedIcon
+                                                              .replaceAll(
+                                                                  "E57697",
+                                                                  "FFFFFF")),
+                                                    ),
+                                                  )
+                                                else
+                                                  Container(),
                                               ],
                                             ),
                                     ),
@@ -159,87 +160,86 @@ class _UserProfileState extends State<UserProfile> {
                                           TableCellVerticalAlignment.middle,
                                       child: Column(
                                         children: [
-                                          name == null
-                                              ? Container()
-                                              : premium == false
-                                                  ? Text(
-                                                      name
-                                                          .toString()
-                                                          .toUpperCase(),
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: TextStyle(
-                                                          fontFamily:
-                                                              "Proxima Nova",
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor,
-                                                          fontSize: 20,
-                                                          fontWeight:
-                                                              FontWeight.w600),
-                                                    )
-                                                  : Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: <Widget>[
-                                                        Text(
-                                                          name
-                                                              .toString()
-                                                              .toUpperCase(),
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  "Proxima Nova",
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor,
-                                                              fontSize: 20,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600),
-                                                        ),
-                                                        Padding(
+                                          if (name == null)
+                                            Container()
+                                          else
+                                            premium == false
+                                                ? Text(
+                                                    name
+                                                        .toString()
+                                                        .toUpperCase(),
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        fontFamily:
+                                                            "Proxima Nova",
+                                                        color: Theme.of(context)
+                                                            .accentColor,
+                                                        fontSize: 20,
+                                                        fontWeight:
+                                                            FontWeight.w600),
+                                                  )
+                                                : Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: <Widget>[
+                                                      Text(
+                                                        name
+                                                            .toString()
+                                                            .toUpperCase(),
+                                                        style: TextStyle(
+                                                            fontFamily:
+                                                                "Proxima Nova",
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
+                                                            fontSize: 20,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w600),
+                                                      ),
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                    .only(
+                                                                left: 6.0),
+                                                        child: Container(
                                                           padding:
                                                               const EdgeInsets
-                                                                      .only(
-                                                                  left: 6.0),
-                                                          child: Container(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                        .symmetric(
-                                                                    vertical: 2,
-                                                                    horizontal:
-                                                                        4),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          50),
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor,
-                                                            ),
-                                                            child: Text(
-                                                              "PRO",
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .bodyText2
-                                                                  .copyWith(
-                                                                    fontSize: 9,
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .errorColor,
-                                                                  ),
-                                                            ),
+                                                                      .symmetric(
+                                                                  vertical: 2,
+                                                                  horizontal:
+                                                                      4),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        50),
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
                                                           ),
-                                                        )
-                                                      ],
-                                                    ),
+                                                          child: Text(
+                                                            "PRO",
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodyText2
+                                                                .copyWith(
+                                                                  fontSize: 9,
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .errorColor,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      )
+                                                    ],
+                                                  ),
                                           // const Text("Write bio here...")
                                         ],
                                       ),
@@ -253,30 +253,33 @@ class _UserProfileState extends State<UserProfile> {
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
                                         children: [
-                                          twitter != "" && twitter != null
-                                              ? IconButton(
-                                                  icon: Icon(
-                                                    JamIcons.twitter,
-                                                    color: Theme.of(context)
-                                                        .accentColor,
-                                                  ),
-                                                  onPressed: () {
-                                                    launch(
-                                                        "https://www.twitter.com/$twitter");
-                                                  })
-                                              : Container(),
-                                          instagram != "" && instagram != null
-                                              ? IconButton(
-                                                  icon: Icon(
-                                                    JamIcons.instagram,
-                                                    color: Theme.of(context)
-                                                        .accentColor,
-                                                  ),
-                                                  onPressed: () {
-                                                    launch(
-                                                        "https://www.instagram.com/$instagram");
-                                                  })
-                                              : Container(),
+                                          if (twitter != "" && twitter != null)
+                                            IconButton(
+                                                icon: Icon(
+                                                  JamIcons.twitter,
+                                                  color: Theme.of(context)
+                                                      .accentColor,
+                                                ),
+                                                onPressed: () {
+                                                  launch(
+                                                      "https://www.twitter.com/$twitter");
+                                                })
+                                          else
+                                            Container(),
+                                          if (instagram != "" &&
+                                              instagram != null)
+                                            IconButton(
+                                                icon: Icon(
+                                                  JamIcons.instagram,
+                                                  color: Theme.of(context)
+                                                      .accentColor,
+                                                ),
+                                                onPressed: () {
+                                                  launch(
+                                                      "https://www.instagram.com/$instagram");
+                                                })
+                                          else
+                                            Container(),
                                         ],
                                       ),
                                     ),
@@ -454,134 +457,122 @@ class _UserProfileState extends State<UserProfile> {
                     },
                   ),
                   actions: [
-                    main.prefs.get("isLoggedin") as bool == true &&
-                            main.prefs.get('email') as String != email
-                        ? StreamBuilder<QuerySnapshot>(
-                            stream: users
-                                .where("email",
-                                    isEqualTo: main.prefs.get('email'))
-                                .snapshots(),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<QuerySnapshot> snapshot) {
-                              if (!snapshot.hasData) {
-                                return Container();
-                              } else {
-                                final List following = snapshot
-                                        .data
-                                        .documents[0]
-                                        .data['following'] as List ??
-                                    [];
-                                if (following.contains(email)) {
-                                  return IconButton(
-                                    icon: const Icon(JamIcons.user_remove),
-                                    onPressed: () {
-                                      following
-                                          .removeAt(following.indexOf(email));
-                                      snapshot.data.documents[0].reference
-                                          .updateData({'following': following});
-                                      users
-                                          .where("email", isEqualTo: email)
-                                          .getDocuments()
-                                          .then((value) {
-                                        if (value.documents.isEmpty ||
-                                            value.documents == null) {
-                                        } else {
-                                          final List followers = value
-                                                  .documents[0]
-                                                  .data['followers'] as List ??
-                                              [];
-                                          followers.removeAt(followers.indexOf(
-                                              main.prefs.get('email')));
-                                          value.documents[0].reference
-                                              .updateData(
-                                                  {'followers': followers});
-                                        }
-                                      });
-                                      toasts.error("Unfollowed $name!");
-                                    },
-                                  );
-                                } else {
-                                  return Tooltip(
-                                    margin: EdgeInsets.fromLTRB(
-                                        MediaQuery.of(context).size.width * 0.4,
-                                        0,
-                                        16,
-                                        0),
-                                    showDuration: const Duration(seconds: 4),
-                                    key: key,
-                                    padding:
-                                        const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                                    message:
-                                        "Follow $name to get notified for new posts!",
-                                    child: IconButton(
-                                      icon: const Icon(JamIcons.user_plus),
-                                      onPressed: () {
-                                        following.add(email);
-                                        snapshot.data.documents[0].reference
-                                            .updateData(
-                                                {'following': following});
-                                        users
-                                            .where("email", isEqualTo: email)
-                                            .getDocuments()
-                                            .then((value) {
-                                          if (value.documents.isEmpty ||
-                                              value.documents == null) {
-                                          } else {
-                                            final List followers = value
-                                                        .documents[0]
-                                                        .data['followers']
-                                                    as List ??
-                                                [];
-                                            followers
-                                                .add(main.prefs.get('email'));
-                                            value.documents[0].reference
-                                                .updateData(
-                                                    {'followers': followers});
-                                          }
-                                        });
-                                        http.post(
-                                          'https://fcm.googleapis.com/fcm/send',
-                                          headers: <String, String>{
-                                            'Content-Type': 'application/json',
-                                            'Authorization':
-                                                'key=$fcmServerToken',
-                                          },
-                                          body: jsonEncode(
-                                            <String, dynamic>{
-                                              'notification': <String, dynamic>{
-                                                'title': '🎉 New Follower!',
-                                                'body':
-                                                    '${main.prefs.get('googlename')} is now following you.',
-                                                'color': "#e57697",
-                                                'tag':
-                                                    '${main.prefs.get('googlename')} Follow',
-                                                'image':
-                                                    "${main.prefs.get('googleimage')}",
-                                                'android_channel_id':
-                                                    "followers",
-                                                'icon': '@drawable/ic_follow'
-                                              },
-                                              'priority': 'high',
-                                              'data': <String, dynamic>{
-                                                'click_action':
-                                                    'FLUTTER_NOTIFICATION_CLICK',
-                                                'id': '1',
-                                                'status': 'done'
-                                              },
-                                              'to':
-                                                  "/topics/${email.split("@")[0]}"
-                                            },
-                                          ),
-                                        );
-                                        toasts.codeSend("Followed $name!");
+                    if (main.prefs.get("isLoggedin") as bool == true &&
+                        main.prefs.get('email') as String != email)
+                      StreamBuilder<QuerySnapshot>(
+                        stream: users
+                            .where("email", isEqualTo: main.prefs.get('email'))
+                            .snapshots(),
+                        builder: (BuildContext context,
+                            AsyncSnapshot<QuerySnapshot> snapshot) {
+                          if (!snapshot.hasData) {
+                            return Container();
+                          } else {
+                            final List following = snapshot.data.documents[0]
+                                    .data['following'] as List ??
+                                [];
+                            if (following.contains(email)) {
+                              return IconButton(
+                                icon: const Icon(JamIcons.user_remove),
+                                onPressed: () {
+                                  following.removeAt(following.indexOf(email));
+                                  snapshot.data.documents[0].reference
+                                      .updateData({'following': following});
+                                  users
+                                      .where("email", isEqualTo: email)
+                                      .getDocuments()
+                                      .then((value) {
+                                    if (value.documents.isEmpty ||
+                                        value.documents == null) {
+                                    } else {
+                                      final List followers = value.documents[0]
+                                              .data['followers'] as List ??
+                                          [];
+                                      followers.removeAt(followers
+                                          .indexOf(main.prefs.get('email')));
+                                      value.documents[0].reference
+                                          .updateData({'followers': followers});
+                                    }
+                                  });
+                                  toasts.error("Unfollowed $name!");
+                                },
+                              );
+                            } else {
+                              return Tooltip(
+                                margin: EdgeInsets.fromLTRB(
+                                    MediaQuery.of(context).size.width * 0.4,
+                                    0,
+                                    16,
+                                    0),
+                                showDuration: const Duration(seconds: 4),
+                                key: key,
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                message:
+                                    "Follow $name to get notified for new posts!",
+                                child: IconButton(
+                                  icon: const Icon(JamIcons.user_plus),
+                                  onPressed: () {
+                                    following.add(email);
+                                    snapshot.data.documents[0].reference
+                                        .updateData({'following': following});
+                                    users
+                                        .where("email", isEqualTo: email)
+                                        .getDocuments()
+                                        .then((value) {
+                                      if (value.documents.isEmpty ||
+                                          value.documents == null) {
+                                      } else {
+                                        final List followers = value
+                                                .documents[0]
+                                                .data['followers'] as List ??
+                                            [];
+                                        followers.add(main.prefs.get('email'));
+                                        value.documents[0].reference.updateData(
+                                            {'followers': followers});
+                                      }
+                                    });
+                                    http.post(
+                                      'https://fcm.googleapis.com/fcm/send',
+                                      headers: <String, String>{
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'key=$fcmServerToken',
                                       },
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          )
-                        : Container(),
+                                      body: jsonEncode(
+                                        <String, dynamic>{
+                                          'notification': <String, dynamic>{
+                                            'title': '🎉 New Follower!',
+                                            'body':
+                                                '${main.prefs.get('googlename')} is now following you.',
+                                            'color': "#e57697",
+                                            'tag':
+                                                '${main.prefs.get('googlename')} Follow',
+                                            'image':
+                                                "${main.prefs.get('googleimage')}",
+                                            'android_channel_id': "followers",
+                                            'icon': '@drawable/ic_follow'
+                                          },
+                                          'priority': 'high',
+                                          'data': <String, dynamic>{
+                                            'click_action':
+                                                'FLUTTER_NOTIFICATION_CLICK',
+                                            'id': '1',
+                                            'status': 'done'
+                                          },
+                                          'to': "/topics/${email.split("@")[0]}"
+                                        },
+                                      ),
+                                    );
+                                    toasts.codeSend("Followed $name!");
+                                  },
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      )
+                    else
+                      Container(),
                   ],
                 ),
                 SliverAppBar(

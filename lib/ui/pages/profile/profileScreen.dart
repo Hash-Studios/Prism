@@ -248,25 +248,26 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               ),
                                                             ),
                                                           ),
-                                                          globals.verifiedUsers
-                                                                  .contains(main
-                                                                      .prefs
-                                                                      .get(
-                                                                          "email")
-                                                                      .toString())
-                                                              ? Positioned(
-                                                                  top: 5,
-                                                                  left: 100,
-                                                                  child:
-                                                                      Container(
-                                                                    width: 30,
-                                                                    height: 30,
-                                                                    child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                          if (globals
+                                                              .verifiedUsers
+                                                              .contains(main
+                                                                  .prefs
+                                                                  .get("email")
+                                                                  .toString()))
+                                                            Positioned(
+                                                              top: 5,
+                                                              left: 100,
+                                                              child: Container(
+                                                                width: 30,
+                                                                height: 30,
+                                                                child: SvgPicture.string(
+                                                                    verifiedIcon.replaceAll(
                                                                         "E57697",
                                                                         "FFFFFF")),
-                                                                  ),
-                                                                )
-                                                              : Container(),
+                                                              ),
+                                                            )
+                                                          else
+                                                            Container(),
                                                         ],
                                                       ),
                                               ),

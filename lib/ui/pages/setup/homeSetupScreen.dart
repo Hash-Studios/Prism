@@ -291,40 +291,40 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                 }
               }),
         ),
-        pageNumber == 0
-            ? Container()
-            : Align(
-                alignment: Alignment.centerLeft,
-                child: ArrowBounceAnimation(
-                  onTap: () {
-                    widget.controller.animateToPage(
-                        widget.controller.page.toInt() - 1,
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.fastOutSlowIn);
-                    HapticFeedback.vibrate();
-                  },
-                  child: const Icon(JamIcons.chevron_left),
-                ),
-              ),
-        pageNumber ==
-                Provider.of<SetupProvider>(context, listen: false)
-                        .setups
-                        .length -
-                    1
-            ? Container()
-            : Align(
-                alignment: Alignment.centerRight,
-                child: ArrowBounceAnimation(
-                  onTap: () {
-                    widget.controller.animateToPage(
-                        widget.controller.page.toInt() + 1,
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.fastOutSlowIn);
-                    HapticFeedback.vibrate();
-                  },
-                  child: const Icon(JamIcons.chevron_right),
-                ),
-              ),
+        if (pageNumber == 0)
+          Container()
+        else
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ArrowBounceAnimation(
+              onTap: () {
+                widget.controller.animateToPage(
+                    widget.controller.page.toInt() - 1,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.fastOutSlowIn);
+                HapticFeedback.vibrate();
+              },
+              child: const Icon(JamIcons.chevron_left),
+            ),
+          ),
+        if (pageNumber ==
+            Provider.of<SetupProvider>(context, listen: false).setups.length -
+                1)
+          Container()
+        else
+          Align(
+            alignment: Alignment.centerRight,
+            child: ArrowBounceAnimation(
+              onTap: () {
+                widget.controller.animateToPage(
+                    widget.controller.page.toInt() + 1,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.fastOutSlowIn);
+                HapticFeedback.vibrate();
+              },
+              child: const Icon(JamIcons.chevron_right),
+            ),
+          ),
       ],
     );
   }

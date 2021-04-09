@@ -57,7 +57,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
     load(_streamController);
   }
 
-  load(StreamController<QuerySnapshot> sc) async {
+  Future<void> load(StreamController<QuerySnapshot> sc) async {
     await databaseReference
         .collection("users")
         .where("email", isEqualTo: main.prefs.get('email'))
@@ -271,20 +271,22 @@ class _FollowingTileState extends State<FollowingTile> {
                           widget.finalDocs[widget.index]["email"],
                           widget.finalDocs[widget.index]["userPhoto"],
                           false,
-                          widget.finalDocs[widget.index]["twitter"] != null &&
-                                  widget.finalDocs[widget.index]["twitter"] !=
-                                      ""
-                              ? widget.finalDocs[widget.index]["twitter"]
-                                  .toString()
-                                  .split("https://www.twitter.com/")[1]
-                              : "",
-                          widget.finalDocs[widget.index]["instagram"] != null &&
-                                  widget.finalDocs[widget.index]["instagram"] !=
-                                      ""
-                              ? widget.finalDocs[widget.index]["instagram"]
-                                  .toString()
-                                  .split("https://www.instagram.com/")[1]
-                              : "",
+                          if (widget.finalDocs[widget.index]["twitter"] !=
+                                  null &&
+                              widget.finalDocs[widget.index]["twitter"] != "")
+                            widget.finalDocs[widget.index]["twitter"]
+                                .toString()
+                                .split("https://www.twitter.com/")[1]
+                          else
+                            "",
+                          if (widget.finalDocs[widget.index]["instagram"] !=
+                                  null &&
+                              widget.finalDocs[widget.index]["instagram"] != "")
+                            widget.finalDocs[widget.index]["instagram"]
+                                .toString()
+                                .split("https://www.instagram.com/")[1]
+                          else
+                            "",
                         ]);
                   },
                   child: Row(
@@ -301,29 +303,28 @@ class _FollowingTileState extends State<FollowingTile> {
                               radius: 16,
                             ),
                           ),
-                          globals.verifiedUsers.contains(widget
-                                  .finalDocs[widget.index]["email"]
-                                  .toString())
-                              ? Container(
-                                  width: 15,
-                                  height: 15,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.white,
-                                  ),
-                                  child: SvgPicture.string(
-                                      verifiedIcon.replaceAll(
-                                          "E57697",
-                                          Theme.of(context).errorColor ==
-                                                  Colors.black
-                                              ? "E57697"
-                                              : Theme.of(context)
-                                                  .errorColor
-                                                  .toString()
-                                                  .replaceAll("Color(0xff", "")
-                                                  .replaceAll(")", ""))),
-                                )
-                              : Container(),
+                          if (globals.verifiedUsers.contains(widget
+                              .finalDocs[widget.index]["email"]
+                              .toString()))
+                            Container(
+                              width: 15,
+                              height: 15,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                              ),
+                              child: SvgPicture.string(verifiedIcon.replaceAll(
+                                  "E57697",
+                                  Theme.of(context).errorColor == Colors.black
+                                      ? "E57697"
+                                      : Theme.of(context)
+                                          .errorColor
+                                          .toString()
+                                          .replaceAll("Color(0xff", "")
+                                          .replaceAll(")", ""))),
+                            )
+                          else
+                            Container(),
                         ],
                       ),
                       const SizedBox(width: 4),

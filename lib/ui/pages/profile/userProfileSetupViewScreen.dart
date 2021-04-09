@@ -103,7 +103,6 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
-        resizeToAvoidBottomPadding: false,
         key: _scaffoldKey,
         backgroundColor: Theme.of(context).primaryColor,
         body: SlidingUpPanel(
@@ -495,66 +494,76 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                                         index][
                                                                     "userPhoto"],
                                                                 false,
-                                                                user_data.userProfileSetups[index]["twitter"] !=
-                                                                            null &&
-                                                                        user_data.userProfileSetups[index]["twitter"] !=
-                                                                            ""
-                                                                    ? user_data
-                                                                        .userProfileSetups[
-                                                                            index]
+                                                                if (user_data.userProfileSetups[index]
                                                                             [
-                                                                            "twitter"]
-                                                                        .toString()
-                                                                        .split(
-                                                                            "https://www.twitter.com/")[1]
-                                                                    : "",
-                                                                user_data.userProfileSetups[index]["instagram"] !=
-                                                                            null &&
-                                                                        user_data.userProfileSetups[index]["instagram"] !=
-                                                                            ""
-                                                                    ? user_data
-                                                                        .userProfileSetups[
-                                                                            index]
+                                                                            "twitter"] !=
+                                                                        null &&
+                                                                    user_data.userProfileSetups[index]
                                                                             [
-                                                                            "instagram"]
-                                                                        .toString()
-                                                                        .split(
-                                                                            "https://www.instagram.com/")[1]
-                                                                    : "",
+                                                                            "twitter"] !=
+                                                                        "")
+                                                                  user_data
+                                                                      .userProfileSetups[
+                                                                          index]
+                                                                          [
+                                                                          "twitter"]
+                                                                      .toString()
+                                                                      .split(
+                                                                          "https://www.twitter.com/")[1]
+                                                                else
+                                                                  "",
+                                                                if (user_data.userProfileSetups[index]
+                                                                            [
+                                                                            "instagram"] !=
+                                                                        null &&
+                                                                    user_data.userProfileSetups[index]
+                                                                            [
+                                                                            "instagram"] !=
+                                                                        "")
+                                                                  user_data
+                                                                      .userProfileSetups[
+                                                                          index]
+                                                                          [
+                                                                          "instagram"]
+                                                                      .toString()
+                                                                      .split(
+                                                                          "https://www.instagram.com/")[1]
+                                                                else
+                                                                  "",
                                                               ]);
                                                         }),
                                                   ),
-                                                  globals.verifiedUsers
-                                                          .contains(user_data
-                                                              .userProfileSetups[
-                                                                  index]
-                                                                  ["email"]
-                                                              .toString())
-                                                      ? Align(
-                                                          alignment: Alignment
-                                                              .topRight,
-                                                          child: Container(
-                                                            width: 20,
-                                                            height: 20,
-                                                            child: SvgPicture.string(verifiedIcon.replaceAll(
-                                                                "E57697",
-                                                                Theme.of(context).errorColor ==
-                                                                        Colors
-                                                                            .black
-                                                                    ? "E57697"
-                                                                    : Theme.of(
-                                                                            context)
-                                                                        .errorColor
-                                                                        .toString()
-                                                                        .replaceAll(
-                                                                            "Color(0xFF",
-                                                                            "")
-                                                                        .replaceAll(
-                                                                            ")",
-                                                                            ""))),
-                                                          ),
-                                                        )
-                                                      : Container(),
+                                                  if (globals.verifiedUsers
+                                                      .contains(user_data
+                                                          .userProfileSetups[
+                                                              index]["email"]
+                                                          .toString()))
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.topRight,
+                                                      child: Container(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                            "E57697",
+                                                            Theme.of(context)
+                                                                        .errorColor ==
+                                                                    Colors.black
+                                                                ? "E57697"
+                                                                : Theme.of(
+                                                                        context)
+                                                                    .errorColor
+                                                                    .toString()
+                                                                    .replaceAll(
+                                                                        "Color(0xFF",
+                                                                        "")
+                                                                    .replaceAll(
+                                                                        ")",
+                                                                        ""))),
+                                                      ),
+                                                    )
+                                                  else
+                                                    Container(),
                                                 ],
                                               ),
                                             ),
@@ -633,20 +642,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                   .toString()[0] !=
                                               "["
                                           ? "Prism"
-                                          : user_data.userProfileSetups[index]
-                                                      ["wallpaper_url"][0]
-                                                  .toString() +
-                                              " - " +
-                                              ((user_data.userProfileSetups[index]
-                                                                  ["wallpaper_url"]
-                                                              as List)
-                                                          .length >
-                                                      2
-                                                  ? user_data
-                                                      .userProfileSetups[index]
-                                                          ["wallpaper_url"][2]
-                                                      .toString()
-                                                  : ""),
+                                          : "${user_data.userProfileSetups[index]["wallpaper_url"][0]} - ${(user_data.userProfileSetups[index]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups[index]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
@@ -767,25 +763,13 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                   .toString());
                                             }
                                           },
-                                          tileText: user_data.userProfileSetups[index]
+                                          tileText: user_data
+                                                      .userProfileSetups[index]
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
                                               ? "Prism"
-                                              : user_data.userProfileSetups[index]
-                                                          ["wallpaper_url"][0]
-                                                      .toString() +
-                                                  " - " +
-                                                  ((user_data.userProfileSetups[index]
-                                                                      ["wallpaper_url"]
-                                                                  as List)
-                                                              .length >
-                                                          2
-                                                      ? user_data
-                                                          .userProfileSetups[index]
-                                                              ["wallpaper_url"][2]
-                                                          .toString()
-                                                      : ""),
+                                              : "${user_data.userProfileSetups[index]["wallpaper_url"][0]} - ${(user_data.userProfileSetups[index]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups[index]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay:
@@ -966,25 +950,14 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                     .toString());
                                               }
                                             },
-                                            tileText: user_data.userProfileSetups[index]
+                                            tileText: user_data
+                                                        .userProfileSetups[
+                                                            index]
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
                                                 ? "Prism"
-                                                : user_data.userProfileSetups[index]
-                                                            ["wallpaper_url"][0]
-                                                        .toString() +
-                                                    " - " +
-                                                    ((user_data.userProfileSetups[index]
-                                                                        ["wallpaper_url"]
-                                                                    as List)
-                                                                .length >
-                                                            2
-                                                        ? user_data
-                                                            .userProfileSetups[index]
-                                                                ["wallpaper_url"][2]
-                                                            .toString()
-                                                        : ""),
+                                                : "${user_data.userProfileSetups[index]["wallpaper_url"][0]} - ${(user_data.userProfileSetups[index]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups[index]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(

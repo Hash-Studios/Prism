@@ -219,40 +219,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 ],
                                               ),
                                             ),
-                                            selectedTheme == 1
-                                                ? Container(
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.27,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.06,
-                                                    decoration: BoxDecoration(
-                                                        color: Colors.black
-                                                            .withOpacity(0.5),
-                                                        border: Border.all(
-                                                            color:
-                                                                Colors.black45),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(5)),
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: const [
-                                                        Icon(
-                                                          JamIcons.check,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ],
+                                            if (selectedTheme == 1)
+                                              Container(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.27,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.06,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.black
+                                                        .withOpacity(0.5),
+                                                    border: Border.all(
+                                                        color: Colors.black45),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5)),
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: const [
+                                                    Icon(
+                                                      JamIcons.check,
+                                                      color: Colors.white,
                                                     ),
-                                                  )
-                                                : Container(),
+                                                  ],
+                                                ),
+                                              )
+                                            else
+                                              Container(),
                                           ],
                                         ),
                                       ),
@@ -313,40 +310,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 ],
                                               ),
                                             ),
-                                            selectedTheme == 2
-                                                ? Container(
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.27,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.06,
-                                                    decoration: BoxDecoration(
-                                                        color: Colors.white
-                                                            .withOpacity(0.5),
-                                                        border: Border.all(
-                                                            color:
-                                                                Colors.black45),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(5)),
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: const [
-                                                        Icon(
-                                                          JamIcons.check,
-                                                          color: Colors.black,
-                                                        ),
-                                                      ],
+                                            if (selectedTheme == 2)
+                                              Container(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.27,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.06,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withOpacity(0.5),
+                                                    border: Border.all(
+                                                        color: Colors.black45),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5)),
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: const [
+                                                    Icon(
+                                                      JamIcons.check,
+                                                      color: Colors.black,
                                                     ),
-                                                  )
-                                                : Container(),
+                                                  ],
+                                                ),
+                                              )
+                                            else
+                                              Container(),
                                           ],
                                         ),
                                       ),
@@ -418,54 +412,48 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 ],
                                               ),
                                             ),
-                                            selectedTheme == 3
-                                                ? Container(
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.27,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.06,
-                                                    decoration: BoxDecoration(
-                                                        color: MediaQuery.of(
-                                                                        context)
-                                                                    .platformBrightness ==
-                                                                Brightness.dark
-                                                            ? Colors.white
-                                                                .withOpacity(
-                                                                    0.5)
-                                                            : Colors.black
-                                                                .withOpacity(
-                                                                    0.5),
-                                                        border: Border.all(
-                                                            color:
-                                                                Colors.black45),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(5)),
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Icon(
-                                                          JamIcons.check,
-                                                          color: MediaQuery.of(
-                                                                          context)
-                                                                      .platformBrightness ==
-                                                                  Brightness
-                                                                      .dark
-                                                              ? Colors.black
-                                                              : Colors.white,
-                                                        ),
-                                                      ],
+                                            if (selectedTheme == 3)
+                                              Container(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.27,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.06,
+                                                decoration: BoxDecoration(
+                                                    color: MediaQuery.of(
+                                                                    context)
+                                                                .platformBrightness ==
+                                                            Brightness.dark
+                                                        ? Colors.white
+                                                            .withOpacity(0.5)
+                                                        : Colors.black
+                                                            .withOpacity(0.5),
+                                                    border: Border.all(
+                                                        color: Colors.black45),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5)),
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      JamIcons.check,
+                                                      color: MediaQuery.of(
+                                                                      context)
+                                                                  .platformBrightness ==
+                                                              Brightness.dark
+                                                          ? Colors.black
+                                                          : Colors.white,
                                                     ),
-                                                  )
-                                                : Container(),
+                                                  ],
+                                                ),
+                                              )
+                                            else
+                                              Container(),
                                           ],
                                         ),
                                       ),

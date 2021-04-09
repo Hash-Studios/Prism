@@ -126,215 +126,213 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
   Widget build(BuildContext context) {
     debugPrint(widget.provider);
     try {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-              },
-              child: Container(
-                color: Provider.of<ThemeModeExtended>(context, listen: false)
-                            .getCurrentModeStyle(
-                                MediaQuery.of(context).platformBrightness) ==
-                        "Dark"
-                    ? Colors.black.withOpacity(0.75)
-                    : Colors.white.withOpacity(0.75),
-              )),
-          Positioned(
-              top: widget.childOffset.dy,
-              left: widget.childOffset.dx,
-              child: GestureDetector(
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            GestureDetector(
                 onTap: () {
                   Navigator.pop(context);
                 },
-                child: AbsorbPointer(
-                    child: Container(
-                        width: widget.childSize.width,
-                        height: widget.childSize.height,
-                        child: widget.child)),
-              )),
-          widget.provider == "WallHaven"
-              ? Positioned(
-                  top: widget.childOffset.dy + widget.childSize.height * 4 / 10,
-                  left: widget.childOffset.dx,
-                  child: TweenAnimationBuilder(
-                    duration: const Duration(milliseconds: 150),
-                    builder:
-                        (BuildContext context, double value, Widget child) {
-                      return Transform.scale(
-                        scale: value,
-                        alignment: Alignment.bottomRight,
-                        child: child,
-                      );
-                    },
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    child: Container(
-                      width: widget.childSize.width,
-                      height: widget.childSize.height * 6 / 10,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).hintColor,
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(20.0)),
-                      ),
-                      child: ClipRRect(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(20.0)),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                              child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  ActionChip(
-                                      pressElevation: 5,
-                                      padding: const EdgeInsets.fromLTRB(
-                                          14, 11, 14, 11),
-                                      avatar: Icon(
-                                        JamIcons.ordered_list,
-                                        color: HexColor(WData
-                                                        .walls[widget.index]
-                                                        .colors[WData
-                                                                .walls[widget
-                                                                    .index]
-                                                                .colors
-                                                                .length -
-                                                            1]
-                                                        .toString())
-                                                    .computeLuminance() >
-                                                0.5
-                                            ? Colors.black
-                                            : Colors.white,
-                                        size: 20,
-                                      ),
-                                      backgroundColor: HexColor(WData
-                                          .walls[widget.index]
-                                          .colors[WData.walls[widget.index]
-                                                  .colors.length -
-                                              1]
-                                          .toString()),
-                                      label: Text(
-                                        WData.walls[widget.index].category
-                                                .toString()[0]
-                                                .toUpperCase() +
-                                            WData.walls[widget.index].category
-                                                .toString()
-                                                .substring(1),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline4
-                                            .copyWith(
-                                              color: HexColor(WData
+                child: Container(
+                  color: Provider.of<ThemeModeExtended>(context, listen: false)
+                              .getCurrentModeStyle(
+                                  MediaQuery.of(context).platformBrightness) ==
+                          "Dark"
+                      ? Colors.black.withOpacity(0.75)
+                      : Colors.white.withOpacity(0.75),
+                )),
+            Positioned(
+                top: widget.childOffset.dy,
+                left: widget.childOffset.dx,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: AbsorbPointer(
+                      child: Container(
+                          width: widget.childSize.width,
+                          height: widget.childSize.height,
+                          child: widget.child)),
+                )),
+            if (widget.provider == "WallHaven")
+              Positioned(
+                top: widget.childOffset.dy + widget.childSize.height * 4 / 10,
+                left: widget.childOffset.dx,
+                child: TweenAnimationBuilder(
+                  duration: const Duration(milliseconds: 150),
+                  builder: (BuildContext context, double value, Widget child) {
+                    return Transform.scale(
+                      scale: value,
+                      alignment: Alignment.bottomRight,
+                      child: child,
+                    );
+                  },
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  child: Container(
+                    width: widget.childSize.width,
+                    height: widget.childSize.height * 6 / 10,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).hintColor,
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(20.0)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(20.0)),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                ActionChip(
+                                    pressElevation: 5,
+                                    padding: const EdgeInsets.fromLTRB(
+                                        14, 11, 14, 11),
+                                    avatar: Icon(
+                                      JamIcons.ordered_list,
+                                      color: HexColor(WData
+                                                      .walls[widget.index]
+                                                      .colors[WData
                                                               .walls[
                                                                   widget.index]
-                                                              .colors[WData
-                                                                      .walls[widget
-                                                                          .index]
-                                                                      .colors
-                                                                      .length -
-                                                                  1]
-                                                              .toString())
-                                                          .computeLuminance() >
-                                                      0.5
-                                                  ? Colors.black
-                                                  : Colors.white,
-                                            ),
-                                      ),
-                                      onPressed: () {}),
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                    child: Text(
-                                      WData.walls[widget.index].id
-                                          .toString()
-                                          .toUpperCase(),
+                                                              .colors
+                                                              .length -
+                                                          1]
+                                                      .toString())
+                                                  .computeLuminance() >
+                                              0.5
+                                          ? Colors.black
+                                          : Colors.white,
+                                      size: 20,
+                                    ),
+                                    backgroundColor: HexColor(WData
+                                        .walls[widget.index]
+                                        .colors[WData.walls[widget.index].colors
+                                                .length -
+                                            1]
+                                        .toString()),
+                                    label: Text(
+                                      WData.walls[widget.index].category
+                                              .toString()[0]
+                                              .toUpperCase() +
+                                          WData.walls[widget.index].category
+                                              .toString()
+                                              .substring(1),
                                       style: Theme.of(context)
                                           .textTheme
-                                          .headline5
+                                          .headline4
+                                          .copyWith(
+                                            color: HexColor(WData
+                                                            .walls[widget.index]
+                                                            .colors[WData
+                                                                    .walls[widget
+                                                                        .index]
+                                                                    .colors
+                                                                    .length -
+                                                                1]
+                                                            .toString())
+                                                        .computeLuminance() >
+                                                    0.5
+                                                ? Colors.black
+                                                : Colors.white,
+                                          ),
+                                    ),
+                                    onPressed: () {}),
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                  child: Text(
+                                    WData.walls[widget.index].id
+                                        .toString()
+                                        .toUpperCase(),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headline5
+                                        .copyWith(
+                                            color:
+                                                Theme.of(context).accentColor),
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      JamIcons.eye,
+                                      size: 20,
+                                      color: Theme.of(context).accentColor,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      "Views: ${WData.walls[widget.index].views.toString()}",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
                                           .copyWith(
                                               color: Theme.of(context)
                                                   .accentColor),
                                     ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        JamIcons.eye,
-                                        size: 20,
-                                        color: Theme.of(context).accentColor,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        "Views: ${WData.walls[widget.index].views.toString()}",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2
-                                            .copyWith(
-                                                color: Theme.of(context)
-                                                    .accentColor),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        JamIcons.set_square,
-                                        size: 20,
-                                        color: Theme.of(context).accentColor,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        WData.walls[widget.index].resolution
-                                            .toString(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2
-                                            .copyWith(
-                                                color: Theme.of(context)
-                                                    .accentColor),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Align(
-                              alignment: Alignment.bottomRight,
-                              child: GestureDetector(
-                                onTap: () async {
-                                  Navigator.pop(context);
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                      color: Theme.of(context).hintColor,
-                                      borderRadius: const BorderRadius.only(
-                                          topLeft: Radius.circular(20),
-                                          bottomRight: Radius.circular(20))),
-                                  padding: const EdgeInsets.all(0),
-                                  child: Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                    child: Icon(
-                                      JamIcons.close,
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      JamIcons.set_square,
+                                      size: 20,
                                       color: Theme.of(context).accentColor,
                                     ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      WData.walls[widget.index].resolution
+                                          .toString(),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
+                                          .copyWith(
+                                              color: Theme.of(context)
+                                                  .accentColor),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: GestureDetector(
+                              onTap: () async {
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: Theme.of(context).hintColor,
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(20),
+                                        bottomRight: Radius.circular(20))),
+                                padding: const EdgeInsets.all(0),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                  child: Icon(
+                                    JamIcons.close,
+                                    color: Theme.of(context).accentColor,
                                   ),
                                 ),
                               ),
-                            )
-                          ],
-                        ),
+                            ),
+                          )
+                        ],
                       ),
                     ),
                   ),
-                )
-              : widget.provider == "Prism"
+                ),
+              )
+            else
+              widget.provider == "Prism"
                   ? Positioned(
                       top: widget.childOffset.dy +
                           widget.childSize.height * 4 / 10,
@@ -427,70 +425,73 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                 widget.index]
                                                             ["userPhoto"],
                                                         false,
-                                                        Data.subPrismWalls[widget
+                                                        if (Data.subPrismWalls[
+                                                                        widget
                                                                             .index]
-                                                                        [
-                                                                        "twitter"] !=
-                                                                    null &&
-                                                                Data.subPrismWalls[
-                                                                            widget.index]
-                                                                        [
-                                                                        "twitter"] !=
-                                                                    ""
-                                                            ? Data
-                                                                .subPrismWalls[
-                                                                    widget.index]
-                                                                    ["twitter"]
-                                                                .toString()
-                                                                .split(
-                                                                    "https://www.twitter.com/")[1]
-                                                            : "",
-                                                        Data.subPrismWalls[widget
+                                                                    [
+                                                                    "twitter"] !=
+                                                                null &&
+                                                            Data.subPrismWalls[
+                                                                        widget
                                                                             .index]
-                                                                        [
-                                                                        "instagram"] !=
-                                                                    null &&
-                                                                Data.subPrismWalls[
-                                                                            widget.index]
-                                                                        [
-                                                                        "instagram"] !=
-                                                                    ""
-                                                            ? Data
-                                                                .subPrismWalls[
-                                                                    widget
-                                                                        .index]
-                                                                    ["instagram"]
-                                                                .toString()
-                                                                .split("https://www.instagram.com/")[1]
-                                                            : "",
+                                                                    [
+                                                                    "twitter"] !=
+                                                                "")
+                                                          Data.subPrismWalls[
+                                                                  widget.index]
+                                                                  ["twitter"]
+                                                              .toString()
+                                                              .split(
+                                                                  "https://www.twitter.com/")[1]
+                                                        else
+                                                          "",
+                                                        if (Data.subPrismWalls[
+                                                                        widget
+                                                                            .index]
+                                                                    [
+                                                                    "instagram"] !=
+                                                                null &&
+                                                            Data.subPrismWalls[
+                                                                        widget
+                                                                            .index]
+                                                                    [
+                                                                    "instagram"] !=
+                                                                "")
+                                                          Data.subPrismWalls[
+                                                                  widget.index]
+                                                                  ["instagram"]
+                                                              .toString()
+                                                              .split(
+                                                                  "https://www.instagram.com/")[1]
+                                                        else
+                                                          "",
                                                       ]);
                                                 }),
-                                            globals.verifiedUsers.contains(Data
-                                                    .subPrismWalls[widget.index]
+                                            if (globals.verifiedUsers.contains(
+                                                Data.subPrismWalls[widget.index]
                                                         ["email"]
-                                                    .toString())
-                                                ? Container(
-                                                    width: 20,
-                                                    height: 20,
-                                                    child: SvgPicture.string(
-                                                        verifiedIcon.replaceAll(
-                                                            "E57697",
-                                                            Theme.of(context)
-                                                                        .errorColor ==
-                                                                    Colors.black
-                                                                ? "E57697"
-                                                                : Theme.of(
-                                                                        context)
-                                                                    .errorColor
-                                                                    .toString()
-                                                                    .replaceAll(
-                                                                        "Color(0xff",
-                                                                        "")
-                                                                    .replaceAll(
-                                                                        ")",
-                                                                        ""))),
-                                                  )
-                                                : Container(),
+                                                    .toString()))
+                                              Container(
+                                                width: 20,
+                                                height: 20,
+                                                child: SvgPicture.string(
+                                                    verifiedIcon.replaceAll(
+                                                        "E57697",
+                                                        Theme.of(context)
+                                                                    .errorColor ==
+                                                                Colors.black
+                                                            ? "E57697"
+                                                            : Theme.of(context)
+                                                                .errorColor
+                                                                .toString()
+                                                                .replaceAll(
+                                                                    "Color(0xff",
+                                                                    "")
+                                                                .replaceAll(
+                                                                    ")", ""))),
+                                              )
+                                            else
+                                              Container(),
                                           ]),
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(
@@ -2162,143 +2163,146 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         ),
                                       ),
                                     ),
-          Positioned(
-            top: topOffset,
-            left: leftOffset,
-            child: SetWallpaperButton(
-              colorChanged: false,
-              url: widget.provider == "WallHaven"
-                  ? WData.walls[widget.index].path.toString()
-                  : widget.provider == "Prism"
-                      ? Data.subPrismWalls[widget.index]["wallpaper_url"]
-                          .toString()
-                      : widget.provider == "ProfileWall"
-                          ? Provider.of<ProfileWallProvider>(context,
-                                  listen: false)
-                              .profileWalls[widget.index]["wallpaper_url"]
-                              .toString()
-                          : widget.provider == "UserProfileWall"
-                              ? UserData.userProfileWalls[widget.index]
-                                      ["wallpaper_url"]
-                                  .toString()
-                              : widget.provider == "Pexels"
-                                  ? PData.wallsP[widget.index].src["original"]
-                                      .toString()
-                                  : widget.provider == "Liked"
-                                      ? Provider.of<FavouriteProvider>(context,
-                                              listen: false)
-                                          .liked[widget.index]["url"]
-                                          .toString()
-                                      : PData
-                                          .wallsC[widget.index].src["original"]
-                                          .toString(),
-            ),
-          ),
-          Positioned(
-            top: topOffset - fabHeartTopOffset,
-            left: leftOffset - fabHeartLeftOffset,
-            child: widget.provider == "WallHaven"
-                ? FavouriteWallpaperButton(
-                    id: WData.walls[widget.index].id.toString(),
-                    provider: "WallHaven",
-                    wallhaven: WData.walls[widget.index],
-                    trash: false,
-                  )
-                : widget.provider == "Prism"
-                    ? FavouriteWallpaperButton(
-                        id: Data.subPrismWalls[widget.index]["id"].toString(),
-                        provider: "Prism",
-                        prism: Data.subPrismWalls[widget.index] as Map,
-                        trash: false,
-                      )
-                    : widget.provider == "ProfileWall"
-                        ? FavouriteWallpaperButton(
-                            id: Provider.of<ProfileWallProvider>(context,
+            Positioned(
+              top: topOffset,
+              left: leftOffset,
+              child: SetWallpaperButton(
+                colorChanged: false,
+                url: widget.provider == "WallHaven"
+                    ? WData.walls[widget.index].path.toString()
+                    : widget.provider == "Prism"
+                        ? Data.subPrismWalls[widget.index]["wallpaper_url"]
+                            .toString()
+                        : widget.provider == "ProfileWall"
+                            ? Provider.of<ProfileWallProvider>(context,
                                     listen: false)
-                                .profileWalls[widget.index]["id"]
-                                .toString(),
-                            provider: "Prism",
-                            prism: Provider.of<ProfileWallProvider>(context,
-                                    listen: false)
-                                .profileWalls[widget.index] as Map,
-                            trash: false,
-                          )
-                        : widget.provider == "UserProfileWall"
-                            ? FavouriteWallpaperButton(
-                                id: UserData.userProfileWalls[widget.index]
-                                        ["id"]
-                                    .toString(),
-                                provider: "Prism",
-                                prism: UserData.userProfileWalls[widget.index]
-                                    as Map,
-                                trash: false,
-                              )
-                            : widget.provider == "Pexels"
-                                ? FavouriteWallpaperButton(
-                                    id: PData.wallsP[widget.index].id
-                                        .toString(),
-                                    provider: "Pexels",
-                                    pexels: PData.wallsP[widget.index],
-                                    trash: false,
-                                  )
-                                : widget.provider == "Liked"
-                                    ? FavouriteWallpaperButton(
-                                        id: Provider.of<FavouriteProvider>(
+                                .profileWalls[widget.index]["wallpaper_url"]
+                                .toString()
+                            : widget.provider == "UserProfileWall"
+                                ? UserData.userProfileWalls[widget.index]
+                                        ["wallpaper_url"]
+                                    .toString()
+                                : widget.provider == "Pexels"
+                                    ? PData.wallsP[widget.index].src["original"]
+                                        .toString()
+                                    : widget.provider == "Liked"
+                                        ? Provider.of<FavouriteProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[widget.index]["id"]
+                                            .liked[widget.index]["url"]
+                                            .toString()
+                                        : PData.wallsC[widget.index]
+                                            .src["original"]
                                             .toString(),
-                                        provider:
-                                            Provider.of<FavouriteProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .liked[widget.index]["provider"]
-                                                .toString(),
-                                        trash: true,
-                                      )
-                                    : FavouriteWallpaperButton(
-                                        id: PData.wallsC[widget.index].id
-                                            .toString(),
-                                        provider: "Pexels",
-                                        pexels: PData.wallsC[widget.index],
-                                        trash: false,
-                                      ),
-          ),
-          Positioned(
-            top: topOffset + fabWallTopOffset,
-            left: leftOffset + fabWallLeftOffset,
-            child: DownloadButton(
-              colorChanged: false,
-              link: widget.provider == "WallHaven"
-                  ? WData.walls[widget.index].path.toString()
-                  : widget.provider == "Prism"
-                      ? Data.subPrismWalls[widget.index]["wallpaper_url"]
-                          .toString()
-                      : widget.provider == "ProfileWall"
-                          ? Provider.of<ProfileWallProvider>(context,
-                                  listen: false)
-                              .profileWalls[widget.index]["wallpaper_url"]
-                              .toString()
-                          : widget.provider == "UserProfileWall"
-                              ? UserData.userProfileWalls[widget.index]
-                                      ["wallpaper_url"]
-                                  .toString()
-                              : widget.provider == "Pexels"
-                                  ? PData.wallsP[widget.index].src["original"]
-                                      .toString()
-                                  : widget.provider == "Liked"
-                                      ? Provider.of<FavouriteProvider>(context,
-                                              listen: false)
-                                          .liked[widget.index]["url"]
-                                          .toString()
-                                      : PData
-                                          .wallsC[widget.index].src["original"]
-                                          .toString(),
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+            Positioned(
+              top: topOffset - fabHeartTopOffset,
+              left: leftOffset - fabHeartLeftOffset,
+              child: widget.provider == "WallHaven"
+                  ? FavouriteWallpaperButton(
+                      id: WData.walls[widget.index].id.toString(),
+                      provider: "WallHaven",
+                      wallhaven: WData.walls[widget.index],
+                      trash: false,
+                    )
+                  : widget.provider == "Prism"
+                      ? FavouriteWallpaperButton(
+                          id: Data.subPrismWalls[widget.index]["id"].toString(),
+                          provider: "Prism",
+                          prism: Data.subPrismWalls[widget.index] as Map,
+                          trash: false,
+                        )
+                      : widget.provider == "ProfileWall"
+                          ? FavouriteWallpaperButton(
+                              id: Provider.of<ProfileWallProvider>(context,
+                                      listen: false)
+                                  .profileWalls[widget.index]["id"]
+                                  .toString(),
+                              provider: "Prism",
+                              prism: Provider.of<ProfileWallProvider>(context,
+                                      listen: false)
+                                  .profileWalls[widget.index] as Map,
+                              trash: false,
+                            )
+                          : widget.provider == "UserProfileWall"
+                              ? FavouriteWallpaperButton(
+                                  id: UserData.userProfileWalls[widget.index]
+                                          ["id"]
+                                      .toString(),
+                                  provider: "Prism",
+                                  prism: UserData.userProfileWalls[widget.index]
+                                      as Map,
+                                  trash: false,
+                                )
+                              : widget.provider == "Pexels"
+                                  ? FavouriteWallpaperButton(
+                                      id: PData.wallsP[widget.index].id
+                                          .toString(),
+                                      provider: "Pexels",
+                                      pexels: PData.wallsP[widget.index],
+                                      trash: false,
+                                    )
+                                  : widget.provider == "Liked"
+                                      ? FavouriteWallpaperButton(
+                                          id: Provider.of<FavouriteProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[widget.index]["id"]
+                                              .toString(),
+                                          provider:
+                                              Provider.of<FavouriteProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[widget.index]
+                                                      ["provider"]
+                                                  .toString(),
+                                          trash: true,
+                                        )
+                                      : FavouriteWallpaperButton(
+                                          id: PData.wallsC[widget.index].id
+                                              .toString(),
+                                          provider: "Pexels",
+                                          pexels: PData.wallsC[widget.index],
+                                          trash: false,
+                                        ),
+            ),
+            Positioned(
+              top: topOffset + fabWallTopOffset,
+              left: leftOffset + fabWallLeftOffset,
+              child: DownloadButton(
+                colorChanged: false,
+                link: widget.provider == "WallHaven"
+                    ? WData.walls[widget.index].path.toString()
+                    : widget.provider == "Prism"
+                        ? Data.subPrismWalls[widget.index]["wallpaper_url"]
+                            .toString()
+                        : widget.provider == "ProfileWall"
+                            ? Provider.of<ProfileWallProvider>(context,
+                                    listen: false)
+                                .profileWalls[widget.index]["wallpaper_url"]
+                                .toString()
+                            : widget.provider == "UserProfileWall"
+                                ? UserData.userProfileWalls[widget.index]
+                                        ["wallpaper_url"]
+                                    .toString()
+                                : widget.provider == "Pexels"
+                                    ? PData.wallsP[widget.index].src["original"]
+                                        .toString()
+                                    : widget.provider == "Liked"
+                                        ? Provider.of<FavouriteProvider>(
+                                                context,
+                                                listen: false)
+                                            .liked[widget.index]["url"]
+                                            .toString()
+                                        : PData.wallsC[widget.index]
+                                            .src["original"]
+                                            .toString(),
+              ),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       debugPrint(e.toString());
       Navigator.pop(context);

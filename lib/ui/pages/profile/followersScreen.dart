@@ -100,16 +100,18 @@ class _FollowersScreenState extends State<FollowersScreen> {
                                           user["userPhoto"] ??
                                               "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2FnoUser.png?alt=media",
                                           false,
-                                          user["twitter"] != null &&
-                                                  user["twitter"] != ""
-                                              ? user["twitter"].toString().split(
-                                                  "https://www.twitter.com/")[1]
-                                              : "",
-                                          user["instagram"] != null &&
-                                                  user["instagram"] != ""
-                                              ? user["instagram"].toString().split(
-                                                  "https://www.instagram.com/")[1]
-                                              : "",
+                                          if (user["twitter"] != null &&
+                                              user["twitter"] != "")
+                                            user["twitter"].toString().split(
+                                                "https://www.twitter.com/")[1]
+                                          else
+                                            "",
+                                          if (user["instagram"] != null &&
+                                              user["instagram"] != "")
+                                            user["instagram"].toString().split(
+                                                "https://www.instagram.com/")[1]
+                                          else
+                                            "",
                                         ]);
                                   },
                                 )
