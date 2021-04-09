@@ -394,52 +394,54 @@ class _PageManagerChildState extends State<PageManagerChild>
                 children: globals.followersTab
                     ? [
                         const HomeScreen(),
-                        main.prefs.get('isLoggedin') as bool == true
-                            ? const FollowingScreen()
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: <Widget>[
-                                  const Spacer(),
-                                  Center(
-                                      child: Container(
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.7,
-                                    child: const Text(
-                                      "Please sign-in to view the latest walls from the artists you follow here.",
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  )),
-                                  const SizedBox(
-                                    height: 16,
+                        if (main.prefs.get('isLoggedin') as bool == true)
+                          const FollowingScreen()
+                        else
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              const Spacer(),
+                              Center(
+                                child: Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.7,
+                                  child: const Text(
+                                    "Please sign-in to view the latest walls from the artists you follow here.",
+                                    textAlign: TextAlign.center,
                                   ),
-                                  ElevatedButton(
-                                    onPressed: () async {
-                                      googleSignInPopUp(context, () {
-                                        main.RestartWidget.restartApp(context);
-                                      });
-                                    },
-                                    style: ButtonStyle(
-                                      backgroundColor:
-                                          MaterialStateColor.resolveWith(
-                                              (states) => Colors.white),
-                                    ),
-                                    child: Container(
-                                      width: 60,
-                                      child: const Text(
-                                        'SIGN-IN',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Color(0xFFE57697),
-                                          fontSize: 15,
-                                          fontFamily: "Roboto",
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                ],
+                                ),
                               ),
+                              const SizedBox(
+                                height: 16,
+                              ),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  googleSignInPopUp(context, () {
+                                    main.RestartWidget.restartApp(context);
+                                  });
+                                },
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateColor.resolveWith(
+                                          (states) => Colors.white),
+                                ),
+                                child: Container(
+                                  width: 60,
+                                  child: const Text(
+                                    'SIGN-IN',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Color(0xFFE57697),
+                                      fontSize: 15,
+                                      fontFamily: "Roboto",
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
                         const CollectionScreen()
                       ]
                     : [const HomeScreen(), const CollectionScreen()]),

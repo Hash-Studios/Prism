@@ -118,11 +118,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
           .liked[index]["id"]
           .toString()
           .toUpperCase());
-      _futureView =
-          getViews(Provider.of<FavouriteProvider>(context, listen: false)
-          .liked[index]["id"]
-          .toString()
-          .toUpperCase());
+      _futureView = getViews(
+          Provider.of<FavouriteProvider>(context, listen: false)
+              .liked[index]["id"]
+              .toString()
+              .toUpperCase());
     }
     _updatePaletteGenerator();
     super.initState();
@@ -156,7 +156,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       .liked[index]["provider"] ==
                   "Prism"
           ? Scaffold(
-              resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
@@ -266,471 +265,654 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               ),
                             )),
                             ColorBar(colors: colors),
-                            Provider.of<FavouriteProvider>(context,
-                                            listen: false)
-                                        .liked[index]["provider"] ==
-                                    "WallHaven"
-                                ? Expanded(
-                                    flex: 8,
-                                    child: Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          35, 0, 35, 10),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                            if (Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .liked[index]["provider"] ==
+                                "WallHaven")
+                              Expanded(
+                                flex: 8,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: <Widget>[
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
                                         crossAxisAlignment:
-                                            CrossAxisAlignment.end,
+                                            CrossAxisAlignment.start,
                                         children: <Widget>[
-                                          Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: <Widget>[
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.fromLTRB(
-                                                        0, 5, 0, 10),
-                                                child: Text(
-                                                  Provider.of<FavouriteProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .liked[index]["id"]
-                                                      .toString()
-                                                      .toUpperCase(),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyText1
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
-                                                ),
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                0, 5, 0, 10),
+                                            child: Text(
+                                              Provider.of<FavouriteProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["id"]
+                                                  .toString()
+                                                  .toUpperCase(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText1
+                                                  .copyWith(
+                                                      color: Theme.of(context)
+                                                          .accentColor),
+                                            ),
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.eye,
+                                                size: 20,
+                                                color: Theme.of(context)
+                                                    .accentColor
+                                                    .withOpacity(.7),
                                               ),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.eye,
-                                                    size: 20,
-                                                    color: Theme.of(context)
-                                                        .accentColor
-                                                        .withOpacity(.7),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"]}",
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2
-                                                        .copyWith(
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 5),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.heart_f,
-                                                    size: 20,
-                                                    color: Theme.of(context)
-                                                        .accentColor
-                                                        .withOpacity(.7),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["fav"]}",
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2
-                                                        .copyWith(
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 5),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.save,
-                                                    size: 20,
-                                                    color: Theme.of(context)
-                                                        .accentColor
-                                                        .withOpacity(.7),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    "${double.parse((double.parse(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2
-                                                        .copyWith(
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor),
-                                                  ),
-                                                ],
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"]}",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
                                               ),
                                             ],
                                           ),
-                                          Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            children: <Widget>[
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.fromLTRB(
-                                                        0, 0, 0, 0),
-                                                child: Row(
-                                                  children: [
-                                                    Text(
-                                                      Provider.of<FavouriteProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .liked[index]
-                                                                  ["category"]
-                                                              .toString()[0]
-                                                              .toUpperCase() +
-                                                          Provider.of<FavouriteProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .liked[index]
-                                                                  ["category"]
-                                                              .toString()
-                                                              .substring(1),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyText2
-                                                          .copyWith(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor),
-                                                    ),
-                                                    const SizedBox(width: 10),
-                                                    Icon(
-                                                      JamIcons.unordered_list,
-                                                      size: 20,
-                                                      color: Theme.of(context)
-                                                          .accentColor
-                                                          .withOpacity(.7),
-                                                    ),
-                                                  ],
-                                                ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.heart_f,
+                                                size: 20,
+                                                color: Theme.of(context)
+                                                    .accentColor
+                                                    .withOpacity(.7),
                                               ),
-                                              const SizedBox(height: 5),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"]}",
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2
-                                                        .copyWith(
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Icon(
-                                                    JamIcons.set_square,
-                                                    size: 20,
-                                                    color: Theme.of(context)
-                                                        .accentColor
-                                                        .withOpacity(.7),
-                                                  ),
-                                                ],
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["fav"]}",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
                                               ),
-                                              const SizedBox(height: 5),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    Provider.of<FavouriteProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .liked[index]
-                                                            ["provider"]
-                                                        .toString(),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2
-                                                        .copyWith(
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Icon(
-                                                    JamIcons.database,
-                                                    size: 20,
-                                                    color: Theme.of(context)
-                                                        .accentColor
-                                                        .withOpacity(.7),
-                                                  ),
-                                                ],
+                                            ],
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.save,
+                                                size: 20,
+                                                color: Theme.of(context)
+                                                    .accentColor
+                                                    .withOpacity(.7),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                "${double.parse((double.parse(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
                                               ),
                                             ],
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  )
-                                : Provider.of<FavouriteProvider>(context,
-                                                listen: false)
-                                            .liked[index]["provider"] ==
-                                        "Prism"
-                                    ? Expanded(
-                                        flex: 8,
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.36,
-                                          child: Padding(
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: <Widget>[
+                                          Padding(
                                             padding: const EdgeInsets.fromLTRB(
-                                                35, 0, 35, 10),
+                                                0, 0, 0, 0),
                                             child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceBetween,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.end,
-                                              children: <Widget>[
-                                                Column(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: <Widget>[
-                                                    Padding(
-                                                      padding: const EdgeInsets
-                                                          .fromLTRB(0, 5, 0, 10),
-                                                      child: Row(
-                                                        children: [
-                                                          Text(
-                                                            Provider.of<FavouriteProvider>(
-                                                                    context,
-                                                                    listen: false)
-                                                                .liked[index]["id"]
-                                                                .toString()
-                                                                .toUpperCase(),
-                                                            style: Theme.of(context)
-                                                                .textTheme
-                                                                .bodyText1
-                                                                .copyWith(
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .accentColor),
-                                                          ),Padding(
-                                                      padding: const EdgeInsets
-                                                              .symmetric(
-                                                          horizontal: 6.0),
-                                                      child: Container(
-                                                        height: 20,
-                                                        color: Theme.of(context)
-                                                            .accentColor,
-                                                        width: 2,
-                                                      ),
-                                                    ),
-                                                    FutureBuilder(
-                                                      future: _futureView,
-                                                      builder:
-                                                          (context, snapshot) {
-                                                        switch (snapshot
-                                                            .connectionState) {
-                                                          case ConnectionState
-                                                              .waiting:
-                                                            return Text(
-                                                              "",
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .bodyText1
-                                                                  .copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .accentColor,
-                                                                      fontSize:
-                                                                          16),
-                                                            );
-                                                          case ConnectionState
-                                                              .none:
-                                                            return Text(
-                                                              "",
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .bodyText1
-                                                                  .copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .accentColor,
-                                                                      fontSize:
-                                                                          16),
-                                                            );
-                                                          default:
-                                                            if (snapshot
-                                                                .hasError) {
-                                                              return Text(
-                                                                "",
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodyText1
-                                                                    .copyWith(
-                                                                        color: Theme.of(
-                                                                                context)
-                                                                            .accentColor,
-                                                                        fontSize:
-                                                                            16),
-                                                              );
-                                                            } else {
-                                                              return Text(
-                                                                "${snapshot.data} views",
-                                                                 overflow: TextOverflow.fade,
-                                                                softWrap: false,
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodyText1
-                                                                    .copyWith(
-                                                                        color: Theme.of(
-                                                                                context)
-                                                                            .accentColor,
-                                                                        fontSize:
-                                                                            16),
-                                                              );
-                                                            }
-                                                        }
-                                                      },
-                                                    ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    Row(
-                                                      children: [
-                                                        Icon(
-                                                          JamIcons.camera,
-                                                          size: 20,
-                                                          color: Theme.of(context)
-                                                              .accentColor
-                                                              .withOpacity(.7),
-                                                        ),
-                                                        const SizedBox(width: 10),
-                                                        Text(
-                                                          "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["photographer"]}",
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .bodyText2
-                                                              .copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 5),
-                                                    Row(
-                                                      children: [
-                                                        Icon(
-                                                          JamIcons
-                                                              .arrow_circle_right,
-                                                          size: 20,
-                                                          color: Theme.of(context)
-                                                              .accentColor
-                                                              .withOpacity(.7),
-                                                        ),
-                                                        const SizedBox(width: 10),
-                                                        Text(
-                                                          "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["category"]}",
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .bodyText2
-                                                              .copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 5),
-                                                    Row(
-                                                      children: [
-                                                        Icon(
-                                                          JamIcons.save,
-                                                          size: 20,
-                                                          color: Theme.of(context)
-                                                              .accentColor
-                                                              .withOpacity(.7),
-                                                        ),
-                                                        const SizedBox(width: 10),
-                                                        Text(
-                                                          "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"]}",
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .bodyText2
-                                                              .copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
+                                              children: [
+                                                Text(
+                                                  Provider.of<FavouriteProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["category"]
+                                                          .toString()[0]
+                                                          .toUpperCase() +
+                                                      Provider.of<FavouriteProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["category"]
+                                                          .toString()
+                                                          .substring(1),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
                                                 ),
-                                                Column(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.end,
-                                                  children: <Widget>[
-                                                    Row(
-                                                      children: [
-                                                        Text(
-                                                          "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"]}",
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .bodyText2
-                                                              .copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor),
-                                                        ),
-                                                        const SizedBox(width: 10),
-                                                        Icon(
-                                                          JamIcons.set_square,
-                                                          size: 20,
-                                                          color: Theme.of(context)
-                                                              .accentColor
-                                                              .withOpacity(.7),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 5),
-                                                    Row(
+                                                const SizedBox(width: 10),
+                                                Icon(
+                                                  JamIcons.unordered_list,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"]}",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.set_square,
+                                                size: 20,
+                                                color: Theme.of(context)
+                                                    .accentColor
+                                                    .withOpacity(.7),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                Provider.of<FavouriteProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .liked[index]["provider"]
+                                                    .toString(),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.database,
+                                                size: 20,
+                                                color: Theme.of(context)
+                                                    .accentColor
+                                                    .withOpacity(.7),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else
+                              Provider.of<FavouriteProvider>(context,
+                                              listen: false)
+                                          .liked[index]["provider"] ==
+                                      "Prism"
+                                  ? Expanded(
+                                      flex: 8,
+                                      child: Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.36,
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              35, 0, 35, 10),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: <Widget>[
+                                              Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: <Widget>[
+                                                  Padding(
+                                                    padding: const EdgeInsets
+                                                        .fromLTRB(0, 5, 0, 10),
+                                                    child: Row(
                                                       children: [
                                                         Text(
                                                           Provider.of<FavouriteProvider>(
                                                                   context,
                                                                   listen: false)
                                                               .liked[index]
-                                                                  ["provider"]
-                                                              .toString(),
-                                                          style: Theme.of(context)
+                                                                  ["id"]
+                                                              .toString()
+                                                              .toUpperCase(),
+                                                          style: Theme.of(
+                                                                  context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText1
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
                                                                       .accentColor),
                                                         ),
-                                                        const SizedBox(width: 10),
-                                                        Icon(
-                                                          JamIcons.database,
-                                                          size: 20,
-                                                          color: Theme.of(context)
-                                                              .accentColor
-                                                              .withOpacity(.7),
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .symmetric(
+                                                                  horizontal:
+                                                                      6.0),
+                                                          child: Container(
+                                                            height: 20,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
+                                                            width: 2,
+                                                          ),
+                                                        ),
+                                                        FutureBuilder(
+                                                          future: _futureView,
+                                                          builder: (context,
+                                                              snapshot) {
+                                                            switch (snapshot
+                                                                .connectionState) {
+                                                              case ConnectionState
+                                                                  .waiting:
+                                                                return Text(
+                                                                  "",
+                                                                  style: Theme.of(
+                                                                          context)
+                                                                      .textTheme
+                                                                      .bodyText1
+                                                                      .copyWith(
+                                                                          color: Theme.of(context)
+                                                                              .accentColor,
+                                                                          fontSize:
+                                                                              16),
+                                                                );
+                                                              case ConnectionState
+                                                                  .none:
+                                                                return Text(
+                                                                  "",
+                                                                  style: Theme.of(
+                                                                          context)
+                                                                      .textTheme
+                                                                      .bodyText1
+                                                                      .copyWith(
+                                                                          color: Theme.of(context)
+                                                                              .accentColor,
+                                                                          fontSize:
+                                                                              16),
+                                                                );
+                                                              default:
+                                                                if (snapshot
+                                                                    .hasError) {
+                                                                  return Text(
+                                                                    "",
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyText1
+                                                                        .copyWith(
+                                                                            color:
+                                                                                Theme.of(context).accentColor,
+                                                                            fontSize: 16),
+                                                                  );
+                                                                } else {
+                                                                  return Text(
+                                                                    "${snapshot.data} views",
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .fade,
+                                                                    softWrap:
+                                                                        false,
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyText1
+                                                                        .copyWith(
+                                                                            color:
+                                                                                Theme.of(context).accentColor,
+                                                                            fontSize: 16),
+                                                                  );
+                                                                }
+                                                            }
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        JamIcons.camera,
+                                                        size: 20,
+                                                        color: Theme.of(context)
+                                                            .accentColor
+                                                            .withOpacity(.7),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["photographer"]}",
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyText2
+                                                            .copyWith(
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .accentColor),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 5),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        JamIcons
+                                                            .arrow_circle_right,
+                                                        size: 20,
+                                                        color: Theme.of(context)
+                                                            .accentColor
+                                                            .withOpacity(.7),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["category"]}",
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyText2
+                                                            .copyWith(
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .accentColor),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 5),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        JamIcons.save,
+                                                        size: 20,
+                                                        color: Theme.of(context)
+                                                            .accentColor
+                                                            .withOpacity(.7),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"]}",
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyText2
+                                                            .copyWith(
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .accentColor),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                              Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: <Widget>[
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"]}",
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyText2
+                                                            .copyWith(
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .accentColor),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Icon(
+                                                        JamIcons.set_square,
+                                                        size: 20,
+                                                        color: Theme.of(context)
+                                                            .accentColor
+                                                            .withOpacity(.7),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 5),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        Provider.of<FavouriteProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .liked[index]
+                                                                ["provider"]
+                                                            .toString(),
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyText2
+                                                            .copyWith(
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .accentColor),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Icon(
+                                                        JamIcons.database,
+                                                        size: 20,
+                                                        color: Theme.of(context)
+                                                            .accentColor
+                                                            .withOpacity(.7),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Provider.of<FavouriteProvider>(context,
+                                                  listen: false)
+                                              .liked[index]["provider"] ==
+                                          "Pexels"
+                                      ? Expanded(
+                                          flex: 8,
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                35, 0, 35, 15),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  children: <Widget>[
+                                                    Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: <Widget>[
+                                                        Row(
+                                                          children: [
+                                                            Icon(
+                                                              JamIcons.camera,
+                                                              size: 20,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor
+                                                                  .withOpacity(
+                                                                      .7),
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 10),
+                                                            Container(
+                                                              width: MediaQuery.of(
+                                                                          context)
+                                                                      .size
+                                                                      .width *
+                                                                  .4,
+                                                              child: Text(
+                                                                Provider.of<FavouriteProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .liked[
+                                                                        index][
+                                                                        "photographer"]
+                                                                    .toString(),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .left,
+                                                                style: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .bodyText2
+                                                                    .copyWith(
+                                                                        color: Theme.of(context)
+                                                                            .accentColor),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 5),
+                                                        Row(
+                                                          children: [
+                                                            Icon(
+                                                              JamIcons
+                                                                  .set_square,
+                                                              size: 20,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor
+                                                                  .withOpacity(
+                                                                      .7),
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 10),
+                                                            Text(
+                                                              Provider.of<FavouriteProvider>(
+                                                                      context,
+                                                                      listen:
+                                                                          false)
+                                                                  .liked[index][
+                                                                      "resolution"]
+                                                                  .toString(),
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText2
+                                                                  .copyWith(
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .end,
+                                                      children: <Widget>[
+                                                        Row(
+                                                          children: [
+                                                            Text(
+                                                              Provider.of<FavouriteProvider>(
+                                                                      context,
+                                                                      listen:
+                                                                          false)
+                                                                  .liked[index]
+                                                                      ["id"]
+                                                                  .toString(),
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText2
+                                                                  .copyWith(
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor),
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 10),
+                                                            Icon(
+                                                              JamIcons.info,
+                                                              size: 20,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor
+                                                                  .withOpacity(
+                                                                      .7),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 5),
+                                                        Row(
+                                                          children: [
+                                                            Text(
+                                                              Provider.of<FavouriteProvider>(
+                                                                      context,
+                                                                      listen:
+                                                                          false)
+                                                                  .liked[index][
+                                                                      "provider"]
+                                                                  .toString(),
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText2
+                                                                  .copyWith(
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor),
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 10),
+                                                            Icon(
+                                                              JamIcons.database,
+                                                              size: 20,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor
+                                                                  .withOpacity(
+                                                                      .7),
+                                                            ),
+                                                          ],
                                                         ),
                                                       ],
                                                     ),
@@ -739,201 +921,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               ],
                                             ),
                                           ),
-                                        ),
-                                      )
-                                    : Provider.of<FavouriteProvider>(context,
-                                                    listen: false)
-                                                .liked[index]["provider"] ==
-                                            "Pexels"
-                                        ? Expanded(
-                                            flex: 8,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      35, 0, 35, 15),
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment.end,
-                                                    children: <Widget>[
-                                                      Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: <Widget>[
-                                                          Row(
-                                                            children: [
-                                                              Icon(
-                                                                JamIcons.camera,
-                                                                size: 20,
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor
-                                                                    .withOpacity(
-                                                                        .7),
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 10),
-                                                              Container(
-                                                                width: MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width *
-                                                                    .4,
-                                                                child: Text(
-                                                                  Provider.of<FavouriteProvider>(
-                                                                          context,
-                                                                          listen:
-                                                                              false)
-                                                                      .liked[
-                                                                          index]
-                                                                          [
-                                                                          "photographer"]
-                                                                      .toString(),
-                                                                  textAlign:
-                                                                      TextAlign
-                                                                          .left,
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodyText2
-                                                                      .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).accentColor),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 5),
-                                                          Row(
-                                                            children: [
-                                                              Icon(
-                                                                JamIcons
-                                                                    .set_square,
-                                                                size: 20,
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor
-                                                                    .withOpacity(
-                                                                        .7),
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 10),
-                                                              Text(
-                                                                Provider.of<FavouriteProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .liked[
-                                                                        index][
-                                                                        "resolution"]
-                                                                    .toString(),
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodyText2
-                                                                    .copyWith(
-                                                                        color: Theme.of(context)
-                                                                            .accentColor),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .end,
-                                                        children: <Widget>[
-                                                          Row(
-                                                            children: [
-                                                              Text(
-                                                                Provider.of<FavouriteProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .liked[
-                                                                        index]
-                                                                        ["id"]
-                                                                    .toString(),
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodyText2
-                                                                    .copyWith(
-                                                                        color: Theme.of(context)
-                                                                            .accentColor),
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 10),
-                                                              Icon(
-                                                                JamIcons.info,
-                                                                size: 20,
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor
-                                                                    .withOpacity(
-                                                                        .7),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 5),
-                                                          Row(
-                                                            children: [
-                                                              Text(
-                                                                Provider.of<FavouriteProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .liked[
-                                                                        index][
-                                                                        "provider"]
-                                                                    .toString(),
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodyText2
-                                                                    .copyWith(
-                                                                        color: Theme.of(context)
-                                                                            .accentColor),
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 10),
-                                                              Icon(
-                                                                JamIcons
-                                                                    .database,
-                                                                size: 20,
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor
-                                                                    .withOpacity(
-                                                                        .7),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          )
-                                        : Expanded(flex: 8, child: Container()),
+                                        )
+                                      : Expanded(flex: 8, child: Container()),
                             Expanded(
                               flex: 5,
                               child: Row(
@@ -1157,7 +1146,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
             )
           : Scaffold(
               key: _scaffoldKey,
-              resizeToAvoidBottomPadding: false,
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(

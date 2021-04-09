@@ -436,277 +436,265 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                       });
                     }),
               ),
-              groupWidgetValue == 0
-                  ? Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).hintColor),
-                            child: TextField(
-                              cursorColor: Theme.of(context).errorColor,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline5
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
-                              controller: widgetName1,
-                              focusNode: textFocusNode,
-                              decoration: InputDecoration(
-                                contentPadding:
-                                    const EdgeInsets.only(left: 30, top: 15),
-                                border: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                hintText: "Write widget app name...",
-                                hintStyle: Theme.of(context)
-                                    .textTheme
-                                    .headline5
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                                suffixIcon: Icon(
-                                  JamIcons.android,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                              ),
-                              onSubmitted: (tex) {
-                                // setState(() {
-                                //   defaultText = tex;
-                                // });
-                              },
+              if (groupWidgetValue == 0)
+                Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(500),
+                            color: Theme.of(context).hintColor),
+                        child: TextField(
+                          cursorColor: Theme.of(context).errorColor,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline5
+                              .copyWith(color: Theme.of(context).accentColor),
+                          controller: widgetName1,
+                          focusNode: textFocusNode,
+                          decoration: InputDecoration(
+                            contentPadding:
+                                const EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Write widget app name...",
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headline5
+                                .copyWith(color: Theme.of(context).accentColor),
+                            suffixIcon: Icon(
+                              JamIcons.android,
+                              color: Theme.of(context).accentColor,
                             ),
                           ),
+                          onSubmitted: (tex) {
+                            // setState(() {
+                            //   defaultText = tex;
+                            // });
+                          },
                         ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).hintColor),
-                            child: TextField(
-                              cursorColor: Theme.of(context).errorColor,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline5
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
-                              controller: widgetURL1,
-                              focusNode: textFocusNode,
-                              decoration: InputDecoration(
-                                contentPadding:
-                                    const EdgeInsets.only(left: 30, top: 15),
-                                border: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                hintText: "Write widget app link...",
-                                hintStyle: Theme.of(context)
-                                    .textTheme
-                                    .headline5
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                                suffixIcon: Icon(
-                                  JamIcons.google_play,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                              ),
-                              onSubmitted: (tex) {
-                                // setState(() {
-                                //   defaultText = tex;
-                                // });
-                              },
-                            ),
-                          ),
-                        ),
-                        secondWidgetAdded == true
-                            ? Padding(
-                                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(500),
-                                      color: Theme.of(context).hintColor),
-                                  child: TextField(
-                                    cursorColor: Theme.of(context).errorColor,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headline5
-                                        .copyWith(
-                                            color:
-                                                Theme.of(context).accentColor),
-                                    controller: widgetName2,
-                                    focusNode: textFocusNode,
-                                    decoration: InputDecoration(
-                                      contentPadding: const EdgeInsets.only(
-                                          left: 30, top: 15),
-                                      border: InputBorder.none,
-                                      disabledBorder: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                      hintText: "Write 2nd widget app name...",
-                                      hintStyle: Theme.of(context)
-                                          .textTheme
-                                          .headline5
-                                          .copyWith(
-                                              color: Theme.of(context)
-                                                  .accentColor),
-                                      suffixIcon: Icon(
-                                        JamIcons.android,
-                                        color: Theme.of(context).accentColor,
-                                      ),
-                                    ),
-                                    onSubmitted: (tex) {
-                                      // setState(() {
-                                      //   defaultText = tex;
-                                      // });
-                                    },
-                                  ),
-                                ),
-                              )
-                            : TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    secondWidgetAdded = true;
-                                  });
-                                },
-                                child: Text("Add more widget",
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2)),
-                        secondWidgetAdded == true
-                            ? Padding(
-                                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(500),
-                                      color: Theme.of(context).hintColor),
-                                  child: TextField(
-                                    cursorColor: Theme.of(context).errorColor,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headline5
-                                        .copyWith(
-                                            color:
-                                                Theme.of(context).accentColor),
-                                    controller: widgetURL2,
-                                    focusNode: textFocusNode,
-                                    decoration: InputDecoration(
-                                      contentPadding: const EdgeInsets.only(
-                                          left: 30, top: 15),
-                                      border: InputBorder.none,
-                                      disabledBorder: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                      hintText: "Write 2nd widget app link...",
-                                      hintStyle: Theme.of(context)
-                                          .textTheme
-                                          .headline5
-                                          .copyWith(
-                                              color: Theme.of(context)
-                                                  .accentColor),
-                                      suffixIcon: Icon(
-                                        JamIcons.google_play,
-                                        color: Theme.of(context).accentColor,
-                                      ),
-                                    ),
-                                    onSubmitted: (tex) {
-                                      // setState(() {
-                                      //   defaultText = tex;
-                                      // });
-                                    },
-                                  ),
-                                ),
-                              )
-                            : Container()
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).hintColor),
-                            child: TextField(
-                              cursorColor: Theme.of(context).errorColor,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline5
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
-                              controller: iconName,
-                              focusNode: textFocusNode,
-                              decoration: InputDecoration(
-                                contentPadding:
-                                    const EdgeInsets.only(left: 30, top: 15),
-                                border: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                hintText: "Write icon pack name...",
-                                hintStyle: Theme.of(context)
-                                    .textTheme
-                                    .headline5
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                                suffixIcon: Icon(
-                                  JamIcons.android,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                              ),
-                              onSubmitted: (tex) {
-                                // setState(() {
-                                //   defaultText = tex;
-                                // });
-                              },
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).hintColor),
-                            child: TextField(
-                              cursorColor: Theme.of(context).errorColor,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline5
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
-                              controller: iconURL,
-                              focusNode: textFocusNode,
-                              decoration: InputDecoration(
-                                contentPadding:
-                                    const EdgeInsets.only(left: 30, top: 15),
-                                border: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                hintText: "Write icon app link...",
-                                hintStyle: Theme.of(context)
-                                    .textTheme
-                                    .headline5
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                                suffixIcon: Icon(
-                                  JamIcons.google_play_circle,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                              ),
-                              onSubmitted: (tex) {
-                                // setState(() {
-                                //   defaultText = tex;
-                                // });
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(500),
+                            color: Theme.of(context).hintColor),
+                        child: TextField(
+                          cursorColor: Theme.of(context).errorColor,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline5
+                              .copyWith(color: Theme.of(context).accentColor),
+                          controller: widgetURL1,
+                          focusNode: textFocusNode,
+                          decoration: InputDecoration(
+                            contentPadding:
+                                const EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Write widget app link...",
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headline5
+                                .copyWith(color: Theme.of(context).accentColor),
+                            suffixIcon: Icon(
+                              JamIcons.google_play,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          ),
+                          onSubmitted: (tex) {
+                            // setState(() {
+                            //   defaultText = tex;
+                            // });
+                          },
+                        ),
+                      ),
+                    ),
+                    if (secondWidgetAdded == true)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(500),
+                              color: Theme.of(context).hintColor),
+                          child: TextField(
+                            cursorColor: Theme.of(context).errorColor,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headline5
+                                .copyWith(color: Theme.of(context).accentColor),
+                            controller: widgetName2,
+                            focusNode: textFocusNode,
+                            decoration: InputDecoration(
+                              contentPadding:
+                                  const EdgeInsets.only(left: 30, top: 15),
+                              border: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              hintText: "Write 2nd widget app name...",
+                              hintStyle: Theme.of(context)
+                                  .textTheme
+                                  .headline5
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                              suffixIcon: Icon(
+                                JamIcons.android,
+                                color: Theme.of(context).accentColor,
+                              ),
+                            ),
+                            onSubmitted: (tex) {
+                              // setState(() {
+                              //   defaultText = tex;
+                              // });
+                            },
+                          ),
+                        ),
+                      )
+                    else
+                      TextButton(
+                          onPressed: () {
+                            setState(() {
+                              secondWidgetAdded = true;
+                            });
+                          },
+                          child: Text("Add more widget",
+                              style: Theme.of(context).textTheme.bodyText2)),
+                    if (secondWidgetAdded == true)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(500),
+                              color: Theme.of(context).hintColor),
+                          child: TextField(
+                            cursorColor: Theme.of(context).errorColor,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headline5
+                                .copyWith(color: Theme.of(context).accentColor),
+                            controller: widgetURL2,
+                            focusNode: textFocusNode,
+                            decoration: InputDecoration(
+                              contentPadding:
+                                  const EdgeInsets.only(left: 30, top: 15),
+                              border: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              hintText: "Write 2nd widget app link...",
+                              hintStyle: Theme.of(context)
+                                  .textTheme
+                                  .headline5
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                              suffixIcon: Icon(
+                                JamIcons.google_play,
+                                color: Theme.of(context).accentColor,
+                              ),
+                            ),
+                            onSubmitted: (tex) {
+                              // setState(() {
+                              //   defaultText = tex;
+                              // });
+                            },
+                          ),
+                        ),
+                      )
+                    else
+                      Container()
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(500),
+                            color: Theme.of(context).hintColor),
+                        child: TextField(
+                          cursorColor: Theme.of(context).errorColor,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline5
+                              .copyWith(color: Theme.of(context).accentColor),
+                          controller: iconName,
+                          focusNode: textFocusNode,
+                          decoration: InputDecoration(
+                            contentPadding:
+                                const EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Write icon pack name...",
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headline5
+                                .copyWith(color: Theme.of(context).accentColor),
+                            suffixIcon: Icon(
+                              JamIcons.android,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          ),
+                          onSubmitted: (tex) {
+                            // setState(() {
+                            //   defaultText = tex;
+                            // });
+                          },
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(500),
+                            color: Theme.of(context).hintColor),
+                        child: TextField(
+                          cursorColor: Theme.of(context).errorColor,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline5
+                              .copyWith(color: Theme.of(context).accentColor),
+                          controller: iconURL,
+                          focusNode: textFocusNode,
+                          decoration: InputDecoration(
+                            contentPadding:
+                                const EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Write icon app link...",
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headline5
+                                .copyWith(color: Theme.of(context).accentColor),
+                            suffixIcon: Icon(
+                              JamIcons.google_play_circle,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          ),
+                          onSubmitted: (tex) {
+                            // setState(() {
+                            //   defaultText = tex;
+                            // });
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
           const Divider(
@@ -738,224 +726,220 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                       });
                     }),
               ),
-              groupValue == 0
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(500),
-                            color: Theme.of(context).hintColor),
-                        child: TextField(
-                          cursorColor: Theme.of(context).errorColor,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline5
-                              .copyWith(color: Theme.of(context).accentColor),
-                          controller: wallpaperUrl,
-                          focusNode: textFocusNode,
-                          decoration: InputDecoration(
-                            contentPadding:
-                                const EdgeInsets.only(left: 30, top: 15),
-                            border: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            hintText: "Write wallpaper link...",
-                            hintStyle: Theme.of(context)
-                                .textTheme
-                                .headline5
-                                .copyWith(color: Theme.of(context).accentColor),
-                            suffixIcon: Icon(
-                              JamIcons.picture,
-                              color: Theme.of(context).accentColor,
-                            ),
-                          ),
-                          onSubmitted: (tex) {
-                            // setState(() {
-                            //   defaultText = tex;
-                            // });
-                          },
+              if (groupValue == 0)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  child: Container(
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(500),
+                        color: Theme.of(context).hintColor),
+                    child: TextField(
+                      cursorColor: Theme.of(context).errorColor,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline5
+                          .copyWith(color: Theme.of(context).accentColor),
+                      controller: wallpaperUrl,
+                      focusNode: textFocusNode,
+                      decoration: InputDecoration(
+                        contentPadding:
+                            const EdgeInsets.only(left: 30, top: 15),
+                        border: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        hintText: "Write wallpaper link...",
+                        hintStyle: Theme.of(context)
+                            .textTheme
+                            .headline5
+                            .copyWith(color: Theme.of(context).accentColor),
+                        suffixIcon: Icon(
+                          JamIcons.picture,
+                          color: Theme.of(context).accentColor,
                         ),
                       ),
-                    )
-                  : groupValue == 1
-                      ? Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                          child: FloatingActionButton.extended(
-                            backgroundColor: wallpaperUploaded == true
-                                ? Theme.of(context).hintColor
-                                : Theme.of(context).errorColor,
-                            onPressed: () async {
-                              final pickedFile = await ImagePicker()
-                                  .getImage(source: ImageSource.gallery);
-                              if (pickedFile != null) {
-                                Future.delayed(const Duration())
-                                    .then((value) async {
-                                  final argumentsFromWall =
-                                      await Navigator.pushNamed(
-                                          context, uploadWallRoute, arguments: [
-                                    File(pickedFile.path),
-                                    true
-                                  ]);
-                                  if (argumentsFromWall != null) {
-                                    final List argsC =
-                                        argumentsFromWall as List;
-                                    if (argsC.length == 2) {
-                                      setState(() {
-                                        wallpaperUploadLink =
-                                            argsC[0].toString();
-                                        wallpaperId = argsC[1].toString();
-                                        wallpaperUploaded = true;
-                                      });
-                                    }
+                      onSubmitted: (tex) {
+                        // setState(() {
+                        //   defaultText = tex;
+                        // });
+                      },
+                    ),
+                  ),
+                )
+              else
+                groupValue == 1
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        child: FloatingActionButton.extended(
+                          backgroundColor: wallpaperUploaded == true
+                              ? Theme.of(context).hintColor
+                              : Theme.of(context).errorColor,
+                          onPressed: () async {
+                            final pickedFile = await ImagePicker()
+                                .getImage(source: ImageSource.gallery);
+                            if (pickedFile != null) {
+                              Future.delayed(const Duration())
+                                  .then((value) async {
+                                final argumentsFromWall =
+                                    await Navigator.pushNamed(
+                                        context, uploadWallRoute, arguments: [
+                                  File(pickedFile.path),
+                                  true
+                                ]);
+                                if (argumentsFromWall != null) {
+                                  final List argsC = argumentsFromWall as List;
+                                  if (argsC.length == 2) {
+                                    setState(() {
+                                      wallpaperUploadLink = argsC[0].toString();
+                                      wallpaperId = argsC[1].toString();
+                                      wallpaperUploaded = true;
+                                    });
                                   }
-                                });
-                              }
-                            },
-                            label: Text(
-                              wallpaperUploaded == true
-                                  ? "Change Wall"
-                                  : "Upload",
-                              style: TextStyle(
-                                  color: Theme.of(context).accentColor,
-                                  fontWeight: FontWeight.normal),
-                            ),
-                            icon: Icon(
-                              JamIcons.upload,
-                              color: Theme.of(context).accentColor,
+                                }
+                              });
+                            }
+                          },
+                          label: Text(
+                            wallpaperUploaded == true
+                                ? "Change Wall"
+                                : "Upload",
+                            style: TextStyle(
+                                color: Theme.of(context).accentColor,
+                                fontWeight: FontWeight.normal),
+                          ),
+                          icon: Icon(
+                            JamIcons.upload,
+                            color: Theme.of(context).accentColor,
+                          ),
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(500),
+                                  color: Theme.of(context).hintColor),
+                              child: TextField(
+                                cursorColor: Theme.of(context).errorColor,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline5
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                                controller: wallpaperAppName,
+                                focusNode: textFocusNode,
+                                decoration: InputDecoration(
+                                  contentPadding:
+                                      const EdgeInsets.only(left: 30, top: 15),
+                                  border: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  hintText: "Write wallpaper app name...",
+                                  hintStyle: Theme.of(context)
+                                      .textTheme
+                                      .headline5
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                  suffixIcon: Icon(
+                                    JamIcons.android,
+                                    color: Theme.of(context).accentColor,
+                                  ),
+                                ),
+                                onSubmitted: (tex) {
+                                  // setState(() {
+                                  //   defaultText = tex;
+                                  // });
+                                },
+                              ),
                             ),
                           ),
-                        )
-                      : Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(500),
-                                    color: Theme.of(context).hintColor),
-                                child: TextField(
-                                  cursorColor: Theme.of(context).errorColor,
-                                  style: Theme.of(context)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(500),
+                                  color: Theme.of(context).hintColor),
+                              child: TextField(
+                                cursorColor: Theme.of(context).errorColor,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline5
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                                controller: wallpaperAppLink,
+                                focusNode: textFocusNode,
+                                decoration: InputDecoration(
+                                  contentPadding:
+                                      const EdgeInsets.only(left: 30, top: 15),
+                                  border: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  hintText: "Write app link...",
+                                  hintStyle: Theme.of(context)
                                       .textTheme
                                       .headline5
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
-                                  controller: wallpaperAppName,
-                                  focusNode: textFocusNode,
-                                  decoration: InputDecoration(
-                                    contentPadding: const EdgeInsets.only(
-                                        left: 30, top: 15),
-                                    border: InputBorder.none,
-                                    disabledBorder: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    hintText: "Write wallpaper app name...",
-                                    hintStyle: Theme.of(context)
-                                        .textTheme
-                                        .headline5
-                                        .copyWith(
-                                            color:
-                                                Theme.of(context).accentColor),
-                                    suffixIcon: Icon(
-                                      JamIcons.android,
-                                      color: Theme.of(context).accentColor,
-                                    ),
+                                  suffixIcon: Icon(
+                                    JamIcons.google_play,
+                                    color: Theme.of(context).accentColor,
                                   ),
-                                  onSubmitted: (tex) {
-                                    // setState(() {
-                                    //   defaultText = tex;
-                                    // });
-                                  },
                                 ),
+                                onSubmitted: (tex) {
+                                  // setState(() {
+                                  //   defaultText = tex;
+                                  // });
+                                },
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(500),
-                                    color: Theme.of(context).hintColor),
-                                child: TextField(
-                                  cursorColor: Theme.of(context).errorColor,
-                                  style: Theme.of(context)
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(500),
+                                  color: Theme.of(context).hintColor),
+                              child: TextField(
+                                cursorColor: Theme.of(context).errorColor,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline5
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                                controller: wallpaperAppWallName,
+                                focusNode: textFocusNode,
+                                decoration: InputDecoration(
+                                  contentPadding:
+                                      const EdgeInsets.only(left: 30, top: 15),
+                                  border: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  hintText: "Write wallpaper name",
+                                  hintStyle: Theme.of(context)
                                       .textTheme
                                       .headline5
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
-                                  controller: wallpaperAppLink,
-                                  focusNode: textFocusNode,
-                                  decoration: InputDecoration(
-                                    contentPadding: const EdgeInsets.only(
-                                        left: 30, top: 15),
-                                    border: InputBorder.none,
-                                    disabledBorder: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    hintText: "Write app link...",
-                                    hintStyle: Theme.of(context)
-                                        .textTheme
-                                        .headline5
-                                        .copyWith(
-                                            color:
-                                                Theme.of(context).accentColor),
-                                    suffixIcon: Icon(
-                                      JamIcons.google_play,
-                                      color: Theme.of(context).accentColor,
-                                    ),
+                                  suffixIcon: Icon(
+                                    JamIcons.picture,
+                                    color: Theme.of(context).accentColor,
                                   ),
-                                  onSubmitted: (tex) {
-                                    // setState(() {
-                                    //   defaultText = tex;
-                                    // });
-                                  },
                                 ),
+                                onSubmitted: (tex) {
+                                  // setState(() {
+                                  //   defaultText = tex;
+                                  // });
+                                },
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(500),
-                                    color: Theme.of(context).hintColor),
-                                child: TextField(
-                                  cursorColor: Theme.of(context).errorColor,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headline5
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
-                                  controller: wallpaperAppWallName,
-                                  focusNode: textFocusNode,
-                                  decoration: InputDecoration(
-                                    contentPadding: const EdgeInsets.only(
-                                        left: 30, top: 15),
-                                    border: InputBorder.none,
-                                    disabledBorder: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    hintText: "Write wallpaper name",
-                                    hintStyle: Theme.of(context)
-                                        .textTheme
-                                        .headline5
-                                        .copyWith(
-                                            color:
-                                                Theme.of(context).accentColor),
-                                    suffixIcon: Icon(
-                                      JamIcons.picture,
-                                      color: Theme.of(context).accentColor,
-                                    ),
-                                  ),
-                                  onSubmitted: (tex) {
-                                    // setState(() {
-                                    //   defaultText = tex;
-                                    // });
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      ),
             ],
           ),
           const Divider(

@@ -154,7 +154,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
       onWillPop: onWillPop,
       child: provider == "WallHaven"
           ? Scaffold(
-              resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
@@ -637,7 +636,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
             )
           : provider == "Prism"
               ? Scaffold(
-                  resizeToAvoidBottomPadding: false,
                   key: _scaffoldKey,
                   backgroundColor:
                       isLoading ? Theme.of(context).primaryColor : accent,
@@ -964,32 +962,40 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                         index][
                                                                     "userPhoto"],
                                                                 false,
-                                                                data.subPrismWalls[index]["twitter"] !=
-                                                                            null &&
-                                                                        data.subPrismWalls[index]["twitter"] !=
-                                                                            ""
-                                                                    ? data
-                                                                        .subPrismWalls[
-                                                                            index]
+                                                                if (data.subPrismWalls[index]
                                                                             [
-                                                                            "twitter"]
-                                                                        .toString()
-                                                                        .split(
-                                                                            "https://www.twitter.com/")[1]
-                                                                    : "",
-                                                                data.subPrismWalls[index]["instagram"] !=
-                                                                            null &&
-                                                                        data.subPrismWalls[index]["instagram"] !=
-                                                                            ""
-                                                                    ? data
-                                                                        .subPrismWalls[
-                                                                            index]
+                                                                            "twitter"] !=
+                                                                        null &&
+                                                                    data.subPrismWalls[index]
                                                                             [
-                                                                            "instagram"]
-                                                                        .toString()
-                                                                        .split(
-                                                                            "https://www.instagram.com/")[1]
-                                                                    : "",
+                                                                            "twitter"] !=
+                                                                        "")
+                                                                  data.subPrismWalls[
+                                                                          index]
+                                                                          [
+                                                                          "twitter"]
+                                                                      .toString()
+                                                                      .split(
+                                                                          "https://www.twitter.com/")[1]
+                                                                else
+                                                                  "",
+                                                                if (data.subPrismWalls[index]
+                                                                            [
+                                                                            "instagram"] !=
+                                                                        null &&
+                                                                    data.subPrismWalls[index]
+                                                                            [
+                                                                            "instagram"] !=
+                                                                        "")
+                                                                  data.subPrismWalls[
+                                                                          index]
+                                                                          [
+                                                                          "instagram"]
+                                                                      .toString()
+                                                                      .split(
+                                                                          "https://www.instagram.com/")[1]
+                                                                else
+                                                                  "",
                                                               ]);
                                                         },
                                                         padding:
@@ -1028,37 +1034,38 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         ),
                                                       ),
                                                     ),
-                                                    globals.verifiedUsers
-                                                            .contains(data
-                                                                .subPrismWalls[
-                                                                    index]
-                                                                    ["email"]
-                                                                .toString())
-                                                        ? Align(
-                                                            alignment: Alignment
-                                                                .topRight,
-                                                            child: Container(
-                                                              width: 20,
-                                                              height: 20,
-                                                              child: SvgPicture.string(verifiedIcon.replaceAll(
-                                                                  "E57697",
-                                                                  Theme.of(context).errorColor ==
-                                                                          Colors
-                                                                              .black
-                                                                      ? "E57697"
-                                                                      : Theme.of(
-                                                                              context)
-                                                                          .errorColor
-                                                                          .toString()
-                                                                          .replaceAll(
-                                                                              "Color(0xff",
-                                                                              "")
-                                                                          .replaceAll(
-                                                                              ")",
-                                                                              ""))),
-                                                            ),
-                                                          )
-                                                        : Container(),
+                                                    if (globals.verifiedUsers
+                                                        .contains(data
+                                                            .subPrismWalls[
+                                                                index]["email"]
+                                                            .toString()))
+                                                      Align(
+                                                        alignment:
+                                                            Alignment.topRight,
+                                                        child: Container(
+                                                          width: 20,
+                                                          height: 20,
+                                                          child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                              "E57697",
+                                                              Theme.of(context)
+                                                                          .errorColor ==
+                                                                      Colors
+                                                                          .black
+                                                                  ? "E57697"
+                                                                  : Theme.of(
+                                                                          context)
+                                                                      .errorColor
+                                                                      .toString()
+                                                                      .replaceAll(
+                                                                          "Color(0xff",
+                                                                          "")
+                                                                      .replaceAll(
+                                                                          ")",
+                                                                          ""))),
+                                                        ),
+                                                      )
+                                                    else
+                                                      Container(),
                                                   ],
                                                 ),
                                               ),
@@ -1339,7 +1346,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                 )
               : provider == "Pexels"
                   ? Scaffold(
-                      resizeToAvoidBottomPadding: false,
                       key: _scaffoldKey,
                       backgroundColor:
                           isLoading ? Theme.of(context).primaryColor : accent,
@@ -1883,7 +1889,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                     )
                   : provider.length > 6 && provider.substring(0, 6) == "Colors"
                       ? Scaffold(
-                          resizeToAvoidBottomPadding: false,
                           key: _scaffoldKey,
                           backgroundColor: isLoading
                               ? Theme.of(context).primaryColor
@@ -2292,111 +2297,106 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             ),
                             body: Stack(
                               children: <Widget>[
-                                pdata.wallsC == null
-                                    ? Container()
-                                    : AnimatedBuilder(
-                                        animation: offsetAnimation,
-                                        builder: (buildContext, child) {
-                                          if (offsetAnimation.value < 0.0) {
-                                            debugPrint(
-                                                '${offsetAnimation.value + 8.0}');
-                                          }
-                                          return GestureDetector(
-                                            onPanUpdate: (details) {
-                                              if (details.delta.dy < -10) {
-                                                // HapticFeedback.vibrate();
-                                                panelController.open();
-                                              }
-                                            },
-                                            onLongPress: () {
-                                              setState(() {
-                                                colorChanged = false;
-                                              });
-                                              HapticFeedback.vibrate();
-                                              shakeController.forward(
-                                                  from: 0.0);
-                                            },
-                                            onTap: () {
-                                              HapticFeedback.vibrate();
-                                              !isLoading
-                                                  ? updateAccent()
-                                                  : debugPrint("");
-                                              shakeController.forward(
-                                                  from: 0.0);
-                                            },
-                                            child: CachedNetworkImage(
-                                              imageUrl: pdata
-                                                  .wallsC[index].src["original"]
-                                                  .toString(),
-                                              imageBuilder:
-                                                  (context, imageProvider) =>
-                                                      Screenshot(
-                                                controller:
-                                                    screenshotController,
-                                                child: Container(
-                                                  margin: EdgeInsets.symmetric(
-                                                      vertical: offsetAnimation
-                                                              .value *
-                                                          1.25,
-                                                      horizontal:
+                                if (pdata.wallsC == null)
+                                  Container()
+                                else
+                                  AnimatedBuilder(
+                                      animation: offsetAnimation,
+                                      builder: (buildContext, child) {
+                                        if (offsetAnimation.value < 0.0) {
+                                          debugPrint(
+                                              '${offsetAnimation.value + 8.0}');
+                                        }
+                                        return GestureDetector(
+                                          onPanUpdate: (details) {
+                                            if (details.delta.dy < -10) {
+                                              // HapticFeedback.vibrate();
+                                              panelController.open();
+                                            }
+                                          },
+                                          onLongPress: () {
+                                            setState(() {
+                                              colorChanged = false;
+                                            });
+                                            HapticFeedback.vibrate();
+                                            shakeController.forward(from: 0.0);
+                                          },
+                                          onTap: () {
+                                            HapticFeedback.vibrate();
+                                            !isLoading
+                                                ? updateAccent()
+                                                : debugPrint("");
+                                            shakeController.forward(from: 0.0);
+                                          },
+                                          child: CachedNetworkImage(
+                                            imageUrl: pdata
+                                                .wallsC[index].src["original"]
+                                                .toString(),
+                                            imageBuilder:
+                                                (context, imageProvider) =>
+                                                    Screenshot(
+                                              controller: screenshotController,
+                                              child: Container(
+                                                margin: EdgeInsets.symmetric(
+                                                    vertical:
+                                                        offsetAnimation.value *
+                                                            1.25,
+                                                    horizontal:
+                                                        offsetAnimation.value /
+                                                            2),
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
                                                           offsetAnimation
-                                                                  .value /
-                                                              2),
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            offsetAnimation
-                                                                .value),
-                                                    image: DecorationImage(
-                                                      colorFilter: colorChanged
-                                                          ? ColorFilter.mode(
-                                                              accent,
-                                                              BlendMode.hue)
-                                                          : null,
-                                                      image: imageProvider,
-                                                      fit: BoxFit.cover,
-                                                    ),
+                                                              .value),
+                                                  image: DecorationImage(
+                                                    colorFilter: colorChanged
+                                                        ? ColorFilter.mode(
+                                                            accent,
+                                                            BlendMode.hue)
+                                                        : null,
+                                                    image: imageProvider,
+                                                    fit: BoxFit.cover,
                                                   ),
-                                                ),
-                                              ),
-                                              progressIndicatorBuilder:
-                                                  (context, url,
-                                                          downloadProgress) =>
-                                                      Stack(
-                                                children: <Widget>[
-                                                  const SizedBox.expand(
-                                                      child: Text("")),
-                                                  Center(
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                            valueColor:
-                                                                AlwaysStoppedAnimation(
-                                                              Theme.of(context)
-                                                                  .errorColor,
-                                                            ),
-                                                            value:
-                                                                downloadProgress
-                                                                    .progress),
-                                                  ),
-                                                ],
-                                              ),
-                                              errorWidget:
-                                                  (context, url, error) =>
-                                                      Center(
-                                                child: Icon(
-                                                  JamIcons.close_circle_f,
-                                                  color: isLoading
-                                                      ? Theme.of(context)
-                                                          .accentColor
-                                                      : accent.computeLuminance() >
-                                                              0.5
-                                                          ? Colors.black
-                                                          : Colors.white,
                                                 ),
                                               ),
                                             ),
-                                          );
-                                        }),
+                                            progressIndicatorBuilder: (context,
+                                                    url, downloadProgress) =>
+                                                Stack(
+                                              children: <Widget>[
+                                                const SizedBox.expand(
+                                                    child: Text("")),
+                                                Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                          valueColor:
+                                                              AlwaysStoppedAnimation(
+                                                            Theme.of(context)
+                                                                .errorColor,
+                                                          ),
+                                                          value:
+                                                              downloadProgress
+                                                                  .progress),
+                                                ),
+                                              ],
+                                            ),
+                                            errorWidget:
+                                                (context, url, error) => Center(
+                                              child: Icon(
+                                                JamIcons.close_circle_f,
+                                                color: isLoading
+                                                    ? Theme.of(context)
+                                                        .accentColor
+                                                    : accent.computeLuminance() >
+                                                            0.5
+                                                        ? Colors.black
+                                                        : Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }),
                                 Align(
                                   alignment: Alignment.topLeft,
                                   child: Padding(
@@ -2469,7 +2469,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           ),
                         )
                       : Scaffold(
-                          resizeToAvoidBottomPadding: false,
                           key: _scaffoldKey,
                           backgroundColor: isLoading
                               ? Theme.of(context).primaryColor

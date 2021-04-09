@@ -234,7 +234,7 @@ class _MyAppState extends State<MyApp> {
           width = mode.width;
         }
       }
-      List<DisplayMode> maxWidthModes = [];
+      final List<DisplayMode> maxWidthModes = [];
       for (final mode in modes) {
         if (mode.width == width) {
           maxWidthModes.add(mode);
@@ -246,7 +246,7 @@ class _MyAppState extends State<MyApp> {
           height = mode.height;
         }
       }
-      List<DisplayMode> maxResModes = [];
+      final List<DisplayMode> maxResModes = [];
       for (final mode in maxWidthModes) {
         if (mode.height == height) {
           maxResModes.add(mode);
@@ -258,7 +258,7 @@ class _MyAppState extends State<MyApp> {
           refreshRate = mode.refreshRate;
         }
       }
-      List<DisplayMode> maxDisplayModes = [];
+      final List<DisplayMode> maxDisplayModes = [];
       for (final mode in maxResModes) {
         if (mode.refreshRate == refreshRate) {
           maxDisplayModes.add(mode);

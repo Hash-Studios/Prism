@@ -112,7 +112,6 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
-        resizeToAvoidBottomPadding: false,
         key: _scaffoldKey,
         backgroundColor: Theme.of(context).primaryColor,
         body: SlidingUpPanel(
@@ -293,8 +292,9 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                     .width *
                                                 0.36,
                                             child: Padding(
-                                              padding: const EdgeInsets.fromLTRB(
-                                                  0, 5, 0, 5),
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      0, 5, 0, 5),
                                               child: Row(
                                                 children: [
                                                   Text(
@@ -310,9 +310,9 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         .textTheme
                                                         .bodyText1
                                                         .copyWith(
-                                                            color:
-                                                                Theme.of(context)
-                                                                    .accentColor,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
                                                             fontSize: 16),
                                                   ),
                                                   Padding(
@@ -328,7 +328,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   ),
                                                   FutureBuilder(
                                                     future: _futureView,
-                                                    builder: (context, snapshot) {
+                                                    builder:
+                                                        (context, snapshot) {
                                                       switch (snapshot
                                                           .connectionState) {
                                                         case ConnectionState
@@ -343,9 +344,11 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                     color: Theme.of(
                                                                             context)
                                                                         .accentColor,
-                                                                    fontSize: 16),
+                                                                    fontSize:
+                                                                        16),
                                                           );
-                                                        case ConnectionState.none:
+                                                        case ConnectionState
+                                                            .none:
                                                           return Text(
                                                             "",
                                                             style: Theme.of(
@@ -356,10 +359,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                     color: Theme.of(
                                                                             context)
                                                                         .accentColor,
-                                                                    fontSize: 16),
+                                                                    fontSize:
+                                                                        16),
                                                           );
                                                         default:
-                                                          if (snapshot.hasError) {
+                                                          if (snapshot
+                                                              .hasError) {
                                                             return Text(
                                                               "",
                                                               style: Theme.of(
@@ -376,8 +381,10 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           } else {
                                                             return Text(
                                                               "${snapshot.data} views",
-                                                               overflow: TextOverflow.fade,
-                                                                softWrap: false,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .fade,
+                                                              softWrap: false,
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
@@ -521,75 +528,79 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                             false)
                                                                     .profileSetups[index]["userPhoto"],
                                                                 false,
-                                                                Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["twitter"] !=
-                                                                            null &&
-                                                                        Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["twitter"] !=
-                                                                            ""
-                                                                    ? Provider.of<ProfileSetupProvider>(
-                                                                            context,
-                                                                            listen:
-                                                                                false)
-                                                                        .profileSetups[
-                                                                            index]
-                                                                            [
-                                                                            "twitter"]
-                                                                        .toString()
-                                                                        .split(
-                                                                            "https://www.twitter.com/")[1]
-                                                                    : "",
-                                                                Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["instagram"] !=
-                                                                            null &&
-                                                                        Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["instagram"] !=
-                                                                            ""
-                                                                    ? Provider.of<ProfileSetupProvider>(
-                                                                            context,
-                                                                            listen:
-                                                                                false)
-                                                                        .profileSetups[
-                                                                            index]
-                                                                            [
-                                                                            "instagram"]
-                                                                        .toString()
-                                                                        .split(
-                                                                            "https://www.instagram.com/")[1]
-                                                                    : "",
+                                                                if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index][
+                                                                            "twitter"] !=
+                                                                        null &&
+                                                                    Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index][
+                                                                            "twitter"] !=
+                                                                        "")
+                                                                  Provider.of<ProfileSetupProvider>(
+                                                                          context,
+                                                                          listen:
+                                                                              false)
+                                                                      .profileSetups[
+                                                                          index][
+                                                                          "twitter"]
+                                                                      .toString()
+                                                                      .split(
+                                                                          "https://www.twitter.com/")[1]
+                                                                else
+                                                                  "",
+                                                                if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index][
+                                                                            "instagram"] !=
+                                                                        null &&
+                                                                    Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index][
+                                                                            "instagram"] !=
+                                                                        "")
+                                                                  Provider.of<ProfileSetupProvider>(
+                                                                          context,
+                                                                          listen:
+                                                                              false)
+                                                                      .profileSetups[
+                                                                          index][
+                                                                          "instagram"]
+                                                                      .toString()
+                                                                      .split(
+                                                                          "https://www.instagram.com/")[1]
+                                                                else
+                                                                  "",
                                                               ]);
                                                         }),
                                                   ),
-                                                  globals.verifiedUsers
-                                                          .contains(Provider.of<
-                                                                      ProfileSetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .profileSetups[
-                                                                  index]
-                                                                  ["email"]
-                                                              .toString())
-                                                      ? Align(
-                                                          alignment: Alignment
-                                                              .topRight,
-                                                          child: Container(
-                                                            width: 20,
-                                                            height: 20,
-                                                            child: SvgPicture.string(verifiedIcon.replaceAll(
-                                                                "E57697",
-                                                                Theme.of(context).errorColor ==
-                                                                        Colors
-                                                                            .black
-                                                                    ? "E57697"
-                                                                    : Theme.of(
-                                                                            context)
-                                                                        .errorColor
-                                                                        .toString()
-                                                                        .replaceAll(
-                                                                            "Color(0xff",
-                                                                            "")
-                                                                        .replaceAll(
-                                                                            ")",
-                                                                            ""))),
-                                                          ),
-                                                        )
-                                                      : Container(),
+                                                  if (globals.verifiedUsers
+                                                      .contains(Provider.of<
+                                                                  ProfileSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .profileSetups[index]
+                                                              ["email"]
+                                                          .toString()))
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.topRight,
+                                                      child: Container(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                            "E57697",
+                                                            Theme.of(context)
+                                                                        .errorColor ==
+                                                                    Colors.black
+                                                                ? "E57697"
+                                                                : Theme.of(
+                                                                        context)
+                                                                    .errorColor
+                                                                    .toString()
+                                                                    .replaceAll(
+                                                                        "Color(0xff",
+                                                                        "")
+                                                                    .replaceAll(
+                                                                        ")",
+                                                                        ""))),
+                                                      ),
+                                                    )
+                                                  else
+                                                    Container(),
                                                 ],
                                               ),
                                             ),
@@ -687,26 +698,16 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   .toString());
                                         }
                                       },
-                                      tileText: Provider.of<ProfileSetupProvider>(context, listen: false)
+                                      tileText: Provider.of<
+                                                          ProfileSetupProvider>(
+                                                      context,
+                                                      listen: false)
                                                   .profileSetups[index]
                                                       ["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
                                           ? "Prism"
-                                          : Provider.of<ProfileSetupProvider>(context,
-                                                      listen: false)
-                                                  .profileSetups[index]
-                                                      ["wallpaper_url"][0]
-                                                  .toString() +
-                                              " - " +
-                                              ((Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"] as List).length > 2
-                                                  ? Provider.of<ProfileSetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .profileSetups[index]
-                                                          ["wallpaper_url"][2]
-                                                      .toString()
-                                                  : ""),
+                                          : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
@@ -871,26 +872,16 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<ProfileSetupProvider>(context, listen: false)
-                                                      .profileSetups[index]
-                                                          ["wallpaper_url"]
-                                                      .toString()[0] !=
-                                                  "["
-                                              ? "Prism"
-                                              : Provider.of<ProfileSetupProvider>(context,
-                                                          listen: false)
-                                                      .profileSetups[index]
-                                                          ["wallpaper_url"][0]
-                                                      .toString() +
-                                                  " - " +
-                                                  ((Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"] as List).length > 2
-                                                      ? Provider.of<ProfileSetupProvider>(
+                                          tileText:
+                                              Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
                                                           .profileSetups[index]
-                                                              ["wallpaper_url"][2]
-                                                          .toString()
-                                                      : ""),
+                                                              ["wallpaper_url"]
+                                                          .toString()[0] !=
+                                                      "["
+                                                  ? "Prism"
+                                                  : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay:
@@ -1134,26 +1125,16 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<ProfileSetupProvider>(context, listen: false)
+                                            tileText: Provider.of<
+                                                                ProfileSetupProvider>(
+                                                            context,
+                                                            listen: false)
                                                         .profileSetups[index]
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
                                                 ? "Prism"
-                                                : Provider.of<ProfileSetupProvider>(context,
-                                                            listen: false)
-                                                        .profileSetups[index]
-                                                            ["wallpaper_url"][0]
-                                                        .toString() +
-                                                    " - " +
-                                                    ((Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"] as List).length > 2
-                                                        ? Provider.of<ProfileSetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .profileSetups[index]
-                                                                ["wallpaper_url"][2]
-                                                            .toString()
-                                                        : ""),
+                                                : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups[index]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(

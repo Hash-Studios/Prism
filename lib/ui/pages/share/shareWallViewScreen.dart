@@ -168,7 +168,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
       onWillPop: onWillPop,
       child: provider == "WallHaven"
           ? Scaffold(
-              resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
@@ -692,7 +691,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
             )
           : provider == "Prism"
               ? Scaffold(
-                  resizeToAvoidBottomPadding: false,
                   key: _scaffoldKey,
                   backgroundColor:
                       isLoading ? Theme.of(context).primaryColor : accent,
@@ -1027,8 +1025,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                               Data.wall["email"],
                                                                               Data.wall["userPhoto"],
                                                                               false,
-                                                                              Data.wall["twitter"] != null && Data.wall["twitter"] != "" ? Data.wall["twitter"].toString().split("https://www.twitter.com/")[1] : "",
-                                                                              Data.wall["instagram"] != null && Data.wall["instagram"] != "" ? Data.wall["instagram"].toString().split("https://www.instagram.com/")[1] : "",
+                                                                              if (Data.wall["twitter"] != null && Data.wall["twitter"] != "")
+                                                                                Data.wall["twitter"].toString().split("https://www.twitter.com/")[1]
+                                                                              else
+                                                                                "",
+                                                                              if (Data.wall["instagram"] != null && Data.wall["instagram"] != "")
+                                                                                Data.wall["instagram"].toString().split("https://www.instagram.com/")[1]
+                                                                              else
+                                                                                "",
                                                                             ]);
                                                                           },
                                                                 padding: const EdgeInsets
@@ -1074,28 +1078,35 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                             .fade),
                                                               ),
                                                             ),
-                                                            globals.verifiedUsers
-                                                                    .contains(Data
-                                                                        .wall[
-                                                                            "email"]
-                                                                        .toString())
-                                                                ? Align(
-                                                                    alignment:
-                                                                        Alignment
-                                                                            .topRight,
-                                                                    child:
-                                                                        Container(
-                                                                      width: 20,
-                                                                      height:
-                                                                          20,
-                                                                      child: SvgPicture.string(verifiedIcon.replaceAll(
-                                                                          "E57697",
-                                                                          Theme.of(context).errorColor == Colors.black
-                                                                              ? "E57697"
-                                                                              : Theme.of(context).errorColor.toString().replaceAll("Color(0xff", "").replaceAll(")", ""))),
-                                                                    ),
-                                                                  )
-                                                                : Container(),
+                                                            if (globals
+                                                                .verifiedUsers
+                                                                .contains(Data
+                                                                    .wall[
+                                                                        "email"]
+                                                                    .toString()))
+                                                              Align(
+                                                                alignment:
+                                                                    Alignment
+                                                                        .topRight,
+                                                                child:
+                                                                    Container(
+                                                                  width: 20,
+                                                                  height: 20,
+                                                                  child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                                      "E57697",
+                                                                      Theme.of(context).errorColor ==
+                                                                              Colors
+                                                                                  .black
+                                                                          ? "E57697"
+                                                                          : Theme.of(context)
+                                                                              .errorColor
+                                                                              .toString()
+                                                                              .replaceAll("Color(0xff", "")
+                                                                              .replaceAll(")", ""))),
+                                                                ),
+                                                              )
+                                                            else
+                                                              Container(),
                                                           ],
                                                         ),
                                                       ),
@@ -1177,150 +1188,142 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             ),
                                           ),
                                         ),
-                                        main.prefs.get('premium') == false &&
-                                                globals.isPremiumWall(
-                                                        globals
-                                                            .premiumCollections,
-                                                        Data.wall["collections"]
-                                                                as List ??
-                                                            []) ==
-                                                    true
-                                            ? Expanded(
-                                                flex: 5,
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceEvenly,
-                                                  children: [
-                                                    GestureDetector(
-                                                      onTap: () async {
-                                                        if (main.prefs.get(
-                                                                    "isLoggedin")
-                                                                as bool ==
-                                                            true) {
-                                                          Navigator.pushNamed(
-                                                              context,
-                                                              premiumRoute);
-                                                        } else {
-                                                          googleSignInPopUp(
-                                                              context, () {
-                                                            Navigator.pushNamed(
-                                                                context,
-                                                                premiumRoute);
-                                                          });
-                                                        }
-                                                        toasts.codeSend(
-                                                            "This is a premium wallpaper.");
-                                                      },
-                                                      child: Container(
-                                                        decoration:
-                                                            BoxDecoration(
+                                        if (main.prefs.get('premium') ==
+                                                false &&
+                                            globals.isPremiumWall(
+                                                    globals.premiumCollections,
+                                                    Data.wall["collections"]
+                                                            as List ??
+                                                        []) ==
+                                                true)
+                                          Expanded(
+                                            flex: 5,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                GestureDetector(
+                                                  onTap: () async {
+                                                    if (main.prefs.get(
+                                                                "isLoggedin")
+                                                            as bool ==
+                                                        true) {
+                                                      Navigator.pushNamed(
+                                                          context,
+                                                          premiumRoute);
+                                                    } else {
+                                                      googleSignInPopUp(context,
+                                                          () {
+                                                        Navigator.pushNamed(
+                                                            context,
+                                                            premiumRoute);
+                                                      });
+                                                    }
+                                                    toasts.codeSend(
+                                                        "This is a premium wallpaper.");
+                                                  },
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .25),
+                                                            blurRadius: 4,
+                                                            offset:
+                                                                const Offset(
+                                                                    0, 4))
+                                                      ],
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              500),
+                                                    ),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            17),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          JamIcons.stop_sign,
                                                           color:
                                                               Theme.of(context)
-                                                                  .primaryColor,
-                                                          boxShadow: [
-                                                            BoxShadow(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        .25),
-                                                                blurRadius: 4,
-                                                                offset:
-                                                                    const Offset(
-                                                                        0, 4))
-                                                          ],
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      500),
-                                                        ),
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(17),
-                                                        child: Row(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children: [
-                                                            Icon(
-                                                              JamIcons
-                                                                  .stop_sign,
-                                                              color: Theme.of(
-                                                                      context)
                                                                   .accentColor,
-                                                              size: 30,
-                                                            ),
-                                                            const SizedBox(
-                                                              width: 4,
-                                                            ),
-                                                            Text(
-                                                              "Premium Required",
-                                                              style: Theme.of(
-                                                                      context)
+                                                          size: 30,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Text(
+                                                          "Premium Required",
+                                                          style:
+                                                              Theme.of(context)
                                                                   .textTheme
                                                                   .headline4,
-                                                            ),
-                                                          ],
                                                         ),
-                                                      ),
+                                                      ],
                                                     ),
-                                                  ],
+                                                  ),
                                                 ),
-                                              )
-                                            : Expanded(
-                                                flex: 5,
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceEvenly,
-                                                  children: <Widget>[
-                                                    DownloadButton(
-                                                        colorChanged:
-                                                            colorChanged,
-                                                        link: screenshotTaken
-                                                            ? _imageFile.path
-                                                            : Data.wall == null
-                                                                ? ""
-                                                                : Data.wall[
-                                                                        "wallpaper_url"]
-                                                                    .toString()),
-                                                    SetWallpaperButton(
-                                                      colorChanged:
-                                                          colorChanged,
-                                                      url: screenshotTaken
-                                                          ? _imageFile.path
-                                                          : Data.wall == null
-                                                              ? ""
-                                                              : Data.wall[
-                                                                      "wallpaper_url"]
-                                                                  .toString(),
-                                                    ),
-                                                    FavouriteWallpaperButton(
-                                                      id: Data.wall == null
+                                              ],
+                                            ),
+                                          )
+                                        else
+                                          Expanded(
+                                            flex: 5,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: <Widget>[
+                                                DownloadButton(
+                                                    colorChanged: colorChanged,
+                                                    link: screenshotTaken
+                                                        ? _imageFile.path
+                                                        : Data.wall == null
+                                                            ? ""
+                                                            : Data.wall[
+                                                                    "wallpaper_url"]
+                                                                .toString()),
+                                                SetWallpaperButton(
+                                                  colorChanged: colorChanged,
+                                                  url: screenshotTaken
+                                                      ? _imageFile.path
+                                                      : Data.wall == null
                                                           ? ""
-                                                          : Data.wall["id"]
+                                                          : Data.wall[
+                                                                  "wallpaper_url"]
                                                               .toString(),
-                                                      provider: "Prism",
-                                                      prism: Data.wall ?? {},
-                                                      trash: false,
-                                                    ),
-                                                    ShareButton(
-                                                        id: Data.wall["id"]
-                                                            .toString(),
-                                                        provider: provider,
-                                                        url: Data.wall[
-                                                                "wallpaper_url"]
-                                                            .toString(),
-                                                        thumbUrl: Data.wall[
-                                                                "wallpaper_thumb"]
-                                                            .toString()),
-                                                    EditButton(
-                                                      url: Data
-                                                          .wall["wallpaper_url"]
-                                                          .toString(),
-                                                    ),
-                                                  ],
                                                 ),
-                                              ),
+                                                FavouriteWallpaperButton(
+                                                  id: Data.wall == null
+                                                      ? ""
+                                                      : Data.wall["id"]
+                                                          .toString(),
+                                                  provider: "Prism",
+                                                  prism: Data.wall ?? {},
+                                                  trash: false,
+                                                ),
+                                                ShareButton(
+                                                    id: Data.wall["id"]
+                                                        .toString(),
+                                                    provider: provider,
+                                                    url: Data
+                                                        .wall["wallpaper_url"]
+                                                        .toString(),
+                                                    thumbUrl: Data
+                                                        .wall["wallpaper_thumb"]
+                                                        .toString()),
+                                                EditButton(
+                                                  url: Data
+                                                      .wall["wallpaper_url"]
+                                                      .toString(),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                       ],
                                     );
                                   }
@@ -1476,7 +1479,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                 )
               : provider == "Pexels"
                   ? Scaffold(
-                      resizeToAvoidBottomPadding: false,
                       key: _scaffoldKey,
                       backgroundColor:
                           isLoading ? Theme.of(context).primaryColor : accent,
@@ -1865,16 +1867,16 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                           WallPaperP(),
                                                       trash: false,
                                                     ),
-                                                    PData.wall != null
-                                                        ? ShareButton(
-                                                            id: PData.wall.id ??
-                                                                "",
-                                                            provider: provider,
-                                                            url: url.toString(),
-                                                            thumbUrl:
-                                                                url.toString(),
-                                                          )
-                                                        : Container(),
+                                                    if (PData.wall != null)
+                                                      ShareButton(
+                                                        id: PData.wall.id ?? "",
+                                                        provider: provider,
+                                                        url: url.toString(),
+                                                        thumbUrl:
+                                                            url.toString(),
+                                                      )
+                                                    else
+                                                      Container(),
                                                     EditButton(
                                                       url: url.toString(),
                                                     ),

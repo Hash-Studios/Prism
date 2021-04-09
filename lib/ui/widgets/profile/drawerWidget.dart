@@ -116,22 +116,25 @@ class ProfileDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: <Widget>[
             createDrawerHeader(context),
-            (main.prefs.get('premium') as bool == true)
-                ? Container()
-                : createDrawerBodyHeader(text: "PREMIUM", context: context),
-            (main.prefs.get('premium') as bool == true)
-                ? Container()
-                : createDrawerBodyItem(
-                    icon: JamIcons.coin,
-                    text: 'Buy Premium',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, premiumRoute);
-                    },
-                    context: context),
-            (main.prefs.get('premium') as bool == true)
-                ? Container()
-                : const Divider(),
+            if (main.prefs.get('premium') as bool == true)
+              Container()
+            else
+              createDrawerBodyHeader(text: "PREMIUM", context: context),
+            if (main.prefs.get('premium') as bool == true)
+              Container()
+            else
+              createDrawerBodyItem(
+                  icon: JamIcons.coin,
+                  text: 'Buy Premium',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, premiumRoute);
+                  },
+                  context: context),
+            if (main.prefs.get('premium') as bool == true)
+              Container()
+            else
+              const Divider(),
             createDrawerBodyHeader(text: "FAVOURITES", context: context),
             createDrawerBodyItem(
                 icon: JamIcons.picture,
@@ -501,33 +504,34 @@ class ProfileDrawer extends StatelessWidget {
             ),
             const Divider(),
             createDrawerBodyHeader(text: "USER", context: context),
-            main.prefs.get("name") != null &&
-                    main.prefs.get("email") != null &&
-                    main.prefs.get("googleimage") != null
-                ? createDrawerBodyItem(
-                    icon: JamIcons.share_alt,
-                    text: 'Share your Profile',
-                    context: context,
-                    onTap: () {
-                      createUserDynamicLink(
-                          main.prefs.get("name").toString(),
-                          main.prefs.get("email").toString(),
-                          main.prefs.get("googleimage").toString(),
-                          main.prefs.get("premium") as bool,
-                          main.prefs.get("twitter") != ""
-                              ? main.prefs
-                                  .get("twitter")
-                                  .toString()
-                                  .split("https://www.twitter.com/")[1]
-                              : "",
-                          main.prefs.get("instagram") != ""
-                              ? main.prefs
-                                  .get("instagram")
-                                  .toString()
-                                  .split("https://www.instagram.com/")[1]
-                              : "");
-                    })
-                : Container(),
+            if (main.prefs.get("name") != null &&
+                main.prefs.get("email") != null &&
+                main.prefs.get("googleimage") != null)
+              createDrawerBodyItem(
+                  icon: JamIcons.share_alt,
+                  text: 'Share your Profile',
+                  context: context,
+                  onTap: () {
+                    createUserDynamicLink(
+                        main.prefs.get("name").toString(),
+                        main.prefs.get("email").toString(),
+                        main.prefs.get("googleimage").toString(),
+                        main.prefs.get("premium") as bool,
+                        main.prefs.get("twitter") != ""
+                            ? main.prefs
+                                .get("twitter")
+                                .toString()
+                                .split("https://www.twitter.com/")[1]
+                            : "",
+                        main.prefs.get("instagram") != ""
+                            ? main.prefs
+                                .get("instagram")
+                                .toString()
+                                .split("https://www.instagram.com/")[1]
+                            : "");
+                  })
+            else
+              Container(),
             createDrawerBodyItem(
               icon: JamIcons.log_out,
               text: 'Log out',

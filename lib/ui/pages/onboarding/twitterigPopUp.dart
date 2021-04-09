@@ -1,18 +1,19 @@
+import 'dart:convert';
+
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
+import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:Prism/gitkey.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OptionalInfo extends StatefulWidget {
   final Image img;
@@ -126,93 +127,94 @@ class _OptionalInfoState extends State<OptionalInfo> {
                 TwitterIGBoxes(
                     twitterController: _twitterController,
                     igController: _igController),
-                widget.showSkip == true
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => SplashWidget()));
-                            },
-                            style: ButtonStyle(
-                                overlayColor: MaterialStateColor.resolveWith(
-                                    (states) => Colors.white10)),
-                            child: Container(
-                              width: 75,
-                              child: Text(
-                                widget.skipText ?? "Skip",
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontFamily: "Roboto",
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                if (widget.showSkip == true)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => SplashWidget()));
+                        },
+                        style: ButtonStyle(
+                            overlayColor: MaterialStateColor.resolveWith(
+                                (states) => Colors.white10)),
+                        child: Container(
+                          width: 75,
+                          child: Text(
+                            widget.skipText ?? "Skip",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontFamily: "Roboto",
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              await func();
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => SplashWidget()));
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateColor.resolveWith(
-                                  (states) => Colors.white),
-                            ),
-                            child: Container(
-                              width: 60,
-                              child: Text(
-                                widget.doneText ?? 'DONE',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Color(0xFFE57697),
-                                  fontSize: 15,
-                                  fontFamily: "Roboto",
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              await func();
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => SplashWidget()));
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateColor.resolveWith(
-                                  (states) => Colors.white),
-                            ),
-                            child: Container(
-                              width: 60,
-                              child: const Text(
-                                'DONE',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Color(0xFFE57697),
-                                  fontSize: 15,
-                                  fontFamily: "Roboto",
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await func();
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => SplashWidget()));
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateColor.resolveWith(
+                              (states) => Colors.white),
+                        ),
+                        child: Container(
+                          width: 60,
+                          child: Text(
+                            widget.doneText ?? 'DONE',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFFE57697),
+                              fontSize: 15,
+                              fontFamily: "Roboto",
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () async {
+                          await func();
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => SplashWidget()));
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateColor.resolveWith(
+                              (states) => Colors.white),
+                        ),
+                        child: Container(
+                          width: 60,
+                          child: const Text(
+                            'DONE',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFFE57697),
+                              fontSize: 15,
+                              fontFamily: "Roboto",
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 const SizedBox(
                   height: 24,
                 ),
@@ -449,93 +451,94 @@ class _OptionalInfo2State extends State<OptionalInfo2> {
                   height: 17,
                 ),
                 ApplyButton(),
-                widget.showSkip == true
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => SplashWidget()));
-                            },
-                            style: ButtonStyle(
-                                overlayColor: MaterialStateColor.resolveWith(
-                                    (states) => Colors.white10)),
-                            child: Container(
-                              width: 75,
-                              child: Text(
-                                widget.skipText ?? "Skip",
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontFamily: "Roboto",
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                if (widget.showSkip == true)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => SplashWidget()));
+                        },
+                        style: ButtonStyle(
+                            overlayColor: MaterialStateColor.resolveWith(
+                                (states) => Colors.white10)),
+                        child: Container(
+                          width: 75,
+                          child: Text(
+                            widget.skipText ?? "Skip",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontFamily: "Roboto",
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              await func();
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => SplashWidget()));
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateColor.resolveWith(
-                                  (states) => Colors.white),
-                            ),
-                            child: Container(
-                              width: 60,
-                              child: Text(
-                                widget.doneText ?? 'DONE',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Color(0xFFE57697),
-                                  fontSize: 15,
-                                  fontFamily: "Roboto",
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              await func();
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => SplashWidget()));
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateColor.resolveWith(
-                                  (states) => Colors.white),
-                            ),
-                            child: Container(
-                              width: 60,
-                              child: const Text(
-                                'DONE',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Color(0xFFE57697),
-                                  fontSize: 15,
-                                  fontFamily: "Roboto",
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await func();
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => SplashWidget()));
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateColor.resolveWith(
+                              (states) => Colors.white),
+                        ),
+                        child: Container(
+                          width: 60,
+                          child: Text(
+                            widget.doneText ?? 'DONE',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFFE57697),
+                              fontSize: 15,
+                              fontFamily: "Roboto",
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () async {
+                          await func();
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => SplashWidget()));
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateColor.resolveWith(
+                              (states) => Colors.white),
+                        ),
+                        child: Container(
+                          width: 60,
+                          child: const Text(
+                            'DONE',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFFE57697),
+                              fontSize: 15,
+                              fontFamily: "Roboto",
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 const SizedBox(
                   height: 24,
                 ),
@@ -627,8 +630,6 @@ class OptionalInfo3 extends StatefulWidget {
 
 class _OptionalInfo3State extends State<OptionalInfo3> {
   Image image1;
-  final TextEditingController _twitterController = TextEditingController();
-  final TextEditingController _igController = TextEditingController();
   Future<bool> onWillPop(BuildContext ctx) async {
     Navigator.pushReplacement(
         ctx, MaterialPageRoute(builder: (context) => SplashWidget()));
@@ -730,91 +731,92 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       ),
                     ],
                   )),
-              widget.showSkip == true
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => SplashWidget()));
-                          },
-                          style: ButtonStyle(
-                              overlayColor: MaterialStateColor.resolveWith(
-                                  (states) => Colors.white10)),
-                          child: Container(
-                            width: 75,
-                            child: Text(
-                              widget.skipText ?? "Skip",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontFamily: "Roboto",
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+              if (widget.showSkip == true)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SplashWidget()));
+                      },
+                      style: ButtonStyle(
+                          overlayColor: MaterialStateColor.resolveWith(
+                              (states) => Colors.white10)),
+                      child: Container(
+                        width: 75,
+                        child: Text(
+                          widget.skipText ?? "Skip",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontFamily: "Roboto",
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => SplashWidget()));
-                          },
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStateColor.resolveWith(
-                                (states) => Colors.white),
-                          ),
-                          child: Container(
-                            width: 60,
-                            child: Text(
-                              widget.doneText ?? 'DONE',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Color(0xFFE57697),
-                                fontSize: 15,
-                                fontFamily: "Roboto",
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => SplashWidget()));
-                          },
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStateColor.resolveWith(
-                                (states) => Colors.white),
-                          ),
-                          child: Container(
-                            width: 60,
-                            child: const Text(
-                              'DONE',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Color(0xFFE57697),
-                                fontSize: 15,
-                                fontFamily: "Roboto",
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SplashWidget()));
+                      },
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateColor.resolveWith(
+                            (states) => Colors.white),
+                      ),
+                      child: Container(
+                        width: 60,
+                        child: Text(
+                          widget.doneText ?? 'DONE',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFFE57697),
+                            fontSize: 15,
+                            fontFamily: "Roboto",
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SplashWidget()));
+                      },
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateColor.resolveWith(
+                            (states) => Colors.white),
+                      ),
+                      child: Container(
+                        width: 60,
+                        child: const Text(
+                          'DONE',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFFE57697),
+                            fontSize: 15,
+                            fontFamily: "Roboto",
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               const SizedBox(
                 height: 24,
               ),

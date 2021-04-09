@@ -54,18 +54,19 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
               style: TextStyle(color: Theme.of(context).accentColor),
             ),
             actions: [
-              MediaQuery.of(context).size.height > 650
-                  ? Container()
-                  : TextButton(
-                      onPressed: () async => getSetup(),
-                      child: Text(
-                        "Continue",
-                        style: TextStyle(
-                          color: Theme.of(context).errorColor,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    )
+              if (MediaQuery.of(context).size.height > 650)
+                Container()
+              else
+                TextButton(
+                  onPressed: () async => getSetup(),
+                  child: Text(
+                    "Continue",
+                    style: TextStyle(
+                      color: Theme.of(context).errorColor,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                )
             ],
           ),
           body: Column(
