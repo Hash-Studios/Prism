@@ -114,7 +114,7 @@ packages:
     source: hosted
     version: "0.1.1+2"
   collection:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: collection
       url: "https://pub.dartlang.org"
@@ -189,14 +189,14 @@ packages:
       name: extended_image
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.9.0"
+    version: "1.6.0"
   extended_image_library:
     dependency: transitive
     description:
       name: extended_image_library
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.2.3"
+    version: "0.3.1"
   ffi:
     dependency: transitive
     description:
@@ -787,7 +787,7 @@ packages:
       name: purchases_flutter
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.4.3"
+    version: "3.2.1"
   quick_actions:
     dependency: "direct main"
     description:
