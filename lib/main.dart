@@ -15,7 +15,7 @@ import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
-import 'package:collection/collection.dart' show IterableExtension;
+// import 'package:collection/collection.dart' show IterableExtension;
 import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -207,67 +207,67 @@ class _MyAppState extends State<MyApp> {
         ?.createNotificationChannel(androidNotificationChannel);
   }
 
-  List<DisplayMode> modes = <DisplayMode>[];
-  DisplayMode? selected;
-  Future<void> fetchModes() async {
-    try {
-      modes = await FlutterDisplayMode.supported;
-      debugPrint(modes.toString());
-    } on PlatformException catch (e) {
-      debugPrint(e.toString());
-    }
-    selected = modes.firstWhereOrNull((DisplayMode m) => m.selected);
-  }
+  // List<DisplayMode> modes = <DisplayMode>[];
+  // DisplayMode? selected;
+  // Future<void> fetchModes() async {
+  //   try {
+  //     modes = await FlutterDisplayMode.supported;
+  //     debugPrint(modes.toString());
+  //   } on PlatformException catch (e) {
+  //     debugPrint(e.toString());
+  //   }
+  //   selected = modes.firstWhereOrNull((DisplayMode m) => m.selected);
+  // }
 
-  Future<DisplayMode> getCurrentMode() async {
-    return FlutterDisplayMode.current;
-  }
+  // Future<DisplayMode> getCurrentMode() async {
+  //   return FlutterDisplayMode.current;
+  // }
 
-  Future<void> setCurrentMode() async {
-    await fetchModes();
-    if (modes.isNotEmpty) {
-      var width = 0;
-      for (final mode in modes) {
-        if (mode.width > width) {
-          width = mode.width;
-        }
-      }
-      final List<DisplayMode> maxWidthModes = [];
-      for (final mode in modes) {
-        if (mode.width == width) {
-          maxWidthModes.add(mode);
-        }
-      }
-      var height = 0;
-      for (final mode in maxWidthModes) {
-        if (mode.height > height) {
-          height = mode.height;
-        }
-      }
-      final List<DisplayMode> maxResModes = [];
-      for (final mode in maxWidthModes) {
-        if (mode.height == height) {
-          maxResModes.add(mode);
-        }
-      }
-      double refreshRate = 0;
-      for (final mode in maxResModes) {
-        if (mode.refreshRate > refreshRate) {
-          refreshRate = mode.refreshRate;
-        }
-      }
-      final List<DisplayMode> maxDisplayModes = [];
-      for (final mode in maxResModes) {
-        if (mode.refreshRate == refreshRate) {
-          maxDisplayModes.add(mode);
-        }
-      }
-      if (maxDisplayModes.isNotEmpty) {
-        await FlutterDisplayMode.setMode(maxDisplayModes[0]);
-      }
-    }
-    selected = modes.firstWhereOrNull((DisplayMode m) => m.selected);
-  }
+  // Future<void> setCurrentMode() async {
+  //   await fetchModes();
+  //   if (modes.isNotEmpty) {
+  //     var width = 0;
+  //     for (final mode in modes) {
+  //       if (mode.width > width) {
+  //         width = mode.width;
+  //       }
+  //     }
+  //     final List<DisplayMode> maxWidthModes = [];
+  //     for (final mode in modes) {
+  //       if (mode.width == width) {
+  //         maxWidthModes.add(mode);
+  //       }
+  //     }
+  //     var height = 0;
+  //     for (final mode in maxWidthModes) {
+  //       if (mode.height > height) {
+  //         height = mode.height;
+  //       }
+  //     }
+  //     final List<DisplayMode> maxResModes = [];
+  //     for (final mode in maxWidthModes) {
+  //       if (mode.height == height) {
+  //         maxResModes.add(mode);
+  //       }
+  //     }
+  //     double refreshRate = 0;
+  //     for (final mode in maxResModes) {
+  //       if (mode.refreshRate > refreshRate) {
+  //         refreshRate = mode.refreshRate;
+  //       }
+  //     }
+  //     final List<DisplayMode> maxDisplayModes = [];
+  //     for (final mode in maxResModes) {
+  //       if (mode.refreshRate == refreshRate) {
+  //         maxDisplayModes.add(mode);
+  //       }
+  //     }
+  //     if (maxDisplayModes.isNotEmpty) {
+  //       await FlutterDisplayMode.setMode(maxDisplayModes[0]);
+  //     }
+  //   }
+  //   selected = modes.firstWhereOrNull((DisplayMode m) => m.selected);
+  // }
 
   Future<bool> getLoginStatus() async {
     await globals.gAuth.googleSignIn.isSignedIn().then((value) {
@@ -280,7 +280,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
-    setCurrentMode();
+    // setCurrentMode();
+    FlutterDisplayMode.setHighRefreshRate();
     _createNotificationChannel(
         "followers", "Followers", "Get notifications for new followers.");
     _createNotificationChannel("recommendations", "Recommendations",
