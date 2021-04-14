@@ -130,7 +130,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                             });
                           }
                         }),
-                    itemBuilder: (BuildContext context, int i) => i == 4
+                    itemBuilder: (BuildContext context, int i, int rI) => i == 4
                         ? Container(
                             width: MediaQuery.of(context).size.width,
                             margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
