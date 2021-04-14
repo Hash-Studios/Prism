@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
@@ -184,9 +185,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         pixelRatio: 3,
                         delay: const Duration(milliseconds: 10),
                       )
-                          .then((File image) async {
+                          .then((Uint8List? image) async {
                         setState(() {
-                          _imageFile = image;
+                          _imageFile = File.fromRawPath(image!);
                           screenshotTaken = true;
                           panelClosed = false;
                         });
@@ -201,9 +202,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               pixelRatio: 3,
                               delay: const Duration(milliseconds: 10),
                             )
-                              .then((File image) async {
+                              .then((Uint8List? image) async {
                               setState(() {
-                                _imageFile = image;
+                                _imageFile = File.fromRawPath(image!);
                                 screenshotTaken = true;
                                 panelClosed = false;
                               });
@@ -332,7 +333,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Text(
-                                                      "${WData.wall == null ? 0 : WData.wall!.views.toString()}",
+                                                      "${WData.wall == null ? 0 : WData.wall.views.toString()}",
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .bodyText2!
@@ -355,7 +356,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Text(
-                                                      "${WData.wall == null ? 0 : WData.wall!.favourites.toString()}",
+                                                      "${WData.wall == null ? 0 : WData.wall.favourites.toString()}",
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .bodyText2!
@@ -378,7 +379,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Text(
-                                                      "${WData.wall == null ? 0 : (double.parse((double.parse(WData.wall!.file_size.toString()) / 1000000).toString()).toStringAsFixed(2))} MB",
+                                                      "${WData.wall == null ? 0 : (double.parse((double.parse(WData.wall.file_size.toString()) / 1000000).toString()).toStringAsFixed(2))} MB",
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .bodyText2!
@@ -405,12 +406,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       Text(
                                                         WData.wall == null
                                                             ? "General"
-                                                            : (WData.wall!
+                                                            : (WData.wall
                                                                     .category
                                                                     .toString()[
                                                                         0]
                                                                     .toUpperCase() +
-                                                                WData.wall!
+                                                                WData.wall
                                                                     .category
                                                                     .toString()
                                                                     .substring(
@@ -438,7 +439,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      "${WData.wall == null ? 0x0 : WData.wall!.resolution.toString()}",
+                                                      "${WData.wall == null ? 0x0 : WData.wall.resolution.toString()}",
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .bodyText2!
@@ -498,7 +499,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                   ? _imageFile.path
                                                   : WData.wall == null
                                                       ? ""
-                                                      : WData.wall!.path
+                                                      : WData.wall.path
                                                           .toString()),
                                           SetWallpaperButton(
                                             colorChanged: colorChanged,
@@ -506,13 +507,13 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                 ? _imageFile.path
                                                 : WData.wall == null
                                                     ? ""
-                                                    : WData.wall!.path
+                                                    : WData.wall.path
                                                         .toString(),
                                           ),
                                           FavouriteWallpaperButton(
                                             id: WData.wall == null
                                                 ? ""
-                                                : WData.wall!.id.toString(),
+                                                : WData.wall.id.toString(),
                                             provider: "WallHaven",
                                             wallhaven:
                                                 WData.wall ?? WallPaper(),
@@ -521,20 +522,20 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           ShareButton(
                                               id: WData.wall == null
                                                   ? ""
-                                                  : WData.wall!.id.toString(),
+                                                  : WData.wall.id.toString(),
                                               provider: provider,
                                               url: WData.wall == null
                                                   ? ""
-                                                  : WData.wall!.path.toString(),
+                                                  : WData.wall.path.toString(),
                                               thumbUrl: WData.wall == null
                                                   ? ""
                                                   : WData
-                                                      .wall!.thumbs!["original"]
+                                                      .wall.thumbs!["original"]
                                                       .toString()),
                                           EditButton(
                                             url: WData.wall == null
                                                 ? ""
-                                                : WData.wall!.path.toString(),
+                                                : WData.wall.path.toString(),
                                           ),
                                         ],
                                       ),
@@ -707,9 +708,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             pixelRatio: 3,
                             delay: const Duration(milliseconds: 10),
                           )
-                              .then((File image) async {
+                              .then((Uint8List? image) async {
                             setState(() {
-                              _imageFile = image;
+                              _imageFile = File.fromRawPath(image!);
                               screenshotTaken = true;
                               panelClosed = false;
                             });
@@ -725,9 +726,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   pixelRatio: 3,
                                   delay: const Duration(milliseconds: 10),
                                 )
-                                  .then((File image) async {
+                                  .then((Uint8List? image) async {
                                   setState(() {
-                                    _imageFile = image;
+                                    _imageFile = File.fromRawPath(image!);
                                     screenshotTaken = true;
                                     panelClosed = false;
                                   });
@@ -957,7 +958,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                         const SizedBox(
                                                             width: 10),
                                                         Text(
-                                                          "${Data.wall == null ? 0 : Data.wall!["desc"].toString()}",
+                                                          "${Data.wall == null ? 0 : Data.wall["desc"].toString()}",
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
@@ -983,7 +984,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                         const SizedBox(
                                                             width: 10),
                                                         Text(
-                                                          "${Data.wall == null ? 0 : Data.wall!["size"].toString()}",
+                                                          "${Data.wall == null ? 0 : Data.wall["size"].toString()}",
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
@@ -1021,16 +1022,16 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                         ? () {}
                                                                         : () {
                                                                             Navigator.pushNamed(context, photographerProfileRoute, arguments: [
-                                                                              Data.wall!["by"],
-                                                                              Data.wall!["email"],
-                                                                              Data.wall!["userPhoto"],
+                                                                              Data.wall["by"],
+                                                                              Data.wall["email"],
+                                                                              Data.wall["userPhoto"],
                                                                               false,
-                                                                              if (Data.wall!["twitter"] != null && Data.wall!["twitter"] != "")
-                                                                                Data.wall!["twitter"].toString().split("https://www.twitter.com/")[1]
+                                                                              if (Data.wall["twitter"] != null && Data.wall["twitter"] != "")
+                                                                                Data.wall["twitter"].toString().split("https://www.twitter.com/")[1]
                                                                               else
                                                                                 "",
-                                                                              if (Data.wall!["instagram"] != null && Data.wall!["instagram"] != "")
-                                                                                Data.wall!["instagram"].toString().split("https://www.instagram.com/")[1]
+                                                                              if (Data.wall["instagram"] != null && Data.wall["instagram"] != "")
+                                                                                Data.wall["instagram"].toString().split("https://www.instagram.com/")[1]
                                                                               else
                                                                                 "",
                                                                             ]);
@@ -1044,7 +1045,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                     CircleAvatar(
                                                                   backgroundImage:
                                                                       CachedNetworkImageProvider(Data
-                                                                          .wall![
+                                                                          .wall[
                                                                               "userPhoto"]
                                                                           .toString()),
                                                                 ),
@@ -1060,7 +1061,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                             null
                                                                         ? "Photographer"
                                                                         : Data
-                                                                            .wall![
+                                                                            .wall[
                                                                                 "by"]
                                                                             .toString(),
                                                                     style: Theme.of(
@@ -1081,7 +1082,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                             if (globals
                                                                 .verifiedUsers
                                                                 .contains(Data
-                                                                    .wall![
+                                                                    .wall[
                                                                         "email"]
                                                                     .toString()))
                                                               Align(
@@ -1115,7 +1116,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     Row(
                                                       children: [
                                                         Text(
-                                                          "${Data.wall == null ? 0x0 : Data.wall!["resolution"].toString()}",
+                                                          "${Data.wall == null ? 0x0 : Data.wall["resolution"].toString()}",
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
@@ -1149,7 +1150,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                 CopyrightPopUp(
                                                                   setup: false,
                                                                   shortlink:
-                                                                      "Wallpaper ID - ${Data.wall!["id"]}",
+                                                                      "Wallpaper ID - ${Data.wall["id"]}",
                                                                 ));
                                                       },
                                                       child: Row(
@@ -1192,7 +1193,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                 false &&
                                             globals.isPremiumWall(
                                                     globals.premiumCollections,
-                                                    Data.wall!["collections"]
+                                                    Data.wall["collections"]
                                                             as List? ??
                                                         []) ==
                                                 true)
@@ -1286,7 +1287,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                         ? _imageFile.path
                                                         : Data.wall == null
                                                             ? ""
-                                                            : Data.wall![
+                                                            : Data.wall[
                                                                     "wallpaper_url"]
                                                                 .toString()),
                                                 SetWallpaperButton(
@@ -1295,32 +1296,32 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       ? _imageFile.path
                                                       : Data.wall == null
                                                           ? ""
-                                                          : Data.wall![
+                                                          : Data.wall[
                                                                   "wallpaper_url"]
                                                               .toString(),
                                                 ),
                                                 FavouriteWallpaperButton(
                                                   id: Data.wall == null
                                                       ? ""
-                                                      : Data.wall!["id"]
+                                                      : Data.wall["id"]
                                                           .toString(),
                                                   provider: "Prism",
                                                   prism: Data.wall ?? {},
                                                   trash: false,
                                                 ),
                                                 ShareButton(
-                                                    id: Data.wall!["id"]
+                                                    id: Data.wall["id"]
                                                         .toString(),
                                                     provider: provider,
                                                     url: Data
-                                                        .wall!["wallpaper_url"]
+                                                        .wall["wallpaper_url"]
                                                         .toString(),
-                                                    thumbUrl: Data.wall![
-                                                            "wallpaper_thumb"]
+                                                    thumbUrl: Data
+                                                        .wall["wallpaper_thumb"]
                                                         .toString()),
                                                 EditButton(
                                                   url: Data
-                                                      .wall!["wallpaper_url"]
+                                                      .wall["wallpaper_url"]
                                                       .toString(),
                                                 ),
                                               ],
@@ -1497,9 +1498,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 pixelRatio: 3,
                                 delay: const Duration(milliseconds: 10),
                               )
-                                  .then((File image) async {
+                                  .then((Uint8List? image) async {
                                 setState(() {
-                                  _imageFile = image;
+                                  _imageFile = File.fromRawPath(image!);
                                   screenshotTaken = true;
                                   panelClosed = false;
                                 });
@@ -1515,9 +1516,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       pixelRatio: 3,
                                       delay: const Duration(milliseconds: 10),
                                     )
-                                      .then((File image) async {
+                                      .then((Uint8List? image) async {
                                       setState(() {
-                                        _imageFile = image;
+                                        _imageFile = File.fromRawPath(image!);
                                         screenshotTaken = true;
                                         panelClosed = false;
                                       });

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
@@ -176,9 +177,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         pixelRatio: 3,
                         delay: const Duration(milliseconds: 10),
                       )
-                          .then((File image) async {
+                          .then((Uint8List? image) async {
                         setState(() {
-                          _imageFile = image;
+                          _imageFile = File.fromRawPath(image!);
                           screenshotTaken = true;
                         });
                         debugPrint('Screenshot Taken');
@@ -194,9 +195,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               pixelRatio: 3,
                               delay: const Duration(milliseconds: 10),
                             )
-                              .then((File image) async {
+                              .then((Uint8List? image) async {
                               setState(() {
-                                _imageFile = image;
+                                _imageFile = File.fromRawPath(image!);
                                 screenshotTaken = true;
                               });
                               debugPrint('Screenshot Taken');
@@ -657,9 +658,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             pixelRatio: 3,
                             delay: const Duration(milliseconds: 10),
                           )
-                              .then((File image) async {
+                              .then((Uint8List? image) async {
                             setState(() {
-                              _imageFile = image;
+                              _imageFile = File.fromRawPath(image!);
                               screenshotTaken = true;
                             });
                             debugPrint('Screenshot Taken');
@@ -674,9 +675,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   pixelRatio: 3,
                                   delay: const Duration(milliseconds: 10),
                                 )
-                                  .then((File image) async {
+                                  .then((Uint8List? image) async {
                                   setState(() {
-                                    _imageFile = image;
+                                    _imageFile = File.fromRawPath(image!);
                                     screenshotTaken = true;
                                   });
                                   debugPrint('Screenshot Taken');
@@ -1368,9 +1369,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 pixelRatio: 3,
                                 delay: const Duration(milliseconds: 10),
                               )
-                                  .then((File image) async {
+                                  .then((Uint8List? image) async {
                                 setState(() {
-                                  _imageFile = image;
+                                  _imageFile = File.fromRawPath(image!);
                                   screenshotTaken = true;
                                 });
                                 debugPrint('Screenshot Taken');
@@ -1385,9 +1386,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       pixelRatio: 3,
                                       delay: const Duration(milliseconds: 10),
                                     )
-                                      .then((File image) async {
+                                      .then((Uint8List? image) async {
                                       setState(() {
-                                        _imageFile = image;
+                                        _imageFile = File.fromRawPath(image!);
                                         screenshotTaken = true;
                                       });
                                       debugPrint('Screenshot Taken');
@@ -1913,9 +1914,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     pixelRatio: 3,
                                     delay: const Duration(milliseconds: 10),
                                   )
-                                      .then((File image) async {
+                                      .then((Uint8List? image) async {
                                     setState(() {
-                                      _imageFile = image;
+                                      _imageFile = File.fromRawPath(image!);
                                       screenshotTaken = true;
                                     });
                                     debugPrint('Screenshot Taken');
@@ -1932,9 +1933,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           delay:
                                               const Duration(milliseconds: 10),
                                         )
-                                          .then((File image) async {
+                                          .then((Uint8List? image) async {
                                           setState(() {
-                                            _imageFile = image;
+                                            _imageFile =
+                                                File.fromRawPath(image!);
                                             screenshotTaken = true;
                                           });
                                           debugPrint('Screenshot Taken');
@@ -2493,9 +2495,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     pixelRatio: 3,
                                     delay: const Duration(milliseconds: 10),
                                   )
-                                      .then((File image) async {
+                                      .then((Uint8List? image) async {
                                     setState(() {
-                                      _imageFile = image;
+                                      _imageFile = File.fromRawPath(image!);
                                       screenshotTaken = true;
                                     });
                                     debugPrint('Screenshot Taken');
@@ -2512,9 +2514,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           delay:
                                               const Duration(milliseconds: 10),
                                         )
-                                          .then((File image) async {
+                                          .then((Uint8List? image) async {
                                           setState(() {
-                                            _imageFile = image;
+                                            _imageFile =
+                                                File.fromRawPath(image!);
                                             screenshotTaken = true;
                                           });
                                           debugPrint('Screenshot Taken');

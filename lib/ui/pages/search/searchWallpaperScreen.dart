@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
@@ -156,9 +157,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         pixelRatio: 3,
                         delay: const Duration(milliseconds: 10),
                       )
-                          .then((File image) async {
+                          .then((Uint8List? image) async {
                         setState(() {
-                          _imageFile = image;
+                          _imageFile = File.fromRawPath(image!);
                           screenshotTaken = true;
                           panelClosed = false;
                         });
@@ -173,9 +174,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               pixelRatio: 3,
                               delay: const Duration(milliseconds: 10),
                             )
-                              .then((File image) async {
+                              .then((Uint8List? image) async {
                               setState(() {
-                                _imageFile = image;
+                                _imageFile = File.fromRawPath(image!);
                                 screenshotTaken = true;
                               });
                               debugPrint('Screenshot Taken');
@@ -639,9 +640,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         pixelRatio: 3,
                         delay: const Duration(milliseconds: 10),
                       )
-                          .then((File image) async {
+                          .then((Uint8List? image) async {
                         setState(() {
-                          _imageFile = image;
+                          _imageFile = File.fromRawPath(image!);
                           screenshotTaken = true;
                           panelClosed = false;
                         });
@@ -656,9 +657,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               pixelRatio: 3,
                               delay: const Duration(milliseconds: 10),
                             )
-                              .then((File image) async {
+                              .then((Uint8List? image) async {
                               setState(() {
-                                _imageFile = image;
+                                _imageFile = File.fromRawPath(image!);
                                 screenshotTaken = true;
                               });
                               debugPrint('Screenshot Taken');
@@ -938,13 +939,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                       colorChanged: colorChanged,
                                       link: screenshotTaken
                                           ? _imageFile.path
-                                          : pdata.wallsPS[index].src!["original"]
+                                          : pdata
+                                              .wallsPS[index].src!["original"]
                                               .toString()),
                                   SetWallpaperButton(
                                       colorChanged: colorChanged,
                                       url: screenshotTaken
                                           ? _imageFile.path
-                                          : pdata.wallsPS[index].src!["original"]
+                                          : pdata
+                                              .wallsPS[index].src!["original"]
                                               .toString()),
                                   FavouriteWallpaperButton(
                                     id: pdata.wallsPS[index].id.toString(),

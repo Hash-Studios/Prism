@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
@@ -158,9 +159,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                     pixelRatio: 3,
                     delay: const Duration(milliseconds: 10),
                   )
-                      .then((File image) async {
+                      .then((Uint8List? image) async {
                     setState(() {
-                      _imageFile = image;
+                      _imageFile = File.fromRawPath(image!);
                       screenshotTaken = true;
                       panelClosed = false;
                     });
@@ -175,9 +176,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                           pixelRatio: 3,
                           delay: const Duration(milliseconds: 10),
                         )
-                          .then((File image) async {
+                          .then((Uint8List? image) async {
                           setState(() {
-                            _imageFile = image;
+                            _imageFile = File.fromRawPath(image!);
                             screenshotTaken = true;
                             panelClosed = false;
                           });
@@ -449,7 +450,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                           Provider.of<ProfileWallProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileWalls![index]["resolution"]
+                                              .profileWalls![index]
+                                                  ["resolution"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
@@ -547,7 +549,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                   provider: Provider.of<ProfileWallProvider>(
                                           context,
                                           listen: false)
-                                      .profileWalls![index]["wallpaper_provider"]
+                                      .profileWalls![index]
+                                          ["wallpaper_provider"]
                                       .toString(),
                                   url: Provider.of<ProfileWallProvider>(context,
                                           listen: false)
