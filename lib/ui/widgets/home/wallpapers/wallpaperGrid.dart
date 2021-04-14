@@ -148,7 +148,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             });
                           }
                         }),
-                    itemBuilder: (BuildContext context, int i) => i == 4
+                    itemBuilder: (BuildContext context, int i, int rI) => i == 4
                         ? Container(
                             width: MediaQuery.of(context).size.width,
                             margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
@@ -368,7 +368,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     : PremiumBannerWalls(
                         comparator: !globals.isPremiumWall(
                             globals.premiumCollections,
-                            Data.subPrismWalls![index]["collections"] as List? ??
+                            Data.subPrismWalls![index]["collections"]
+                                    as List? ??
                                 []),
                         defaultChild: FocusedMenuHolder(
                           provider: widget.provider,
