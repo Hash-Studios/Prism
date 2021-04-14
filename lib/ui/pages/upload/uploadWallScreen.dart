@@ -88,7 +88,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       quality: 85,
     );
     debugPrint(file.lengthSync().toString());
-    debugPrint(result.length.toString());
+    debugPrint(result!.length.toString());
     return result;
   }
 

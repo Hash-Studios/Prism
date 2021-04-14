@@ -86,7 +86,7 @@ class _PageManagerChildState extends State<PageManagerChild>
   void initState() {
     super.initState();
     tabController =
-        TabController(length: globals.followersTab! ? 3 : 2, vsync: this);
+        TabController(length: globals.followersTab ? 3 : 2, vsync: this);
     final QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
       setState(() {
@@ -94,12 +94,12 @@ class _PageManagerChildState extends State<PageManagerChild>
       });
       if (shortcutType == 'Follow_Feed') {
         debugPrint('Follow_Feed');
-        if (globals.followersTab!) {
+        if (globals.followersTab) {
           tabController!.animateTo(1);
         }
       } else if (shortcutType == 'Collections') {
         debugPrint('Collections');
-        if (globals.followersTab!) {
+        if (globals.followersTab) {
           tabController!.animateTo(2);
         } else {
           tabController!.animateTo(1);
@@ -330,7 +330,7 @@ class _PageManagerChildState extends State<PageManagerChild>
               controller: tabController,
               indicatorColor: Theme.of(context).accentColor,
               indicatorSize: TabBarIndicatorSize.label,
-              tabs: globals.followersTab!
+              tabs: globals.followersTab
                   ? [
                       Tab(
                         icon: Icon(
