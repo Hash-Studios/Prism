@@ -64,7 +64,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
   //Check for update if available
   Future<void> checkForUpdate() async {
     InAppUpdate.checkForUpdate().then((info) {
-      if (info.updateAvailable == true) {
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
         InAppUpdate.performImmediateUpdate().catchError((e) => _showError(e));
       }
     }).catchError((e) => _showError(e));
