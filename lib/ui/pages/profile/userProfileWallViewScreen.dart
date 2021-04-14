@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as user_data;
@@ -153,9 +154,9 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                     pixelRatio: 3,
                     delay: const Duration(milliseconds: 10),
                   )
-                      .then((File image) async {
+                      .then((Uint8List? image) async {
                     setState(() {
-                      _imageFile = image;
+                      _imageFile = File.fromRawPath(image!);
                       screenshotTaken = true;
                       panelClosed = false;
                     });
@@ -170,9 +171,9 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           pixelRatio: 3,
                           delay: const Duration(milliseconds: 10),
                         )
-                          .then((File image) async {
+                          .then((Uint8List? image) async {
                           setState(() {
-                            _imageFile = image;
+                            _imageFile = File.fromRawPath(image!);
                             screenshotTaken = true;
                             panelClosed = false;
                           });
@@ -510,7 +511,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                 provider: user_data.userProfileWalls![index]
                                         ["wallpaper_provider"]
                                     .toString(),
-                                prism: user_data.userProfileWalls![index] as Map,
+                                prism:
+                                    user_data.userProfileWalls![index] as Map,
                                 trash: false,
                               ),
                               ShareButton(

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
@@ -146,8 +147,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
           });
     return WillPopScope(
       onWillPop: onWillPop,
-      child: Provider.of<FavouriteProvider>(context, listen: false).liked![index]
-                      ["provider"] ==
+      child: Provider.of<FavouriteProvider>(context, listen: false)
+                      .liked![index]["provider"] ==
                   "WallHaven" ||
               Provider.of<FavouriteProvider>(context, listen: false)
                       .liked![index]["provider"] ==
@@ -172,9 +173,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         pixelRatio: 3,
                         delay: const Duration(milliseconds: 10),
                       )
-                          .then((File image) async {
+                          .then((Uint8List? image) async {
                         setState(() {
-                          _imageFile = image;
+                          _imageFile = File.fromRawPath(image!);
                           screenshotTaken = true;
                           panelClosed = false;
                         });
@@ -189,9 +190,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               pixelRatio: 3,
                               delay: const Duration(milliseconds: 10),
                             )
-                              .then((File image) async {
+                              .then((Uint8List? image) async {
                               setState(() {
-                                _imageFile = image;
+                                _imageFile = File.fromRawPath(image!);
                                 screenshotTaken = true;
                                 panelClosed = false;
                               });
@@ -825,7 +826,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .liked![index][
+                                                                  .liked![index]
+                                                                      [
                                                                       "resolution"]
                                                                   .toString(),
                                                               style: Theme.of(
@@ -889,7 +891,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .liked![index][
+                                                                  .liked![index]
+                                                                      [
                                                                       "provider"]
                                                                   .toString(),
                                                               style: Theme.of(
@@ -1161,9 +1164,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         pixelRatio: 3,
                         delay: const Duration(milliseconds: 10),
                       )
-                          .then((File image) async {
+                          .then((Uint8List? image) async {
                         setState(() {
-                          _imageFile = image;
+                          _imageFile = File.fromRawPath(image!);
                           screenshotTaken = true;
                           panelClosed = false;
                         });
@@ -1178,9 +1181,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               pixelRatio: 3,
                               delay: const Duration(milliseconds: 10),
                             )
-                              .then((File image) async {
+                              .then((Uint8List? image) async {
                               setState(() {
-                                _imageFile = image;
+                                _imageFile = File.fromRawPath(image!);
                                 screenshotTaken = true;
                                 panelClosed = false;
                               });
