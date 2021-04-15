@@ -27,7 +27,9 @@ dependencies:
   data_connection_checker: ^0.3.4
   device_apps: ^2.0.2
   device_info: ^2.0.0
-  extended_image: ^1.0.0 #ToDo Fork this and fix error
+  extended_image:
+    git:
+      url: git://github.com/codenameakshay/extended_image.git
   firebase_admob: ^0.9.3+4
   firebase_analytics: ^5.0.16
   firebase_auth: ^0.16.0

@@ -186,17 +186,19 @@ packages:
   extended_image:
     dependency: "direct main"
     description:
-      name: extended_image
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.6.0"
+      path: "."
+      ref: HEAD
+      resolved-ref: f574ea3195ccd6e87d81ded2e3d6d48259c380dc
+      url: "git://github.com/codenameakshay/extended_image.git"
+    source: git
+    version: "1.0.0"
   extended_image_library:
     dependency: transitive
     description:
       name: extended_image_library
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.3.1"
+    version: "0.2.3"
   ffi:
     dependency: transitive
     description:
