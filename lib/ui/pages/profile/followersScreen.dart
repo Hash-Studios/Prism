@@ -5,6 +5,7 @@ import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class FollowersScreen extends StatefulWidget {
   final List? arguments;
@@ -22,6 +23,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
   @override
   void initState() {
     followers = widget.arguments![0] as List;
+    followers!.sort();
     // users = firestore.collection('users');
     // _stream = users.snapshots();
     super.initState();
@@ -71,9 +73,16 @@ class _FollowersScreenState extends State<FollowersScreen> {
                           //         ?
                           ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: CachedNetworkImageProvider(
-                              // user["userPhoto"] as String? ??
-                              "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2FnoUser.png?alt=media"),
+                          child: ClipOval(
+                            child: SvgPicture.network(
+                                "https://avatars.dicebear.com/api/avataaars/$index.svg?background=transparent"),
+                          ),
+                          // backgroundImage:
+                          // CachedNetworkImageProvider(
+
+                          //     // user["userPhoto"] as String? ??
+                          //     "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2FnoUser.png?alt=media"
+                          // ),
                         ),
                         title: Text(
                           followers![index].toString(),
