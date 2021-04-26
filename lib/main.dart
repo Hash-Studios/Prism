@@ -55,7 +55,7 @@ void main() {
   );
   flutterLocalNotificationsPlugin.initialize(initializationSettings).then((_) {
     InAppPurchaseConnection.enablePendingPurchases();
-    GestureBinding.instance!.resamplingEnabled = true;
+    // GestureBinding.instance!.resamplingEnabled = true;
     getApplicationDocumentsDirectory().then(
       (dir) async {
         Hive.init(dir.path);
