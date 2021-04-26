@@ -64,8 +64,11 @@ class GoogleAuth {
         await prefs.put('twitter', "");
         await prefs.put('instagram', "");
       } else {
+        // if(documents[0].data["userPhoto"]!=null && documents[0].data["userPhoto"]!="")
         Firestore.instance.collection('users').document(user.uid).updateData({
           'userPhoto': user.photoUrl,
+          'name': user.displayName,
+          'email': user.email,
         });
         await prefs.put('id', documents[0]['id']);
         await prefs.put('name', documents[0]['name']);

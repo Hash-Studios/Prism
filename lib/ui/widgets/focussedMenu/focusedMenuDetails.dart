@@ -71,18 +71,19 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 maxMenuWidth +
                 widget.childSize!.width +
                 widget.size.width * 0.3);
-    topOffset = (widget.childOffset.dy + menuHeight + widget.childSize!.height) <
-            widget.size.height
-        ? widget.orientation == Orientation.portrait
-            ? widget.childOffset.dy +
-                widget.childSize!.height +
-                widget.size.width * 0.015
-            : widget.childOffset.dy +
-                widget.childSize!.height +
-                widget.size.width * 0.015
-        : widget.orientation == Orientation.portrait
-            ? widget.childOffset.dy - menuHeight + widget.size.width * 0.125
-            : widget.childOffset.dy - menuHeight;
+    topOffset =
+        (widget.childOffset.dy + menuHeight + widget.childSize!.height) <
+                widget.size.height
+            ? widget.orientation == Orientation.portrait
+                ? widget.childOffset.dy +
+                    widget.childSize!.height +
+                    widget.size.width * 0.015
+                : widget.childOffset.dy +
+                    widget.childSize!.height +
+                    widget.size.width * 0.015
+            : widget.orientation == Orientation.portrait
+                ? widget.childOffset.dy - menuHeight + widget.size.width * 0.125
+                : widget.childOffset.dy - menuHeight;
 
     fabHeartTopOffset =
         (widget.childOffset.dy + menuHeight + widget.childSize!.height) <
@@ -213,8 +214,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     ),
                                     backgroundColor: HexColor(WData
                                         .walls[widget.index]
-                                        .colors![WData.walls[widget.index].colors!
-                                                .length -
+                                        .colors![WData.walls[widget.index]
+                                                .colors!.length -
                                             1]
                                         .toString()),
                                     label: Text(
@@ -339,8 +340,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                       left: widget.childOffset.dx,
                       child: TweenAnimationBuilder(
                         duration: const Duration(milliseconds: 150),
-                        builder:
-                            (BuildContext context, double value, Widget? child) {
+                        builder: (BuildContext context, double value,
+                            Widget? child) {
                           return Transform.scale(
                             scale: value,
                             alignment: Alignment.bottomRight,
@@ -414,62 +415,62 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 ),
                                                 onPressed: () {
                                                   Navigator.pushNamed(context,
-                                                      photographerProfileRoute,
+                                                      followerProfileRoute,
                                                       arguments: [
-                                                        Data.subPrismWalls![
-                                                            widget.index]["by"],
+                                                        // Data.subPrismWalls![
+                                                        //     widget.index]["by"],
                                                         Data.subPrismWalls![
                                                                 widget.index]
                                                             ["email"],
-                                                        Data.subPrismWalls![
-                                                                widget.index]
-                                                            ["userPhoto"],
-                                                        false,
-                                                        if (Data.subPrismWalls![
-                                                                        widget
-                                                                            .index]
-                                                                    [
-                                                                    "twitter"] !=
-                                                                null &&
-                                                            Data.subPrismWalls![
-                                                                        widget
-                                                                            .index]
-                                                                    [
-                                                                    "twitter"] !=
-                                                                "")
-                                                          Data.subPrismWalls![
-                                                                  widget.index]
-                                                                  ["twitter"]
-                                                              .toString()
-                                                              .split(
-                                                                  "https://www.twitter.com/")[1]
-                                                        else
-                                                          "",
-                                                        if (Data.subPrismWalls![
-                                                                        widget
-                                                                            .index]
-                                                                    [
-                                                                    "instagram"] !=
-                                                                null &&
-                                                            Data.subPrismWalls![
-                                                                        widget
-                                                                            .index]
-                                                                    [
-                                                                    "instagram"] !=
-                                                                "")
-                                                          Data.subPrismWalls![
-                                                                  widget.index]
-                                                                  ["instagram"]
-                                                              .toString()
-                                                              .split(
-                                                                  "https://www.instagram.com/")[1]
-                                                        else
-                                                          "",
+                                                        // Data.subPrismWalls![
+                                                        //         widget.index]
+                                                        //     ["userPhoto"],
+                                                        // false,
+                                                        // if (Data.subPrismWalls![
+                                                        //                 widget
+                                                        //                     .index]
+                                                        //             [
+                                                        //             "twitter"] !=
+                                                        //         null &&
+                                                        //     Data.subPrismWalls![
+                                                        //                 widget
+                                                        //                     .index]
+                                                        //             [
+                                                        //             "twitter"] !=
+                                                        //         "")
+                                                        //   Data.subPrismWalls![
+                                                        //           widget.index]
+                                                        //           ["twitter"]
+                                                        //       .toString()
+                                                        //       .split(
+                                                        //           "https://www.twitter.com/")[1]
+                                                        // else
+                                                        //   "",
+                                                        // if (Data.subPrismWalls![
+                                                        //                 widget
+                                                        //                     .index]
+                                                        //             [
+                                                        //             "instagram"] !=
+                                                        //         null &&
+                                                        //     Data.subPrismWalls![
+                                                        //                 widget
+                                                        //                     .index]
+                                                        //             [
+                                                        //             "instagram"] !=
+                                                        //         "")
+                                                        //   Data.subPrismWalls![
+                                                        //           widget.index]
+                                                        //           ["instagram"]
+                                                        //       .toString()
+                                                        //       .split(
+                                                        //           "https://www.instagram.com/")[1]
+                                                        // else
+                                                        //   "",
                                                       ]);
                                                 }),
                                             if (globals.verifiedUsers.contains(
-                                                Data.subPrismWalls![widget.index]
-                                                        ["email"]
+                                                Data.subPrismWalls![
+                                                        widget.index]["email"]
                                                     .toString()))
                                               Container(
                                                 width: 20,
@@ -497,7 +498,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         padding: const EdgeInsets.fromLTRB(
                                             0, 5, 0, 10),
                                         child: Text(
-                                          Data.subPrismWalls![widget.index]["id"]
+                                          Data.subPrismWalls![widget.index]
+                                                  ["id"]
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context)
@@ -1200,7 +1202,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             listen:
                                                                                 false)
                                                                         .liked![
-                                                                            widget.index]
+                                                                            widget
+                                                                                .index]
                                                                             [
                                                                             "category"]
                                                                         .toString()[
@@ -1385,7 +1388,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 tween:
                                                     Tween(begin: 0.0, end: 1.0),
                                                 child: Container(
-                                                  width: widget.childSize!.width,
+                                                  width:
+                                                      widget.childSize!.width,
                                                   height:
                                                       widget.childSize!.height *
                                                           6 /
@@ -2183,7 +2187,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         ["wallpaper_url"]
                                     .toString()
                                 : widget.provider == "Pexels"
-                                    ? PData.wallsP[widget.index].src!["original"]
+                                    ? PData
+                                        .wallsP[widget.index].src!["original"]
                                         .toString()
                                     : widget.provider == "Liked"
                                         ? Provider.of<FavouriteProvider>(
@@ -2208,7 +2213,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                     )
                   : widget.provider == "Prism"
                       ? FavouriteWallpaperButton(
-                          id: Data.subPrismWalls![widget.index]["id"].toString(),
+                          id: Data.subPrismWalls![widget.index]["id"]
+                              .toString(),
                           provider: "Prism",
                           prism: Data.subPrismWalls![widget.index] as Map,
                           trash: false,
@@ -2231,8 +2237,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           ["id"]
                                       .toString(),
                                   provider: "Prism",
-                                  prism: UserData.userProfileWalls![widget.index]
-                                      as Map,
+                                  prism: UserData
+                                      .userProfileWalls![widget.index] as Map,
                                   trash: false,
                                 )
                               : widget.provider == "Pexels"
@@ -2287,7 +2293,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         ["wallpaper_url"]
                                     .toString()
                                 : widget.provider == "Pexels"
-                                    ? PData.wallsP[widget.index].src!["original"]
+                                    ? PData
+                                        .wallsP[widget.index].src!["original"]
                                         .toString()
                                     : widget.provider == "Liked"
                                         ? Provider.of<FavouriteProvider>(

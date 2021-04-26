@@ -95,6 +95,12 @@ class _FollowerProfileState extends State<FollowerProfile> {
                   twitter = snap.data!.documents[0].data["twitter"].toString();
                   instagram =
                       snap.data!.documents[0].data["instagram"].toString();
+                  debugPrint("Name : $name");
+                  debugPrint("Email : $email");
+                  debugPrint("Profile Photo : $userPhoto");
+                  debugPrint("Premium : $premium");
+                  debugPrint("Twitter : $twitter");
+                  debugPrint("Instagram : $instagram");
                   return NestedScrollView(
                     headerSliverBuilder: (context, innerBoxIsScrolled) =>
                         <Widget>[
@@ -287,8 +293,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                                             .accentColor,
                                                       ),
                                                       onPressed: () {
-                                                        launch(
-                                                            "https://www.twitter.com/$twitter");
+                                                        launch(twitter!);
                                                       })
                                                 else
                                                   Container(),
@@ -301,8 +306,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                                             .accentColor,
                                                       ),
                                                       onPressed: () {
-                                                        launch(
-                                                            "https://www.instagram.com/$instagram");
+                                                        launch(instagram!);
                                                       })
                                                 else
                                                   Container(),

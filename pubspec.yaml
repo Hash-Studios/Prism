@@ -52,7 +52,6 @@ dependencies:
   hive_flutter: ^0.3.0+1
   image_editor: ^0.7.1
   image_picker: ^0.6.7+4
-  in_app_purchase: ^0.3.4+1
   in_app_update: ^2.0.0
   palette_generator: ^0.3.0
   path_provider: ^1.6.11

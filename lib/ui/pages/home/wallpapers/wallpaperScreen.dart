@@ -953,52 +953,52 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         onPressed: () {
                                                           Navigator.pushNamed(
                                                               context,
-                                                              photographerProfileRoute,
+                                                              followerProfileRoute,
                                                               arguments: [
-                                                                data.subPrismWalls![
-                                                                        index]
-                                                                    ["by"],
+                                                                // data.subPrismWalls![
+                                                                //         index]
+                                                                //     ["by"],
                                                                 data.subPrismWalls![
                                                                         index]
                                                                     ["email"],
-                                                                data.subPrismWalls![
-                                                                        index][
-                                                                    "userPhoto"],
-                                                                false,
-                                                                if (data.subPrismWalls![index]
-                                                                            [
-                                                                            "twitter"] !=
-                                                                        null &&
-                                                                    data.subPrismWalls![index]
-                                                                            [
-                                                                            "twitter"] !=
-                                                                        "")
-                                                                  data.subPrismWalls![
-                                                                          index]
-                                                                          [
-                                                                          "twitter"]
-                                                                      .toString()
-                                                                      .split(
-                                                                          "https://www.twitter.com/")[1]
-                                                                else
-                                                                  "",
-                                                                if (data.subPrismWalls![index]
-                                                                            [
-                                                                            "instagram"] !=
-                                                                        null &&
-                                                                    data.subPrismWalls![index]
-                                                                            [
-                                                                            "instagram"] !=
-                                                                        "")
-                                                                  data.subPrismWalls![
-                                                                          index]
-                                                                          [
-                                                                          "instagram"]
-                                                                      .toString()
-                                                                      .split(
-                                                                          "https://www.instagram.com/")[1]
-                                                                else
-                                                                  "",
+                                                                // data.subPrismWalls![
+                                                                //         index][
+                                                                //     "userPhoto"],
+                                                                // false,
+                                                                // if (data.subPrismWalls![index]
+                                                                //             [
+                                                                //             "twitter"] !=
+                                                                //         null &&
+                                                                //     data.subPrismWalls![index]
+                                                                //             [
+                                                                //             "twitter"] !=
+                                                                //         "")
+                                                                //   data.subPrismWalls![
+                                                                //           index]
+                                                                //           [
+                                                                //           "twitter"]
+                                                                //       .toString()
+                                                                //       .split(
+                                                                //           "https://www.twitter.com/")[1]
+                                                                // else
+                                                                //   "",
+                                                                // if (data.subPrismWalls![index]
+                                                                //             [
+                                                                //             "instagram"] !=
+                                                                //         null &&
+                                                                //     data.subPrismWalls![index]
+                                                                //             [
+                                                                //             "instagram"] !=
+                                                                //         "")
+                                                                //   data.subPrismWalls![
+                                                                //           index]
+                                                                //           [
+                                                                //           "instagram"]
+                                                                //       .toString()
+                                                                //       .split(
+                                                                //           "https://www.instagram.com/")[1]
+                                                                // else
+                                                                //   "",
                                                               ]);
                                                         },
                                                         padding:

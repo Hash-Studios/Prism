@@ -510,60 +510,60 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         onPressed: () {
                                                           Navigator.pushNamed(
                                                               context,
-                                                              photographerProfileRoute,
+                                                              followerProfileRoute,
                                                               arguments: [
-                                                                Provider.of<ProfileSetupProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .profileSetups![index!]["by"],
+                                                                // Provider.of<ProfileSetupProvider>(
+                                                                //         context,
+                                                                //         listen:
+                                                                //             false)
+                                                                //     .profileSetups![index!]["by"],
                                                                 Provider.of<ProfileSetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
                                                                     .profileSetups![index!]["email"],
-                                                                Provider.of<ProfileSetupProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .profileSetups![index!]["userPhoto"],
-                                                                false,
-                                                                if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
-                                                                            "twitter"] !=
-                                                                        null &&
-                                                                    Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
-                                                                            "twitter"] !=
-                                                                        "")
-                                                                  Provider.of<ProfileSetupProvider>(
-                                                                          context,
-                                                                          listen:
-                                                                              false)
-                                                                      .profileSetups![
-                                                                          index!][
-                                                                          "twitter"]
-                                                                      .toString()
-                                                                      .split(
-                                                                          "https://www.twitter.com/")[1]
-                                                                else
-                                                                  "",
-                                                                if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
-                                                                            "instagram"] !=
-                                                                        null &&
-                                                                    Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
-                                                                            "instagram"] !=
-                                                                        "")
-                                                                  Provider.of<ProfileSetupProvider>(
-                                                                          context,
-                                                                          listen:
-                                                                              false)
-                                                                      .profileSetups![
-                                                                          index!][
-                                                                          "instagram"]
-                                                                      .toString()
-                                                                      .split(
-                                                                          "https://www.instagram.com/")[1]
-                                                                else
-                                                                  "",
+                                                                // Provider.of<ProfileSetupProvider>(
+                                                                //         context,
+                                                                //         listen:
+                                                                //             false)
+                                                                //     .profileSetups![index!]["userPhoto"],
+                                                                // false,
+                                                                // if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
+                                                                //             "twitter"] !=
+                                                                //         null &&
+                                                                //     Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
+                                                                //             "twitter"] !=
+                                                                //         "")
+                                                                //   Provider.of<ProfileSetupProvider>(
+                                                                //           context,
+                                                                //           listen:
+                                                                //               false)
+                                                                //       .profileSetups![
+                                                                //           index!][
+                                                                //           "twitter"]
+                                                                //       .toString()
+                                                                //       .split(
+                                                                //           "https://www.twitter.com/")[1]
+                                                                // else
+                                                                //   "",
+                                                                // if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
+                                                                //             "instagram"] !=
+                                                                //         null &&
+                                                                //     Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
+                                                                //             "instagram"] !=
+                                                                //         "")
+                                                                //   Provider.of<ProfileSetupProvider>(
+                                                                //           context,
+                                                                //           listen:
+                                                                //               false)
+                                                                //       .profileSetups![
+                                                                //           index!][
+                                                                //           "instagram"]
+                                                                //       .toString()
+                                                                //       .split(
+                                                                //           "https://www.instagram.com/")[1]
+                                                                // else
+                                                                //   "",
                                                               ]);
                                                         }),
                                                   ),
@@ -572,8 +572,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                   ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups![index!]
-                                                              ["email"]
+                                                          .profileSetups![
+                                                              index!]["email"]
                                                           .toString()))
                                                     Align(
                                                       alignment:
@@ -641,14 +641,14 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                           if (Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups![index!]
-                                                      ["wall_id"] ==
+                                                          .profileSetups![
+                                                      index!]["wall_id"] ==
                                                   null ||
                                               Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups![index!]
-                                                      ["wall_id"] ==
+                                                          .profileSetups![
+                                                      index!]["wall_id"] ==
                                                   "") {
                                             debugPrint("Id Not Found!");
                                             launch(Provider.of<
@@ -717,7 +717,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                       ProfileSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileSetups![index!]["icon_url"]
+                                              .profileSetups![index!]
+                                                  ["icon_url"]
                                               .toString()
                                               .contains(
                                                   'play.google.com/store/apps/details?id=')
@@ -839,25 +840,28 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                       Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups![index!]
-                                                              ["wall_id"]
+                                                          .profileSetups![
+                                                              index!]["wall_id"]
                                                           .toString(),
                                                       Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups![index!][
+                                                          .profileSetups![
+                                                              index!][
                                                               "wallpaper_provider"]
                                                           .toString(),
                                                       Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups![index!]
+                                                          .profileSetups![
+                                                              index!]
                                                               ["wallpaper_url"]
                                                           .toString(),
                                                       Provider.of<ProfileSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .profileSetups![index!]
+                                                          .profileSetups![
+                                                              index!]
                                                               ["wallpaper_url"]
                                                           .toString(),
                                                     ]);
@@ -872,16 +876,16 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   .toString());
                                             }
                                           },
-                                          tileText:
-                                              Provider.of<ProfileSetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .profileSetups![index!]
-                                                              ["wallpaper_url"]
-                                                          .toString()[0] !=
-                                                      "["
-                                                  ? "Prism"
-                                                  : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
+                                          tileText: Provider.of<
+                                                              ProfileSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .profileSetups![index!]
+                                                          ["wallpaper_url"]
+                                                      .toString()[0] !=
+                                                  "["
+                                              ? "Prism"
+                                              : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay:
@@ -958,7 +962,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                               Provider.of<ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileSetups![index!]["icon"]
+                                                  .profileSetups![index!]
+                                                      ["icon"]
                                                   .toString(),
                                           tileType: "Icons",
                                           panelCollapsed: panelCollapsed,
@@ -1064,8 +1069,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                 if (Provider.of<ProfileSetupProvider>(
                                                                     context,
                                                                     listen: false)
-                                                                .profileSetups![
-                                                            index!]["wall_id"] ==
+                                                                .profileSetups![index!]
+                                                            ["wall_id"] ==
                                                         null ||
                                                     Provider.of<ProfileSetupProvider>(
                                                                     context,
@@ -1289,7 +1294,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         ProfileSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .profileSetups![index!]["widget"]
+                                                .profileSetups![index!]
+                                                    ["widget"]
                                                 .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
@@ -1367,7 +1373,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         ProfileSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .profileSetups![index!]["widget2"]
+                                                .profileSetups![index!]
+                                                    ["widget2"]
                                                 .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
