@@ -543,25 +543,25 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                       () {
                                                                     Navigator.pushNamed(
                                                                         context,
-                                                                        photographerProfileRoute,
+                                                                        followerProfileRoute,
                                                                         arguments: [
-                                                                          sdata.setup![
-                                                                              "by"],
+                                                                          // sdata.setup![
+                                                                          //     "by"],
                                                                           sdata.setup![
                                                                               "email"],
-                                                                          sdata.setup![
-                                                                              "userPhoto"],
-                                                                          false,
-                                                                          if (sdata.setup!["twitter"] != null &&
-                                                                              sdata.setup!["twitter"] != "")
-                                                                            sdata.setup!["twitter"].toString().split("https://www.twitter.com/")[1]
-                                                                          else
-                                                                            "",
-                                                                          if (sdata.setup!["instagram"] != null &&
-                                                                              sdata.setup!["instagram"] != "")
-                                                                            sdata.setup!["instagram"].toString().split("https://www.instagram.com/")[1]
-                                                                          else
-                                                                            "",
+                                                                          // sdata.setup![
+                                                                          //     "userPhoto"],
+                                                                          // false,
+                                                                          // if (sdata.setup!["twitter"] != null &&
+                                                                          //     sdata.setup!["twitter"] != "")
+                                                                          //   sdata.setup!["twitter"].toString().split("https://www.twitter.com/")[1]
+                                                                          // else
+                                                                          //   "",
+                                                                          // if (sdata.setup!["instagram"] != null &&
+                                                                          //     sdata.setup!["instagram"] != "")
+                                                                          //   sdata.setup!["instagram"].toString().split("https://www.instagram.com/")[1]
+                                                                          // else
+                                                                          //   "",
                                                                         ]);
                                                                   }),
                                                             ),

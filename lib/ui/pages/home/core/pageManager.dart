@@ -241,13 +241,13 @@ class _PageManagerChildState extends State<PageManagerChild>
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "user") {
         Future.delayed(const Duration()).then((value) =>
-            Navigator.pushNamed(context, photographerProfileRoute, arguments: [
-              deepLink.queryParameters["name"],
+            Navigator.pushNamed(context, followerProfileRoute, arguments: [
+              // deepLink.queryParameters["name"],
               deepLink.queryParameters["email"],
-              deepLink.queryParameters["userPhoto"],
-              deepLink.queryParameters["premium"] == "true",
-              deepLink.queryParameters["twitter"],
-              deepLink.queryParameters["instagram"],
+              // deepLink.queryParameters["userPhoto"],
+              // deepLink.queryParameters["premium"] == "true",
+              // deepLink.queryParameters["twitter"],
+              // deepLink.queryParameters["instagram"],
             ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "setup") {
@@ -279,16 +279,15 @@ class _PageManagerChildState extends State<PageManagerChild>
                     deepLink.queryParameters["thumb"],
                   ]));
         } else if (deepLink.pathSegments[0] == "user") {
-          Future.delayed(const Duration()).then((value) => Navigator.pushNamed(
-                  context, photographerProfileRoute,
-                  arguments: [
-                    deepLink.queryParameters["name"],
-                    deepLink.queryParameters["email"],
-                    deepLink.queryParameters["userPhoto"],
-                    deepLink.queryParameters["premium"] == "true",
-                    deepLink.queryParameters["twitter"],
-                    deepLink.queryParameters["instagram"],
-                  ]));
+          Future.delayed(const Duration()).then((value) =>
+              Navigator.pushNamed(context, followerProfileRoute, arguments: [
+                // deepLink.queryParameters["name"],
+                deepLink.queryParameters["email"],
+                // deepLink.queryParameters["userPhoto"],
+                // deepLink.queryParameters["premium"] == "true",
+                // deepLink.queryParameters["twitter"],
+                // deepLink.queryParameters["instagram"],
+              ]));
         } else if (deepLink.pathSegments[0] == "setup") {
           Future.delayed(const Duration()).then((value) =>
               Navigator.pushNamed(context, shareSetupViewRoute, arguments: [

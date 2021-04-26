@@ -500,62 +500,62 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                         onPressed: () {
                                                           Navigator.pushNamed(
                                                               context,
-                                                              photographerProfileRoute,
+                                                              followerProfileRoute,
                                                               arguments: [
-                                                                Provider.of<SetupProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .setups![index!]["by"],
+                                                                // Provider.of<SetupProvider>(
+                                                                //         context,
+                                                                //         listen:
+                                                                //             false)
+                                                                //     .setups![index!]["by"],
                                                                 Provider.of<SetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
                                                                     .setups![index!]["email"],
-                                                                Provider.of<SetupProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .setups![index!]["userPhoto"],
-                                                                false,
-                                                                if (Provider.of<SetupProvider>(context, listen: false).setups![index!][
-                                                                            "twitter"] !=
-                                                                        null &&
-                                                                    Provider.of<SetupProvider>(context, listen: false).setups![index!][
-                                                                            "twitter"] !=
-                                                                        "")
-                                                                  Provider.of<SetupProvider>(
-                                                                          context,
-                                                                          listen:
-                                                                              false)
-                                                                      .setups![
-                                                                          index!]
-                                                                          [
-                                                                          "twitter"]
-                                                                      .toString()
-                                                                      .split(
-                                                                          "https://www.twitter.com/")[1]
-                                                                else
-                                                                  "",
-                                                                if (Provider.of<SetupProvider>(context, listen: false).setups![index!][
-                                                                            "instagram"] !=
-                                                                        null &&
-                                                                    Provider.of<SetupProvider>(context, listen: false).setups![index!][
-                                                                            "instagram"] !=
-                                                                        "")
-                                                                  Provider.of<SetupProvider>(
-                                                                          context,
-                                                                          listen:
-                                                                              false)
-                                                                      .setups![
-                                                                          index!]
-                                                                          [
-                                                                          "instagram"]
-                                                                      .toString()
-                                                                      .split(
-                                                                          "https://www.instagram.com/")[1]
-                                                                else
-                                                                  "",
+                                                                // Provider.of<SetupProvider>(
+                                                                //         context,
+                                                                //         listen:
+                                                                //             false)
+                                                                //     .setups![index!]["userPhoto"],
+                                                                // false,
+                                                                // if (Provider.of<SetupProvider>(context, listen: false).setups![index!][
+                                                                //             "twitter"] !=
+                                                                //         null &&
+                                                                //     Provider.of<SetupProvider>(context, listen: false).setups![index!][
+                                                                //             "twitter"] !=
+                                                                //         "")
+                                                                //   Provider.of<SetupProvider>(
+                                                                //           context,
+                                                                //           listen:
+                                                                //               false)
+                                                                //       .setups![
+                                                                //           index!]
+                                                                //           [
+                                                                //           "twitter"]
+                                                                //       .toString()
+                                                                //       .split(
+                                                                //           "https://www.twitter.com/")[1]
+                                                                // else
+                                                                //   "",
+                                                                // if (Provider.of<SetupProvider>(context, listen: false).setups![index!][
+                                                                //             "instagram"] !=
+                                                                //         null &&
+                                                                //     Provider.of<SetupProvider>(context, listen: false).setups![index!][
+                                                                //             "instagram"] !=
+                                                                //         "")
+                                                                //   Provider.of<SetupProvider>(
+                                                                //           context,
+                                                                //           listen:
+                                                                //               false)
+                                                                //       .setups![
+                                                                //           index!]
+                                                                //           [
+                                                                //           "instagram"]
+                                                                //       .toString()
+                                                                //       .split(
+                                                                //           "https://www.instagram.com/")[1]
+                                                                // else
+                                                                //   "",
                                                               ]);
                                                         }),
                                                   ),

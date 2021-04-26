@@ -538,13 +538,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.6"
-  in_app_purchase:
-    dependency: "direct main"
-    description:
-      name: in_app_purchase
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.3.5+1"
   in_app_update:
     dependency: "direct main"
     description:

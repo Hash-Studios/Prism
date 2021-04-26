@@ -265,28 +265,28 @@ class _FollowingTileState extends State<FollowingTile> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    Navigator.pushNamed(context, photographerProfileRoute,
+                    Navigator.pushNamed(context, followerProfileRoute,
                         arguments: [
-                          widget.finalDocs[widget.index]["by"],
+                          // widget.finalDocs[widget.index]["by"],
                           widget.finalDocs[widget.index]["email"],
-                          widget.finalDocs[widget.index]["userPhoto"],
-                          false,
-                          if (widget.finalDocs[widget.index]["twitter"] !=
-                                  null &&
-                              widget.finalDocs[widget.index]["twitter"] != "")
-                            widget.finalDocs[widget.index]["twitter"]
-                                .toString()
-                                .split("https://www.twitter.com/")[1]
-                          else
-                            "",
-                          if (widget.finalDocs[widget.index]["instagram"] !=
-                                  null &&
-                              widget.finalDocs[widget.index]["instagram"] != "")
-                            widget.finalDocs[widget.index]["instagram"]
-                                .toString()
-                                .split("https://www.instagram.com/")[1]
-                          else
-                            "",
+                          // widget.finalDocs[widget.index]["userPhoto"],
+                          // false,
+                          // if (widget.finalDocs[widget.index]["twitter"] !=
+                          //         null &&
+                          //     widget.finalDocs[widget.index]["twitter"] != "")
+                          //   widget.finalDocs[widget.index]["twitter"]
+                          //       .toString()
+                          //       .split("https://www.twitter.com/")[1]
+                          // else
+                          //   "",
+                          // if (widget.finalDocs[widget.index]["instagram"] !=
+                          //         null &&
+                          //     widget.finalDocs[widget.index]["instagram"] != "")
+                          //   widget.finalDocs[widget.index]["instagram"]
+                          //       .toString()
+                          //       .split("https://www.instagram.com/")[1]
+                          // else
+                          //   "",
                         ]);
                   },
                   child: Row(

@@ -492,7 +492,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .liked![index!][
+                                                                  .liked![
+                                                                      index!][
                                                                       "userPhoto"]
                                                                   .toString()),
                                                         ),
@@ -503,62 +504,13 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         onPressed: () {
                                                           Navigator.pushNamed(
                                                               context,
-                                                              photographerProfileRoute,
+                                                              followerProfileRoute,
                                                               arguments: [
                                                                 Provider.of<FavouriteSetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .liked![index!]["by"],
-                                                                Provider.of<FavouriteSetupProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
                                                                     .liked![index!]["email"],
-                                                                Provider.of<FavouriteSetupProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .liked![index!]["userPhoto"],
-                                                                false,
-                                                                if (Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!][
-                                                                            "twitter"] !=
-                                                                        null &&
-                                                                    Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!][
-                                                                            "twitter"] !=
-                                                                        "")
-                                                                  Provider.of<FavouriteSetupProvider>(
-                                                                          context,
-                                                                          listen:
-                                                                              false)
-                                                                      .liked![
-                                                                          index!]
-                                                                          [
-                                                                          "twitter"]
-                                                                      .toString()
-                                                                      .split(
-                                                                          "https://www.twitter.com/")[1]
-                                                                else
-                                                                  "",
-                                                                if (Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!][
-                                                                            "instagram"] !=
-                                                                        null &&
-                                                                    Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!][
-                                                                            "instagram"] !=
-                                                                        "")
-                                                                  Provider.of<FavouriteSetupProvider>(
-                                                                          context,
-                                                                          listen:
-                                                                              false)
-                                                                      .liked![
-                                                                          index!]
-                                                                          [
-                                                                          "instagram"]
-                                                                      .toString()
-                                                                      .split(
-                                                                          "https://www.instagram.com/")[1]
-                                                                else
-                                                                  "",
                                                               ]);
                                                         }),
                                                   ),
@@ -567,7 +519,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                   FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked![index!]["email"]
+                                                          .liked![index!]
+                                                              ["email"]
                                                           .toString()))
                                                     Align(
                                                       alignment:
@@ -685,7 +638,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked![index!]["wallpaper_url"][1]
+                                              .liked![index!]["wallpaper_url"]
+                                                  [1]
                                               .toString());
                                         }
                                       },
@@ -693,7 +647,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked![index!]["wallpaper_url"]
+                                                  .liked![index!]
+                                                      ["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
                                           ? "Prism"
@@ -852,8 +807,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked![index!]["wallpaper_url"]
-                                                      [1]
+                                                  .liked![index!]
+                                                      ["wallpaper_url"][1]
                                                   .toString());
                                             }
                                           },
@@ -904,7 +859,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked![index!]["icon_url"]
+                                                      .liked![index!]
+                                                          ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0]);
@@ -913,7 +869,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           .of<FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                      .liked![index!]["icon_url"]
+                                                      .liked![index!]
+                                                          ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
@@ -921,7 +878,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked![index!]["icon_url"]
+                                                      .liked![index!]
+                                                          ["icon_url"]
                                                       .toString());
                                             } else {
                                               launch(Provider.of<
@@ -1189,7 +1147,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked![index!]["widget_url"]
+                                                    .liked![index!]
+                                                        ["widget_url"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
@@ -1244,7 +1203,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked![index!]["widget_url"]
+                                                    .liked![index!]
+                                                        ["widget_url"]
                                                     .toString());
                                               }
                                             },
@@ -1264,7 +1224,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked![index!]["widget_url2"]
+                                                    .liked![index!]
+                                                        ["widget_url2"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
@@ -1319,7 +1280,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked![index!]["widget_url2"]
+                                                    .liked![index!]
+                                                        ["widget_url2"]
                                                     .toString());
                                               }
                                             },
