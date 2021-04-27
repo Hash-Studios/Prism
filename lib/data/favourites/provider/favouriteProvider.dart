@@ -21,8 +21,19 @@ class FavouriteProvider extends ChangeNotifier {
       for (final f in value.documents) {
         liked!.add(f.data);
       }
-    }).catchError((e) {
-      debugPrint("data done with error");
+      liked!.sort((a, b) {
+        if (a["createdAt"] != null && b["createdAt"] != null) {
+          return (a["createdAt"] as Timestamp)
+              .toDate()
+              .compareTo((b["createdAt"] as Timestamp).toDate());
+        } else {
+          return 0;
+        }
+      });
+      liked = liked!.reversed.toList();
+      // });
+      // .catchError((e) {
+      //   debugPrint("data done with error");
     });
 
     return liked;
