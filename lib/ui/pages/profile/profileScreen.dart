@@ -1027,7 +1027,7 @@ class _ProfileChildState extends State<ProfileChild> {
                     UserList(
                       expanded: false,
                     ),
-                    const StudioList(),
+                    // const StudioList(),
                     AboutList(),
                     const SizedBox(
                       height: 300,

@@ -24,7 +24,7 @@ import 'package:Prism/routes/router.dart' as router;
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hive/hive.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
+// import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';
@@ -54,7 +54,7 @@ void main() {
     android: initializationSettingsAndroid,
   );
   flutterLocalNotificationsPlugin.initialize(initializationSettings).then((_) {
-    InAppPurchaseConnection.enablePendingPurchases();
+    // InAppPurchaseConnection.enablePendingPurchases();
     // GestureBinding.instance!.resamplingEnabled = true;
     getApplicationDocumentsDirectory().then(
       (dir) async {
