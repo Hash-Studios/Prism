@@ -703,13 +703,13 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                         height: 17,
                       ),
                       FollowHeaderCard(
-                        email: "maurya.abhay30@gmail.com",
+                        email: "hk3ToN_Prism@gmail.com",
                         url:
-                            "https://lh3.googleusercontent.com/a-/AOh14GgTe5pUi3k-cdvxoCoJ2kKWafu0RXDN3sUVTp3Z58c=s96-c",
-                        name: "Abhay Maurya",
-                        img1: user1Image1,
-                        img2: user1Image2,
-                        img3: user1Image3,
+                            "https://pbs.twimg.com/profile_images/1278264820450680833/LKoAc7nh_400x400.jpg",
+                        name: "Hk3ToN",
+                        img1: user3Image1,
+                        img2: user3Image2,
+                        img3: user3Image3,
                       ),
                       FollowHeaderCard(
                         email: "akshaymaurya3006@gmail.com",
@@ -721,13 +721,40 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                         img3: user2Image3,
                       ),
                       FollowHeaderCard(
-                        email: "hk3ToN_Prism@gmail.com",
+                        email: "maurya.abhay30@gmail.com",
                         url:
-                            "https://pbs.twimg.com/profile_images/1278264820450680833/LKoAc7nh_400x400.jpg",
-                        name: "Hk3ToN",
-                        img1: user3Image1,
-                        img2: user3Image2,
-                        img3: user3Image3,
+                            "https://lh3.googleusercontent.com/a-/AOh14GgTe5pUi3k-cdvxoCoJ2kKWafu0RXDN3sUVTp3Z58c=s96-c",
+                        name: "Abhay Maurya",
+                        img1: user1Image1,
+                        img2: user1Image2,
+                        img3: user1Image3,
+                      ),
+                      FollowHeaderCard(
+                        email: "inderpalsansoa.1993@gmail.com",
+                        url:
+                            "https://lh3.googleusercontent.com/a-/AOh14GjUOpZ14V9UdM58LCz1nx87N_3SDYSHQwTOec-I=s96-c",
+                        name: "ShankyGotThatArt",
+                        img1: user4Image1,
+                        img2: user4Image2,
+                        img3: user4Image3,
+                      ),
+                      FollowHeaderCard(
+                        email: "yyo17341@gmail.com",
+                        url:
+                            "https://lh3.googleusercontent.com/a-/AOh14GizSGAXOap5UIqWKX16JNSKe56y1X_mKNb0Snaf=s96-c",
+                        name: "Megh Dave",
+                        img1: user5Image1,
+                        img2: user5Image2,
+                        img3: user5Image3,
+                      ),
+                      FollowHeaderCard(
+                        email: "techpool007@gmail.com",
+                        url:
+                            "https://lh3.googleusercontent.com/a-/AOh14GhcT-AssZM3Kk6jz4OTbbAPz3gS-2tvPjLhkAj83w=s96-c",
+                        name: "Dennis Wilson",
+                        img1: user6Image1,
+                        img2: user6Image2,
+                        img3: user6Image3,
                       ),
                     ],
                   )),
