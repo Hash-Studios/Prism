@@ -857,7 +857,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            const StudioList(),
+            // const StudioList(),
           ])),
     );
   }
