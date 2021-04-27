@@ -941,10 +941,16 @@ class SetupTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: "${wallpaper.data["widget2"]}" != "" &&
-              "${wallpaper.data["widget2"]}" != null
-          ? 420
-          : 390,
+      constraints: BoxConstraints(
+        minHeight: "${wallpaper.data["widget2"]}" != "" &&
+                "${wallpaper.data["widget2"]}" != null
+            ? 420
+            : 390,
+        maxHeight: "${wallpaper.data["widget2"]}" != "" &&
+                "${wallpaper.data["widget2"]}" != null
+            ? 470
+            : 440,
+      ),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1301,7 +1307,7 @@ class SetupTile extends StatelessWidget {
                             const SizedBox(
                               height: 16,
                             ),
-                            Row(
+                            Wrap(
                               children: [
                                 Container(
                                   decoration: BoxDecoration(
