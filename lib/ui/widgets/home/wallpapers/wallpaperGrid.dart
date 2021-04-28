@@ -106,8 +106,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
   }
 
   void showGooglePopUp(BuildContext context, Function func) {
-    debugPrint(main.prefs.get("isLoggedin").toString());
-    if (main.prefs.get("isLoggedin") == false) {
+    debugPrint(globals.prismUser.loggedIn.toString());
+    if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {
       func();
@@ -213,7 +213,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                                           as List? ??
                                                       []) ==
                                               true &&
-                                          main.prefs.get('premium') != true
+                                          globals.prismUser.premium != true
                                       ? showGooglePopUp(context, () {
                                           Navigator.pushNamed(
                                             context,
@@ -355,7 +355,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     },
                   );
                 }
-                return main.prefs.get('premium') == true
+                return globals.prismUser.premium == true
                     ? FocusedMenuHolder(
                         provider: widget.provider,
                         index: index,

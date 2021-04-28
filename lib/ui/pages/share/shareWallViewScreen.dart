@@ -1189,7 +1189,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             ),
                                           ),
                                         ),
-                                        if (main.prefs.get('premium') ==
+                                        if (globals.prismUser.premium ==
                                                 false &&
                                             globals.isPremiumWall(
                                                     globals.premiumCollections,
@@ -1205,11 +1205,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               children: [
                                                 GestureDetector(
                                                   onTap: () async {
-                                                    if (main.prefs.get(
-                                                                "isLoggedin",
-                                                                defaultValue:
-                                                                    false)
-                                                            as bool ==
+                                                    if (globals.prismUser
+                                                            .loggedIn ==
                                                         true) {
                                                       Navigator.pushNamed(
                                                           context,

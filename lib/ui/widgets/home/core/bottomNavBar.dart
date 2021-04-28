@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:image_picker/image_picker.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class BottomBar extends StatefulWidget {
   final Widget? child;
@@ -176,7 +177,7 @@ class _BottomNavBarState extends State<BottomNavBar>
 
   Future<void> checkSignIn() async {
     setState(() {
-      isLoggedin = main.prefs.get("isLoggedin") as bool?;
+      isLoggedin = globals.prismUser.loggedIn;
     });
   }
 
@@ -423,7 +424,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                     Container(
                       height: navStack.last == "Profile" ? 9 : 0,
                     ),
-                    if (main.prefs.get("isLoggedin") == true)
+                    if (globals.prismUser.loggedIn == true)
                       imageNotFound
                           ? Icon(
                               JamIcons.user_circle,
@@ -438,7 +439,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                                 backgroundColor: Theme.of(context).accentColor,
                                 radius: 11,
                                 backgroundImage: NetworkImage(
-                                  main.prefs.get('googleimage').toString(),
+                                  globals.prismUser.profilePhoto,
                                 ),
                                 onBackgroundImageError: (_, st) {
                                   setState(() {

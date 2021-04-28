@@ -1407,7 +1407,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                               padding: const EdgeInsets.all(17),
                               child: FavoriteIcon(
                                 valueChanged: () {
-                                  if (main.prefs.get("isLoggedin") == false) {
+                                  if (globals.prismUser.loggedIn == false) {
                                     googleSignInPopUp(context, () {
                                       onFavSetup(
                                           Provider.of<ProfileSetupProvider>(

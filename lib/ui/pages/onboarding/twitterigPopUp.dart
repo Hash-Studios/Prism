@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class OptionalInfo extends StatefulWidget {
   final Image img;
@@ -62,9 +63,9 @@ class _OptionalInfoState extends State<OptionalInfo> {
         _igController.text != null &&
         _igController.text != "") {
       await setUserTwitter("https://www.twitter.com/${_twitterController.text}",
-          main.prefs.get("id").toString());
+          globals.prismUser.id);
       await setUserIG("https://www.instagram.com/${_igController.text}",
-          main.prefs.get("id").toString());
+          globals.prismUser.id);
       toasts.codeSend("Successfully linked!");
     }
   }
@@ -930,7 +931,7 @@ class FollowHeaderCard extends StatelessWidget {
                   const Spacer(),
                   StreamBuilder<QuerySnapshot>(
                     stream: users
-                        .where("email", isEqualTo: main.prefs.get('email'))
+                        .where("email", isEqualTo: globals.prismUser.email)
                         .snapshots(),
                     builder: (BuildContext context,
                         AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -980,7 +981,7 @@ class FollowHeaderCard extends StatelessWidget {
                                     final List followers = value.documents[0]
                                             .data['followers'] as List? ??
                                         [];
-                                    followers.add(main.prefs.get('email'));
+                                    followers.add(globals.prismUser.email);
                                     value.documents[0].reference
                                         .updateData({'followers': followers});
                                   }
@@ -996,13 +997,12 @@ class FollowHeaderCard extends StatelessWidget {
                                       'notification': <String, dynamic>{
                                         'title': '🎉 New Follower!',
                                         'body':
-                                            '${main.prefs.get('googlename')} is now following you.',
+                                            '${globals.prismUser.username} is now following you.',
                                         'color': "#e57697",
-                                        'image':
-                                            "${main.prefs.get('googleimage')}",
+                                        'image': globals.prismUser.profilePhoto,
                                         'android_channel_id': "followers",
                                         'tag':
-                                            '${main.prefs.get('googlename')} Follow',
+                                            '${globals.prismUser.username} Follow',
                                         'icon': '@drawable/ic_follow',
                                       },
                                       'priority': 'high',

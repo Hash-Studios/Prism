@@ -78,19 +78,16 @@ class SetupPage extends StatefulWidget {
 class _SetupPageState extends State<SetupPage> {
   int pageNumber = 0;
   void showPremiumPopUp(Function func) {
-    if (main.prefs.get("isLoggedin") == false ||
-        main.prefs.get("isLoggedin") == null) {
+    if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, () {
-        if (main.prefs.get("premium") == false ||
-            main.prefs.get("premium") == null) {
+        if (globals.prismUser.premium == false) {
           Navigator.pushNamed(context, premiumRoute);
         } else {
           func();
         }
       });
     } else {
-      if (main.prefs.get("premium") == false ||
-          main.prefs.get("premium") == null) {
+      if (globals.prismUser.premium == false) {
         Navigator.pushNamed(context, premiumRoute);
       } else {
         func();

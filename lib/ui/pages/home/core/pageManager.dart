@@ -393,9 +393,7 @@ class _PageManagerChildState extends State<PageManagerChild>
               children: (globals.followersTab == true)
                   ? <Widget>[
                       const HomeScreen(),
-                      if (main.prefs.get('isLoggedin', defaultValue: false)
-                              as bool ==
-                          true)
+                      if (globals.prismUser.loggedIn == true)
                         const FollowingScreen()
                       else
                         Column(

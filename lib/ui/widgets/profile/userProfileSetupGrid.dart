@@ -11,6 +11,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 
 class UserProfileSetupGrid extends StatefulWidget {
   final String? email;
@@ -31,7 +32,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
       GlobalKey<RefreshIndicatorState>();
 
   void showPremiumPopUp(Function func) {
-    if (main.prefs.get("premium") == false) {
+    if (globals.prismUser.premium == false) {
       Navigator.pushNamed(context, premiumRoute);
     } else {
       func();
@@ -39,8 +40,8 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
   }
 
   void showGooglePopUp(Function func) {
-    debugPrint(main.prefs.get("isLoggedin").toString());
-    if (main.prefs.get("isLoggedin") == false) {
+    debugPrint(globals.prismUser.loggedIn.toString());
+    if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {
       func();
@@ -281,7 +282,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
                                   onTap: () {
                                     if (userdata.userProfileSetups == []) {
                                     } else {
-                                      if (main.prefs.get('premium') == true) {
+                                      if (globals.prismUser.premium == true) {
                                         Navigator.pushNamed(
                                             context, userProfileSetupViewRoute,
                                             arguments: [index]);

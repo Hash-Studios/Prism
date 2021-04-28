@@ -60,7 +60,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
   Future<void> load(StreamController<QuerySnapshot> sc) async {
     await databaseReference
         .collection("users")
-        .where("email", isEqualTo: main.prefs.get('email'))
+        .where("email", isEqualTo: globals.prismUser.email)
         .getDocuments()
         .then((value) {
       following = value.documents[0].data["following"] as List? ?? [];
@@ -155,8 +155,8 @@ class _FollowingTileState extends State<FollowingTile> {
   // }
 
   void showGooglePopUp(BuildContext context, Function func) {
-    debugPrint(main.prefs.get("isLoggedin").toString());
-    if (main.prefs.get("isLoggedin") == false) {
+    debugPrint(globals.prismUser.loggedIn.toString());
+    if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {
       func();
@@ -185,7 +185,7 @@ class _FollowingTileState extends State<FollowingTile> {
                                             ["collections"] as List? ??
                                         []) ==
                                 true &&
-                            main.prefs.get('premium') != true
+                            globals.prismUser.premium != true
                         ? showGooglePopUp(context, () {
                             Navigator.pushNamed(
                               context,

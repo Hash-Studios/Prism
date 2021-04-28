@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 
 class EditSetupReviewScreen extends StatefulWidget {
   final List? arguments;
@@ -307,11 +308,8 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                 child: CircleAvatar(
                   backgroundColor: Theme.of(context).errorColor,
                   radius: 20,
-                  child: main.prefs.get("googleimage") == null
-                      ? Container()
-                      : ClipOval(
-                          child: Image.network(
-                              main.prefs.get("googleimage").toString())),
+                  child: ClipOval(
+                      child: Image.network(globals.prismUser.profilePhoto)),
                 ),
               ),
               const Spacer(),
@@ -960,7 +958,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
           ),
           ListTile(
             title: Text(
-              main.prefs.get('premium') == true
+              globals.prismUser.premium == true
                   ? "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. Your setup will be visible in the setups section."
                   : "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your setup will be visible in the setups section.",
               style: TextStyle(

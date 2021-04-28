@@ -17,6 +17,7 @@ import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class UploadWallScreen extends StatefulWidget {
   final List? arguments;
@@ -276,7 +277,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       padding: const EdgeInsets.all(8.0),
                       child: Center(
                         child: Text(
-                          main.prefs.get('premium') == true
+                          globals.prismUser.premium == true
                               ? "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. Your photo will be visible in the profile/community section."
                               : "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
                           textAlign: TextAlign.center,

@@ -21,21 +21,19 @@ Future<void> getNotifications() async {
         Map<String, dynamic> map;
         map = f.data;
         if (map['modifier'] == "free") {
-          if (main.prefs.get('premium') == false ||
-              main.prefs.get('premium') == null) {
+          if (globals.prismUser.premium == false) {
             writeNotifications(map);
           }
         } else if (map['modifier'] == "premium") {
-          if (main.prefs.get('premium') == true) {
+          if (globals.prismUser.premium == true) {
             writeNotifications(map);
           }
         } else if (map['modifier'] == "all") {
           writeNotifications(map);
         } else if (map['modifier'] == globals.currentAppVersion) {
           writeNotifications(map);
-        } else if (map['modifier'] == main.prefs.get('email').toString()) {
-          if (main.prefs.get('email').toString() != "" &&
-              main.prefs.get('email').toString() != null) {
+        } else if (map['modifier'] == globals.prismUser.email) {
+          if (globals.prismUser.email != "") {
             writeNotifications(map);
           }
         }
@@ -75,13 +73,12 @@ Future<void> getNotifications() async {
           }
           if (unique) {
             if (map['modifier'] == "free") {
-              if (main.prefs.get('premium') == false ||
-                  main.prefs.get('premium') == null) {
+              if (globals.prismUser.premium == false) {
                 counter++;
                 writeNotifications(map);
               }
             } else if (map['modifier'] == "premium") {
-              if (main.prefs.get('premium') == true) {
+              if (globals.prismUser.premium == true) {
                 counter++;
                 writeNotifications(map);
               }
@@ -91,9 +88,8 @@ Future<void> getNotifications() async {
             } else if (map['modifier'] == globals.currentAppVersion) {
               counter++;
               writeNotifications(map);
-            } else if (map['modifier'] == main.prefs.get('email').toString()) {
-              if (main.prefs.get('email').toString() != "" &&
-                  main.prefs.get('email').toString() != null) {
+            } else if (map['modifier'] == globals.prismUser.email) {
+              if (globals.prismUser.email != "") {
                 counter++;
                 writeNotifications(map);
               }

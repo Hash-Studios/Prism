@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 
 class ProfileSetupProvider extends ChangeNotifier {
   final Firestore databaseReference = Firestore.instance;
@@ -9,16 +9,16 @@ class ProfileSetupProvider extends ChangeNotifier {
   Future<List?> getProfileSetups() async {
     profileSetups = [];
     Query db;
-    if (main.prefs.get('premium') == true) {
+    if (globals.prismUser.premium == true) {
       db = databaseReference
           .collection("setups")
-          .where('email', isEqualTo: main.prefs.get('email'))
+          .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("created_at", descending: true);
     } else {
       db = databaseReference
           .collection("setups")
           .where('review', isEqualTo: true)
-          .where('email', isEqualTo: main.prefs.get('email'))
+          .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("created_at", descending: true);
     }
     await db.getDocuments().then((value) {

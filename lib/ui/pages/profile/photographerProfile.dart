@@ -457,14 +457,11 @@ class _UserProfileState extends State<UserProfile> {
                     },
                   ),
                   actions: [
-                    if (main.prefs.get("isLoggedin", defaultValue: false)
-                                as bool ==
-                            true &&
-                        main.prefs.get('email', defaultValue: "") as String !=
-                            email)
+                    if (globals.prismUser.loggedIn == true &&
+                        globals.prismUser.email != email)
                       StreamBuilder<QuerySnapshot>(
                         stream: users
-                            .where("email", isEqualTo: main.prefs.get('email'))
+                            .where("email", isEqualTo: globals.prismUser.email)
                             .snapshots(),
                         builder: (BuildContext context,
                             AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -492,7 +489,7 @@ class _UserProfileState extends State<UserProfile> {
                                               .data['followers'] as List? ??
                                           [];
                                       followers.removeAt(followers
-                                          .indexOf(main.prefs.get('email')));
+                                          .indexOf(globals.prismUser.email));
                                       value.documents[0].reference
                                           .updateData({'followers': followers});
                                     }
@@ -530,7 +527,7 @@ class _UserProfileState extends State<UserProfile> {
                                                 .documents[0]
                                                 .data['followers'] as List? ??
                                             [];
-                                        followers.add(main.prefs.get('email'));
+                                        followers.add(globals.prismUser.email);
                                         value.documents[0].reference.updateData(
                                             {'followers': followers});
                                       }
@@ -546,12 +543,12 @@ class _UserProfileState extends State<UserProfile> {
                                           'notification': <String, dynamic>{
                                             'title': '🎉 New Follower!',
                                             'body':
-                                                '${main.prefs.get('googlename')} is now following you.',
+                                                '${globals.prismUser.username} is now following you.',
                                             'color': "#e57697",
                                             'tag':
-                                                '${main.prefs.get('googlename')} Follow',
+                                                '${globals.prismUser.username} Follow',
                                             'image':
-                                                "${main.prefs.get('googleimage')}",
+                                                globals.prismUser.profilePhoto,
                                             'android_channel_id': "followers",
                                             'icon': '@drawable/ic_follow'
                                           },

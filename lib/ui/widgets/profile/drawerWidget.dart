@@ -36,9 +36,7 @@ class ProfileDrawer extends StatelessWidget {
                       Container(
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
-                          main.prefs.get('premium', defaultValue: false)
-                                      as bool ==
-                                  true
+                          globals.prismUser.premium == true
                               ? "Prism Pro"
                               : "Prism",
                           style: Theme.of(context)
@@ -50,9 +48,7 @@ class ProfileDrawer extends StatelessWidget {
                       Container(
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
-                          main.prefs.get('premium', defaultValue: false)
-                                      as bool ==
-                                  true
+                          globals.prismUser.premium == true
                               ? "Exclusive premium walls & setups!"
                               : "Exclusive wallpapers & setups!",
                           style: Theme.of(context)
@@ -121,11 +117,11 @@ class ProfileDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: <Widget>[
             createDrawerHeader(context),
-            if (main.prefs.get('premium', defaultValue: false) as bool == true)
+            if (globals.prismUser.premium == true)
               Container()
             else
               createDrawerBodyHeader(text: "PREMIUM", context: context),
-            if (main.prefs.get('premium', defaultValue: false) as bool == true)
+            if (globals.prismUser.premium == true)
               Container()
             else
               createDrawerBodyItem(
@@ -136,7 +132,7 @@ class ProfileDrawer extends StatelessWidget {
                     Navigator.pushNamed(context, premiumRoute);
                   },
                   context: context),
-            if (main.prefs.get('premium', defaultValue: false) as bool == true)
+            if (globals.prismUser.premium == true)
               Container()
             else
               const Divider(),
@@ -368,7 +364,7 @@ class ProfileDrawer extends StatelessWidget {
                             Navigator.of(context).pop();
                             await setUserTwitter(
                                 "https://www.twitter.com/${_twitterController.text}",
-                                main.prefs.get("id").toString());
+                                globals.prismUser.id.toString());
                             toasts.codeSend("Successfully linked!");
                           },
                           child: const Text(
@@ -474,7 +470,7 @@ class ProfileDrawer extends StatelessWidget {
                             Navigator.of(context).pop();
                             await setUserIG(
                                 "https://www.instagram.com/${_igController.text}",
-                                main.prefs.get("id").toString());
+                                globals.prismUser.id.toString());
                             toasts.codeSend("Successfully linked!");
                           },
                           child: const Text(
@@ -509,34 +505,29 @@ class ProfileDrawer extends StatelessWidget {
             ),
             const Divider(),
             createDrawerBodyHeader(text: "USER", context: context),
-            if (main.prefs.get("name") != null &&
-                main.prefs.get("email") != null &&
-                main.prefs.get("googleimage") != null)
-              createDrawerBodyItem(
-                  icon: JamIcons.share_alt,
-                  text: 'Share your Profile',
-                  context: context,
-                  onTap: () {
-                    createUserDynamicLink(
-                        main.prefs.get("name").toString(),
-                        main.prefs.get("email").toString(),
-                        main.prefs.get("googleimage").toString(),
-                        main.prefs.get("premium") as bool?,
-                        main.prefs.get("twitter") != ""
-                            ? main.prefs
-                                .get("twitter")
-                                .toString()
-                                .split("https://www.twitter.com/")[1]
-                            : "",
-                        main.prefs.get("instagram") != ""
-                            ? main.prefs
-                                .get("instagram")
-                                .toString()
-                                .split("https://www.instagram.com/")[1]
-                            : "");
-                  })
-            else
-              Container(),
+            createDrawerBodyItem(
+                icon: JamIcons.share_alt,
+                text: 'Share your Profile',
+                context: context,
+                onTap: () {
+                  createUserDynamicLink(
+                      globals.prismUser.username.toString(),
+                      globals.prismUser.email.toString(),
+                      globals.prismUser.profilePhoto.toString(),
+                      globals.prismUser.premium,
+                      main.prefs.get("twitter") != ""
+                          ? main.prefs
+                              .get("twitter")
+                              .toString()
+                              .split("https://www.twitter.com/")[1]
+                          : "",
+                      main.prefs.get("instagram") != ""
+                          ? main.prefs
+                              .get("instagram")
+                              .toString()
+                              .split("https://www.instagram.com/")[1]
+                          : "");
+                }),
             createDrawerBodyItem(
               icon: JamIcons.log_out,
               text: 'Log out',

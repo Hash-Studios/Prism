@@ -19,6 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:animations/animations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class ReviewScreen extends StatefulWidget {
   @override
@@ -137,7 +138,7 @@ class _WallReviewState extends State<WallReview> {
         children: [
           StreamBuilder<QuerySnapshot>(
               stream: rejectedWalls
-                  .where("email", isEqualTo: main.prefs.get('email').toString())
+                  .where("email", isEqualTo: globals.prismUser.email)
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
               builder: (BuildContext context,
@@ -156,7 +157,7 @@ class _WallReviewState extends State<WallReview> {
               }),
           StreamBuilder<QuerySnapshot>(
               stream: walls
-                  .where("email", isEqualTo: main.prefs.get('email').toString())
+                  .where("email", isEqualTo: globals.prismUser.email)
                   .where("review", isEqualTo: false)
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
@@ -887,7 +888,7 @@ class _SetupReviewState extends State<SetupReview> {
         children: [
           StreamBuilder<QuerySnapshot>(
               stream: rejectedSetups
-                  .where("email", isEqualTo: main.prefs.get('email').toString())
+                  .where("email", isEqualTo: globals.prismUser.email)
                   .orderBy('created_at', descending: true)
                   .snapshots(),
               builder: (BuildContext context,
@@ -906,7 +907,7 @@ class _SetupReviewState extends State<SetupReview> {
               }),
           StreamBuilder<QuerySnapshot>(
               stream: setups
-                  .where("email", isEqualTo: main.prefs.get('email').toString())
+                  .where("email", isEqualTo: globals.prismUser.email)
                   .where("review", isEqualTo: false)
                   .orderBy('created_at', descending: true)
                   .snapshots(),

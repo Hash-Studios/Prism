@@ -16,7 +16,7 @@ class UserList extends StatelessWidget {
   UserList({required this.expanded});
   @override
   Widget build(BuildContext context) {
-    if (main.prefs.get("isLoggedin") == false) {
+    if (globals.prismUser.loggedIn == false) {
       return ListTile(
         onTap: () {
           final Dialog loaderDialog = Dialog(
@@ -33,7 +33,7 @@ class UserList extends StatelessWidget {
               ),
             ),
           );
-          if (main.prefs.get("isLoggedin") == false) {
+          if (globals.prismUser.loggedIn == false) {
             showDialog(
                 barrierDismissible: false,
                 context: context,
@@ -78,13 +78,13 @@ class UserList extends StatelessWidget {
               fontFamily: "Proxima Nova"),
         ),
         subtitle: Text(
-          main.prefs.get("isLoggedin") == true
+          globals.prismUser.loggedIn == true
               ? "Clear favorites or logout"
               : "Login with Google",
           style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
         ),
         children: <Widget>[
-          if (main.prefs.get("isLoggedin") == true)
+          if (globals.prismUser.loggedIn == true)
             Column(
               children: [
                 ListTile(
@@ -345,7 +345,7 @@ class UserList extends StatelessWidget {
                                   Navigator.of(context).pop();
                                   await setUserTwitter(
                                       "https://www.twitter.com/${_twitterController.text}",
-                                      main.prefs.get("id").toString());
+                                      globals.prismUser.id.toString());
                                   toasts.codeSend("Successfully linked!");
                                 },
                                 child: const Text(
@@ -465,7 +465,7 @@ class UserList extends StatelessWidget {
                                   Navigator.of(context).pop();
                                   await setUserIG(
                                       "https://www.instagram.com/${_igController.text}",
-                                      main.prefs.get("id").toString());
+                                      globals.prismUser.id.toString());
                                   toasts.codeSend("Successfully linked!");
                                 },
                                 child: const Text(
@@ -494,7 +494,7 @@ class UserList extends StatelessWidget {
                           fontFamily: "Proxima Nova"),
                     ),
                     subtitle: Text(
-                      main.prefs.get("email").toString(),
+                      globals.prismUser.email,
                       style: const TextStyle(fontSize: 12),
                     ),
                     onTap: () {

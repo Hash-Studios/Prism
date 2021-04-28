@@ -163,7 +163,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                         //                 .setups[index]["widget2"] ==
                         //             null
                         // ?
-                        main.prefs.get('premium') == true
+                        globals.prismUser.premium == true
                             ? MediaQuery.of(context).size.height * .70 > 600
                                 ? MediaQuery.of(context).size.height * .70
                                 : 600
@@ -193,7 +193,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                           //                 .setups[index]["widget2"] ==
                           //             null
                           // ?
-                          main.prefs.get('premium') == true
+                          globals.prismUser.premium == true
                               ? MediaQuery.of(context).size.height * .70 > 600
                                   ? MediaQuery.of(context).size.height * .70
                                   : 600
@@ -605,7 +605,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                           ),
                                   ),
                                 ),
-                                if (main.prefs.get('premium') == true)
+                                if (globals.prismUser.premium == true)
                                   Expanded(
                                     flex: 16,
                                     child: Padding(
@@ -1168,7 +1168,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                   )
                                 else
                                   Container(),
-                                if (main.prefs.get('premium') == true)
+                                if (globals.prismUser.premium == true)
                                   Expanded(
                                     flex: 5,
                                     child: Row(
@@ -1194,8 +1194,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                           padding: const EdgeInsets.all(17),
                                           child: FavoriteIcon(
                                             valueChanged: () {
-                                              if (main.prefs
-                                                      .get("isLoggedin") ==
+                                              if (globals.prismUser.loggedIn ==
                                                   false) {
                                                 googleSignInPopUp(context, () {
                                                   onFavSetup(
@@ -1230,9 +1229,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                       children: [
                                         GestureDetector(
                                           onTap: () async {
-                                            if (main.prefs.get("isLoggedin",
-                                                        defaultValue: false)
-                                                    as bool ==
+                                            if (globals.prismUser.loggedIn ==
                                                 true) {
                                               Navigator.pushNamed(
                                                   context, premiumRoute);

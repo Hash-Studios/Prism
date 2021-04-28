@@ -20,8 +20,8 @@ class WallpaperTile extends StatelessWidget {
   final int index;
 
   void showGooglePopUp(BuildContext context, Function func) {
-    debugPrint(main.prefs.get("isLoggedin").toString());
-    if (main.prefs.get("isLoggedin") == false) {
+    debugPrint(globals.prismUser.loggedIn.toString());
+    if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {
       func();
@@ -74,7 +74,7 @@ class WallpaperTile extends StatelessWidget {
                                           as List? ??
                                       []) ==
                               true &&
-                          main.prefs.get('premium') != true
+                          globals.prismUser.premium == true
                       ? showGooglePopUp(context, () {
                           Navigator.pushNamed(
                             context,

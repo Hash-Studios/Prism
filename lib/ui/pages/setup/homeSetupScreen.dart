@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 
 class HomeSetupScreen extends StatefulWidget {
   const HomeSetupScreen({
@@ -59,19 +60,17 @@ class HomeSetupPage extends StatefulWidget {
 class _HomeSetupPageState extends State<HomeSetupPage> {
   int pageNumber = 0;
   void showPremiumPopUp(Function func) {
-    debugPrint(main.prefs.get("premium").toString());
-    if (main.prefs.get("isLoggedin") == false) {
+    debugPrint(globals.prismUser.premium.toString());
+    if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, () {
-        if (main.prefs.get("premium") == false ||
-            main.prefs.get("premium") == null) {
+        if (globals.prismUser.premium == false) {
           Navigator.pushNamed(context, premiumRoute);
         } else {
           func();
         }
       });
     } else {
-      if (main.prefs.get("premium") == false ||
-          main.prefs.get("premium") == null) {
+      if (globals.prismUser.premium == false) {
         Navigator.pushNamed(context, premiumRoute);
       } else {
         func();
