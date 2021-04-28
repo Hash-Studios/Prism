@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
@@ -65,6 +66,7 @@ void main() {
         await Hive.openBox('localFav');
         Hive.registerAdapter(NotifDataAdapter());
         await Hive.openBox<List>('notifications');
+        Hive.registerAdapter(PrismUsersAdapter());
         prefs = await Hive.openBox('prefs');
         debugPrint("Box Opened");
         if (prefs.get("systemOverlayColor") == null) {

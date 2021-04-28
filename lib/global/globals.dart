@@ -1,6 +1,18 @@
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/main.dart' as main;
 
 GoogleAuth gAuth = GoogleAuth();
+PrismUsers prismUser = main.prefs.get(
+  'prismUser',
+  defaultValue: PrismUsers.initial(
+    createdAt: DateTime.now().toIso8601String(),
+    lastLogin: DateTime.now(),
+    links: {},
+    followers: [],
+    following: [],
+  ),
+) as PrismUsers;
 String currentAppVersion = '2.6.4';
 String obsoleteAppVersion = '2.6.0';
 String currentAppVersionCode = '63';
