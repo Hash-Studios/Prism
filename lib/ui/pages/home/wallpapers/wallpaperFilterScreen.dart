@@ -24,6 +24,7 @@ import 'package:photofilters/filters/preset_filters.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class WallpaperFilterScreen extends StatefulWidget {
   final imagelib.Image image;
@@ -220,17 +221,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   void showPremiumPopUp(Function func) {
-    if (main.prefs.get("isLoggedin") == false) {
+    if (globals.prismUser.loggedIn == false) {
       toasts.codeSend("Editing Wallpaper is a premium feature.");
       googleSignInPopUp(context, () {
-        if (main.prefs.get("premium") == false) {
+        if (globals.prismUser.premium == false) {
           Navigator.pushNamed(context, premiumRoute);
         } else {
           func();
         }
       });
     } else {
-      if (main.prefs.get("premium") == false) {
+      if (globals.prismUser.premium == false) {
         toasts.codeSend("Editing Wallpaper is a premium feature.");
         Navigator.pushNamed(context, premiumRoute);
       } else {

@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:Prism/global/globals.dart' as globals;
 
 Firestore firestore = Firestore.instance;
 Future<void> createRecord(
@@ -18,9 +19,9 @@ Future<void> createRecord(
     String? wallpaperDesc,
     dynamic review) async {
   await firestore.collection("walls").add({
-    'by': main.prefs.get('name'),
-    'email': main.prefs.get('email'),
-    'userPhoto': main.prefs.get('googleimage'),
+    'by': globals.prismUser.username,
+    'email': globals.prismUser.email,
+    'userPhoto': globals.prismUser.profilePhoto,
     'id': id,
     'wallpaper_provider': wallpaperProvider,
     'wallpaper_thumb': wallpaperThumb,
@@ -32,8 +33,6 @@ Future<void> createRecord(
     'review': review,
     'createdAt': DateTime.now(),
     'collections': ["community"],
-    'twitter': main.prefs.get('twitter') ?? "",
-    'instagram': main.prefs.get('instagram') ?? "",
   });
   int wallsUploaded = main.prefs.get("wallsUploaded") as int? ?? 0;
   if (main.prefs.get('date') !=
@@ -53,7 +52,7 @@ Future<void> createRecord(
   if (wallsUploaded > 5) {
     toasts.codeSend("Please try to upload less than 5 walls a day.");
   }
-  if (main.prefs.get('premium') == true) {
+  if (globals.prismUser.premium == true) {
     http.post(
       'https://fcm.googleapis.com/fcm/send',
       headers: <String, String>{
@@ -65,7 +64,7 @@ Future<void> createRecord(
           'notification': <String, dynamic>{
             'title': '🎉 New Premium Wall for review!',
             'body':
-                'New Post by ${main.prefs.get('googlename')} is up for review.',
+                'New Post by ${globals.prismUser.username} is up for review.',
             'color': "#e57697",
             'image': wallpaperThumb,
             'android_channel_id': "posts",
@@ -91,7 +90,7 @@ Future<void> createRecord(
           'notification': <String, dynamic>{
             'title': '🎉 New Premium Wall for review!',
             'body':
-                'New Post by ${main.prefs.get('googlename')} is up for review.',
+                'New Post by ${globals.prismUser.username} is up for review.',
             'color': "#e57697",
             'image': wallpaperThumb,
             'android_channel_id': "posts",
@@ -130,9 +129,9 @@ Future<void> createSetup(
     String wallId,
     bool? review) async {
   await firestore.collection("setups").add({
-    'by': main.prefs.get('name'),
-    'email': main.prefs.get('email'),
-    'userPhoto': main.prefs.get('googleimage'),
+    'by': globals.prismUser.username,
+    'email': globals.prismUser.email,
+    'userPhoto': globals.prismUser.profilePhoto,
     'id': id,
     'image': imageURL,
     'wallpaper_provider': wallpaperProvider,
@@ -148,12 +147,9 @@ Future<void> createSetup(
     'desc': setupDesc,
     'review': review,
     'created_at': DateTime.now(),
-    'twitter': main.prefs.get('twitter') ?? "",
-    'instagram': main.prefs.get('instagram') ?? "",
     'wall_id': wallId
   });
-  if (main.prefs.get("isLoggedin") == true &&
-      main.prefs.get("premium") == true) {
+  if (globals.prismUser.loggedIn == true && globals.prismUser.premium == true) {
     http.post(
       'https://fcm.googleapis.com/fcm/send',
       headers: <String, String>{
@@ -165,7 +161,7 @@ Future<void> createSetup(
           'notification': <String, dynamic>{
             'title': '🎉 New Premium Setup for review!',
             'body':
-                'New Post by ${main.prefs.get('googlename')} is up for review.',
+                'New Post by ${globals.prismUser.username} is up for review.',
             'color': "#e57697",
             'image': imageURL,
             'android_channel_id': "posts",
@@ -191,7 +187,7 @@ Future<void> createSetup(
           'notification': <String, dynamic>{
             'title': '🎉 New Premium Setup for review!',
             'body':
-                'New Post by ${main.prefs.get('googlename')} is up for review.',
+                'New Post by ${globals.prismUser.username} is up for review.',
             'color': "#e57697",
             'image': imageURL,
             'android_channel_id': "posts",
@@ -228,9 +224,9 @@ Future<void> updateSetup(
     String wallId,
     bool? review) async {
   await firestore.collection("setups").document(setupDocId).updateData({
-    'by': main.prefs.get('name'),
-    'email': main.prefs.get('email'),
-    'userPhoto': main.prefs.get('googleimage'),
+    'by': globals.prismUser.username,
+    'email': globals.prismUser.email,
+    'userPhoto': globals.prismUser.profilePhoto,
     'id': id,
     'image': imageURL,
     'wallpaper_provider': wallpaperProvider,
@@ -246,8 +242,6 @@ Future<void> updateSetup(
     'desc': setupDesc,
     'review': review,
     'created_at': DateTime.now(),
-    'twitter': main.prefs.get('twitter') ?? "",
-    'instagram': main.prefs.get('instagram') ?? "",
     'wall_id': wallId
   });
   toasts.codeSend("Your setup is edited, and is under review.");

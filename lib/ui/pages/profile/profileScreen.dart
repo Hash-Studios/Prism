@@ -91,7 +91,7 @@ class _ProfileChildState extends State<ProfileChild> {
   }
 
   Future checkFav() async {
-    if (main.prefs.get("isLoggedin") as bool) {
+    if (globals.prismUser.loggedIn) {
       await Provider.of<FavouriteProvider>(context, listen: false)
           .countFav()
           .then(
@@ -123,7 +123,7 @@ class _ProfileChildState extends State<ProfileChild> {
 
     return WillPopScope(
         onWillPop: onWillPop,
-        child: main.prefs.get("isLoggedin") as bool
+        child: globals.prismUser.loggedIn
             ? DefaultTabController(
                 length: 2,
                 child: Stack(
@@ -135,7 +135,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         headerSliverBuilder: (context, innerBoxIsScrolled) =>
                             <Widget>[
                           SliverAppBar(
-                            actions: main.prefs.get('isLoggedin') == false
+                            actions: globals.prismUser.loggedIn == false
                                 ? []
                                 : [
                                     Padding(
@@ -174,102 +174,87 @@ class _ProfileChildState extends State<ProfileChild> {
                                           children: [
                                             TableRow(children: [
                                               TableCell(
-                                                child: main.prefs.get(
-                                                            "googleimage") ==
-                                                        null
-                                                    ? Container()
-                                                    : Stack(
-                                                        alignment:
-                                                            Alignment.center,
-                                                        children: [
-                                                          Container(
-                                                            decoration: BoxDecoration(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            5000),
-                                                                boxShadow: [
-                                                                  BoxShadow(
-                                                                      blurRadius:
-                                                                          16,
-                                                                      offset:
-                                                                          const Offset(
-                                                                              0,
-                                                                              4),
-                                                                      color: const Color(
-                                                                              0xFF000000)
-                                                                          .withOpacity(
-                                                                              0.24))
-                                                                ]),
-                                                            child:
-                                                                GestureDetector(
-                                                              onTap: () {
-                                                                _controllerBottomCenter
-                                                                    .play();
-                                                                count++;
-                                                                main.prefs.put(
-                                                                    'easterCount',
-                                                                    count);
-                                                                if ((main.prefs.get(
-                                                                        'easterCount',
-                                                                        defaultValue:
-                                                                            0) as int) >
-                                                                    20) {
-                                                                  toasts.codeSend(
-                                                                      "Congratulations");
-                                                                  firestore
-                                                                      .collection(
-                                                                          "easter")
-                                                                      .add({
-                                                                    "name": main
-                                                                        .prefs
-                                                                        .get(
-                                                                            'name'),
-                                                                    "email": main
-                                                                        .prefs
-                                                                        .get(
-                                                                            'email'),
-                                                                    "userPhoto": main
-                                                                        .prefs
-                                                                        .get(
-                                                                            'googleimage'),
-                                                                  });
-                                                                }
-                                                              },
-                                                              child:
-                                                                  CircleAvatar(
-                                                                radius: 50,
-                                                                backgroundImage:
-                                                                    NetworkImage(main
-                                                                        .prefs
-                                                                        .get(
-                                                                            "googleimage")
-                                                                        .toString()),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          if (globals
-                                                              .verifiedUsers
-                                                              .contains(main
-                                                                  .prefs
-                                                                  .get("email")
-                                                                  .toString()))
-                                                            Positioned(
-                                                              top: 5,
-                                                              left: 100,
-                                                              child: Container(
-                                                                width: 30,
-                                                                height: 30,
-                                                                child: SvgPicture.string(
-                                                                    verifiedIcon.replaceAll(
-                                                                        "E57697",
-                                                                        "FFFFFF")),
-                                                              ),
-                                                            )
-                                                          else
-                                                            Container(),
-                                                        ],
+                                                child: Stack(
+                                                  alignment: Alignment.center,
+                                                  children: [
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      5000),
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                                blurRadius: 16,
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 4),
+                                                                color: const Color(
+                                                                        0xFF000000)
+                                                                    .withOpacity(
+                                                                        0.24))
+                                                          ]),
+                                                      child: GestureDetector(
+                                                        onTap: () {
+                                                          _controllerBottomCenter
+                                                              .play();
+                                                          count++;
+                                                          main.prefs.put(
+                                                              'easterCount',
+                                                              count);
+                                                          if ((main.prefs.get(
+                                                                  'easterCount',
+                                                                  defaultValue:
+                                                                      0) as int) >
+                                                              20) {
+                                                            toasts.codeSend(
+                                                                "Congratulations");
+                                                            firestore
+                                                                .collection(
+                                                                    "easter")
+                                                                .add({
+                                                              "name": globals
+                                                                  .prismUser
+                                                                  .username,
+                                                              "email": globals
+                                                                  .prismUser
+                                                                  .email,
+                                                              "userPhoto": globals
+                                                                  .prismUser
+                                                                  .profilePhoto,
+                                                            });
+                                                          }
+                                                        },
+                                                        child: CircleAvatar(
+                                                          radius: 50,
+                                                          backgroundImage:
+                                                              NetworkImage(globals
+                                                                  .prismUser
+                                                                  .profilePhoto
+                                                                  .toString()),
+                                                        ),
                                                       ),
+                                                    ),
+                                                    if (globals.verifiedUsers
+                                                        .contains(globals
+                                                            .prismUser.email))
+                                                      Positioned(
+                                                        top: 5,
+                                                        left: 100,
+                                                        child: Container(
+                                                          width: 30,
+                                                          height: 30,
+                                                          child: SvgPicture
+                                                              .string(verifiedIcon
+                                                                  .replaceAll(
+                                                                      "E57697",
+                                                                      "FFFFFF")),
+                                                        ),
+                                                      )
+                                                    else
+                                                      Container(),
+                                                  ],
+                                                ),
                                               ),
                                               TableCell(
                                                 verticalAlignment:
@@ -279,21 +264,38 @@ class _ProfileChildState extends State<ProfileChild> {
                                                   padding:
                                                       const EdgeInsets.only(
                                                           bottom: 20),
-                                                  child: main.prefs
-                                                              .get("name") ==
-                                                          null
-                                                      ? Container()
-                                                      : main.prefs.get(
-                                                                  'premium') ==
-                                                              false
-                                                          ? Text(
-                                                              main.prefs
-                                                                  .get("name")
-                                                                  .toString()
+                                                  child: globals.prismUser
+                                                              .premium ==
+                                                          false
+                                                      ? Text(
+                                                          globals.prismUser
+                                                              .username
+                                                              .toUpperCase(),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  "Proxima Nova",
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor,
+                                                              fontSize: 20,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600),
+                                                        )
+                                                      : Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: <Widget>[
+                                                            Text(
+                                                              globals.prismUser
+                                                                  .username
                                                                   .toUpperCase(),
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
                                                               style: TextStyle(
                                                                   fontFamily:
                                                                       "Proxima Nova",
@@ -304,73 +306,46 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w600),
-                                                            )
-                                                          : Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              children: <
-                                                                  Widget>[
-                                                                Text(
-                                                                  main.prefs
-                                                                      .get(
-                                                                          "name")
-                                                                      .toString()
-                                                                      .toUpperCase(),
-                                                                  style: TextStyle(
-                                                                      fontFamily:
-                                                                          "Proxima Nova",
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .accentColor,
-                                                                      fontSize:
-                                                                          20,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600),
-                                                                ),
-                                                                Padding(
-                                                                  padding: const EdgeInsets
+                                                            ),
+                                                            Padding(
+                                                              padding:
+                                                                  const EdgeInsets
                                                                           .only(
                                                                       left:
                                                                           6.0),
-                                                                  child:
-                                                                      Container(
-                                                                    padding: const EdgeInsets
-                                                                            .symmetric(
-                                                                        vertical:
-                                                                            2,
-                                                                        horizontal:
-                                                                            4),
-                                                                    decoration:
-                                                                        BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
+                                                              child: Container(
+                                                                padding: const EdgeInsets
+                                                                        .symmetric(
+                                                                    vertical: 2,
+                                                                    horizontal:
+                                                                        4),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
                                                                               50),
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .accentColor,
-                                                                    ),
-                                                                    child: Text(
-                                                                      "PRO",
-                                                                      style: Theme.of(
-                                                                              context)
-                                                                          .textTheme
-                                                                          .bodyText2!
-                                                                          .copyWith(
-                                                                            fontSize:
-                                                                                9,
-                                                                            color:
-                                                                                Theme.of(context).errorColor,
-                                                                          ),
-                                                                    ),
-                                                                  ),
-                                                                )
-                                                              ],
-                                                            ),
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .accentColor,
+                                                                ),
+                                                                child: Text(
+                                                                  "PRO",
+                                                                  style: Theme.of(
+                                                                          context)
+                                                                      .textTheme
+                                                                      .bodyText2!
+                                                                      .copyWith(
+                                                                        fontSize:
+                                                                            9,
+                                                                        color: Theme.of(context)
+                                                                            .errorColor,
+                                                                      ),
+                                                                ),
+                                                              ),
+                                                            )
+                                                          ],
+                                                        ),
                                                 ),
                                               ),
                                             ]),
@@ -502,7 +477,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                               () async {
                                                                             Navigator.of(context).pop();
                                                                             await setUserTwitter("https://www.twitter.com/${_twitterController.text}",
-                                                                                main.prefs.get("id").toString());
+                                                                                globals.prismUser.id.toString());
                                                                             toasts.codeSend("Successfully linked!");
                                                                           },
                                                                           child:
@@ -642,7 +617,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                               () async {
                                                                             Navigator.of(context).pop();
                                                                             await setUserIG("https://www.instagram.com/${_igController.text}",
-                                                                                main.prefs.get("id").toString());
+                                                                                globals.prismUser.id.toString());
                                                                             toasts.codeSend("Successfully linked!");
                                                                           },
                                                                           child:
@@ -748,10 +723,9 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             QuerySnapshot>(
                                                         stream: users
                                                             .where("email",
-                                                                isEqualTo: main
-                                                                    .prefs
-                                                                    .get(
-                                                                        'email'))
+                                                                isEqualTo: globals
+                                                                    .prismUser
+                                                                    .email)
                                                             .snapshots(),
                                                         builder: (BuildContext
                                                                 context,
@@ -860,8 +834,7 @@ class _ProfileChildState extends State<ProfileChild> {
                             automaticallyImplyLeading: false,
                             pinned: true,
                             titleSpacing: 0,
-                            expandedHeight:
-                                main.prefs.get("isLoggedin") as bool ? 50 : 0,
+                            expandedHeight: globals.prismUser.loggedIn ? 50 : 0,
                             title: SizedBox(
                               width: MediaQuery.of(context).size.width,
                               height: 57,

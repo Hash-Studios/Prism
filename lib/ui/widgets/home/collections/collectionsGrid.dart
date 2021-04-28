@@ -89,7 +89,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
   }
 
   void showPremiumPopUp(Function func) {
-    if (main.prefs.get("premium") == false) {
+    if (globals.prismUser.premium == false) {
       Navigator.pushNamed(context, premiumRoute);
     } else {
       func();
@@ -98,13 +98,13 @@ class _CollectionsGridState extends State<CollectionsGrid>
 
   Future<void> checkSignIn() async {
     setState(() {
-      isLoggedin = main.prefs.get("isLoggedin") as bool?;
+      isLoggedin = globals.prismUser.loggedIn;
     });
   }
 
   void showGooglePopUp(Function func) {
-    debugPrint(main.prefs.get("isLoggedin").toString());
-    if (main.prefs.get("isLoggedin") == false) {
+    debugPrint(globals.prismUser.loggedIn.toString());
+    if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {
       func();
@@ -163,7 +163,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                     CData.collections![CData.collectionNames.toList()[index]],
                   ]);
                 } else {
-                  if (main.prefs.get('premium') == true) {
+                  if (globals.prismUser.premium == true) {
                     Navigator
                         .pushNamed(context, collectionViewRoute, arguments: [
                       CData.collectionNames

@@ -40,7 +40,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     image3 = Image.asset('assets/images/third.png');
     super.initState();
     isLoading = false;
-    isSignedIn = main.prefs.get('isLoggedin') as bool? ?? false;
+    isSignedIn = globals.prismUser.loggedIn;
     selectedTheme = 2;
     selectedAccentColor = const Color(0xFFE57697);
     _currentPage = 0;
@@ -634,8 +634,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         });
                                         setState(() {
                                           isLoading = false;
-                                          isSignedIn = main.prefs
-                                              .get('isLoggedin') as bool?;
+                                          isSignedIn =
+                                              globals.prismUser.loggedIn;
                                         });
                                       },
                         style: ButtonStyle(
@@ -711,7 +711,7 @@ class OBIndicator extends StatelessWidget {
   const OBIndicator({
     Key? key,
     required int? currentPage,
-  })  : _currentPage = currentPage,
+  })   : _currentPage = currentPage,
         super(key: key);
 
   final int? _currentPage;

@@ -50,7 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           body: ListView(children: <Widget>[
-            if (main.prefs.get("premium") == true)
+            if (globals.prismUser.premium == true)
               Container()
             else
               Padding(
@@ -71,14 +71,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             Column(
               children: <Widget>[
-                if (main.prefs.get("premium") == true)
+                if (globals.prismUser.premium == true)
                   Container()
                 else
                   ListTile(
                     onTap: () {
-                      if (main.prefs.get("isLoggedin") == false) {
+                      if (globals.prismUser.loggedIn == false) {
                         googleSignInPopUp(context, () {
-                          if (main.prefs.get("premium") == true) {
+                          if (globals.prismUser.premium == true) {
                             main.RestartWidget.restartApp(context);
                           } else {
                             Navigator.pushNamed(context, premiumRoute);
@@ -322,7 +322,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            if (main.prefs.get("isLoggedin") == false)
+            if (globals.prismUser.loggedIn == false)
               ListTile(
                 onTap: () {
                   final Dialog loaderDialog = Dialog(
@@ -339,7 +339,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   );
-                  if (main.prefs.get("isLoggedin") == false) {
+                  if (globals.prismUser.loggedIn == false) {
                     showDialog(
                         barrierDismissible: false,
                         context: context,
@@ -375,7 +375,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             else
               Column(
                 children: <Widget>[
-                  if (main.prefs.get("isLoggedin") == true)
+                  if (globals.prismUser.loggedIn == true)
                     Column(
                       children: [
                         ListTile(
@@ -663,7 +663,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           Navigator.of(context).pop();
                                           await setUserTwitter(
                                               "https://www.twitter.com/${_twitterController.text}",
-                                              main.prefs.get("id").toString());
+                                              globals.prismUser.id.toString());
                                           toasts
                                               .codeSend("Successfully linked!");
                                         },
@@ -796,7 +796,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           Navigator.of(context).pop();
                                           await setUserIG(
                                               "https://www.instagram.com/${_igController.text}",
-                                              main.prefs.get("id").toString());
+                                              globals.prismUser.id.toString());
                                           toasts
                                               .codeSend("Successfully linked!");
                                         },
@@ -827,7 +827,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   fontFamily: "Proxima Nova"),
                             ),
                             subtitle: Text(
-                              main.prefs.get("email").toString(),
+                              globals.prismUser.email,
                               style: const TextStyle(fontSize: 12),
                             ),
                             onTap: () {

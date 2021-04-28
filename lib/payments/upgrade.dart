@@ -18,7 +18,7 @@ PurchaserInfo? _purchaserInfo;
 Future<void> checkPremium() async {
   appData.isPro = false;
 
-  await Purchases.setup(apiKey, appUserId: main.prefs.get('id') as String);
+  await Purchases.setup(apiKey, appUserId: globals.prismUser.id);
 
   PurchaserInfo purchaserInfo;
   try {
@@ -55,7 +55,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     appData.isPro = false;
 
     await Purchases.setDebugLogsEnabled(true);
-    await Purchases.setup(apiKey, appUserId: main.prefs.get('id') as String);
+    await Purchases.setup(apiKey, appUserId: globals.prismUser.id);
 
     PurchaserInfo purchaserInfo;
     try {

@@ -44,8 +44,8 @@ class _DownloadButtonState extends State<DownloadButton> {
     return GestureDetector(
       onTap: () async {
         if (!isLoading) {
-          if (main.prefs.get("isLoggedin") == true) {
-            if (main.prefs.get("premium") == true) {
+          if (globals.prismUser.loggedIn == true) {
+            if (globals.prismUser.premium == true) {
               onDownload();
             } else {
               showDownloadPopup(context, () {
@@ -96,7 +96,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   void showPremiumPopUp(Function func) {
-    if (main.prefs.get("premium") == false) {
+    if (globals.prismUser.premium == false) {
       toasts.codeSend("Variants are a premium feature.");
       Navigator.pushNamed(context, premiumRoute);
     } else {
@@ -315,7 +315,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                 shape: const StadiumBorder(),
                 color: Theme.of(context).errorColor,
                 onPressed: () {
-                  if (main.prefs.get("isLoggedin") == false) {
+                  if (globals.prismUser.loggedIn == false) {
                     googleSignInPopUp(context, () {
                       Navigator.of(context).pop();
                       Navigator.pushNamed(context, premiumRoute);

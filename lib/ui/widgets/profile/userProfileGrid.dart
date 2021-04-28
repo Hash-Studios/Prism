@@ -236,7 +236,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      return main.prefs.get('premium') != true
+                      return globals.prismUser.premium != true
                           ? PremiumBannerWalls(
                               comparator: !globals.isPremiumWall(
                                   globals.premiumCollections,
@@ -276,8 +276,8 @@ class PhotographerWallTile extends StatelessWidget {
   final int index;
 
   void showGooglePopUp(BuildContext context, Function func) {
-    debugPrint(main.prefs.get("isLoggedin").toString());
-    if (main.prefs.get("isLoggedin") == false) {
+    debugPrint(globals.prismUser.loggedIn.toString());
+    if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {
       func();
@@ -315,7 +315,7 @@ class PhotographerWallTile extends StatelessWidget {
                                           ["collections"] as List? ??
                                       []) ==
                               true &&
-                          main.prefs.get('premium') != true
+                          globals.prismUser.premium != true
                       ? showGooglePopUp(context, () {
                           Navigator.pushNamed(
                             context,

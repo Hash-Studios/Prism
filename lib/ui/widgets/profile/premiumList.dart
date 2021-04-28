@@ -3,20 +3,21 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class PremiumList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        if (main.prefs.get("premium") == true)
+        if (globals.prismUser.premium == true)
           Container()
         else
           ListTile(
             onTap: () {
-              if (main.prefs.get("isLoggedin") == false) {
+              if (globals.prismUser.loggedIn == false) {
                 googleSignInPopUp(context, () {
-                  if (main.prefs.get("premium") == true) {
+                  if (globals.prismUser.premium == true) {
                     main.RestartWidget.restartApp(context);
                   } else {
                     Navigator.pushNamed(context, premiumRoute);

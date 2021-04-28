@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 
 class ProfileWallProvider extends ChangeNotifier {
   final Firestore databaseReference = Firestore.instance;
@@ -9,16 +10,16 @@ class ProfileWallProvider extends ChangeNotifier {
   Future<List?> getProfileWalls() async {
     profileWalls = [];
     Query db;
-    if (main.prefs.get('premium') == true) {
+    if (globals.prismUser.premium == true) {
       db = databaseReference
           .collection("walls")
-          .where('email', isEqualTo: main.prefs.get('email'))
+          .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("createdAt", descending: true);
     } else {
       db = databaseReference
           .collection("walls")
           .where('review', isEqualTo: true)
-          .where('email', isEqualTo: main.prefs.get('email'))
+          .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("createdAt", descending: true);
     }
     await db.getDocuments().then((value) {
@@ -38,16 +39,16 @@ class ProfileWallProvider extends ChangeNotifier {
   Future<int> getProfileWallsLength() async {
     var tempList = [];
     Query db2;
-    if (main.prefs.get('premium') == true) {
+    if (globals.prismUser.premium == true) {
       db2 = databaseReference
           .collection("setups")
-          .where('email', isEqualTo: main.prefs.get('email'))
+          .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("created_at", descending: true);
     } else {
       db2 = databaseReference
           .collection("setups")
           .where('review', isEqualTo: true)
-          .where('email', isEqualTo: main.prefs.get('email'))
+          .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("created_at", descending: true);
     }
     await db2.getDocuments().then((value) {
@@ -64,16 +65,16 @@ class ProfileWallProvider extends ChangeNotifier {
     main.prefs.put('userSetups', len);
     final len2 = len;
     tempList = [];
-    if (main.prefs.get('premium') == true) {
+    if (globals.prismUser.premium == true) {
       db2 = databaseReference
           .collection("walls")
-          .where('email', isEqualTo: main.prefs.get('email'))
+          .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("createdAt", descending: true);
     } else {
       db2 = databaseReference
           .collection("walls")
           .where('review', isEqualTo: true)
-          .where('email', isEqualTo: main.prefs.get('email'))
+          .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("createdAt", descending: true);
     }
     await db2.getDocuments().then((value) {

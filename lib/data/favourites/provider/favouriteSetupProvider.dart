@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 
@@ -7,7 +8,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
   final Firestore databaseReference = Firestore.instance;
   List? liked;
   Future<List?> getDataBase() async {
-    final String uid = main.prefs.get("id") as String;
+    final String uid = globals.prismUser.id;
     liked = [];
     await databaseReference
         .collection("users")
@@ -27,7 +28,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteDataByID(String id) async {
-    final String uid = main.prefs.get("id") as String;
+    final String uid = globals.prismUser.id;
     try {
       await databaseReference
           .collection("users")
@@ -43,7 +44,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
   }
 
   Future<bool> createFavSetup(Map setup) async {
-    final String uid = main.prefs.get("id") as String;
+    final String uid = globals.prismUser.id;
     await databaseReference
         .collection("users")
         .document(uid)
@@ -118,7 +119,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteData() async {
-    final String uid = main.prefs.get("id") as String;
+    final String uid = globals.prismUser.id;
     try {
       await databaseReference
           .collection("users")

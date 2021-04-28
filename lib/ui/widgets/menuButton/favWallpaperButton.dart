@@ -9,6 +9,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class FavouriteWallpaperButton extends StatefulWidget {
   final String id;
@@ -61,7 +62,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
             padding: const EdgeInsets.all(17),
             child: FavoriteIcon(
               valueChanged: () {
-                if (main.prefs.get("isLoggedin") == false) {
+                if (globals.prismUser.loggedIn == false) {
                   googleSignInPopUp(context, () {
                     onFav(widget.id, widget.provider, widget.wallhaven,
                         widget.pexels, widget.prism);

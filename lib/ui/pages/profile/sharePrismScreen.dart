@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:share/share.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/global/globals.dart' as globals;
 
 class SharePrismScreen extends StatefulWidget {
   @override
@@ -20,9 +21,9 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   }
 
   Future<void> getLink() async {
-    if (main.prefs.get("id") == "" || main.prefs.get("id") == null) {
+    if (globals.prismUser.id == "") {
     } else {
-      await createSharingPrismLink(main.prefs.get("id").toString())
+      await createSharingPrismLink(globals.prismUser.id.toString())
           .then((value) => setState(() {
                 link = value;
               }));

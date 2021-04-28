@@ -13,6 +13,7 @@ import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 import 'package:intl/intl.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -393,18 +394,17 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                 style: TextStyle(fontSize: 12),
               ),
               onChanged: (bool value) async {
-                if (main.prefs.get('isLoggedin', defaultValue: false) as bool ==
-                    true) {
+                if (globals.prismUser.loggedIn == true) {
                   main.prefs.put("followersSubscriber", value);
                   setState(() {
                     followersSubscriber = value;
                   });
                   if (value) {
                     home.f.subscribeToTopic(
-                        main.prefs.get('googleemail').split("@")[0].toString());
+                        globals.prismUser.email.split("@")[0].toString());
                   } else {
                     home.f.unsubscribeFromTopic(
-                        main.prefs.get('googleemail').split("@")[0].toString());
+                        globals.prismUser.email.split("@")[0].toString());
                     main.prefs.put("postsSubscriber", value);
                     setState(() {
                       postsSubscriber = value;
@@ -435,9 +435,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               ),
               onChanged: followersSubscriber!
                   ? (bool value) async {
-                      if (main.prefs.get('isLoggedin', defaultValue: false)
-                              as bool ==
-                          true) {
+                      if (globals.prismUser.loggedIn == true) {
                         main.prefs.put("postsSubscriber", value);
                         setState(() {
                           postsSubscriber = value;

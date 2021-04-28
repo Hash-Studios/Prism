@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class FavIconButton extends StatefulWidget {
   final String? id;
@@ -37,7 +38,7 @@ class _FavIconButtonState extends State<FavIconButton> {
       children: [
         FavoriteIcon(
           valueChanged: () {
-            if (main.prefs.get("isLoggedin") == false) {
+            if (globals.prismUser.loggedIn == false) {
               googleSignInPopUp(context, () {
                 onFav(widget.id, "Prism", null, null, widget.prism);
               });
