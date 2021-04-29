@@ -118,7 +118,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final sdkInt = androidInfo.version.sdkInt;
     debugPrint('(SDK $sdkInt)');
     toasts.codeSend("Starting Download");
-
+    main.localNotification.createDownloadNotification();
     if (sdkInt >= 30) {
       if (widget.link!.contains("com.hash.prism")) {
         await platform.invokeMethod(
@@ -133,6 +133,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           setState(() {
             isLoading = false;
           });
+          main.localNotification.cancelDownloadNotification();
         }).catchError((e) {
           debugPrint(e.toString());
           setState(() {
@@ -152,6 +153,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           setState(() {
             isLoading = false;
           });
+          main.localNotification.cancelDownloadNotification();
         }).catchError((e) {
           debugPrint(e.toString());
           setState(() {
@@ -167,6 +169,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         setState(() {
           isLoading = false;
         });
+        main.localNotification.cancelDownloadNotification();
       }).catchError((e) {
         setState(() {
           isLoading = false;
