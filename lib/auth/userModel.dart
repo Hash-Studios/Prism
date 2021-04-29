@@ -91,7 +91,7 @@ class PrismUsers {
       'bio': bio,
       'username': username,
       'following': following,
-      'lastLogin': lastLogin,
+      'lastLogin': DateTime.now(),
       'links': links,
       'profilePhoto': profilePhoto,
     });
