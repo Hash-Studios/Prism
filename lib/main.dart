@@ -274,7 +274,8 @@ class _MyAppState extends State<MyApp> {
   Future<bool> getLoginStatus() async {
     await globals.gAuth.googleSignIn.isSignedIn().then((value) {
       if (value) checkPremium();
-      prefs.put("isLoggedin", value);
+      globals.prismUser.loggedIn = value;
+      prefs.put("prismUser", globals.prismUser);
       return value;
     });
     return false;

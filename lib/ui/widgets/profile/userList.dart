@@ -40,13 +40,15 @@ class UserList extends StatelessWidget {
                 builder: (BuildContext context) => loaderDialog);
             globals.gAuth.signInWithGoogle().then((value) {
               toasts.codeSend("Login Successful!");
-              main.prefs.put("isLoggedin", true);
+              globals.prismUser.loggedIn = true;
+              main.prefs.put("prismUser", globals.prismUser);
               Navigator.pop(context);
               main.RestartWidget.restartApp(context);
             }).catchError((e) {
               debugPrint(e.toString());
               Navigator.pop(context);
-              main.prefs.put("isLoggedin", false);
+              globals.prismUser.loggedIn = false;
+              main.prefs.put("prismUser", globals.prismUser);
               toasts.error("Something went wrong, please try again!");
             });
           } else {

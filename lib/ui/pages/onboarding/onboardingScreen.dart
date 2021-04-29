@@ -604,7 +604,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             .signInWithGoogle()
                                             .then((value) {
                                           toasts.codeSend("Login Successful!");
-                                          main.prefs.put("isLoggedin", true);
+                                          globals.prismUser.loggedIn = true;
+                                          main.prefs.put(
+                                              "prismUser", globals.prismUser);
                                           Future.delayed(const Duration(
                                                   milliseconds: 500))
                                               .then((value) {
@@ -628,7 +630,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           });
                                         }).catchError((e) {
                                           debugPrint(e.toString());
-                                          main.prefs.put("isLoggedin", false);
+                                          globals.prismUser.loggedIn = false;
+                                          main.prefs.put(
+                                              "prismUser", globals.prismUser);
                                           toasts.error(
                                               "Something went wrong, please try again!");
                                         });
