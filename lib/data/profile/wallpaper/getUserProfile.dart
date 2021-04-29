@@ -1,3 +1,4 @@
+import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/material.dart';
@@ -95,18 +96,29 @@ Future<int> getProfileSetupsLength(String? email) async {
   return len2;
 }
 
-Future setUserTwitter(String twitter, String id) async {
-  await databaseReference
-      .collection("users")
-      .document(id)
-      .updateData({"twitter": twitter});
-  main.prefs.put("twitter", twitter);
-}
+// Future setUserTwitter(String twitter, String id) async {
+//   await databaseReference
+//       .collection("users")
+//       .document(id)
+//       .updateData({"twitter": twitter});
+//   main.prefs.put("twitter", twitter);
+// }
 
-Future setUserIG(String ig, String id) async {
+// Future setUserIG(String ig, String id) async {
+//   await databaseReference
+//       .collection("users")
+//       .document(id)
+//       .updateData({"instagram": ig});
+//   main.prefs.put("instagram", ig);
+// }
+
+Future setUserLinks(List<LinksModel> linklist, String id) async {
+  Map updateLink = {};
+  linklist.forEach((element) {
+    updateLink[element.name] = element.link;
+  });
   await databaseReference
       .collection("users")
       .document(id)
-      .updateData({"instagram": ig});
-  main.prefs.put("instagram", ig);
+      .updateData({"links": updateLink});
 }
