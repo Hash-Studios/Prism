@@ -202,6 +202,7 @@ class _MyAppState extends State<MyApp> {
     localNotification.createNotificationChannel("downloads", "Downloads",
         "Get notifications for download progress of wallpapers.", false);
     getLoginStatus();
+    localNotification.fetchNotificationData(context);
     super.initState();
   }
 
