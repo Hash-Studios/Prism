@@ -16,7 +16,7 @@ class LinksModel {
 
   factory LinksModel.fromLinkAndKey(String names, String links) {
     if (names.toLowerCase() == "twitter") {
-      RegExp twitterUser = RegExp(
+      final RegExp twitterUser = RegExp(
           r"(?:(?:http|https):\/\/)?(?:www.)?(?:twitter.com)\/(?:@)?([A-Za-z0-9-_]+)");
       return LinksModel(
         username: twitterUser.firstMatch(links)!.group(1)!,
@@ -25,7 +25,7 @@ class LinksModel {
         icon: JamIcons.twitter,
       );
     } else if (names.toLowerCase() == "instagram") {
-      RegExp instagramUser = RegExp(
+      final RegExp instagramUser = RegExp(
           r"(?:(?:http|https):\/\/)?(?:www.)?(?:instagram.com|instagr.am)\/(?:@)?([A-Za-z0-9-_]+)");
       return LinksModel(
         username: instagramUser.stringMatch(links)!,
@@ -34,7 +34,7 @@ class LinksModel {
         icon: JamIcons.instagram,
       );
     } else if (names.toLowerCase() == "telegram") {
-      RegExp telegramUser = RegExp(
+      final RegExp telegramUser = RegExp(
           r"(?:(?:http|https):\/\/)?(?:www.)?(?:t.me)\/(?:@)?([A-Za-z0-9-_]+)");
       return LinksModel(
         username: telegramUser.stringMatch(links)!,
@@ -46,4 +46,12 @@ class LinksModel {
     return LinksModel(
         username: "", name: "", link: "", icon: Icons.link_rounded);
   }
+}
+
+List<LinksModel> linksToModel(Map links) {
+  final List<LinksModel> linklist = [];
+  links.forEach((key, value) {
+    linklist.add(LinksModel.fromLinkAndKey(key.toString(), value.toString()));
+  });
+  return linklist;
 }
