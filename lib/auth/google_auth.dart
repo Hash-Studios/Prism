@@ -81,7 +81,7 @@ class GoogleAuth {
         // await prefs.put('instagram', "");
       } else {
         // if(documents[0].data["userPhoto"]!=null && documents[0].data["userPhoto"]!="")
-        globals.prismUser = PrismUsers.fromDocumentSnapshot(documents[0]);
+        globals.prismUser = PrismUsers.fromDocumentSnapshot(documents[0], user);
         // await prefs.put('id', documents[0]['id']);
         // await prefs.put('name', documents[0]['name']);
         // await prefs.put('email', documents[0]['email']);
