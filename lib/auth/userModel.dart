@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 part 'userModel.g.dart';
 
@@ -97,12 +98,13 @@ class PrismUsers {
     });
   }
 
-  factory PrismUsers.fromDocumentSnapshot(DocumentSnapshot doc) =>
+  factory PrismUsers.fromDocumentSnapshot(
+          DocumentSnapshot doc, FirebaseUser user) =>
       PrismUsers.withoutSave(
         bio: (doc["bio"] ?? "").toString(),
         createdAt: doc["createdAt"].toString(),
         email: doc["email"].toString(),
-        username: (doc["username"] ?? "").toString(),
+        username: (doc["username"] ?? user.displayName).toString(),
         followers: doc["followers"] as List ?? [],
         following: doc["following"] as List ?? [],
         id: doc["id"].toString(),
@@ -111,6 +113,6 @@ class PrismUsers {
         links: doc["links"] as Map ?? {},
         premium: doc["premium"] as bool,
         loggedIn: true,
-        profilePhoto: (doc["profilePhoto"] ?? "").toString(),
+        profilePhoto: (doc["profilePhoto"] ?? user.photoUrl).toString(),
       );
 }
