@@ -1,3 +1,4 @@
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +14,14 @@ class LocalNotification {
       android: initializationSettingsAndroid,
     );
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  Future<void> fetchNotificationData(BuildContext context) async {
+    final NotificationAppLaunchDetails notificationAppLaunchDetails =
+        await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+    if (notificationAppLaunchDetails.payload == "downloaded") {
+      Navigator.pushNamed(context, downloadRoute);
+    }
   }
 
   Future<void> createNotificationChannel(
