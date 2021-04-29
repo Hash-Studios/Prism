@@ -376,6 +376,8 @@ class WallTile extends StatelessWidget {
                                       final sdkInt = androidInfo.version.sdkInt;
                                       debugPrint('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
+                                      main.localNotification
+                                          .createDownloadNotification();
 
                                       if (sdkInt >= 30) {
                                         await platform.invokeMethod(
@@ -387,6 +389,8 @@ class WallTile extends StatelessWidget {
                                                 parameters: {'link': link});
                                             toasts.codeSend(
                                                 "Wall Downloaded in Pictures/Prism!");
+                                            main.localNotification
+                                                .cancelDownloadNotification();
                                           } else {
                                             toasts.error(
                                                 "Couldn't download! Please Retry!");
@@ -403,6 +407,8 @@ class WallTile extends StatelessWidget {
                                               parameters: {'link': link});
                                           toasts.codeSend(
                                               "Wall Downloaded in Internal Storage/Prism!");
+                                          main.localNotification
+                                              .cancelDownloadNotification();
                                         }).catchError((e) {});
                                       }
                                     },
@@ -710,6 +716,8 @@ class RejectedWallTile extends StatelessWidget {
                                       final sdkInt = androidInfo.version.sdkInt;
                                       debugPrint('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
+                                      main.localNotification
+                                          .createDownloadNotification();
 
                                       if (sdkInt >= 30) {
                                         await platform.invokeMethod(
@@ -721,6 +729,8 @@ class RejectedWallTile extends StatelessWidget {
                                                 parameters: {'link': link});
                                             toasts.codeSend(
                                                 "Wall Downloaded in Pictures/Prism!");
+                                            main.localNotification
+                                                .cancelDownloadNotification();
                                           } else {
                                             toasts.error(
                                                 "Couldn't download! Please Retry!");
@@ -737,6 +747,8 @@ class RejectedWallTile extends StatelessWidget {
                                               parameters: {'link': link});
                                           toasts.codeSend(
                                               "Wall Downloaded in Internal Storage/Prism!");
+                                          main.localNotification
+                                              .cancelDownloadNotification();
                                         }).catchError((e) {});
                                       }
                                     },
