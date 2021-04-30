@@ -48,7 +48,7 @@ class GoogleAuth {
           .getDocuments();
       final List<DocumentSnapshot> documents = result.documents;
       if (documents.isEmpty) {
-        globals.prismUser = PrismUsers(
+        globals.prismUser = PrismUsers.withSave(
           username: user.displayName,
           email: user.email,
           id: user.uid,

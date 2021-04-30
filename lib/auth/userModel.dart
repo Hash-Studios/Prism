@@ -45,6 +45,24 @@ class PrismUsers {
     required this.bio,
     required this.loggedIn,
   }) {
+    print("Default constructor !!!!");
+  }
+
+  PrismUsers.withSave({
+    required this.username,
+    required this.email,
+    required this.id,
+    required this.createdAt,
+    required this.premium,
+    required this.lastLogin,
+    required this.links,
+    required this.followers,
+    required this.following,
+    required this.profilePhoto,
+    required this.bio,
+    required this.loggedIn,
+  }) {
+    print("With Save constructor !!!!");
     Firestore.instance.collection('users').document(id).updateData({
       'bio': bio,
       'username': username,
@@ -72,7 +90,9 @@ class PrismUsers {
     required this.following,
     this.profilePhoto = "",
     this.loggedIn = false,
-  });
+  }) {
+    print("initial constructor !!!!");
+  }
 
   PrismUsers.withoutSave({
     required this.username,
@@ -88,6 +108,7 @@ class PrismUsers {
     required this.bio,
     required this.loggedIn,
   }) {
+    print("Without save constructor !!!!");
     Firestore.instance.collection('users').document(id).updateData({
       'bio': bio,
       'username': username,
