@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
@@ -14,20 +13,17 @@ import 'package:Prism/ui/widgets/profile/drawerWidget.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
 import 'package:Prism/ui/widgets/profile/downloadList.dart';
 import 'package:Prism/ui/widgets/profile/premiumList.dart';
-import 'package:Prism/ui/widgets/profile/studioList.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/profile/uploadedWallsLoader.dart';
 import 'package:Prism/ui/widgets/profile/uploadedSetupsLoader.dart';
 import 'package:Prism/ui/widgets/profile/userList.dart';
-import 'package:animations/animations.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -200,16 +196,13 @@ class _ProfileChildState extends State<ProfileChild> {
                                                           _controllerBottomCenter
                                                               .play();
                                                           count++;
-                                                          main.prefs.put(
-                                                              'easterCount',
-                                                              count);
-                                                          if ((main.prefs.get(
-                                                                  'easterCount',
-                                                                  defaultValue:
-                                                                      0) as int) >
-                                                              20) {
+                                                          if (count > 50) {
+                                                            main.prefs.put(
+                                                                'easterCount',
+                                                                0);
+                                                            count = 0;
                                                             toasts.codeSend(
-                                                                "Congratulations");
+                                                                "Congratulations, champ.");
                                                             firestore
                                                                 .collection(
                                                                     "easter")
@@ -223,7 +216,14 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               "userPhoto": globals
                                                                   .prismUser
                                                                   .profilePhoto,
+                                                              "createdAt":
+                                                                  DateTime
+                                                                      .now(),
                                                             });
+                                                          } else {
+                                                            main.prefs.put(
+                                                                'easterCount',
+                                                                count);
                                                           }
                                                         },
                                                         child: CircleAvatar(
