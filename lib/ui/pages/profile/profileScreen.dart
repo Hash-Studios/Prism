@@ -8,6 +8,7 @@ import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/popup/linkPopUp.dart';
 import 'package:Prism/ui/widgets/profile/aboutList.dart';
 import 'package:Prism/ui/widgets/profile/drawerWidget.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
@@ -361,7 +362,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                                           .accentColor,
                                                     ),
                                                     onPressed: () {
-                                                      //TODO Create link popup
+                                                      showLinksPopUp(context,
+                                                          globals.prismUser.id);
                                                     }),
                                               ),
                                               TableCell(

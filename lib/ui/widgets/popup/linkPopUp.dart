@@ -1,0 +1,90 @@
+import 'package:Prism/data/links/model/linksModel.dart';
+import 'package:Prism/ui/pages/profile/aboutScreen.dart';
+import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:animations/animations.dart';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+void showLinksPopUp(BuildContext context, String id) {
+  Future<List<LinksModel>> getLinks(String id) async {
+    List<LinksModel> links = [];
+    final Firestore firestore = Firestore.instance;
+    print(id);
+    await firestore.collection('users').document(id).get().then((value) {
+      links = linksToModel(value.data["links"] as Map);
+      print(links);
+    });
+    return links;
+  }
+
+  final AlertDialog linkPopUp = AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    content: Container(
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: Theme.of(context).primaryColor),
+      width: MediaQuery.of(context).size.width * .78,
+      child: FutureBuilder<List<LinksModel>>(
+          future: getLinks(id),
+          builder: (context, snapshot) {
+            if (snapshot == null) {
+              debugPrint("snapshot null");
+              return SizedBox(height: 300, child: Center(child: Loader()));
+            }
+            if (snapshot.connectionState == ConnectionState.waiting ||
+                snapshot.connectionState == ConnectionState.none) {
+              debugPrint("snapshot none, waiting");
+              return SizedBox(height: 300, child: Center(child: Loader()));
+            } else {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    children: snapshot.data!
+                        .map(
+                          (e) => ActionButton(
+                            icon: e.icon,
+                            link: e.link,
+                            text: "@${e.username}",
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              );
+            }
+          }),
+    ),
+    backgroundColor: Theme.of(context).primaryColor,
+    contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
+  );
+  showModal(
+      context: context,
+      configuration: const FadeScaleTransitionConfiguration(),
+      builder: (BuildContext context) => linkPopUp);
+}
+
+// [
+//                       if (snapshot.data!.blog != null &&
+//                           snapshot.data!.blog != "")
+                        // ActionButton(
+                        //     icon: JamIcons.link,
+                        //     link: "https://${snapshot.data!.blog}",
+                        //     text: "WEBSITE")
+//                       else
+//                         Container(),
+//                       ActionButton(
+//                           icon: JamIcons.github,
+//                           link: snapshot.data!.htmlUrl,
+//                           text: "GITHUB"),
+//                       if (snapshot.data!.twitterUsername != null)
+//                         ActionButton(
+//                             icon: JamIcons.twitter,
+//                             link:
+//                                 "https://www.twitter.com/${snapshot.data!.twitterUsername}",
+//                             text: "TWITTER")
+//                       else
+//                         Container(),
+//                     ]
