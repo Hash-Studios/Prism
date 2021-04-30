@@ -4,6 +4,7 @@ import 'package:Prism/gitkey.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:Prism/ui/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/ui/widgets/profile/userProfileLoader.dart';
 import 'package:Prism/ui/widgets/profile/userProfileSetupLoader.dart';
 import 'package:flutter/cupertino.dart';
@@ -30,8 +31,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
   String? email;
   String? userPhoto;
   bool? premium;
-  String? twitter;
-  String? instagram;
+  Map? links;
   late CollectionReference users;
   final ScrollController scrollController = ScrollController();
   final Firestore firestore = Firestore.instance;
@@ -92,15 +92,12 @@ class _FollowerProfileState extends State<FollowerProfile> {
                   userPhoto =
                       snap.data!.documents[0].data["userPhoto"].toString();
                   premium = snap.data!.documents[0].data["premium"] as bool;
-                  twitter = snap.data!.documents[0].data["twitter"].toString();
-                  instagram =
-                      snap.data!.documents[0].data["instagram"].toString();
+                  links = snap.data!.documents[0].data["links"] as Map;
                   debugPrint("Name : $name");
                   debugPrint("Email : $email");
                   debugPrint("Profile Photo : $userPhoto");
                   debugPrint("Premium : $premium");
-                  debugPrint("Twitter : $twitter");
-                  debugPrint("Instagram : $instagram");
+                  debugPrint("Links : $links");
                   return NestedScrollView(
                     headerSliverBuilder: (context, innerBoxIsScrolled) =>
                         <Widget>[
@@ -280,38 +277,19 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                             verticalAlignment:
                                                 TableCellVerticalAlignment
                                                     .middle,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                if (twitter != "" &&
-                                                    twitter != null)
-                                                  IconButton(
-                                                      icon: Icon(
-                                                        JamIcons.twitter,
-                                                        color: Theme.of(context)
-                                                            .accentColor,
-                                                      ),
-                                                      onPressed: () {
-                                                        launch(twitter!);
-                                                      })
-                                                else
-                                                  Container(),
-                                                if (instagram != "" &&
-                                                    instagram != null)
-                                                  IconButton(
-                                                      icon: Icon(
-                                                        JamIcons.instagram,
-                                                        color: Theme.of(context)
-                                                            .accentColor,
-                                                      ),
-                                                      onPressed: () {
-                                                        launch(instagram!);
-                                                      })
-                                                else
-                                                  Container(),
-                                              ],
-                                            ),
+                                            child: links != null &&
+                                                    links!.isNotEmpty
+                                                ? IconButton(
+                                                    icon: Icon(
+                                                      JamIcons.link,
+                                                      color: Theme.of(context)
+                                                          .accentColor,
+                                                    ),
+                                                    onPressed: () {
+                                                      showNoLoadLinksPopUp(
+                                                          context, links!);
+                                                    })
+                                                : Container(),
                                           ),
                                           TableCell(
                                             verticalAlignment:

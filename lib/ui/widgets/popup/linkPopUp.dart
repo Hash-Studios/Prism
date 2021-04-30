@@ -65,26 +65,3 @@ void showLinksPopUp(BuildContext context, String id) {
       configuration: const FadeScaleTransitionConfiguration(),
       builder: (BuildContext context) => linkPopUp);
 }
-
-// [
-//                       if (snapshot.data!.blog != null &&
-//                           snapshot.data!.blog != "")
-                        // ActionButton(
-                        //     icon: JamIcons.link,
-                        //     link: "https://${snapshot.data!.blog}",
-                        //     text: "WEBSITE")
-//                       else
-//                         Container(),
-//                       ActionButton(
-//                           icon: JamIcons.github,
-//                           link: snapshot.data!.htmlUrl,
-//                           text: "GITHUB"),
-//                       if (snapshot.data!.twitterUsername != null)
-//                         ActionButton(
-//                             icon: JamIcons.twitter,
-//                             link:
-//                                 "https://www.twitter.com/${snapshot.data!.twitterUsername}",
-//                             text: "TWITTER")
-//                       else
-//                         Container(),
-//                     ]
