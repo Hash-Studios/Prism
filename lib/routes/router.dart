@@ -16,7 +16,7 @@ import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/pages/profile/editSetupDetails.dart';
 import 'package:Prism/ui/pages/profile/followerProfile.dart';
-import 'package:Prism/ui/pages/profile/photographerProfile.dart';
+// import 'package:Prism/ui/pages/profile/photographerProfile.dart';
 import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
 import 'package:Prism/ui/pages/profile/profileSetupViewScreen.dart';
@@ -72,12 +72,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: profileRoute);
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => ProfileScreen());
-    case photographerProfileRoute:
-      navStack.add("User Profile");
-      debugPrint(navStack.toString());
-      analytics.setCurrentScreen(screenName: photographerProfileRoute);
-      return CupertinoPageRoute(
-          builder: (context) => UserProfile(settings.arguments as List?));
+    // case photographerProfileRoute:
+    //   navStack.add("User Profile");
+    //   debugPrint(navStack.toString());
+    //   analytics.setCurrentScreen(screenName: photographerProfileRoute);
+    //   return CupertinoPageRoute(
+    //       builder: (context) => UserProfile(settings.arguments as List?));
     case followerProfileRoute:
       navStack.add("Follower Profile");
       debugPrint(navStack.toString());
