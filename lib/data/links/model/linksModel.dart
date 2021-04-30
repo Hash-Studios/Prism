@@ -28,7 +28,7 @@ class LinksModel {
       final RegExp instagramUser = RegExp(
           r"(?:(?:http|https):\/\/)?(?:www.)?(?:instagram.com|instagr.am)\/(?:@)?([A-Za-z0-9-_]+)");
       return LinksModel(
-        username: instagramUser.stringMatch(links)!,
+        username: instagramUser.firstMatch(links)!.group(1)!,
         name: "Instagram",
         link: links,
         icon: JamIcons.instagram,
@@ -37,10 +37,10 @@ class LinksModel {
       final RegExp telegramUser = RegExp(
           r"(?:(?:http|https):\/\/)?(?:www.)?(?:t.me)\/(?:@)?([A-Za-z0-9-_]+)");
       return LinksModel(
-        username: telegramUser.stringMatch(links)!,
+        username: telegramUser.firstMatch(links)!.group(1)!,
         name: "Telegram",
         link: links,
-        icon: JamIcons.plane_f,
+        icon: JamIcons.paper_plane_f,
       );
     }
     return LinksModel(
