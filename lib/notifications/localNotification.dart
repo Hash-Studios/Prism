@@ -99,7 +99,7 @@ class LocalNotification {
       (activeNotifications!.length + 1) == 1
           ? 'Wall downloaded.'
           : '${int.parse(activeNotifications[0].title.substring(0, 1)) + 1} walls downloaded.',
-      "Tap to open downloads.",
+      "Tap to open Prism.",
       platformChannelSpecifics,
       payload: "downloaded",
     );
