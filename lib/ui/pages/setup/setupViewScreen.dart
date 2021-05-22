@@ -11,6 +11,8 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockSetupOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
@@ -488,8 +490,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .setups![index!]
-                                                                      [
+                                                                  .setups![
+                                                                      index!][
                                                                       "userPhoto"]
                                                                   .toString()),
                                                         ),
@@ -626,7 +628,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       onTap: () async {
                                         if (Provider.of<SetupProvider>(context,
                                                     listen: false)
-                                                .setups![index!]["wallpaper_url"]
+                                                .setups![index!]
+                                                    ["wallpaper_url"]
                                                 .toString()[0] !=
                                             "[") {
                                           if (Provider.of<SetupProvider>(
@@ -645,7 +648,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                             launch(Provider.of<SetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .setups![index!]["wallpaper_url"]
+                                                .setups![index!]
+                                                    ["wallpaper_url"]
                                                 .toString());
                                           } else {
                                             Navigator.pushNamed(
@@ -654,7 +658,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups![index!]["wall_id"]
+                                                      .setups![index!]
+                                                          ["wall_id"]
                                                       .toString(),
                                                   Provider.of<SetupProvider>(
                                                           context,
@@ -680,7 +685,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                           launch(Provider.of<SetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .setups![index!]["wallpaper_url"][1]
+                                              .setups![index!]["wallpaper_url"]
+                                                  [1]
                                               .toString());
                                         }
                                       },
@@ -726,7 +732,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups![index!]["icon_url"]
+                                                      .setups![index!]
+                                                          ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0]);
@@ -735,7 +742,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups![index!]["icon_url"]
+                                                      .setups![index!]
+                                                          ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
@@ -743,7 +751,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups![index!]["icon_url"]
+                                                      .setups![index!]
+                                                          ["icon_url"]
                                                       .toString());
                                         } else {
                                           launch(Provider.of<SetupProvider>(
@@ -873,7 +882,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups![index!]["icon_url"]
+                                                      .setups![index!]
+                                                          ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
@@ -903,7 +913,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           .of<SetupProvider>(
                                                               context,
                                                               listen: false)
-                                                      .setups![index!]["icon_url"]
+                                                      .setups![index!]
+                                                          ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
@@ -911,7 +922,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups![index!]["icon_url"]
+                                                      .setups![index!]
+                                                          ["icon_url"]
                                                       .toString());
                                             } else {
                                               launch(Provider.of<SetupProvider>(
@@ -1177,7 +1189,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                             SetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .setups![index!]["widget_url"]
+                                                    .setups![index!]
+                                                        ["widget_url"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
@@ -1271,7 +1284,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               if (Provider.of<SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups![index!]["widget_url2"]
+                                                  .setups![index!]
+                                                      ["widget_url2"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')) {
@@ -1507,6 +1521,41 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                   ),
                 ),
               ),
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding:
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                              transitionDuration:
+                                  const Duration(milliseconds: 300),
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) {
+                                animation = Tween(begin: 0.0, end: 1.0)
+                                    .animate(animation);
+                                return FadeTransition(
+                                    opacity: animation,
+                                    child: SetupOverlay(
+                                      link: Provider.of<SetupProvider>(context,
+                                              listen: false)
+                                          .setups![index!]["image"]
+                                          .toString(),
+                                    ));
+                              },
+                              fullscreenDialog: true,
+                              opaque: false));
+                    },
+                    color: Theme.of(context).accentColor,
+                    icon: const Icon(
+                      JamIcons.arrow_up_right,
+                    ),
+                  ),
+                ),
+              ),
               // Align(
               //   alignment: Alignment.topRight,
               //   child: Padding(
@@ -1673,8 +1722,8 @@ class ModifiedDownloadButton extends StatelessWidget {
         ? Provider.of<SetupProvider>(context, listen: false).setups![index!]
                         ["wall_id"] !=
                     null &&
-                Provider.of<SetupProvider>(context, listen: false).setups![index!]
-                        ["wall_id"] !=
+                Provider.of<SetupProvider>(context, listen: false)
+                        .setups![index!]["wall_id"] !=
                     ""
             ? DownloadButton(
                 link: Provider.of<SetupProvider>(context, listen: false)
@@ -1747,8 +1796,8 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
         ? Provider.of<SetupProvider>(context, listen: false).setups![index!]
                         ["wall_id"] !=
                     null &&
-                Provider.of<SetupProvider>(context, listen: false).setups![index!]
-                        ["wall_id"] !=
+                Provider.of<SetupProvider>(context, listen: false)
+                        .setups![index!]["wall_id"] !=
                     ""
             ? SetWallpaperButton(
                 url: Provider.of<SetupProvider>(context, listen: false)
