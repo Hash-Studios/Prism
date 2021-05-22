@@ -42,7 +42,7 @@ int? categories;
 int? purity;
 LocalNotification localNotification = LocalNotification();
 void main() {
-  //! Uncomment next line before release
+  //TODO: Uncomment next line before release
   // debugPrint = (String message, {int wrapWidth}) {};
   WidgetsFlutterBinding.ensureInitialized();
 
