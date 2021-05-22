@@ -8,6 +8,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockSetupOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -1320,6 +1321,40 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                     color: Theme.of(context).accentColor,
                     icon: const Icon(
                       JamIcons.chevron_left,
+                    ),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding:
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                              transitionDuration:
+                                  const Duration(milliseconds: 300),
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) {
+                                animation = Tween(begin: 0.0, end: 1.0)
+                                    .animate(animation);
+                                return FadeTransition(
+                                    opacity: animation,
+                                    child: SetupOverlay(
+                                      link: user_data.userProfileSetups![index!]
+                                              ["image"]
+                                          .toString(),
+                                    ));
+                              },
+                              fullscreenDialog: true,
+                              opaque: false));
+                    },
+                    color: Theme.of(context).accentColor,
+                    icon: const Icon(
+                      JamIcons.arrow_up_right,
                     ),
                   ),
                 ),
