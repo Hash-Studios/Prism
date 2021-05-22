@@ -377,10 +377,19 @@ class _FollowingTileState extends State<FollowingTile> {
                   ),
                 ),
                 const Spacer(),
-                FavIconButton(
-                  id: widget.finalDocs[widget.index]["id"] as String?,
-                  prism: widget.finalDocs[widget.index].data,
-                ),
+                if (globals.isPremiumWall(
+                            globals.premiumCollections,
+                            widget.finalDocs[widget.index]["collections"]
+                                    as List? ??
+                                []) ==
+                        true &&
+                    globals.prismUser.premium != true)
+                  Container()
+                else
+                  FavIconButton(
+                    id: widget.finalDocs[widget.index]["id"] as String?,
+                    prism: widget.finalDocs[widget.index].data,
+                  ),
               ],
             ),
           )
