@@ -312,10 +312,12 @@ class _WallpaperGridState extends State<WallpaperGrid> {
               if (scrollInfo.metrics.pixels ==
                   scrollInfo.metrics.maxScrollExtent) {
                 if (!seeMoreLoader) {
-                  Data.seeMorePrism();
                   setState(() {
                     seeMoreLoader = true;
-                    Future.delayed(const Duration(seconds: 2))
+                  });
+                  Data.seeMorePrism();
+                  setState(() {
+                    Future.delayed(const Duration(seconds: 1))
                         .then((value) => seeMoreLoader = false);
                   });
                 }
@@ -344,10 +346,12 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     seeMoreLoader: seeMoreLoader,
                     func: () {
                       if (!seeMoreLoader) {
-                        Data.seeMorePrism();
                         setState(() {
                           seeMoreLoader = true;
-                          Future.delayed(const Duration(seconds: 2))
+                        });
+                        Data.seeMorePrism();
+                        setState(() {
+                          Future.delayed(const Duration(seconds: 1))
                               .then((value) => seeMoreLoader = false);
                         });
                       }
