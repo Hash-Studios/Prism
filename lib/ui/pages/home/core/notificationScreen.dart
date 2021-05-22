@@ -1,9 +1,9 @@
 import 'dart:ui';
 
+import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
@@ -21,16 +21,11 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  List? notifications;
+  List<InAppNotif> notifications = [];
+  final Box<InAppNotif> box = Hive.box('inAppNotifs');
   @override
   void initState() {
-    final Box<List> box = Hive.box('notifications');
-    if (box.get('notifications') == [] || box.get('notifications') == null) {
-      notifications = [];
-    } else {
-      notifications = box.get('notifications');
-    }
-    notifications = List.from(notifications!.reversed);
+    notifications = box.values.toList();
     super.initState();
   }
 
@@ -70,17 +65,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ],
         ),
         body: Container(
-          child: notifications!.isNotEmpty
+          child: notifications.isNotEmpty
               ? ListView.builder(
-                  itemCount: notifications!.length,
+                  itemCount: notifications.length,
                   itemBuilder: (BuildContext context, int index) {
                     return Dismissible(
                       onDismissed: (DismissDirection direction) {
                         setState(() {
-                          notifications!.removeAt(index);
+                          notifications.removeAt(index);
+                          box.deleteAt(index);
                         });
-                        final Box<List?> box = Hive.box('notifications');
-                        box.put('notifications', notifications);
                       },
                       dismissThresholds: const {
                         DismissDirection.startToEnd: 0.5,
@@ -107,8 +101,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         ),
                       ),
                       key: UniqueKey(),
-                      child: NotificationCard(
-                          notification: notifications![index] as NotifData),
+                      child:
+                          NotificationCard(notification: notifications[index]),
                     );
                   },
                 )
@@ -139,9 +133,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         onPressed: () {
                           Navigator.of(context).pop();
                           setState(() {
-                            notifications = [];
-                            final Box<List?> box = Hive.box('notifications');
-                            box.put('notifications', notifications);
+                            notifications.clear();
+                            box.clear();
                           });
                         },
                         child: const Text(
@@ -187,7 +180,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 }
 
 class NotificationCard extends StatelessWidget {
-  final NotifData? notification;
+  final InAppNotif? notification;
 
   const NotificationCard({this.notification});
 
@@ -233,7 +226,7 @@ class NotificationCard extends StatelessWidget {
             fontFamily: "Proxima Nova"),
       ),
       subtitle: Text(
-        notification!.desc!,
+        notification!.body!,
         style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
       ),
       children: <Widget>[

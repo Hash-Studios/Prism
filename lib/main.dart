@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
-import 'package:Prism/data/notifications/model/notificationModel.dart';
+import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
@@ -54,12 +54,11 @@ void main() {
     getApplicationDocumentsDirectory().then(
       (dir) async {
         Hive.init(dir.path);
-        await Hive.openBox('wallpapers');
         await Hive.openBox('collections');
         await Hive.openBox('setups');
         await Hive.openBox('localFav');
-        Hive.registerAdapter(NotifDataAdapter());
-        await Hive.openBox<List>('notifications');
+        Hive.registerAdapter(InAppNotifAdapter());
+        await Hive.openBox<InAppNotif>('inAppNotifs');
         Hive.registerAdapter(PrismUsersAdapter());
         prefs = await Hive.openBox('prefs');
         debugPrint("Box Opened");

@@ -1,3 +1,4 @@
+import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -24,7 +25,7 @@ class CategoriesBar extends StatefulWidget {
 
 class _CategoriesBarState extends State<CategoriesBar> {
   bool noNotification = true;
-  final Box<List> box = Hive.box('notifications');
+  final Box<InAppNotif> box = Hive.box('inAppNotifs');
   List notifications = [];
   final key = GlobalKey();
   @override
@@ -39,17 +40,16 @@ class _CategoriesBarState extends State<CategoriesBar> {
   }
 
   Future<void> fetchNotifications() async {
-    await getNotifications();
+    await getNotifs();
     setState(() {
-      notifications = box.get('notifications')!;
+      notifications = box.values.toList();
     });
     checkNewNotification();
   }
 
   void checkNewNotification() {
-    final Box<List> box = Hive.box('notifications');
-    var notifications = box.get('notifications');
-    notifications ??= [];
+    final Box<InAppNotif> box = Hive.box('inAppNotifs');
+    final notifications = box.values.toList();
     if (notifications.isEmpty) {
       setState(() {
         noNotification = true;

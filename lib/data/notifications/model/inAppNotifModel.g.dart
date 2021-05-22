@@ -1,25 +1,25 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'notificationModel.dart';
+part of 'inAppNotifModel.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class NotifDataAdapter extends TypeAdapter<NotifData> {
+class InAppNotifAdapter extends TypeAdapter<InAppNotif> {
   @override
-  final int typeId = 0;
+  final int typeId = 9;
 
   @override
-  NotifData read(BinaryReader reader) {
+  InAppNotif read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return NotifData(
+    return InAppNotif(
       pageName: fields[1] as String?,
       title: fields[0] as String?,
-      desc: fields[2] as String?,
+      body: fields[2] as String?,
       imageUrl: fields[3] as String?,
       arguments: (fields[4] as List?)?.cast<dynamic>(),
       url: fields[5] as String?,
@@ -28,7 +28,7 @@ class NotifDataAdapter extends TypeAdapter<NotifData> {
   }
 
   @override
-  void write(BinaryWriter writer, NotifData obj) {
+  void write(BinaryWriter writer, InAppNotif obj) {
     writer
       ..writeByte(7)
       ..writeByte(0)
@@ -36,7 +36,7 @@ class NotifDataAdapter extends TypeAdapter<NotifData> {
       ..writeByte(1)
       ..write(obj.pageName)
       ..writeByte(2)
-      ..write(obj.desc)
+      ..write(obj.body)
       ..writeByte(3)
       ..write(obj.imageUrl)
       ..writeByte(4)
@@ -53,7 +53,7 @@ class NotifDataAdapter extends TypeAdapter<NotifData> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is NotifDataAdapter &&
+      other is InAppNotifAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
