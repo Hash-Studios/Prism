@@ -1,3 +1,4 @@
+import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
@@ -150,8 +151,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: () async {
                   DefaultCacheManager().emptyCache();
                   PaintingBinding.instance!.imageCache!.clear();
-                  await Hive.box('wallpapers').deleteFromDisk();
-                  await Hive.openBox('wallpapers');
+                  await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
+                  await Hive.openBox<InAppNotif>('inAppNotifs');
+                  main.prefs.delete('lastFetchTime');
                   await Hive.box('collections').deleteFromDisk();
                   await Hive.openBox('collections');
                   await Hive.box('setups').deleteFromDisk();

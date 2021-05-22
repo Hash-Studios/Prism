@@ -1,3 +1,4 @@
+import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
@@ -76,8 +77,9 @@ class _GeneralListState extends State<GeneralList> {
             onTap: () async {
               DefaultCacheManager().emptyCache();
               PaintingBinding.instance!.imageCache!.clear();
-              await Hive.box('wallpapers').deleteFromDisk();
-              await Hive.openBox('wallpapers');
+              await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
+              await Hive.openBox<InAppNotif>('inAppNotifs');
+              main.prefs.delete('lastFetchTime');
               await Hive.box('collections').deleteFromDisk();
               await Hive.openBox('collections');
               await Hive.box('setups').deleteFromDisk();
