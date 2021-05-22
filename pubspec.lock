@@ -1033,6 +1033,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.0+1"
+  smooth_star_rating:
+    dependency: "direct main"
+    description:
+      name: smooth_star_rating
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.1"
   source_gen:
     dependency: transitive
     description:
