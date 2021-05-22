@@ -3,90 +3,84 @@ import 'dart:async';
 import 'package:Prism/routes/router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
-import 'package:intl/intl.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 List? prismWalls;
+List<QueryDocumentSnapshot>? prismWallsDocSnaps;
 List? subPrismWalls;
 List? sortedData;
 List? subSortedData;
 late List wallsDataL;
 Map wall = {};
-int page = 1;
 int pageTrending = 1;
 Future<List?> getPrismWalls() async {
   if (navStack.last == "Home") {
-    final box = Hive.box('wallpapers');
-    if ((box.get('wallpapers') == null) ||
-        (box.get('wallpapers').toString() == "[]") ||
-        (box.get('date') !=
-            DateFormat("yy-MM-dd").format(
-              DateTime.now(),
-            ))) {
-      debugPrint("Refetching whole collection");
+    debugPrint("Fetching first 24 walls!");
+    prismWalls = [];
+    subPrismWalls = [];
+    await databaseReference
+        .collection("walls")
+        .where('review', isEqualTo: true)
+        .orderBy("createdAt", descending: true)
+        .limit(24)
+        .get()
+        .then((value) {
       prismWalls = [];
-      subPrismWalls = [];
-      await databaseReference
-          .collection("walls")
-          .where('review', isEqualTo: true)
-          .orderBy("createdAt", descending: true)
-          .get()
-          .then((value) {
-        prismWalls = [];
-        for (final f in value.docs) {
-          Map<String, dynamic> map;
-          map = f.data();
-          map['createdAt'] = map['createdAt'].toString();
-          prismWalls!.add(map);
-        }
-        box.delete('wallpapers');
-        if (prismWalls != []) {
-          box.put('wallpapers', prismWalls);
-          debugPrint("Wallpapers saved");
-          box.put(
-            'date',
-            DateFormat("yy-MM-dd").format(
-              DateTime.now(),
-            ),
-          );
-          debugPrint(prismWalls!.length.toString());
-          subPrismWalls = box.get('wallpapers').sublist(0, 24) as List?;
-        } else {
-          debugPrint("Not connected to Internet");
-          subPrismWalls = [];
-        }
-      }).catchError((e) {
-        debugPrint(e.toString());
-        debugPrint("data done with error");
-      });
-    } else {
-      debugPrint("Community : Data Fetched from cache");
-      prismWalls = [];
-      subPrismWalls = [];
-      prismWalls = box.get('wallpapers') as List?;
-      subPrismWalls = prismWalls!.sublist(0, 24);
-    }
+      prismWallsDocSnaps = value.docs;
+      for (final f in value.docs) {
+        Map<String, dynamic> map;
+        map = f.data();
+        map['createdAt'] = map['createdAt'].toString();
+        prismWalls!.add(map);
+      }
+      if (prismWalls != []) {
+        debugPrint("${prismWalls!.length} walls fetched!");
+        subPrismWalls = prismWalls;
+      } else {
+        debugPrint("Not connected to Internet");
+        subPrismWalls = [];
+      }
+    }).catchError((e) {
+      debugPrint(e.toString());
+      debugPrint("data done with error");
+    });
   } else {
     debugPrint("Refresh blocked");
   }
   return subPrismWalls;
 }
 
-List? seeMorePrism() {
-  final int len = prismWalls!.length;
-  final double pages = len / 24;
-  debugPrint(len.toString());
-  debugPrint(pages.toString());
-  debugPrint(page.toString());
-  if (page < pages.floor()) {
-    subPrismWalls!.addAll(
-        prismWalls!.sublist(subPrismWalls!.length, subPrismWalls!.length + 24));
-    page += 1;
-  } else {
-    subPrismWalls!.addAll(prismWalls!.sublist(subPrismWalls!.length));
-  }
+Future<List?> seeMorePrism() async {
+  debugPrint("Fetching more walls!");
+  await databaseReference
+      .collection("walls")
+      .where('review', isEqualTo: true)
+      .orderBy("createdAt", descending: true)
+      .startAfterDocument(prismWallsDocSnaps![prismWallsDocSnaps!.length - 1])
+      .limit(24)
+      .get()
+      .then((value) {
+    for (final doc in value.docs) {
+      prismWallsDocSnaps!.add(doc);
+    }
+    for (final f in value.docs) {
+      Map<String, dynamic> map;
+      map = f.data();
+      map['createdAt'] = map['createdAt'].toString();
+      prismWalls!.add(map);
+    }
+    if (prismWalls != []) {
+      final int len = prismWalls!.length;
+      final double pageNumber = len / 24;
+      debugPrint("${value.docs.length} walls fetched!");
+      debugPrint("$len total walls fetched!");
+      debugPrint("PageNumber: $pageNumber");
+      subPrismWalls!.addAll(prismWalls!.sublist(subPrismWalls!.length));
+    } else {
+      debugPrint("Not connected to Internet");
+    }
+  });
   return subPrismWalls;
 }
 
