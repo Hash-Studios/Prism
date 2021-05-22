@@ -180,7 +180,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
                       ),
               ),
               const Spacer(),
-              Container(
+              SizedBox(
                 width: MediaQuery.of(context).size.width * 0.8,
                 child: Text(
                   """
@@ -193,7 +193,7 @@ Guidelines for uploading setups -""",
                   ),
                 ),
               ),
-              Container(
+              SizedBox(
                 width: MediaQuery.of(context).size.width * 0.8,
                 child: Text(
                   """

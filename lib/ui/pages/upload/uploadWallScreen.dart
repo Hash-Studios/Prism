@@ -15,7 +15,6 @@ import 'package:Prism/gitkey.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/main.dart' as main;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
@@ -205,7 +204,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               ),
             ),
             if (isProcessing || isUploading)
-              Container(
+              SizedBox(
                 width: MediaQuery.of(context).size.width / 2.4,
                 height: MediaQuery.of(context).size.width / 2.4,
                 child: FlareActor(
@@ -246,7 +245,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
             else
               Container(),
             if (isProcessing || isUploading)
-              Container(
+              SizedBox(
                   width: MediaQuery.of(context).size.width / 2,
                   child: ClipRRect(
                       borderRadius: BorderRadius.circular(500),
@@ -262,7 +261,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
               child: Row(
                 children: <Widget>[
-                  Container(
+                  SizedBox(
                     width: MediaQuery.of(context).size.width * 0.2,
                     child: Center(
                       child: Icon(
@@ -271,7 +270,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       ),
                     ),
                   ),
-                  Container(
+                  SizedBox(
                     width: MediaQuery.of(context).size.width * 0.6,
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),

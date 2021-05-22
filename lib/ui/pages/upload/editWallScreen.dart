@@ -157,7 +157,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
+                    SizedBox(
                       width: MediaQuery.of(context).size.width * 0.2,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -217,7 +217,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                         ],
                       ),
                     ),
-                    Container(
+                    SizedBox(
                       width: MediaQuery.of(context).size.width * 0.6,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -232,7 +232,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                         ],
                       ),
                     ),
-                    Container(
+                    SizedBox(
                       width: MediaQuery.of(context).size.width * 0.1,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

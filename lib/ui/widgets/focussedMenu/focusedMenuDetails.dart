@@ -152,7 +152,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                     Navigator.pop(context);
                   },
                   child: AbsorbPointer(
-                      child: Container(
+                      child: SizedBox(
                           width: widget.childSize!.width,
                           height: widget.childSize!.height,
                           child: widget.child)),
@@ -472,7 +472,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 Data.subPrismWalls![
                                                         widget.index]["email"]
                                                     .toString()))
-                                              Container(
+                                              SizedBox(
                                                 width: 20,
                                                 height: 20,
                                                 child: SvgPicture.string(

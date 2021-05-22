@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -45,7 +46,7 @@ class PrismUsers {
     required this.bio,
     required this.loggedIn,
   }) {
-    print("Default constructor !!!!");
+    debugPrint("Default constructor !!!!");
   }
 
   PrismUsers.withSave({
@@ -62,7 +63,7 @@ class PrismUsers {
     required this.bio,
     required this.loggedIn,
   }) {
-    print("With Save constructor !!!!");
+    debugPrint("With Save constructor !!!!");
     FirebaseFirestore.instance.collection('users').doc(id).update({
       'bio': bio,
       'username': username,
@@ -91,7 +92,7 @@ class PrismUsers {
     this.profilePhoto = "",
     this.loggedIn = false,
   }) {
-    print("initial constructor !!!!");
+    debugPrint("initial constructor !!!!");
   }
 
   PrismUsers.withoutSave({
@@ -108,7 +109,7 @@ class PrismUsers {
     required this.bio,
     required this.loggedIn,
   }) {
-    print("Without save constructor !!!!");
+    debugPrint("Without save constructor !!!!");
     FirebaseFirestore.instance.collection('users').doc(id).update({
       'bio': bio,
       'username': username,

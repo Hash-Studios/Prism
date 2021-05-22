@@ -22,7 +22,7 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
 
   void getOffset() {
     final RenderBox renderBox =
-        containerKey.currentContext!.findRenderObject() as RenderBox;
+        (containerKey.currentContext!.findRenderObject() as RenderBox?)!;
     final Size size = renderBox.size;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     setState(() {

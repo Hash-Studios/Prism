@@ -597,7 +597,7 @@ class Change extends StatelessWidget {
             const SizedBox(
               width: 20,
             ),
-            Container(
+            SizedBox(
               width: MediaQuery.of(context).size.width * 0.6,
               child: Text(
                 text,

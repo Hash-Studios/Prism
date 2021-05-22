@@ -26,7 +26,7 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
 
   void getOffset() {
     final RenderBox renderBox =
-        containerKey.currentContext!.findRenderObject() as RenderBox;
+        (containerKey.currentContext!.findRenderObject() as RenderBox?)!;
     final Size size = renderBox.size;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     setState(() {

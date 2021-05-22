@@ -126,7 +126,7 @@ class PrismList extends StatelessWidget {
                       Radius.circular(20),
                     ),
                   ),
-                  content: Container(
+                  content: SizedBox(
                     height: 280,
                     width: 250,
                     child: Center(

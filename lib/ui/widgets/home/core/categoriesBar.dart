@@ -67,7 +67,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
       if (info.updateAvailability == UpdateAvailability.updateAvailable) {
         InAppUpdate.performImmediateUpdate().catchError((e) => _showError(e));
       }
-    }).catchError((e) => _showError(e));
+    }).catchError((e) {
+      _showError(e);
+    });
   }
 
   void _showError(dynamic exception) {
@@ -137,7 +139,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
         },
       ),
       title: Align(
-        child: Container(
+        child: SizedBox(
           height: 24,
           width: Provider.of<CategorySupplier>(context).getCurrentChoice ==
                   "Community"

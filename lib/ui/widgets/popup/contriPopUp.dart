@@ -65,7 +65,7 @@ void showContributorDetails(BuildContext context, String username) {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
+                            SizedBox(
                               width: MediaQuery.of(context).size.width * 0.4,
                               child: Text(
                                 snapshot.data!.name!,
@@ -80,7 +80,7 @@ void showContributorDetails(BuildContext context, String username) {
                                         fontSize: 20),
                               ),
                             ),
-                            Container(
+                            SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.4,
                                 child: Text(
                                   snapshot.data!.login!,
@@ -104,7 +104,7 @@ void showContributorDetails(BuildContext context, String username) {
                                       color: Theme.of(context)
                                           .accentColor
                                           .withOpacity(0.5)),
-                                  Container(
+                                  SizedBox(
                                       width: MediaQuery.of(context).size.width *
                                           0.3,
                                       child: Text(
@@ -132,7 +132,7 @@ void showContributorDetails(BuildContext context, String username) {
                     children: [
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Container(
+                        child: SizedBox(
                           width: MediaQuery.of(context).size.width * 0.6,
                           child: Text(
                             snapshot.data!.bio!,

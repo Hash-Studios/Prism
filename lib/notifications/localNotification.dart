@@ -96,7 +96,7 @@ class LocalNotification {
             [];
     await flutterLocalNotificationsPlugin.show(
       1,
-      (activeNotifications!.length + 1) == 1
+      (activeNotifications.length + 1) == 1
           ? 'Wall downloaded.'
           : '${int.parse(activeNotifications[0].title!.substring(0, 1)) + 1} walls downloaded.',
       "Tap to open Prism.",

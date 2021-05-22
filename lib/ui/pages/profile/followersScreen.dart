@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 

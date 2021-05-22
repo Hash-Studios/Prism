@@ -18,7 +18,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -274,7 +273,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: <Widget>[
-                                          Container(
+                                          SizedBox(
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width *
@@ -543,7 +542,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                     Align(
                                                       alignment:
                                                           Alignment.topRight,
-                                                      child: Container(
+                                                      child: SizedBox(
                                                         width: 20,
                                                         height: 20,
                                                         child: SvgPicture.string(verifiedIcon.replaceAll(

@@ -9,10 +9,10 @@ void showLinksPopUp(BuildContext context, String id) {
   Future<List<LinksModel>> getLinks(String id) async {
     List<LinksModel> links = [];
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
-    print(id);
+    debugPrint(id);
     await firestore.collection('users').doc(id).get().then((value) {
       links = linksToModel(value.data()!["links"] as Map);
-      print(links);
+      debugPrint(links.toString());
     });
     return links;
   }

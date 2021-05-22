@@ -294,7 +294,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                   const SizedBox(
                     width: 20,
                   ),
-                  Container(
+                  SizedBox(
                     width: MediaQuery.of(context).size.width * 0.7,
                     child: Text(
                       "Watch a small video ad to download this wallpaper.",

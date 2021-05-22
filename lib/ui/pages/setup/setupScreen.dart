@@ -14,7 +14,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 
 class SetupScreen extends StatefulWidget {
@@ -124,7 +123,7 @@ class _SetupPageState extends State<SetupPage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Container(
+                    SizedBox(
                       width: MediaQuery.of(context).size.width * 0.8,
                       child: Text(
                         Provider.of<SetupProvider>(context, listen: false)
@@ -277,7 +276,7 @@ class _SetupPageState extends State<SetupPage> {
                                         child: ClipRRect(
                                           borderRadius:
                                               BorderRadius.circular(10),
-                                          child: Container(
+                                          child: SizedBox(
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .height *
@@ -296,7 +295,7 @@ class _SetupPageState extends State<SetupPage> {
                                     ),
                                     progressIndicatorBuilder:
                                         (context, url, downloadProgress) =>
-                                            Container(
+                                            SizedBox(
                                       width:
                                           MediaQuery.of(context).size.height *
                                               0.7 *

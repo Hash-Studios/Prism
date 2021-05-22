@@ -156,7 +156,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             forward: true,
                             slideSide: SlideFromSlide.bottom,
                             delay: const Duration(milliseconds: 200),
-                            child: Container(
+                            child: SizedBox(
                               width: MediaQuery.of(context).size.width * 0.935,
                               height: MediaQuery.of(context).size.height * 0.07,
                               child: ListView(
@@ -568,7 +568,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         style: ButtonStyle(
                             overlayColor: MaterialStateColor.resolveWith(
                                 (states) => Colors.white10)),
-                        child: Container(
+                        child: SizedBox(
                           width: 75,
                           child: Text(
                             _currentPage == 2 ? "Finish" : "Skip",
@@ -646,7 +646,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           backgroundColor: MaterialStateColor.resolveWith(
                               (states) => Colors.white),
                         ),
-                        child: Container(
+                        child: SizedBox(
                           width: 60,
                           child: _currentPage != 2
                               ? Text(

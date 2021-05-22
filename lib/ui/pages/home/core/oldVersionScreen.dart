@@ -24,7 +24,7 @@ class OldVersion extends StatelessWidget {
         children: <Widget>[
           const Spacer(),
           Center(
-              child: Container(
+              child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.7,
             child: Text(
               "The version ${globals.currentAppVersion}+${globals.currentAppVersionCode} is obsolete and no longer supported. Please update the app to the latest version, to use it.",
@@ -43,7 +43,7 @@ class OldVersion extends StatelessWidget {
               backgroundColor:
                   MaterialStateColor.resolveWith((states) => Colors.white),
             ),
-            child: Container(
+            child: SizedBox(
               width: 60,
               child: const Text(
                 'UPDATE',

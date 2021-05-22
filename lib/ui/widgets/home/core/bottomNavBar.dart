@@ -7,7 +7,6 @@ import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dar
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:image_picker/image_picker.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
@@ -585,7 +584,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                       onTap: () async {
                         await getImage();
                       },
-                      child: Container(
+                      child: SizedBox(
                         width: width / 2 - 20,
                         height: width / 2 / 0.6625,
                         child: Stack(
@@ -663,7 +662,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                         Future.delayed(const Duration()).then((value) =>
                             Navigator.pushNamed(context, setupGuidelinesRoute));
                       },
-                      child: Container(
+                      child: SizedBox(
                         width: width / 2 - 20,
                         height: width / 2 / 0.6625,
                         child: Stack(
@@ -734,7 +733,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
           const Spacer(flex: 2),
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-            child: Container(
+            child: SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               child: Text(
                 "Please only upload high-quaity original wallpapers and setups. Please do not upload wallpapers from other apps. You can also report wallpapers or setups by clicking the copyright button after opening them.",

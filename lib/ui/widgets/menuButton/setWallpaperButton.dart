@@ -380,7 +380,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                   onTap: () {
                     widget.onTap1!();
                   },
-                  child: Container(
+                  child: SizedBox(
                     width: width - 20,
                     height: 60,
                     child: Container(
@@ -411,7 +411,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                   onTap: () {
                     widget.onTap2!();
                   },
-                  child: Container(
+                  child: SizedBox(
                     width: width - 20,
                     height: 60,
                     child: Container(
@@ -442,7 +442,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                   onTap: () {
                     widget.onTap3!();
                   },
-                  child: Container(
+                  child: SizedBox(
                     width: width - 20,
                     height: 60,
                     child: Container(
@@ -472,7 +472,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
           const Spacer(flex: 2),
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-            child: Container(
+            child: SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               child: Text(
                 "Select where wallpaper you want to change with this wallpaper. Selecting both, will change the wallpaper on home screen as well as lock screen.",

@@ -1039,7 +1039,7 @@ class SetupTile extends StatelessWidget {
                                 toasts.codeSend(
                                     "${wallpaper.data()!["name"]} - ${wallpaper.data()!["desc"]}");
                               },
-                              child: Container(
+                              child: SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 child: RichText(
                                   text: TextSpan(
@@ -1089,7 +1089,7 @@ class SetupTile extends StatelessWidget {
                                 const SizedBox(
                                   width: 8,
                                 ),
-                                Container(
+                                SizedBox(
                                   width:
                                       MediaQuery.of(context).size.width * 0.3,
                                   child: Text(
@@ -1153,7 +1153,7 @@ class SetupTile extends StatelessWidget {
                                   const SizedBox(
                                     width: 8,
                                   ),
-                                  Container(
+                                  SizedBox(
                                     width:
                                         MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
@@ -1194,7 +1194,7 @@ class SetupTile extends StatelessWidget {
                                   const SizedBox(
                                     width: 8,
                                   ),
-                                  Container(
+                                  SizedBox(
                                     width:
                                         MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
@@ -1237,7 +1237,7 @@ class SetupTile extends StatelessWidget {
                                     const SizedBox(
                                       width: 8,
                                     ),
-                                    Container(
+                                    SizedBox(
                                       width: MediaQuery.of(context).size.width *
                                           0.3,
                                       child: Text(
@@ -1282,7 +1282,7 @@ class SetupTile extends StatelessWidget {
                                     const SizedBox(
                                       width: 8,
                                     ),
-                                    Container(
+                                    SizedBox(
                                       width: MediaQuery.of(context).size.width *
                                           0.3,
                                       child: Text(
@@ -1596,7 +1596,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 toasts.codeSend(
                                     "${wallpaper.data()!["name"]} - ${wallpaper.data()!["desc"]}");
                               },
-                              child: Container(
+                              child: SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 child: RichText(
                                   text: TextSpan(
@@ -1646,7 +1646,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 const SizedBox(
                                   width: 8,
                                 ),
-                                Container(
+                                SizedBox(
                                   width:
                                       MediaQuery.of(context).size.width * 0.3,
                                   child: Text(
@@ -1710,7 +1710,7 @@ class RejectedSetupTile extends StatelessWidget {
                                   const SizedBox(
                                     width: 8,
                                   ),
-                                  Container(
+                                  SizedBox(
                                     width:
                                         MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
@@ -1751,7 +1751,7 @@ class RejectedSetupTile extends StatelessWidget {
                                   const SizedBox(
                                     width: 8,
                                   ),
-                                  Container(
+                                  SizedBox(
                                     width:
                                         MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
@@ -1794,7 +1794,7 @@ class RejectedSetupTile extends StatelessWidget {
                                     const SizedBox(
                                       width: 8,
                                     ),
-                                    Container(
+                                    SizedBox(
                                       width: MediaQuery.of(context).size.width *
                                           0.3,
                                       child: Text(
@@ -1839,7 +1839,7 @@ class RejectedSetupTile extends StatelessWidget {
                                     const SizedBox(
                                       width: 8,
                                     ),
-                                    Container(
+                                    SizedBox(
                                       width: MediaQuery.of(context).size.width *
                                           0.3,
                                       child: Text(

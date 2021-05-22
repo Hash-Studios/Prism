@@ -773,7 +773,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       style: ButtonStyle(
                           overlayColor: MaterialStateColor.resolveWith(
                               (states) => Colors.white10)),
-                      child: Container(
+                      child: SizedBox(
                         width: 75,
                         child: Text(
                           widget.skipText ?? "Skip",
@@ -798,7 +798,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                         backgroundColor: MaterialStateColor.resolveWith(
                             (states) => Colors.white),
                       ),
-                      child: Container(
+                      child: SizedBox(
                         width: 60,
                         child: Text(
                           widget.doneText ?? 'DONE',
@@ -829,9 +829,9 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                         backgroundColor: MaterialStateColor.resolveWith(
                             (states) => Colors.white),
                       ),
-                      child: Container(
+                      child: const SizedBox(
                         width: 60,
-                        child: const Text(
+                        child: Text(
                           'DONE',
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -909,7 +909,7 @@ class FollowHeaderCard extends StatelessWidget {
             ),
             color: Colors.white,
             elevation: 4,
-            child: Container(
+            child: SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               height: 60,
               child: Row(
@@ -954,9 +954,9 @@ class FollowHeaderCard extends StatelessWidget {
                                 backgroundColor: MaterialStateColor.resolveWith(
                                     (states) => Colors.white),
                               ),
-                              child: Container(
+                              child: const SizedBox(
                                 width: 65,
-                                child: const Icon(
+                                child: Icon(
                                   JamIcons.check,
                                   color: Color(0xFFE57697),
                                 ),
@@ -1028,9 +1028,9 @@ class FollowHeaderCard extends StatelessWidget {
                                 backgroundColor: MaterialStateColor.resolveWith(
                                     (states) => const Color(0xFFE57697)),
                               ),
-                              child: Container(
+                              child: const SizedBox(
                                 width: 65,
-                                child: const Text(
+                                child: Text(
                                   'FOLLOW',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
@@ -1060,7 +1060,7 @@ class FollowHeaderCard extends StatelessWidget {
             ),
             color: Colors.white,
             elevation: 4,
-            child: Container(
+            child: SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               height: MediaQuery.of(context).size.width * 0.8 / 3,
               child: Row(
@@ -1095,7 +1095,7 @@ class FollowImage extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: Container(
+        child: SizedBox(
           height: (MediaQuery.of(context).size.width * 0.8 - 48) / 3,
           width: (MediaQuery.of(context).size.width * 0.8 - 48) / 3,
           child: CachedNetworkImage(

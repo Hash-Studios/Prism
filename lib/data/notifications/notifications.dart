@@ -2,7 +2,6 @@ import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;

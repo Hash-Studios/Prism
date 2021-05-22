@@ -5,7 +5,6 @@ import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/routes/router.dart';

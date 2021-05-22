@@ -10,10 +10,8 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/ui/widgets/profile/studioList.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:animations/animations.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
@@ -31,8 +29,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool followers = (main.prefs.get('followersTab') ?? true) as bool;
   int categories = (main.prefs.get('WHcategories') ?? 100) as int;
   int purity = (main.prefs.get('WHpurity') ?? 100) as int;
-  final TextEditingController _twitterController = TextEditingController();
-  final TextEditingController _igController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -406,7 +402,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       Radius.circular(10),
                                     ),
                                   ),
-                                  content: Container(
+                                  content: SizedBox(
                                     height: 50,
                                     width: 250,
                                     child: Center(
@@ -491,7 +487,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       Radius.circular(10),
                                     ),
                                   ),
-                                  content: Container(
+                                  content: SizedBox(
                                     height: 50,
                                     width: 250,
                                     child: Center(
