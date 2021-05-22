@@ -94,14 +94,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
     await Future.delayed(const Duration(milliseconds: 500));
     Data.prismWalls = [];
     Data.subPrismWalls = [];
-    if (Provider.of<CategorySupplier>(context, listen: false)
-            .selectedChoice
-            .name ==
-        "Trending") {
-      Data.getTrendingWalls();
-    } else {
-      Data.getPrismWalls();
-    }
+    Data.getPrismWalls();
   }
 
   void showGooglePopUp(BuildContext context, Function func) {
