@@ -14,10 +14,6 @@ import 'package:provider/provider.dart';
 
 final FirebaseMessaging f = FirebaseMessaging.instance;
 
-Future<void> myBackgroundMessageHandler(Map<String, dynamic> message) async {
-  writeNotifications(message);
-}
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     Key? key,
