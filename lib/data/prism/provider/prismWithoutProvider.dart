@@ -13,7 +13,6 @@ List? sortedData;
 List? subSortedData;
 late List wallsDataL;
 Map wall = {};
-int pageTrending = 1;
 Future<List?> getPrismWalls() async {
   if (navStack.last == "Home") {
     debugPrint("Fetching first 24 walls!");
@@ -86,7 +85,11 @@ Future<List?> seeMorePrism() async {
 
 Future<Map> getDataByID(String? id) async {
   wall = {};
-  await databaseReference.collection("walls").get().then((value) {
+  await databaseReference
+      .collection("walls")
+      .where('id', isEqualTo: id)
+      .get()
+      .then((value) {
     for (final element in value.docs) {
       if (element.data()["id"] == id) {
         wall = element.data();
@@ -95,47 +98,4 @@ Future<Map> getDataByID(String? id) async {
     return wall;
   });
   return wall;
-}
-
-Future<List?> getTrendingWalls() async {
-  prismWalls = [];
-  subPrismWalls = [];
-  await getPrismWalls();
-  final List? walls = prismWalls;
-  final Map viewData =
-      await (getMapFromGitHub() as FutureOr<Map<dynamic, dynamic>>);
-  final Map wallsData = viewData["wallpapers"] as Map;
-  wallsDataL = [];
-  prismWalls = [];
-  wallsData.forEach((key, value) {
-    wallsDataL.add({key: value["views"]});
-  });
-  wallsDataL.sort((b, a) {
-    return int.parse(a.values.toList()[0].toString())
-        .compareTo(int.parse(b.values.toList()[0].toString()));
-  });
-  wallsDataL.forEach((wallData) {
-    walls!.forEach((element) {
-      if (element["id"] == wallData.keys.toList()[0]) {
-        prismWalls!.add(element);
-      }
-    });
-  });
-  return subPrismWalls = prismWalls!.sublist(0, 24);
-}
-
-List? seeMoreTrending() {
-  final int len = prismWalls!.length;
-  final double pages = len / 24;
-  debugPrint(len.toString());
-  debugPrint(pages.toString());
-  debugPrint(pageTrending.toString());
-  if (pageTrending < pages.floor()) {
-    subPrismWalls!.addAll(
-        prismWalls!.sublist(subPrismWalls!.length, subPrismWalls!.length + 24));
-    pageTrending += 1;
-  } else {
-    subPrismWalls!.addAll(prismWalls!.sublist(subPrismWalls!.length));
-  }
-  return subPrismWalls;
 }

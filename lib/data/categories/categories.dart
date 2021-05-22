@@ -7,13 +7,6 @@ List categories = [
         "https://images.pexels.com/photos/3280130/pexels-photo-3280130.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"
   },
   {
-    "name": "Trending",
-    "provider": "Prism",
-    "type": "non-search",
-    "image":
-        "https://images.pexels.com/photos/3280130/pexels-photo-3280130.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"
-  },
-  {
     "name": "Curated",
     "provider": "Pexels",
     "type": "non-search",
