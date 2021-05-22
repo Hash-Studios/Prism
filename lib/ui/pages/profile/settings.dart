@@ -573,22 +573,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Container(),
                 ],
               ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Support',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).errorColor == Colors.black
-                        ? Colors.grey
-                        : Theme.of(context).errorColor,
-                  ),
-                ),
-              ),
-            ),
           ])),
     );
   }
