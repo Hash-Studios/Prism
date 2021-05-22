@@ -30,7 +30,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
   late QuerySnapshot finalQuery;
   List<DocumentSnapshot> finalDocs = [];
   late List following;
-  final Firestore databaseReference = Firestore.instance;
+  final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
   CollectionReference? walls;
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
@@ -47,8 +47,9 @@ class _FollowingScreenState extends State<FollowingScreen> {
       setState(() {
         finalQuery = p;
         finalDocs = [];
-        for (final doc in finalQuery.documents) {
-          if (following.contains(doc.data["email"]) && finalDocs.length <= 30) {
+        for (final doc in finalQuery.docs) {
+          if (following.contains(doc.data()["email"]) &&
+              finalDocs.length <= 30) {
             finalDocs.add(doc);
           }
         }
@@ -61,9 +62,9 @@ class _FollowingScreenState extends State<FollowingScreen> {
     await databaseReference
         .collection("users")
         .where("email", isEqualTo: globals.prismUser.email)
-        .getDocuments()
+        .get()
         .then((value) {
-      following = value.documents[0].data["following"] as List? ?? [];
+      following = value.docs[0].data()["following"] as List? ?? [];
     });
     databaseReference
         .collection("walls")
@@ -388,7 +389,7 @@ class _FollowingTileState extends State<FollowingTile> {
                 else
                   FavIconButton(
                     id: widget.finalDocs[widget.index]["id"] as String?,
-                    prism: widget.finalDocs[widget.index].data,
+                    prism: widget.finalDocs[widget.index].data(),
                   ),
               ],
             ),

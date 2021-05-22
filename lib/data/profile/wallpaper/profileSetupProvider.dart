@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
 class ProfileSetupProvider extends ChangeNotifier {
-  final Firestore databaseReference = Firestore.instance;
+  final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
   List? profileSetups;
   int len = 0;
   Future<List?> getProfileSetups() async {
@@ -21,10 +21,10 @@ class ProfileSetupProvider extends ChangeNotifier {
           .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("created_at", descending: true);
     }
-    await db.getDocuments().then((value) {
+    await db.get().then((value) {
       profileSetups = [];
-      for (final f in value.documents) {
-        profileSetups!.add(f.data);
+      for (final f in value.docs) {
+        profileSetups!.add(f.data());
       }
       len = profileSetups!.length;
       debugPrint(len.toString());

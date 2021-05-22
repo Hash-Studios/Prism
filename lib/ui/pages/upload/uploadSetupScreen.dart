@@ -170,7 +170,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                   content: base64Image,
                   path: Path.basename(image.path)))
           .then((value) => setState(() {
-                imageURL = value.content.downloadUrl;
+                imageURL = value.content!.downloadUrl;
               }));
       debugPrint('File Uploaded');
       setState(() {

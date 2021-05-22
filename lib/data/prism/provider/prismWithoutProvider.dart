@@ -7,7 +7,7 @@ import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 
-final Firestore databaseReference = Firestore.instance;
+final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 List? prismWalls;
 List? subPrismWalls;
 List? sortedData;
@@ -32,12 +32,12 @@ Future<List?> getPrismWalls() async {
           .collection("walls")
           .where('review', isEqualTo: true)
           .orderBy("createdAt", descending: true)
-          .getDocuments()
+          .get()
           .then((value) {
         prismWalls = [];
-        for (final f in value.documents) {
+        for (final f in value.docs) {
           Map<String, dynamic> map;
-          map = f.data;
+          map = f.data();
           map['createdAt'] = map['createdAt'].toString();
           prismWalls!.add(map);
         }
@@ -92,10 +92,10 @@ List? seeMorePrism() {
 
 Future<Map> getDataByID(String? id) async {
   wall = {};
-  await databaseReference.collection("walls").getDocuments().then((value) {
-    for (final element in value.documents) {
-      if (element.data["id"] == id) {
-        wall = element.data;
+  await databaseReference.collection("walls").get().then((value) {
+    for (final element in value.docs) {
+      if (element.data()["id"] == id) {
+        wall = element.data();
       }
     }
     return wall;
@@ -127,8 +127,7 @@ Future<List?> getTrendingWalls() async {
       }
     });
   });
-  subPrismWalls = prismWalls!.sublist(0, 24);
-  return subPrismWalls;
+  return subPrismWalls = prismWalls!.sublist(0, 24);
 }
 
 List? seeMoreTrending() {

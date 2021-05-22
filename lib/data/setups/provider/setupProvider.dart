@@ -4,7 +4,7 @@ import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 
 class SetupProvider extends ChangeNotifier {
-  final Firestore databaseReference = Firestore.instance;
+  final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
   List? setups;
   Future<List?> getDataBase() async {
     final box = Hive.box('setups');
@@ -20,11 +20,11 @@ class SetupProvider extends ChangeNotifier {
           .collection("setups")
           .orderBy("created_at", descending: true)
           .where("review", isEqualTo: true)
-          .getDocuments()
+          .get()
           .then((value) {
-        for (final f in value.documents) {
+        for (final f in value.docs) {
           Map<String, dynamic> map;
-          map = f.data;
+          map = f.data();
           map['created_at'] = map['created_at'].toDate();
           setups!.add(map);
         }
@@ -60,16 +60,16 @@ class SetupProvider extends ChangeNotifier {
   }
 }
 
-final databaseReference2 = Firestore.instance;
+final databaseReference2 = FirebaseFirestore.instance;
 Map? setup;
 Future<Map?> getSetupFromName(String? name) async {
   setup = {};
   await databaseReference2
       .collection("setups")
       .where("name", isEqualTo: name)
-      .getDocuments()
+      .get()
       .then((value) {
-    value.documents.forEach((f) => setup = f.data);
+    value.docs.forEach((f) => setup = f.data());
     debugPrint(setup.toString());
   }).catchError((e) {
     debugPrint("data done with error");

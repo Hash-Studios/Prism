@@ -68,7 +68,7 @@ void showContributorDetails(BuildContext context, String username) {
                             Container(
                               width: MediaQuery.of(context).size.width * 0.4,
                               child: Text(
-                                snapshot.data!.name,
+                                snapshot.data!.name!,
                                 maxLines: 2,
                                 textAlign: TextAlign.center,
                                 overflow: TextOverflow.ellipsis,
@@ -83,7 +83,7 @@ void showContributorDetails(BuildContext context, String username) {
                             Container(
                                 width: MediaQuery.of(context).size.width * 0.4,
                                 child: Text(
-                                  snapshot.data!.login,
+                                  snapshot.data!.login!,
                                   textAlign: TextAlign.center,
                                   overflow: TextOverflow.ellipsis,
                                   style: Theme.of(context)
@@ -108,7 +108,7 @@ void showContributorDetails(BuildContext context, String username) {
                                       width: MediaQuery.of(context).size.width *
                                           0.3,
                                       child: Text(
-                                        snapshot.data!.location,
+                                        snapshot.data!.location!,
                                         textAlign: TextAlign.center,
                                         overflow: TextOverflow.ellipsis,
                                         style: Theme.of(context)
@@ -135,7 +135,7 @@ void showContributorDetails(BuildContext context, String username) {
                         child: Container(
                           width: MediaQuery.of(context).size.width * 0.6,
                           child: Text(
-                            snapshot.data!.bio,
+                            snapshot.data!.bio!,
                             style: TextStyle(
                                 fontSize: 14,
                                 color: Theme.of(context).accentColor,
@@ -159,7 +159,7 @@ void showContributorDetails(BuildContext context, String username) {
                         Container(),
                       ActionButton(
                           icon: JamIcons.github,
-                          link: snapshot.data!.htmlUrl,
+                          link: snapshot.data!.htmlUrl!,
                           text: "GITHUB"),
                       if (snapshot.data!.twitterUsername != null)
                         ActionButton(

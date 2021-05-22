@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:Prism/global/globals.dart' as globals;
 
-Firestore firestore = Firestore.instance;
+FirebaseFirestore firestore = FirebaseFirestore.instance;
 Future<void> createRecord(
     String? id,
     String? wallpaperProvider,
@@ -54,7 +54,7 @@ Future<void> createRecord(
   }
   if (globals.prismUser.premium == true) {
     http.post(
-      'https://fcm.googleapis.com/fcm/send',
+      Uri.parse('https://fcm.googleapis.com/fcm/send'),
       headers: <String, String>{
         'Content-Type': 'application/json',
         'Authorization': 'key=$fcmServerToken',
@@ -80,7 +80,7 @@ Future<void> createRecord(
       ),
     );
     http.post(
-      'https://fcm.googleapis.com/fcm/send',
+      Uri.parse('https://fcm.googleapis.com/fcm/send'),
       headers: <String, String>{
         'Content-Type': 'application/json',
         'Authorization': 'key=$fcmServerToken',
@@ -151,7 +151,7 @@ Future<void> createSetup(
   });
   if (globals.prismUser.loggedIn == true && globals.prismUser.premium == true) {
     http.post(
-      'https://fcm.googleapis.com/fcm/send',
+      Uri.parse('https://fcm.googleapis.com/fcm/send'),
       headers: <String, String>{
         'Content-Type': 'application/json',
         'Authorization': 'key=$fcmServerToken',
@@ -177,7 +177,7 @@ Future<void> createSetup(
       ),
     );
     http.post(
-      'https://fcm.googleapis.com/fcm/send',
+      Uri.parse('https://fcm.googleapis.com/fcm/send'),
       headers: <String, String>{
         'Content-Type': 'application/json',
         'Authorization': 'key=$fcmServerToken',
@@ -223,7 +223,7 @@ Future<void> updateSetup(
     String setupDesc,
     String wallId,
     bool? review) async {
-  await firestore.collection("setups").document(setupDocId).updateData({
+  await firestore.collection("setups").doc(setupDocId).update({
     'by': globals.prismUser.username,
     'email': globals.prismUser.email,
     'userPhoto': globals.prismUser.profilePhoto,

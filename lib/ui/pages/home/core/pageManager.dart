@@ -161,7 +161,7 @@ class _PageManagerChildState extends State<PageManagerChild>
                   onPressed: () async {
                     debugPrint(
                         'Thanks for the ${stars == null ? '0' : stars.round().toString()} star(s) !');
-                    if (stars <= 3) {
+                    if (stars! <= 3) {
                       if (Platform.isAndroid) {
                         final androidInfo =
                             await DeviceInfoPlugin().androidInfo;
@@ -213,9 +213,11 @@ class _PageManagerChildState extends State<PageManagerChild>
           ),
           ignoreNativeDialog: Platform.isAndroid,
           starRatingOptions: StarRatingOptions(
-              initialRating: 5,
-              starsFillColor: Theme.of(context).errorColor,
-              starsBorderColor: Theme.of(context).errorColor),
+            initialRating: 5,
+            glow: true,
+            glowColor: Theme.of(context).errorColor,
+            // starsBorderColor: Theme.of(context).errorColor,
+          ),
           onDismissed: () =>
               rateMyApp.callEvent(RateMyAppEventType.laterButtonPressed),
         );

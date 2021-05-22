@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/material.dart';
 
-final Firestore databaseReference = Firestore.instance;
+final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 List? userProfileWalls;
 List? userProfileSetups;
 int len = 0;
@@ -15,11 +15,11 @@ Future<List?> getuserProfileWalls(String? email) async {
       .where('review', isEqualTo: true)
       .where('email', isEqualTo: email)
       .orderBy("createdAt", descending: true)
-      .getDocuments()
+      .get()
       .then((value) {
     userProfileWalls = [];
-    for (final f in value.documents) {
-      userProfileWalls!.add(f.data);
+    for (final f in value.docs) {
+      userProfileWalls!.add(f.data());
     }
     len = userProfileWalls!.length;
     debugPrint(len.toString());
@@ -37,10 +37,10 @@ Future<List?> getUserProfileSetups(String? email) async {
       .where('review', isEqualTo: true)
       .where('email', isEqualTo: email)
       .orderBy("created_at", descending: true)
-      .getDocuments()
+      .get()
       .then((value) {
     userProfileSetups = [];
-    for (final f in value.documents) {
+    for (final f in value.docs) {
       userProfileSetups!.add(f.data);
     }
     len2 = userProfileSetups!.length;
@@ -59,10 +59,10 @@ Future<int> getProfileWallsLength(String? email) async {
       .where('review', isEqualTo: true)
       .where('email', isEqualTo: email)
       .orderBy("createdAt", descending: true)
-      .getDocuments()
+      .get()
       .then((value) {
     tempList = [];
-    value.documents.forEach((f) {
+    value.docs.forEach((f) {
       tempList.add(f.data);
     });
     len = tempList.length;
@@ -81,10 +81,10 @@ Future<int> getProfileSetupsLength(String? email) async {
       .where('review', isEqualTo: true)
       .where('email', isEqualTo: email)
       .orderBy("created_at", descending: true)
-      .getDocuments()
+      .get()
       .then((value) {
     tempList = [];
-    value.documents.forEach((f) {
+    value.docs.forEach((f) {
       tempList.add(f.data);
     });
     len2 = tempList.length;
@@ -119,6 +119,6 @@ Future setUserLinks(List<LinksModel> linklist, String id) async {
   });
   await databaseReference
       .collection("users")
-      .document(id)
-      .updateData({"links": updateLink});
+      .doc(id)
+      .update({"links": updateLink});
 }

@@ -889,7 +889,7 @@ class FollowHeaderCard extends StatelessWidget {
   final String img1;
   final String img2;
   final String img3;
-  final Firestore firestore = Firestore.instance;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -938,8 +938,8 @@ class FollowHeaderCard extends StatelessWidget {
                       if (!snapshot.hasData) {
                         return Container();
                       } else {
-                        final List following = snapshot.data!.documents[0]
-                                .data['following'] as List? ??
+                        final List following = snapshot.data!.docs[0]
+                                .data()['following'] as List? ??
                             [];
                         if (following.contains(email)) {
                           return Padding(
@@ -969,25 +969,27 @@ class FollowHeaderCard extends StatelessWidget {
                             child: ElevatedButton(
                               onPressed: () {
                                 following.add(email);
-                                snapshot.data!.documents[0].reference
-                                    .updateData({'following': following});
+                                snapshot.data!.docs[0].reference
+                                    .update({'following': following});
                                 users
                                     .where("email", isEqualTo: email)
-                                    .getDocuments()
+                                    .get()
                                     .then((value) {
-                                  if (value.documents.isEmpty ||
-                                      value.documents == null) {
+                                  if (value.docs.isEmpty ||
+                                      value.docs == null) {
                                   } else {
-                                    final List followers = value.documents[0]
-                                            .data['followers'] as List? ??
+                                    final List followers = value.docs[0]
+                                            .data()['followers'] as List? ??
                                         [];
                                     followers.add(globals.prismUser.email);
-                                    value.documents[0].reference
-                                        .updateData({'followers': followers});
+                                    value.docs[0].reference
+                                        .update({'followers': followers});
                                   }
                                 });
                                 http.post(
-                                  'https://fcm.googleapis.com/fcm/send',
+                                  Uri.parse(
+                                    'https://fcm.googleapis.com/fcm/send',
+                                  ),
                                   headers: <String, String>{
                                     'Content-Type': 'application/json',
                                     'Authorization': 'key=$fcmServerToken',

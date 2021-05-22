@@ -34,7 +34,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
   Map? links;
   late CollectionReference users;
   final ScrollController scrollController = ScrollController();
-  final Firestore firestore = Firestore.instance;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final key = GlobalKey();
   @override
   void initState() {
@@ -85,14 +85,13 @@ class _FollowerProfileState extends State<FollowerProfile> {
           child: Scaffold(
             backgroundColor: Theme.of(context).primaryColor,
             body: FutureBuilder<QuerySnapshot>(
-              future: users.where('email', isEqualTo: email).getDocuments(),
+              future: users.where('email', isEqualTo: email).get(),
               builder: (context, snap) {
                 if (snap.hasData && snap.data != null) {
-                  name = snap.data!.documents[0].data["name"].toString();
-                  userPhoto =
-                      snap.data!.documents[0].data["userPhoto"].toString();
-                  premium = snap.data!.documents[0].data["premium"] as bool;
-                  links = snap.data!.documents[0].data["links"] as Map;
+                  name = snap.data!.docs[0].data()["name"].toString();
+                  userPhoto = snap.data!.docs[0].data()["userPhoto"].toString();
+                  premium = snap.data!.docs[0].data()["premium"] as bool;
+                  links = snap.data!.docs[0].data()["links"] as Map;
                   debugPrint("Name : $name");
                   debugPrint("Email : $email");
                   debugPrint("Profile Photo : $userPhoto");
@@ -403,19 +402,17 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                                             ),
                                                           ],
                                                         );
-                                                      } else if (snapshot.data!
-                                                                  .documents !=
+                                                      } else if (snapshot
+                                                                  .data!.docs !=
                                                               null &&
-                                                          snapshot
-                                                              .data!
-                                                              .documents
+                                                          snapshot.data!.docs
                                                               .isNotEmpty) {
                                                         List followers = [];
 
                                                         followers = snapshot
                                                                         .data!
-                                                                        .documents[0]
-                                                                        .data[
+                                                                        .docs[0]
+                                                                        .data()[
                                                                     'followers']
                                                                 as List? ??
                                                             [];
@@ -493,10 +490,8 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                 if (!snapshot.hasData) {
                                   return Container();
                                 } else {
-                                  final List following = snapshot
-                                          .data!
-                                          .documents[0]
-                                          .data['following'] as List? ??
+                                  final List following = snapshot.data!.docs[0]
+                                          .data()['following'] as List? ??
                                       [];
                                   if (following.contains(email)) {
                                     return IconButton(
@@ -504,27 +499,24 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                       onPressed: () {
                                         following
                                             .removeAt(following.indexOf(email));
-                                        snapshot.data!.documents[0].reference
-                                            .updateData(
-                                                {'following': following});
+                                        snapshot.data!.docs[0].reference
+                                            .update({'following': following});
                                         users
                                             .where("email", isEqualTo: email)
-                                            .getDocuments()
+                                            .get()
                                             .then((value) {
-                                          if (value.documents.isEmpty ||
-                                              value.documents == null) {
+                                          if (value.docs.isEmpty ||
+                                              value.docs == null) {
                                           } else {
-                                            final List followers = value
-                                                        .documents[0]
-                                                        .data['followers']
+                                            final List followers = value.docs[0]
+                                                        .data()['followers']
                                                     as List? ??
                                                 [];
                                             followers.removeAt(
                                                 followers.indexOf(
                                                     globals.prismUser.email));
-                                            value.documents[0].reference
-                                                .updateData(
-                                                    {'followers': followers});
+                                            value.docs[0].reference.update(
+                                                {'followers': followers});
                                           }
                                         });
                                         toasts.error("Unfollowed $name!");
@@ -548,30 +540,30 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                         icon: const Icon(JamIcons.user_plus),
                                         onPressed: () {
                                           following.add(email);
-                                          snapshot.data!.documents[0].reference
-                                              .updateData(
-                                                  {'following': following});
+                                          snapshot.data!.docs[0].reference
+                                              .update({'following': following});
                                           users
                                               .where("email", isEqualTo: email)
-                                              .getDocuments()
+                                              .get()
                                               .then((value) {
-                                            if (value.documents.isEmpty ||
-                                                value.documents == null) {
+                                            if (value.docs.isEmpty ||
+                                                value.docs == null) {
                                             } else {
                                               final List followers = value
-                                                          .documents[0]
-                                                          .data['followers']
+                                                          .docs[0]
+                                                          .data()['followers']
                                                       as List? ??
                                                   [];
                                               followers
                                                   .add(globals.prismUser.email);
-                                              value.documents[0].reference
-                                                  .updateData(
-                                                      {'followers': followers});
+                                              value.docs[0].reference.update(
+                                                  {'followers': followers});
                                             }
                                           });
                                           http.post(
-                                            'https://fcm.googleapis.com/fcm/send',
+                                            Uri.parse(
+                                              'https://fcm.googleapis.com/fcm/send',
+                                            ),
                                             headers: <String, String>{
                                               'Content-Type':
                                                   'application/json',

@@ -33,7 +33,9 @@ Future<List<WallPaper>> categoryDataFetcher(
   if (navStack.last == "Home") {
     http
         .get(
-            "https://wallhaven.cc/api/v1/search?q=$categoryName&page=${pageNumbers[index][categoryName]}&categories=$categories&purity=$purity")
+      Uri.parse(
+          "https://wallhaven.cc/api/v1/search?q=$categoryName&page=${pageNumbers[index][categoryName]}&categories=$categories&purity=$purity"),
+    )
         .then(
       (http.Response response) {
         final resp = json.decode(response.body);
@@ -80,7 +82,9 @@ Future<List<WallPaper>> getData(
   if (navStack.last == "Home") {
     http
         .get(
-            "https://wallhaven.cc/api/v1/search?page=$pageGetData&categories=$categories&purity=$purity&sorting=toplist&order=des")
+      Uri.parse(
+          "https://wallhaven.cc/api/v1/search?page=$pageGetData&categories=$categories&purity=$purity&sorting=toplist&order=des"),
+    )
         .then(
       (http.Response response) {
         final resp = json.decode(response.body);
@@ -121,7 +125,11 @@ Future<WallPaper> getWallbyID(String idU) async {
   final String id = idU.toLowerCase();
   debugPrint("https://wallhaven.cc/api/v1/w/$id");
   wall = WallPaper();
-  http.get("https://wallhaven.cc/api/v1/w/$id").then(
+  http
+      .get(
+    Uri.parse("https://wallhaven.cc/api/v1/w/$id"),
+  )
+      .then(
     (http.Response response) {
       final resp = json.decode(response.body)["data"];
       wall = WallPaper(
@@ -162,7 +170,9 @@ Future<List<WallPaper>> getWallsbyQuery(
       "https://wallhaven.cc/api/v1/search?q=$query&page=1&categories=$categories&purity=$purity");
   http
       .get(
-          "https://wallhaven.cc/api/v1/search?q=$query&page=1&categories=$categories&purity=$purity")
+    Uri.parse(
+        "https://wallhaven.cc/api/v1/search?q=$query&page=1&categories=$categories&purity=$purity"),
+  )
       .then(
     (http.Response response) {
       final resp = json.decode(response.body);
@@ -200,7 +210,9 @@ Future<List<WallPaper>> getWallsbyQueryPage(
       "https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery&categories=$categories&purity=$purity");
   http
       .get(
-          "https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery&categories=$categories&purity=$purity")
+    Uri.parse(
+        "https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery&categories=$categories&purity=$purity"),
+  )
       .then(
     (http.Response response) {
       final resp = json.decode(response.body);

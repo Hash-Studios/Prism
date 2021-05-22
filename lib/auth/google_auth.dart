@@ -25,32 +25,34 @@ class GoogleAuth {
   Future<String> signInWithGoogle() async {
     isLoading = true;
     prefs = await Hive.openBox('prefs');
-    final GoogleSignInAccount googleSignInAccount = await googleSignIn.signIn();
+    final GoogleSignInAccount? googleSignInAccount =
+        await googleSignIn.signIn();
     final GoogleSignInAuthentication googleSignInAuthentication =
-        await googleSignInAccount.authentication;
+        await googleSignInAccount!.authentication;
 
-    final AuthCredential credential = GoogleAuthProvider.getCredential(
+    final AuthCredential credential = GoogleAuthProvider.credential(
       accessToken: googleSignInAuthentication.accessToken,
       idToken: googleSignInAuthentication.idToken,
     );
 
-    final AuthResult authResult = await _auth.signInWithCredential(credential);
-    final FirebaseUser user = authResult.user;
-    assert(user.email != null);
-    assert(user.displayName != null);
-    assert(user.photoUrl != null);
-    name = user.displayName;
+    final UserCredential authResult =
+        await _auth.signInWithCredential(credential);
+    final User? user = authResult.user;
+    assert(user!.email != null);
+    assert(user!.displayName != null);
+    assert(user!.photoURL != null);
+    name = user!.displayName;
     email = user.email;
     if (user != null) {
-      final QuerySnapshot result = await Firestore.instance
+      final QuerySnapshot result = await FirebaseFirestore.instance
           .collection('users')
           .where('id', isEqualTo: user.uid)
-          .getDocuments();
-      final List<DocumentSnapshot> documents = result.documents;
+          .get();
+      final List<DocumentSnapshot> documents = result.docs;
       if (documents.isEmpty) {
         globals.prismUser = PrismUsers.withSave(
-          username: user.displayName,
-          email: user.email,
+          username: user.displayName!,
+          email: user.email!,
           id: user.uid,
           createdAt: DateTime.now().toIso8601String(),
           premium: false,
@@ -58,7 +60,7 @@ class GoogleAuth {
           links: {},
           followers: [],
           following: [],
-          profilePhoto: user.photoUrl,
+          profilePhoto: user.photoURL!,
           bio: "",
           loggedIn: true,
         );
@@ -98,11 +100,11 @@ class GoogleAuth {
       // value.put('googleemail', user.email);
       // value.put('googleimage', user.photoUrl);
     });
-    home.f.subscribeToTopic(user.email.split("@")[0]);
+    home.f.subscribeToTopic(user.email!.split("@")[0]);
     assert(!user.isAnonymous);
     assert(await user.getIdToken() != null);
-    final FirebaseUser currentUser = await _auth.currentUser();
-    assert(user.uid == currentUser.uid);
+    final User? currentUser = _auth.currentUser;
+    assert(user.uid == currentUser!.uid);
     analytics.logLogin();
     await checkPremium();
     return 'signInWithGoogle succeeded: $user';

@@ -19,6 +19,7 @@ import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 // import 'package:collection/collection.dart' show IterableExtension;
 import 'package:firebase_analytics/observer.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
@@ -52,122 +53,127 @@ void main() {
   };
   localNotification = LocalNotification();
   // InAppPurchaseConnection.enablePendingPurchases();
-  getApplicationDocumentsDirectory().then(
-    (dir) async {
-      Hive.init(dir.path);
-      await Hive.openBox('wallpapers');
-      await Hive.openBox('collections');
-      await Hive.openBox('setups');
-      await Hive.openBox('localFav');
-      Hive.registerAdapter(NotifDataAdapter());
-      await Hive.openBox<List>('notifications');
-      Hive.registerAdapter(PrismUsersAdapter());
-      prefs = await Hive.openBox('prefs');
-      debugPrint("Box Opened");
-      if (prefs.get("systemOverlayColor") == null) {
-        prefs.put("systemOverlayColor", 0xFFE57697);
-      }
-      currentThemeID =
-          prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-      prefs.put("lightThemeID", currentThemeID);
-      currentDarkThemeID =
-          prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-      prefs.put("darkThemeID", currentDarkThemeID);
-      currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
-      prefs.put("themeMode", currentMode);
-      lightAccent = Color(int.parse(
-          prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
-      prefs.put(
-          "lightAccent",
-          int.parse(lightAccent
-              .toString()
-              .replaceAll("Color(", "")
-              .replaceAll(")", "")));
-      darkAccent = Color(int.parse(
-          prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
-      prefs.put(
-          "darkAccent",
-          int.parse(darkAccent
-              .toString()
-              .replaceAll("Color(", "")
-              .replaceAll(")", "")));
-      optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
-      if (optimisedWallpapers) {
-        prefs.put('optimisedWallpapers', true);
-      } else {
-        prefs.put('optimisedWallpapers', false);
-      }
-      categories = prefs.get('WHcategories') as int? ?? 100;
-      if (categories == 100) {
-        prefs.put('WHcategories', 100);
-      } else {
-        prefs.put('WHcategories', 111);
-      }
-      purity = prefs.get('WHpurity') as int? ?? 100;
-      if (purity == 100) {
-        prefs.put('WHpurity', 100);
-      } else {
-        prefs.put('WHpurity', 110);
-      }
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        systemNavigationBarColor: Color(prefs.get('systemOverlayColor') as int),
-      ));
-      SystemChrome.setSystemUIOverlayStyle(
-          const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-          .then(
-        (value) => runZoned<Future<void>>(
-          () {
-            runApp(
-              RestartWidget(
-                child: MultiProvider(
-                  providers: [
-                    ChangeNotifierProvider<FavouriteProvider>(
-                      create: (context) => FavouriteProvider(),
-                    ),
-                    ChangeNotifierProvider<FavouriteSetupProvider>(
-                      create: (context) => FavouriteSetupProvider(),
-                    ),
-                    ChangeNotifierProvider<CategorySupplier>(
-                      create: (context) => CategorySupplier(),
-                    ),
-                    ChangeNotifierProvider<SetupProvider>(
-                      create: (context) => SetupProvider(),
-                    ),
-                    ChangeNotifierProvider<ProfileWallProvider>(
-                      create: (context) => ProfileWallProvider(),
-                    ),
-                    ChangeNotifierProvider<ProfileSetupProvider>(
-                      create: (context) => ProfileSetupProvider(),
-                    ),
-                    ChangeNotifierProvider<ThemeModel>(
-                      create: (context) => ThemeModel(
-                          themes[currentThemeID!]
-                          // ?? kLightTheme
-                          ,
-                          lightAccent),
-                    ),
-                    ChangeNotifierProvider<DarkThemeModel>(
-                      create: (context) => DarkThemeModel(
-                          darkThemes[currentDarkThemeID!]
-                          // ?? kDarkTheme
-                          ,
-                          darkAccent),
-                    ),
-                    ChangeNotifierProvider<ThemeModeExtended>(
-                      create: (context) =>
-                          ThemeModeExtended(modes[currentMode!]),
-                    ),
-                  ],
-                  child: MyApp(),
+  Firebase.initializeApp().then((_) {
+    getApplicationDocumentsDirectory().then(
+      (dir) async {
+        Hive.init(dir.path);
+        await Hive.openBox('wallpapers');
+        await Hive.openBox('collections');
+        await Hive.openBox('setups');
+        await Hive.openBox('localFav');
+        Hive.registerAdapter(NotifDataAdapter());
+        await Hive.openBox<List>('notifications');
+        Hive.registerAdapter(PrismUsersAdapter());
+        prefs = await Hive.openBox('prefs');
+        debugPrint("Box Opened");
+        if (prefs.get("systemOverlayColor") == null) {
+          prefs.put("systemOverlayColor", 0xFFE57697);
+        }
+        currentThemeID = prefs
+            .get('lightThemeID', defaultValue: "kLFrost White")
+            ?.toString();
+        prefs.put("lightThemeID", currentThemeID);
+        currentDarkThemeID = prefs
+            .get('darkThemeID', defaultValue: "kDMaterial Dark")
+            ?.toString();
+        prefs.put("darkThemeID", currentDarkThemeID);
+        currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
+        prefs.put("themeMode", currentMode);
+        lightAccent = Color(int.parse(
+            prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
+        prefs.put(
+            "lightAccent",
+            int.parse(lightAccent
+                .toString()
+                .replaceAll("Color(", "")
+                .replaceAll(")", "")));
+        darkAccent = Color(int.parse(
+            prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
+        prefs.put(
+            "darkAccent",
+            int.parse(darkAccent
+                .toString()
+                .replaceAll("Color(", "")
+                .replaceAll(")", "")));
+        optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
+        if (optimisedWallpapers) {
+          prefs.put('optimisedWallpapers', true);
+        } else {
+          prefs.put('optimisedWallpapers', false);
+        }
+        categories = prefs.get('WHcategories') as int? ?? 100;
+        if (categories == 100) {
+          prefs.put('WHcategories', 100);
+        } else {
+          prefs.put('WHcategories', 111);
+        }
+        purity = prefs.get('WHpurity') as int? ?? 100;
+        if (purity == 100) {
+          prefs.put('WHpurity', 100);
+        } else {
+          prefs.put('WHpurity', 110);
+        }
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+          systemNavigationBarColor:
+              Color(prefs.get('systemOverlayColor') as int),
+        ));
+        SystemChrome.setSystemUIOverlayStyle(
+            const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+            .then(
+          (value) => runZoned<Future<void>>(
+            () {
+              runApp(
+                RestartWidget(
+                  child: MultiProvider(
+                    providers: [
+                      ChangeNotifierProvider<FavouriteProvider>(
+                        create: (context) => FavouriteProvider(),
+                      ),
+                      ChangeNotifierProvider<FavouriteSetupProvider>(
+                        create: (context) => FavouriteSetupProvider(),
+                      ),
+                      ChangeNotifierProvider<CategorySupplier>(
+                        create: (context) => CategorySupplier(),
+                      ),
+                      ChangeNotifierProvider<SetupProvider>(
+                        create: (context) => SetupProvider(),
+                      ),
+                      ChangeNotifierProvider<ProfileWallProvider>(
+                        create: (context) => ProfileWallProvider(),
+                      ),
+                      ChangeNotifierProvider<ProfileSetupProvider>(
+                        create: (context) => ProfileSetupProvider(),
+                      ),
+                      ChangeNotifierProvider<ThemeModel>(
+                        create: (context) => ThemeModel(
+                            themes[currentThemeID!]
+                            // ?? kLightTheme
+                            ,
+                            lightAccent),
+                      ),
+                      ChangeNotifierProvider<DarkThemeModel>(
+                        create: (context) => DarkThemeModel(
+                            darkThemes[currentDarkThemeID!]
+                            // ?? kDarkTheme
+                            ,
+                            darkAccent),
+                      ),
+                      ChangeNotifierProvider<ThemeModeExtended>(
+                        create: (context) =>
+                            ThemeModeExtended(modes[currentMode!]),
+                      ),
+                    ],
+                    child: MyApp(),
+                  ),
                 ),
-              ),
-            );
-          } as Future<void> Function(),
-        ),
-      );
-    },
-  );
+              );
+            } as Future<void> Function(),
+          ),
+        );
+      },
+    );
+  });
 }
 
 class MyApp extends StatefulWidget {

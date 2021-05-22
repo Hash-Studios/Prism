@@ -7,20 +7,20 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:hive/hive.dart';
 
 class FavouriteProvider extends ChangeNotifier {
-  final Firestore databaseReference = Firestore.instance;
+  final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
   List? liked;
   Future<List?> getDataBase() async {
     final String uid = globals.prismUser.id;
     liked = [];
     await databaseReference
         .collection("users")
-        .document(uid)
+        .doc(uid)
         .collection("images")
-        .getDocuments()
+        .get()
         .then((value) {
       liked = [];
-      for (final f in value.documents) {
-        liked!.add(f.data);
+      for (final f in value.docs) {
+        liked!.add(f.data());
       }
       liked!.sort((a, b) {
         if (a["createdAt"] != null && b["createdAt"] != null) {
@@ -45,9 +45,9 @@ class FavouriteProvider extends ChangeNotifier {
     try {
       await databaseReference
           .collection("users")
-          .document(uid)
+          .doc(uid)
           .collection("images")
-          .document(id)
+          .doc(id)
           .delete();
     } catch (e) {
       debugPrint(e.toString());
@@ -62,10 +62,10 @@ class FavouriteProvider extends ChangeNotifier {
     if (provider == "WallHaven") {
       await databaseReference
           .collection("users")
-          .document(uid!)
+          .doc(uid)
           .collection("images")
-          .document(wallhaven!.id.toString())
-          .setData({
+          .doc(wallhaven!.id.toString())
+          .set({
         "id": wallhaven.id.toString(),
         "url": wallhaven.path.toString(),
         "thumb": wallhaven.thumbs!["original"].toString(),
@@ -81,10 +81,10 @@ class FavouriteProvider extends ChangeNotifier {
     } else if (provider == "Pexels") {
       await databaseReference
           .collection("users")
-          .document(uid!)
+          .doc(uid)
           .collection("images")
-          .document(pexels!.id.toString())
-          .setData({
+          .doc(pexels!.id.toString())
+          .set({
         "id": pexels.id.toString(),
         "url": pexels.src!["original"].toString(),
         "thumb": pexels.src!["medium"].toString(),
@@ -100,10 +100,10 @@ class FavouriteProvider extends ChangeNotifier {
     } else if (provider == "Prism") {
       await databaseReference
           .collection("users")
-          .document(uid!)
+          .doc(uid!)
           .collection("images")
-          .document(prism!["id"].toString())
-          .setData({
+          .doc(prism!["id"].toString())
+          .set({
         "id": prism["id"].toString(),
         "url": prism["wallpaper_url"].toString(),
         "thumb": prism["wallpaper_thumb"].toString(),
@@ -182,11 +182,11 @@ class FavouriteProvider extends ChangeNotifier {
     try {
       await databaseReference
           .collection("users")
-          .document(uid)
+          .doc(uid)
           .collection("images")
-          .getDocuments()
+          .get()
           .then((snapshot) {
-        for (final DocumentSnapshot ds in snapshot.documents) {
+        for (final DocumentSnapshot ds in snapshot.docs) {
           ds.reference.delete();
         }
       });

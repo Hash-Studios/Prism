@@ -141,9 +141,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   content: base64Image,
                   path: Path.basename(image.path)))
           .then((value) => setState(() {
-                wallpaperUrl = value.content.downloadUrl;
-                wallpaperPath = value.content.path;
-                wallpaperSha = value.content.sha;
+                wallpaperUrl = value.content!.downloadUrl;
+                wallpaperPath = value.content!.path!;
+                wallpaperSha = value.content!.sha!;
               }));
       await github.repositories
           .createFile(
@@ -153,9 +153,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   content: base64ImageThumb,
                   path: 'thumb_${Path.basename(image.path)}'))
           .then((value) => setState(() {
-                wallpaperThumb = value.content.downloadUrl;
-                thumbPath = value.content.path;
-                thumbSha = value.content.sha;
+                wallpaperThumb = value.content!.downloadUrl;
+                thumbPath = value.content!.path!;
+                thumbSha = value.content!.sha!;
               }));
       debugPrint('File Uploaded');
       setState(() {

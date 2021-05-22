@@ -62,49 +62,52 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
   void initState() {
     super.initState();
     setupDoc = widget.arguments![0] as DocumentSnapshot;
-    imageURL = setupDoc.data["image"].toString();
+    imageURL = setupDoc.data()!["image"].toString();
     groupWidgetValue = 0;
-    setupName = TextEditingController(text: setupDoc.data["name"].toString());
-    id = setupDoc.data["id"].toString();
-    setupDesc = TextEditingController(text: setupDoc.data["desc"].toString());
-    iconName = TextEditingController(text: setupDoc.data["icon"].toString());
-    iconURL = TextEditingController(text: setupDoc.data["icon_url"].toString());
+    setupName =
+        TextEditingController(text: setupDoc.data()!["name"].toString());
+    id = setupDoc.data()!["id"].toString();
+    setupDesc =
+        TextEditingController(text: setupDoc.data()!["desc"].toString());
+    iconName = TextEditingController(text: setupDoc.data()!["icon"].toString());
+    iconURL =
+        TextEditingController(text: setupDoc.data()!["icon_url"].toString());
     widgetName1 =
-        TextEditingController(text: setupDoc.data["widget"].toString());
+        TextEditingController(text: setupDoc.data()!["widget"].toString());
     widgetURL1 =
-        TextEditingController(text: setupDoc.data["widget_url"].toString());
-    if ("${setupDoc.data["wallpaper_url"]}"[0] != "[") {
-      if ("${setupDoc.data["wall_id"]}" != "" &&
-          "${setupDoc.data["wall_id"]}" != null) {
+        TextEditingController(text: setupDoc.data()!["widget_url"].toString());
+    if ("${setupDoc.data()!["wallpaper_url"]}"[0] != "[") {
+      if ("${setupDoc.data()!["wall_id"]}" != "" &&
+          "${setupDoc.data()!["wall_id"]}" != null) {
         wallpaperUploaded = true;
-        wallpaperUploadLink = setupDoc.data["wallpaper_url"].toString();
-        wallpaperId = setupDoc.data["wall_id"].toString();
+        wallpaperUploadLink = setupDoc.data()!["wallpaper_url"].toString();
+        wallpaperId = setupDoc.data()!["wall_id"].toString();
         groupValue = 1;
       } else {
         wallpaperUrl = TextEditingController(
-            text: setupDoc.data["wallpaper_url"].toString());
+            text: setupDoc.data()!["wallpaper_url"].toString());
         groupValue = 0;
       }
     } else {
       wallpaperAppName = TextEditingController(
-          text: setupDoc.data["wallpaper_url"][0].toString());
+          text: setupDoc.data()!["wallpaper_url"][0].toString());
       wallpaperAppWallName = TextEditingController(
-          text: setupDoc.data["wallpaper_url"][2].toString());
+          text: setupDoc.data()!["wallpaper_url"][2].toString());
       wallpaperAppLink = TextEditingController(
-          text: setupDoc.data["wallpaper_url"][1].toString());
+          text: setupDoc.data()!["wallpaper_url"][1].toString());
       groupValue = 2;
     }
     widgetName2 =
-        TextEditingController(text: setupDoc.data["widget2"].toString());
+        TextEditingController(text: setupDoc.data()!["widget2"].toString());
     widgetURL2 =
-        TextEditingController(text: setupDoc.data["widget_url2"].toString());
+        TextEditingController(text: setupDoc.data()!["widget_url2"].toString());
     isUploading = false;
     isProcessing = false;
-    wallpaperProvider = setupDoc.data["wallpaper_provider"].toString();
-    wallpaperThumb = setupDoc.data["wallpaper_thumb"].toString();
-    review = setupDoc.data["review"] as bool?;
-    secondWidgetAdded = "${setupDoc.data["widget2"]}" != "" &&
-        "${setupDoc.data["widget2"]}" != null;
+    wallpaperProvider = setupDoc.data()!["wallpaper_provider"].toString();
+    wallpaperThumb = setupDoc.data()!["wallpaper_thumb"].toString();
+    review = setupDoc.data()!["review"] as bool?;
+    secondWidgetAdded = "${setupDoc.data()!["widget2"]}" != "" &&
+        "${setupDoc.data()!["widget2"]}" != null;
   }
 
   final Map<int, Widget> logoWidgets = <int, Widget>{
@@ -195,7 +198,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                   content: base64Image,
                   path: Path.basename(image.path)))
           .then((value) => setState(() {
-                imageURL = value.content.downloadUrl;
+                imageURL = value.content!.downloadUrl;
               }));
       debugPrint('File Uploaded');
       setState(() {
@@ -255,7 +258,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             name: 'edit_setup',
                             parameters: {'id': id, 'link': imageURL});
                         WallStore.updateSetup(
-                          setupDoc.documentID,
+                          setupDoc.id,
                           id,
                           imageURL,
                           wallpaperProvider,

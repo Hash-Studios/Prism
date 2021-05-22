@@ -63,7 +63,7 @@ class PrismUsers {
     required this.loggedIn,
   }) {
     print("With Save constructor !!!!");
-    Firestore.instance.collection('users').document(id).updateData({
+    FirebaseFirestore.instance.collection('users').doc(id).update({
       'bio': bio,
       'username': username,
       'email': email,
@@ -109,7 +109,7 @@ class PrismUsers {
     required this.loggedIn,
   }) {
     print("Without save constructor !!!!");
-    Firestore.instance.collection('users').document(id).updateData({
+    FirebaseFirestore.instance.collection('users').doc(id).update({
       'bio': bio,
       'username': username,
       'following': following,
@@ -119,21 +119,20 @@ class PrismUsers {
     });
   }
 
-  factory PrismUsers.fromDocumentSnapshot(
-          DocumentSnapshot doc, FirebaseUser user) =>
+  factory PrismUsers.fromDocumentSnapshot(DocumentSnapshot doc, User user) =>
       PrismUsers.withoutSave(
-        bio: (doc["bio"] ?? "").toString(),
-        createdAt: doc["createdAt"].toString(),
-        email: doc["email"].toString(),
-        username: (doc["username"] ?? user.displayName).toString(),
-        followers: doc["followers"] as List ?? [],
-        following: doc["following"] as List ?? [],
-        id: doc["id"].toString(),
-        lastLogin:
-            ((doc["lastLogin"] as Timestamp?) ?? Timestamp.now()).toDate(),
-        links: doc["links"] as Map ?? {},
-        premium: doc["premium"] as bool,
+        bio: (doc.data()!["bio"] ?? "").toString(),
+        createdAt: doc.data()!["createdAt"].toString(),
+        email: doc.data()!["email"].toString(),
+        username: (doc.data()!["username"] ?? user.displayName).toString(),
+        followers: doc.data()!["followers"] as List ?? [],
+        following: doc.data()!["following"] as List ?? [],
+        id: doc.data()!["id"].toString(),
+        lastLogin: ((doc.data()!["lastLogin"] as Timestamp?) ?? Timestamp.now())
+            .toDate(),
+        links: doc.data()!["links"] as Map ?? {},
+        premium: doc.data()!["premium"] as bool,
         loggedIn: true,
-        profilePhoto: (doc["profilePhoto"] ?? user.photoUrl).toString(),
+        profilePhoto: (doc.data()!["profilePhoto"] ?? user.photoURL).toString(),
       );
 }

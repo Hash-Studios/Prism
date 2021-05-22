@@ -64,7 +64,7 @@ class _ProfileChildState extends State<ProfileChild> {
   int profileCount = ((main.prefs.get('userPosts') as int?) ?? 0) +
       ((main.prefs.get('userSetups') as int?) ?? 0);
   final ScrollController scrollController = ScrollController();
-  final Firestore firestore = Firestore.instance;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
   int count = 0;
   @override
   void initState() {
@@ -488,17 +488,16 @@ class _ProfileChildState extends State<ProfileChild> {
                                                           } else {
                                                             List followers = [];
                                                             if (snapshot.data!
-                                                                        .documents !=
+                                                                        .docs !=
                                                                     null &&
                                                                 snapshot
                                                                     .data!
-                                                                    .documents
+                                                                    .docs
                                                                     .isNotEmpty) {
                                                               followers = snapshot
                                                                           .data!
-                                                                          .documents[
-                                                                              0]
-                                                                          .data['followers']
+                                                                          .docs[0]
+                                                                          .data()['followers']
                                                                       as List? ??
                                                                   [];
                                                             }

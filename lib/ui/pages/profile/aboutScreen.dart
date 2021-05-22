@@ -200,10 +200,10 @@ class AboutScreen extends StatelessWidget {
                           tiles.add(ListTile(
                             leading: CircleAvatar(
                               backgroundImage:
-                                  CachedNetworkImageProvider(c.avatarUrl),
+                                  CachedNetworkImageProvider(c.avatarUrl!),
                             ),
                             title: Text(
-                              c.login,
+                              c.login!,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyText2!
@@ -223,7 +223,7 @@ class AboutScreen extends StatelessWidget {
                                           .withOpacity(0.5)),
                             ),
                             onTap: () {
-                              launch(c.htmlUrl);
+                              launch(c.htmlUrl!);
                             },
                           ));
                         }
@@ -268,7 +268,7 @@ class ContributorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        showContributorDetails(context, contributor.login);
+        showContributorDetails(context, contributor.login!);
       },
       child: Column(
         children: [
@@ -280,10 +280,10 @@ class ContributorWidget extends StatelessWidget {
           const SizedBox(
             height: 5,
           ),
-          Container(
+          SizedBox(
             width: MediaQuery.of(context).size.width * 0.3,
             child: Text(
-              contributor.login,
+              contributor.login!,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: Theme.of(context)
