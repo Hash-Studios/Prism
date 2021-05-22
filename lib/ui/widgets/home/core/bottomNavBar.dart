@@ -401,13 +401,11 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ],
                 ),
                 onPressed: () {
-                  // showGooglePopUp(() {
                   navStack.last == "Setups"
                       ? debugPrint("Currently on Setups")
                       : navStack.last == "Home"
                           ? Navigator.of(context).pushNamed(setupRoute)
                           : Navigator.of(context).pushNamed(setupRoute);
-                  // });
                 },
               ),
             ),

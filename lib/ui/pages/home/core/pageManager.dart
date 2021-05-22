@@ -244,12 +244,7 @@ class _PageManagerChildState extends State<PageManagerChild>
       } else if (deepLink.pathSegments[0] == "user") {
         Future.delayed(const Duration()).then((value) =>
             Navigator.pushNamed(context, followerProfileRoute, arguments: [
-              // deepLink.queryParameters["name"],
               deepLink.queryParameters["email"],
-              // deepLink.queryParameters["userPhoto"],
-              // deepLink.queryParameters["premium"] == "true",
-              // deepLink.queryParameters["twitter"],
-              // deepLink.queryParameters["instagram"],
             ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "setup") {
@@ -283,12 +278,7 @@ class _PageManagerChildState extends State<PageManagerChild>
         } else if (deepLink.pathSegments[0] == "user") {
           Future.delayed(const Duration()).then((value) =>
               Navigator.pushNamed(context, followerProfileRoute, arguments: [
-                // deepLink.queryParameters["name"],
                 deepLink.queryParameters["email"],
-                // deepLink.queryParameters["userPhoto"],
-                // deepLink.queryParameters["premium"] == "true",
-                // deepLink.queryParameters["twitter"],
-                // deepLink.queryParameters["instagram"],
               ]));
         } else if (deepLink.pathSegments[0] == "setup") {
           Future.delayed(const Duration()).then((value) =>
@@ -338,39 +328,18 @@ class _PageManagerChildState extends State<PageManagerChild>
                           JamIcons.picture,
                           color: Theme.of(context).accentColor,
                         ),
-                        // child: Text(
-                        //   "Wallpapers",
-                        //   style: Theme.of(context)
-                        //       .textTheme
-                        //       .bodyText2
-                        //       .copyWith(color: Theme.of(context).accentColor),
-                        // ),
                       ),
                       Tab(
                         icon: Icon(
                           JamIcons.user_square,
                           color: Theme.of(context).accentColor,
                         ),
-                        // child: Text(
-                        //   "Following",
-                        //   style: Theme.of(context)
-                        //       .textTheme
-                        //       .bodyText2
-                        //       .copyWith(color: Theme.of(context).accentColor),
-                        // ),
                       ),
                       Tab(
                         icon: Icon(
                           JamIcons.pictures,
                           color: Theme.of(context).accentColor,
                         ),
-                        // child: Text(
-                        //   "Collections",
-                        //   style: Theme.of(context)
-                        //       .textTheme
-                        //       .bodyText2
-                        //       .copyWith(color: Theme.of(context).accentColor),
-                        // ),
                       )
                     ]
                   : [

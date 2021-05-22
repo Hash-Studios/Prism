@@ -470,11 +470,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               color: Theme.of(context).accentColor,
                             ),
                           ),
-                          onSubmitted: (tex) {
-                            // setState(() {
-                            //   defaultText = tex;
-                            // });
-                          },
                         ),
                       ),
                     ),
@@ -509,11 +504,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               color: Theme.of(context).accentColor,
                             ),
                           ),
-                          onSubmitted: (tex) {
-                            // setState(() {
-                            //   defaultText = tex;
-                            // });
-                          },
                         ),
                       ),
                     ),
@@ -550,11 +540,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                 color: Theme.of(context).accentColor,
                               ),
                             ),
-                            onSubmitted: (tex) {
-                              // setState(() {
-                              //   defaultText = tex;
-                              // });
-                            },
                           ),
                         ),
                       )
@@ -600,11 +585,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                 color: Theme.of(context).accentColor,
                               ),
                             ),
-                            onSubmitted: (tex) {
-                              // setState(() {
-                              //   defaultText = tex;
-                              // });
-                            },
                           ),
                         ),
                       )
@@ -646,11 +626,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               color: Theme.of(context).accentColor,
                             ),
                           ),
-                          onSubmitted: (tex) {
-                            // setState(() {
-                            //   defaultText = tex;
-                            // });
-                          },
                         ),
                       ),
                     ),
@@ -685,11 +660,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               color: Theme.of(context).accentColor,
                             ),
                           ),
-                          onSubmitted: (tex) {
-                            // setState(() {
-                            //   defaultText = tex;
-                            // });
-                          },
                         ),
                       ),
                     ),
@@ -758,11 +728,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           color: Theme.of(context).accentColor,
                         ),
                       ),
-                      onSubmitted: (tex) {
-                        // setState(() {
-                        //   defaultText = tex;
-                        // });
-                      },
                     ),
                   ),
                 )
@@ -848,11 +813,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                     color: Theme.of(context).accentColor,
                                   ),
                                 ),
-                                onSubmitted: (tex) {
-                                  // setState(() {
-                                  //   defaultText = tex;
-                                  // });
-                                },
                               ),
                             ),
                           ),
@@ -889,11 +849,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                     color: Theme.of(context).accentColor,
                                   ),
                                 ),
-                                onSubmitted: (tex) {
-                                  // setState(() {
-                                  //   defaultText = tex;
-                                  // });
-                                },
                               ),
                             ),
                           ),
@@ -930,11 +885,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                     color: Theme.of(context).accentColor,
                                   ),
                                 ),
-                                onSubmitted: (tex) {
-                                  // setState(() {
-                                  //   defaultText = tex;
-                                  // });
-                                },
                               ),
                             ),
                           ),

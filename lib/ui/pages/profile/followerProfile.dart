@@ -37,12 +37,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
   final key = GlobalKey();
   @override
   void initState() {
-    // name = widget.arguments![0].toString();
     email = widget.arguments![0].toString();
-    // userPhoto = widget.arguments![2].toString();
-    // premium = widget.arguments![3] as bool;
-    // twitter = widget.arguments![4].toString();
-    // instagram = widget.arguments![5].toString();
     users = firestore.collection('users');
     super.initState();
   }

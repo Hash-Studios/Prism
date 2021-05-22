@@ -4,7 +4,6 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:animations/animations.dart';
 import 'package:device_info/device_info.dart';
-// import 'package:firebase_admob/firebase_admob.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -206,13 +205,6 @@ class DownloadDialogContent extends StatefulWidget {
 
 class _DownloadDialogContentState extends State<DownloadDialogContent> {
   int downloadCoins = 0;
-  // RewardedVideoAd videoAd = RewardedVideoAd.instance;
-  // static const MobileAdTargetingInfo targetingInfo = MobileAdTargetingInfo(
-  //   testDevices: <String>[],
-  //   keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
-  //   nonPersonalizedAds: false,
-  // );
-
   void reward(int rewardAmount) {
     downloadCoins += rewardAmount;
     debugPrint("Coins : ${downloadCoins.toString()}");
@@ -220,42 +212,6 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
 
   @override
   void initState() {
-    // FirebaseAdMob.instance
-    //     .initialize(appId: "ca-app-pub-4649644680694757~6175744196");
-    // videoAd.listener =
-    //     (RewardedVideoAdEvent event, {String? rewardType, int? rewardAmount}) {
-    //   debugPrint("REWARDED VIDEO AD $event");
-    //   switch (event) {
-    //     case RewardedVideoAdEvent.loaded:
-    //       setState(() {
-    //         globals.loadingAd = false;
-    //       });
-    //       break;
-    //     case RewardedVideoAdEvent.failedToLoad:
-    //       toasts.error("Failed to load ad");
-    //       if (mounted) {
-    //         Navigator.pop(context);
-    //         widget.rewardFunc();
-    //       }
-    //       break;
-    //     case RewardedVideoAdEvent.leftApplication:
-    //       break;
-    //     case RewardedVideoAdEvent.started:
-    //       break;
-    //     case RewardedVideoAdEvent.rewarded:
-    //       reward(rewardAmount!);
-    //       break;
-    //     case RewardedVideoAdEvent.closed:
-    //       if (downloadCoins >= 10) widget.rewardFunc();
-    //       break;
-    //     case RewardedVideoAdEvent.opened:
-    //     case RewardedVideoAdEvent.completed:
-    //   }
-    // };
-    // videoAd.load(
-    //     // adUnitId: RewardedVideoAd.testAdUnitId,
-    //     adUnitId: "ca-app-pub-4649644680694757/3358009164",
-    //     targetingInfo: targetingInfo);
     super.initState();
   }
 
@@ -340,9 +296,6 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                 shape: const StadiumBorder(),
                 color: Theme.of(context).accentColor.withOpacity(0.3),
                 onPressed: () {
-                  // globals.loadingAd
-                  //     ? toasts.error("Loading ads")
-                  //     : videoAd.show();
                   globals.loadingAd
                       ? debugPrint("")
                       : Navigator.of(context).pop();

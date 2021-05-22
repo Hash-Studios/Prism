@@ -1519,32 +1519,6 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                   ),
                 ),
               ),
-              // Align(
-              //   alignment: Alignment.topRight,
-              //   child: Padding(
-              //     padding: const EdgeInsets.all(8.0),
-              //     child: IconButton(
-              //       onPressed: () {
-              //         createSetupDynamicLink(
-              //             index.toString(),
-              //             Provider.of<SetupProvider>(context, listen: false)
-              //                 .liked[index]["name"]
-              //                 .toString(),
-              //             Provider.of<SetupProvider>(context, listen: false)
-              //                 .liked[index]["image"]
-              //                 .toString());
-              //       },
-              //       color: isLoading
-              //           ? Theme.of(context).accentColor
-              //           : colors[0].computeLuminance() > 0.5
-              //               ? Colors.black
-              //               : Colors.white,
-              //       icon: const Icon(
-              //         JamIcons.share_alt,
-              //       ),
-              //     ),
-              //   ),
-              // ),
             ],
           ),
         ),

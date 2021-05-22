@@ -588,7 +588,6 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                         onPanUpdate: (details) {
                           if (details.delta.dy < -10) {
                             panelController.open();
-                            // HapticFeedback.vibrate();
                           }
                         },
                         onLongPress: () {

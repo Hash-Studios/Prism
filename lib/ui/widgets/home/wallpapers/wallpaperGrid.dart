@@ -24,9 +24,6 @@ class WallpaperGrid extends StatefulWidget {
 }
 
 class _WallpaperGridState extends State<WallpaperGrid> {
-  // with TickerProviderStateMixin {
-  // AnimationController _controller;
-  // Animation<Color> animation;
   GlobalKey<RefreshIndicatorState> refreshHomeKey =
       GlobalKey<RefreshIndicatorState>();
   int _current = 0;
@@ -34,59 +31,6 @@ class _WallpaperGridState extends State<WallpaperGrid> {
   @override
   void initState() {
     super.initState();
-    // _controller = AnimationController(
-    //   duration: const Duration(milliseconds: 800),
-    //   vsync: this,
-    // );
-    // animation = Provider.of<ThemeModel>(context, listen: false)
-    //             .returnThemeType() ==
-    //         "Dark"
-    //     ? TweenSequence<Color>(
-    //         [
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: Colors.white10,
-    //               end: const Color(0x22FFFFFF),
-    //             ),
-    //           ),
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: const Color(0x22FFFFFF),
-    //               end: Colors.white10,
-    //             ),
-    //           ),
-    //         ],
-    //       ).animate(_controller)
-    //     : TweenSequence<Color>(
-    //         [
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: Colors.black.withOpacity(.1),
-    //               end: Colors.black.withOpacity(.14),
-    //             ),
-    //           ),
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: Colors.black.withOpacity(.14),
-    //               end: Colors.black.withOpacity(.1),
-    //             ),
-    //           ),
-    //         ],
-    //       ).animate(_controller)
-    //   ..addListener(() {
-    //     setState(() {});
-    //   });
-    // _controller.repeat();
-  }
-
-  @override
-  void dispose() {
-    // _controller?.dispose();
-    super.dispose();
   }
 
   Future<void> refreshList() async {
@@ -355,11 +299,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     ? FocusedMenuHolder(
                         provider: widget.provider,
                         index: index,
-                        // child: AnimatedBuilder(
-                        // builder: (buildContext, child) {
                         child: WallpaperTile(widget: widget, index: index),
-                        // },
-                        // ),
                       )
                     : PremiumBannerWalls(
                         comparator: !globals.isPremiumWall(
@@ -370,11 +310,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                         defaultChild: FocusedMenuHolder(
                           provider: widget.provider,
                           index: index,
-                          // child: AnimatedBuilder(
-                          // builder: (buildContext, child) {
+                        
                           child: WallpaperTile(widget: widget, index: index),
-                          // },
-                          // ),
                         ),
                         trueChild: WallpaperTile(widget: widget, index: index),
                       );

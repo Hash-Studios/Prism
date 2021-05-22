@@ -447,7 +447,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                 ),
               );
           }
-          // return Container(); // unreachable
         },
       );
     } else {
@@ -610,7 +609,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               ),
             );
         }
-        // return Container(); // unreachable
       },
     );
   }

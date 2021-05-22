@@ -559,7 +559,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           return GestureDetector(
                             onPanUpdate: (details) {
                               if (details.delta.dy < -10) {
-                                // HapticFeedback.vibrate();
                                 panelController.open();
                               }
                             },
@@ -1022,18 +1021,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                         ? () {}
                                                                         : () {
                                                                             Navigator.pushNamed(context, followerProfileRoute, arguments: [
-                                                                              // Data.wall["by"],
                                                                               Data.wall["email"],
-                                                                              // Data.wall["userPhoto"],
-                                                                              // false,
-                                                                              // if (Data.wall["twitter"] != null && Data.wall["twitter"] != "")
-                                                                              //   Data.wall["twitter"].toString().split("https://www.twitter.com/")[1]
-                                                                              // else
-                                                                              //   "",
-                                                                              // if (Data.wall["instagram"] != null && Data.wall["instagram"] != "")
-                                                                              //   Data.wall["instagram"].toString().split("https://www.instagram.com/")[1]
-                                                                              // else
-                                                                              //   "",
                                                                             ]);
                                                                           },
                                                                 padding: const EdgeInsets
@@ -1342,7 +1330,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               return GestureDetector(
                                 onPanUpdate: (details) {
                                   if (details.delta.dy < -10) {
-                                    // HapticFeedback.vibrate();
                                     panelController.open();
                                   }
                                 },
@@ -1902,7 +1889,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   return GestureDetector(
                                     onPanUpdate: (details) {
                                       if (details.delta.dy < -10) {
-                                        // HapticFeedback.vibrate();
                                         panelController.open();
                                       }
                                     },

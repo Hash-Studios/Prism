@@ -69,7 +69,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         .collection("walls")
         .where("review", isEqualTo: true)
         .orderBy('createdAt', descending: true)
-        // .limit(200)
+        .limit(200)
         .snapshots()
         .pipe(sc);
   }
@@ -136,23 +136,13 @@ class FollowingTile extends StatefulWidget {
 
 class _FollowingTileState extends State<FollowingTile> {
   final now = DateTime.now();
-  // final GlobalKey _globalKey = GlobalKey(debugLabel: "following_element");
   double? height;
 
   @override
   void initState() {
     height = 0;
-    // WidgetsBinding.instance.addPostFrameCallback(_afterLayout);
     super.initState();
   }
-
-  // _afterLayout(_) {
-  //   if (mounted) {
-  //     setState(() {
-  //       height = _globalKey.currentContext.size.height;
-  //     });
-  //   }
-  // }
 
   void showGooglePopUp(BuildContext context, Function func) {
     debugPrint(globals.prismUser.loggedIn.toString());
@@ -203,7 +193,6 @@ class _FollowingTileState extends State<FollowingTile> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(25),
                     child: CachedNetworkImage(
-                      // key: _globalKey,
                       imageUrl: widget.finalDocs[widget.index]
                           ["wallpaper_thumb"] as String,
                       placeholder: (context, url) {
@@ -215,47 +204,6 @@ class _FollowingTileState extends State<FollowingTile> {
                     ),
                   ),
                 ),
-                // ClipRRect(
-                //   borderRadius: BorderRadius.circular(25),
-                //   child: Material(
-                //     color: Colors.transparent,
-                //     child: InkWell(
-                //       splashColor:
-                //           Theme.of(context).accentColor.withOpacity(0.3),
-                //       highlightColor:
-                //           Theme.of(context).accentColor.withOpacity(0.1),
-                //       onTap: () {
-                //         globals.isPremiumWall(
-                //                         globals.premiumCollections,
-                //                         widget.finalDocs[widget.index]
-                //                                 ["collections"] as List ??
-                //                             []) ==
-                //                     true &&
-                //                 main.prefs.get('premium') != true
-                //             ? showGooglePopUp(context, () {
-                //                 Navigator.pushNamed(
-                //                   context,
-                //                   premiumRoute,
-                //                 );
-                //               })
-                //             : Navigator.pushNamed(context, shareRoute,
-                //                 arguments: [
-                //                     widget.finalDocs[widget.index]["id"],
-                //                     widget.finalDocs[widget.index]
-                //                         ["wallpaper_provider"],
-                //                     widget.finalDocs[widget.index]
-                //                         ["wallpaper_url"],
-                //                     widget.finalDocs[widget.index]
-                //                         ["wallpaper_thumb"]
-                //                   ]);
-                //       },
-                //       child: SizedBox(
-                //         width: (MediaQuery.of(context).size.width - 18) * 0.5,
-                //         height: height,
-                //       ),
-                //     ),
-                //   ),
-                // ),
               ],
             ),
           ),
@@ -267,26 +215,7 @@ class _FollowingTileState extends State<FollowingTile> {
                   onTap: () {
                     Navigator.pushNamed(context, followerProfileRoute,
                         arguments: [
-                          // widget.finalDocs[widget.index]["by"],
                           widget.finalDocs[widget.index]["email"],
-                          // widget.finalDocs[widget.index]["userPhoto"],
-                          // false,
-                          // if (widget.finalDocs[widget.index]["twitter"] !=
-                          //         null &&
-                          //     widget.finalDocs[widget.index]["twitter"] != "")
-                          //   widget.finalDocs[widget.index]["twitter"]
-                          //       .toString()
-                          //       .split("https://www.twitter.com/")[1]
-                          // else
-                          //   "",
-                          // if (widget.finalDocs[widget.index]["instagram"] !=
-                          //         null &&
-                          //     widget.finalDocs[widget.index]["instagram"] != "")
-                          //   widget.finalDocs[widget.index]["instagram"]
-                          //       .toString()
-                          //       .split("https://www.instagram.com/")[1]
-                          // else
-                          //   "",
                         ]);
                   },
                   child: Row(

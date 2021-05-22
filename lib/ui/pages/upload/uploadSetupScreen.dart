@@ -451,11 +451,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                               color: Theme.of(context).accentColor,
                             ),
                           ),
-                          onSubmitted: (tex) {
-                            // setState(() {
-                            //   defaultText = tex;
-                            // });
-                          },
                         ),
                       ),
                     ),
@@ -490,11 +485,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                               color: Theme.of(context).accentColor,
                             ),
                           ),
-                          onSubmitted: (tex) {
-                            // setState(() {
-                            //   defaultText = tex;
-                            // });
-                          },
                         ),
                       ),
                     ),
@@ -531,11 +521,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                 color: Theme.of(context).accentColor,
                               ),
                             ),
-                            onSubmitted: (tex) {
-                              // setState(() {
-                              //   defaultText = tex;
-                              // });
-                            },
                           ),
                         ),
                       )
@@ -581,11 +566,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                 color: Theme.of(context).accentColor,
                               ),
                             ),
-                            onSubmitted: (tex) {
-                              // setState(() {
-                              //   defaultText = tex;
-                              // });
-                            },
                           ),
                         ),
                       )
@@ -627,11 +607,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                               color: Theme.of(context).accentColor,
                             ),
                           ),
-                          onSubmitted: (tex) {
-                            // setState(() {
-                            //   defaultText = tex;
-                            // });
-                          },
                         ),
                       ),
                     ),
@@ -666,11 +641,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                               color: Theme.of(context).accentColor,
                             ),
                           ),
-                          onSubmitted: (tex) {
-                            // setState(() {
-                            //   defaultText = tex;
-                            // });
-                          },
                         ),
                       ),
                     ),
@@ -739,11 +709,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           color: Theme.of(context).accentColor,
                         ),
                       ),
-                      onSubmitted: (tex) {
-                        // setState(() {
-                        //   defaultText = tex;
-                        // });
-                      },
                     ),
                   ),
                 )
@@ -832,11 +797,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     color: Theme.of(context).accentColor,
                                   ),
                                 ),
-                                onSubmitted: (tex) {
-                                  // setState(() {
-                                  //   defaultText = tex;
-                                  // });
-                                },
                               ),
                             ),
                           ),
@@ -873,11 +833,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     color: Theme.of(context).accentColor,
                                   ),
                                 ),
-                                onSubmitted: (tex) {
-                                  // setState(() {
-                                  //   defaultText = tex;
-                                  // });
-                                },
                               ),
                             ),
                           ),
@@ -914,11 +869,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     color: Theme.of(context).accentColor,
                                   ),
                                 ),
-                                onSubmitted: (tex) {
-                                  // setState(() {
-                                  //   defaultText = tex;
-                                  // });
-                                },
                               ),
                             ),
                           ),

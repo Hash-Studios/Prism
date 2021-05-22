@@ -48,7 +48,6 @@ class PrismList extends StatelessWidget {
               style: TextStyle(fontSize: 12),
             ),
             onTap: () {
-              // Navigator.pushNamed(context, sharePrismRoute);
               Share.share(
                   "Fall in love with Android customisation again! Check out Prism -\nhttps://play.google.com/store/apps/details?id=com.hash.prism");
             }),

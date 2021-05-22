@@ -129,19 +129,11 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
           parallaxOffset: 0.00,
           color: Colors.transparent,
           maxHeight:
-              // Provider.of<SetupProvider>(context, listen: false)
-              //                 .setups[index]["widget2"] ==
-              //             "" ||
-              //         Provider.of<SetupProvider>(context, listen: false)
-              //                 .setups[index]["widget2"] ==
-              //             null
-              // ?
+            
               MediaQuery.of(context).size.height * .70 > 600
                   ? MediaQuery.of(context).size.height * .70
                   : 600
-          // : MediaQuery.of(context).size.height * .85 > 650
-          //     ? MediaQuery.of(context).size.height * .85
-          //     : 650
+        
           ,
           controller: panelController,
           onPanelOpened: () {
@@ -157,19 +149,11 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
             height:
-                // Provider.of<SetupProvider>(context, listen: false)
-                //                 .setups[index]["widget2"] ==
-                //             "" ||
-                //         Provider.of<SetupProvider>(context, listen: false)
-                //                 .setups[index]["widget2"] ==
-                //             null
-                // ?
+             
                 MediaQuery.of(context).size.height * .70 > 600
                     ? MediaQuery.of(context).size.height * .70
                     : 600
-            // : MediaQuery.of(context).size.height * .85 > 650
-            //     ? MediaQuery.of(context).size.height * .85
-            //     : 650
+        
             ,
             width: MediaQuery.of(context).size.width,
             child: ClipRRect(
@@ -511,58 +495,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               context,
                                                               followerProfileRoute,
                                                               arguments: [
-                                                                // Provider.of<ProfileSetupProvider>(
-                                                                //         context,
-                                                                //         listen:
-                                                                //             false)
-                                                                //     .profileSetups![index!]["by"],
+                                                            
                                                                 Provider.of<ProfileSetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
                                                                     .profileSetups![index!]["email"],
-                                                                // Provider.of<ProfileSetupProvider>(
-                                                                //         context,
-                                                                //         listen:
-                                                                //             false)
-                                                                //     .profileSetups![index!]["userPhoto"],
-                                                                // false,
-                                                                // if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
-                                                                //             "twitter"] !=
-                                                                //         null &&
-                                                                //     Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
-                                                                //             "twitter"] !=
-                                                                //         "")
-                                                                //   Provider.of<ProfileSetupProvider>(
-                                                                //           context,
-                                                                //           listen:
-                                                                //               false)
-                                                                //       .profileSetups![
-                                                                //           index!][
-                                                                //           "twitter"]
-                                                                //       .toString()
-                                                                //       .split(
-                                                                //           "https://www.twitter.com/")[1]
-                                                                // else
-                                                                //   "",
-                                                                // if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
-                                                                //             "instagram"] !=
-                                                                //         null &&
-                                                                //     Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!][
-                                                                //             "instagram"] !=
-                                                                //         "")
-                                                                //   Provider.of<ProfileSetupProvider>(
-                                                                //           context,
-                                                                //           listen:
-                                                                //               false)
-                                                                //       .profileSetups![
-                                                                //           index!][
-                                                                //           "instagram"]
-                                                                //       .toString()
-                                                                //       .split(
-                                                                //           "https://www.instagram.com/")[1]
-                                                                // else
-                                                                //   "",
                                                               ]);
                                                         }),
                                                   ),
@@ -1495,7 +1433,6 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                       onPanUpdate: (details) {
                         if (details.delta.dy < -10) {
                           panelController.open();
-                          // HapticFeedback.vibrate();
                         }
                       },
                       onLongPress: () {
@@ -1583,9 +1520,6 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                               listen: false)
                           .profileSetups![index!]["image"]
                           .toString();
-                      // setState(() {
-                      //   isLoading = true;
-                      // });
                       debugPrint(link);
 
                       final androidInfo = await DeviceInfoPlugin().androidInfo;

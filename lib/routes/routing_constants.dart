@@ -24,7 +24,6 @@ const String userProfileWallViewRoute = '/uprofilew';
 const String userProfileSetupViewRoute = '/uprofiles';
 const String themeViewRoute = '/themes';
 const String premiumRoute = '/buyPremium';
-// const String photographerProfileRoute = '/phprofile';
 const String followerProfileRoute = '/fprofile';
 const String notificationsRoute = '/notifications';
 const String collectionViewRoute = '/collectionsview';

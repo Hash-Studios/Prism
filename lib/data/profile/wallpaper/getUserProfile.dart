@@ -95,22 +95,6 @@ Future<int> getProfileSetupsLength(String? email) async {
   return len2;
 }
 
-// Future setUserTwitter(String twitter, String id) async {
-//   await databaseReference
-//       .collection("users")
-//       .document(id)
-//       .updateData({"twitter": twitter});
-//   main.prefs.put("twitter", twitter);
-// }
-
-// Future setUserIG(String ig, String id) async {
-//   await databaseReference
-//       .collection("users")
-//       .document(id)
-//       .updateData({"instagram": ig});
-//   main.prefs.put("instagram", ig);
-// }
-
 Future setUserLinks(List<LinksModel> linklist, String id) async {
   final Map updateLink = {};
   linklist.forEach((element) {
