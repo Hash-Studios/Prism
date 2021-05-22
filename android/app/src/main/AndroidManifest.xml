@@ -13,8 +13,7 @@
     <application
         android:name="io.flutter.app.FlutterApplication"
         android:icon="@mipmap/ic_launcher"
-        android:label="Prism"
-        android:requestLegacyExternalStorage="true" >
+        android:label="Prism" >
         <service
             android:name=".MyTileService"
             android:icon="@drawable/preview_widget"

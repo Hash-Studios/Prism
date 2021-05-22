@@ -173,6 +173,8 @@ class _DownloadButtonState extends State<DownloadButton> {
         setState(() {
           isLoading = false;
         });
+        // TODO Cancel all
+        main.localNotification.cancelDownloadNotification();
       });
     }
   }
