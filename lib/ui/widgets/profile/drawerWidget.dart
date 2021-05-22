@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:animations/animations.dart';
@@ -331,8 +332,9 @@ class ProfileDrawer extends StatelessWidget {
                 Navigator.pop(context);
                 DefaultCacheManager().emptyCache();
                 PaintingBinding.instance!.imageCache!.clear();
-                await Hive.box('wallpapers').deleteFromDisk();
-                await Hive.openBox('wallpapers');
+                await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
+                await Hive.openBox<InAppNotif>('inAppNotifs');
+                main.prefs.delete('lastFetchTime');
                 await Hive.box('collections').deleteFromDisk();
                 await Hive.openBox('collections');
                 await Hive.box('setups').deleteFromDisk();
