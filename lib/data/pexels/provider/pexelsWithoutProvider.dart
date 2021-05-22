@@ -33,7 +33,8 @@ Future<List<WallPaperP>> categoryDataFetcherP(
     debugPrint(
         "https://api.pexels.com/v1/search?query=$categoryName&per_page=80&page=${pageNumbersP[index][categoryName]}");
     http.get(
-        "https://api.pexels.com/v1/search?query=$categoryName&per_page=80&page=${pageNumbersP[index][categoryName]}",
+        Uri.parse(
+            "https://api.pexels.com/v1/search?query=$categoryName&per_page=80&page=${pageNumbersP[index][categoryName]}"),
         headers: {"Authorization": pexelApiKey}).then(
       (http.Response response) {
         final resp = json.decode(response.body);
@@ -69,7 +70,9 @@ Future<List<WallPaperP>> getDataP(String mode) async {
     pageGetDataP = pageGetDataP + 1;
   }
   if (navStack.last == "Home") {
-    http.get("https://api.pexels.com/v1/curated?per_page=24&page=$pageGetDataP",
+    http.get(
+        Uri.parse(
+            "https://api.pexels.com/v1/curated?per_page=24&page=$pageGetDataP"),
         headers: {"Authorization": pexelApiKey}).then(
       (http.Response response) {
         final resp = json.decode(response.body);
@@ -99,7 +102,7 @@ Future<List<WallPaperP>> getDataP(String mode) async {
 Future<WallPaperP> getWallbyIDP(String? id) async {
   debugPrint("https://api.pexels.com/v1/photos/$id");
   wall = null;
-  http.get("https://api.pexels.com/v1/photos/$id",
+  http.get(Uri.parse("https://api.pexels.com/v1/photos/$id"),
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
@@ -116,7 +119,9 @@ Future<WallPaperP> getWallbyIDP(String? id) async {
 }
 
 Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
-  http.get("https://api.pexels.com/v1/search?query=$query&per_page=80&page=1",
+  http.get(
+      Uri.parse(
+          "https://api.pexels.com/v1/search?query=$query&per_page=80&page=1"),
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
@@ -142,7 +147,8 @@ Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
 
 Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
   http.get(
-      "https://api.pexels.com/v1/search?query=$query&per_page=80&page=$pageGetQueryP",
+      Uri.parse(
+          "https://api.pexels.com/v1/search?query=$query&per_page=80&page=$pageGetQueryP"),
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
@@ -169,7 +175,9 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
 Future<List<WallPaperP>> getWallsPbyColor(String query) async {
   debugPrint(
       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=1");
-  http.get("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1",
+  http.get(
+      Uri.parse(
+          "https://api.pexels.com/v1/search?query=$query&per_page=24&page=1"),
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
@@ -197,7 +205,8 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
   debugPrint(
       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP");
   http.get(
-      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP",
+      Uri.parse(
+          "https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP"),
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);

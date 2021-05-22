@@ -41,7 +41,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
   Future<void> fetchNotifications() async {
     await getNotifications();
     setState(() {
-      notifications = box.get('notifications');
+      notifications = box.get('notifications')!;
     });
     checkNewNotification();
   }

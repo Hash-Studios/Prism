@@ -17,9 +17,9 @@ class LocalNotification {
   }
 
   Future<void> fetchNotificationData(BuildContext context) async {
-    final NotificationAppLaunchDetails notificationAppLaunchDetails =
+    final NotificationAppLaunchDetails? notificationAppLaunchDetails =
         await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
-    if (notificationAppLaunchDetails.payload == "downloaded") {
+    if (notificationAppLaunchDetails!.payload == "downloaded") {
       Navigator.pushNamed(context, downloadRoute);
     }
   }
@@ -34,7 +34,7 @@ class LocalNotification {
             description: 'All Prism Notifications');
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin>()!
         .createNotificationChannelGroup(androidNotificationChannelGroup);
 
     final androidNotificationChannel = AndroidNotificationChannel(
@@ -88,7 +88,7 @@ class LocalNotification {
     );
     const NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
-    final List<ActiveNotification>? activeNotifications =
+    final List<ActiveNotification> activeNotifications =
         await flutterLocalNotificationsPlugin
                 .resolvePlatformSpecificImplementation<
                     AndroidFlutterLocalNotificationsPlugin>()
@@ -98,7 +98,7 @@ class LocalNotification {
       1,
       (activeNotifications!.length + 1) == 1
           ? 'Wall downloaded.'
-          : '${int.parse(activeNotifications[0].title.substring(0, 1)) + 1} walls downloaded.',
+          : '${int.parse(activeNotifications[0].title!.substring(0, 1)) + 1} walls downloaded.',
       "Tap to open Prism.",
       platformChannelSpecifics,
       payload: "downloaded",

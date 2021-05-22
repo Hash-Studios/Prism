@@ -5,20 +5,20 @@ import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 
 class FavouriteSetupProvider extends ChangeNotifier {
-  final Firestore databaseReference = Firestore.instance;
+  final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
   List? liked;
   Future<List?> getDataBase() async {
     final String uid = globals.prismUser.id;
     liked = [];
     await databaseReference
         .collection("users")
-        .document(uid)
+        .doc(uid)
         .collection("setups")
-        .getDocuments()
+        .get()
         .then((value) {
       liked = [];
-      for (final f in value.documents) {
-        liked!.add(f.data);
+      for (final f in value.docs) {
+        liked!.add(f.data());
       }
     }).catchError((e) {
       debugPrint("data done with error");
@@ -32,9 +32,9 @@ class FavouriteSetupProvider extends ChangeNotifier {
     try {
       await databaseReference
           .collection("users")
-          .document(uid)
+          .doc(uid)
           .collection("setups")
-          .document(id)
+          .doc(id)
           .delete();
     } catch (e) {
       debugPrint(e.toString());
@@ -47,10 +47,10 @@ class FavouriteSetupProvider extends ChangeNotifier {
     final String uid = globals.prismUser.id;
     await databaseReference
         .collection("users")
-        .document(uid)
+        .doc(uid)
         .collection("setups")
-        .document(setup["id"].toString())
-        .setData({
+        .doc(setup["id"].toString())
+        .set({
       "by": setup["by"].toString() ?? "",
       "icon": setup["icon"].toString() ?? "",
       "icon_url": setup["icon_url"].toString() ?? "",
@@ -123,11 +123,11 @@ class FavouriteSetupProvider extends ChangeNotifier {
     try {
       await databaseReference
           .collection("users")
-          .document(uid)
+          .doc(uid)
           .collection("setups")
-          .getDocuments()
+          .get()
           .then((snapshot) {
-        for (final DocumentSnapshot ds in snapshot.documents) {
+        for (final DocumentSnapshot ds in snapshot.docs) {
           ds.reference.delete();
         }
       });

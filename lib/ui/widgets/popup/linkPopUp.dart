@@ -8,10 +8,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 void showLinksPopUp(BuildContext context, String id) {
   Future<List<LinksModel>> getLinks(String id) async {
     List<LinksModel> links = [];
-    final Firestore firestore = Firestore.instance;
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
     print(id);
-    await firestore.collection('users').document(id).get().then((value) {
-      links = linksToModel(value.data["links"] as Map);
+    await firestore.collection('users').doc(id).get().then((value) {
+      links = linksToModel(value.data()!["links"] as Map);
       print(links);
     });
     return links;

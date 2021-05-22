@@ -629,7 +629,7 @@ List<int> applyFilter(Map<String, dynamic> params) {
   final imagelib.Image _image =
       imagelib.Image.fromBytes(image.width, image.height, _bytes);
 
-  return _bytes = imagelib.encodeNamedImage(_image, filename);
+  return _bytes = imagelib.encodeNamedImage(_image, filename)!;
 }
 
 ///The global buildThumbnail function

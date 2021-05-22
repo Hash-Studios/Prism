@@ -77,7 +77,7 @@ class _EditButtonState extends State<EditButton> {
       isLoading = true;
     });
     toasts.codeSend("Loading Wallpaper");
-    final response = await http.get(url);
+    final response = await http.get(Uri.parse(url!));
     final documentDirectory = await getApplicationDocumentsDirectory();
     final firstPath = "${documentDirectory.path}/images";
     final filePathAndName = "${documentDirectory.path}/images/pic.jpg";
@@ -105,7 +105,7 @@ class _EditButtonState extends State<EditButton> {
 
   static Future<List<int>> _resizeImage(File file) async {
     final bytes = await file.readAsBytes();
-    final imagelib.Image image = imagelib.decodeImage(bytes);
+    final imagelib.Image image = imagelib.decodeImage(bytes)!;
     final imagelib.Image resized = imagelib.copyResize(image, width: 300);
     final List<int> resizedBytes = imagelib.encodeJpg(resized);
     return resizedBytes;

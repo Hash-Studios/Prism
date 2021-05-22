@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 
-final Firestore databaseReference = Firestore.instance;
+final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 List? wallpapersForCollections;
 late Set collectionNames;
 Map? collections;
@@ -27,15 +27,15 @@ Future<Map?> getCollections() async {
           .collection("walls")
           .where('review', isEqualTo: true)
           .orderBy("createdAt", descending: true)
-          .getDocuments()
+          .get()
           .then((value) {
         wallpapersForCollections = [];
         collectionNames = {};
         collections = {};
         debugPrint("Data Fetched");
-        for (final DocumentSnapshot f in value.documents) {
+        for (final DocumentSnapshot f in value.docs) {
           Map<String, dynamic> map;
-          map = f.data;
+          map = f.data()!;
           map['createdAt'] = map['createdAt'].toString();
           if (map['collections'] != null) wallpapersForCollections!.add(map);
         }

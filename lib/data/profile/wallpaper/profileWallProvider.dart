@@ -4,7 +4,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 
 class ProfileWallProvider extends ChangeNotifier {
-  final Firestore databaseReference = Firestore.instance;
+  final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
   List? profileWalls;
   int len = 0;
   Future<List?> getProfileWalls() async {
@@ -22,10 +22,10 @@ class ProfileWallProvider extends ChangeNotifier {
           .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("createdAt", descending: true);
     }
-    await db.getDocuments().then((value) {
+    await db.get().then((value) {
       profileWalls = [];
-      for (final f in value.documents) {
-        profileWalls!.add(f.data);
+      for (final f in value.docs) {
+        profileWalls!.add(f.data());
       }
       len = profileWalls!.length;
       debugPrint(len.toString());
@@ -51,10 +51,10 @@ class ProfileWallProvider extends ChangeNotifier {
           .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("created_at", descending: true);
     }
-    await db2.getDocuments().then((value) {
+    await db2.get().then((value) {
       tempList = [];
-      for (final f in value.documents) {
-        tempList.add(f.data);
+      for (final f in value.docs) {
+        tempList.add(f.data());
       }
       len = tempList.length;
       debugPrint(len.toString());
@@ -77,10 +77,10 @@ class ProfileWallProvider extends ChangeNotifier {
           .where('email', isEqualTo: globals.prismUser.email)
           .orderBy("createdAt", descending: true);
     }
-    await db2.getDocuments().then((value) {
+    await db2.get().then((value) {
       tempList = [];
-      for (final f in value.documents) {
-        tempList.add(f.data);
+      for (final f in value.docs) {
+        tempList.add(f.data());
       }
       len = tempList.length;
       debugPrint(len.toString());
