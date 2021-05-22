@@ -37,7 +37,6 @@ import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/pages/home/core/notificationScreen.dart';
 import 'package:Prism/ui/pages/upload/editWallScreen.dart';
 import 'package:Prism/ui/pages/upload/setupGuidelines.dart';
-import 'package:Prism/ui/pages/upload/tagSetupScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadSetupScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
 import 'package:Prism/ui/pages/profile/reviewScreen.dart';
@@ -72,12 +71,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: profileRoute);
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => ProfileScreen());
-    // case photographerProfileRoute:
-    //   navStack.add("User Profile");
-    //   debugPrint(navStack.toString());
-    //   analytics.setCurrentScreen(screenName: photographerProfileRoute);
-    //   return CupertinoPageRoute(
-    //       builder: (context) => UserProfile(settings.arguments as List?));
     case followerProfileRoute:
       navStack.add("Follower Profile");
       debugPrint(navStack.toString());
@@ -272,14 +265,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: setupGuidelinesRoute);
       return CupertinoPageRoute(
           builder: (context) => const SetupGuidelinesScreen(),
-          fullscreenDialog: true);
-    case setupTagRoute:
-      navStack.add("Setup Tag");
-      debugPrint(navStack.toString());
-      analytics.setCurrentScreen(screenName: setupTagRoute);
-      return CupertinoPageRoute(
-          builder: (context) =>
-              TagSetupScreen(arguments: settings.arguments as List?),
           fullscreenDialog: true);
     case uploadWallRoute:
       navStack.add("Add");

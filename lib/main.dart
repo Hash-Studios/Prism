@@ -17,7 +17,6 @@ import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
-// import 'package:collection/collection.dart' show IterableExtension;
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +24,6 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:hive/hive.dart';
-// import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';
@@ -52,7 +50,6 @@ void main() {
     FlutterError.dumpErrorToConsole(details, forceReport: true);
   };
   localNotification = LocalNotification();
-  // InAppPurchaseConnection.enablePendingPurchases();
   Firebase.initializeApp().then((_) {
     getApplicationDocumentsDirectory().then(
       (dir) async {
@@ -146,18 +143,12 @@ void main() {
                         create: (context) => ProfileSetupProvider(),
                       ),
                       ChangeNotifierProvider<ThemeModel>(
-                        create: (context) => ThemeModel(
-                            themes[currentThemeID!]
-                            // ?? kLightTheme
-                            ,
-                            lightAccent),
+                        create: (context) =>
+                            ThemeModel(themes[currentThemeID!], lightAccent),
                       ),
                       ChangeNotifierProvider<DarkThemeModel>(
                         create: (context) => DarkThemeModel(
-                            darkThemes[currentDarkThemeID!]
-                            // ?? kDarkTheme
-                            ,
-                            darkAccent),
+                            darkThemes[currentDarkThemeID!], darkAccent),
                       ),
                       ChangeNotifierProvider<ThemeModeExtended>(
                         create: (context) =>
@@ -194,7 +185,6 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
-    // setCurrentMode();
     FlutterDisplayMode.setHighRefreshRate();
     localNotification.createNotificationChannel(
         "followers", "Followers", "Get notifications for new followers.", true);
@@ -224,7 +214,6 @@ class _MyAppState extends State<MyApp> {
       theme: Provider.of<ThemeModel>(context).currentTheme,
       darkTheme: Provider.of<DarkThemeModel>(context).currentTheme,
       themeMode: Provider.of<ThemeModeExtended>(context).currentMode,
-      // debugShowCheckedModeBanner: false,
       home: ((prefs.get('onboarded_new') as bool?) ?? false)
           ? SplashWidget()
           : OnboardingScreen(),

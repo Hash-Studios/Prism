@@ -22,9 +22,7 @@ class PexelsGrid extends StatefulWidget {
 }
 
 class _PexelsGridState extends State<PexelsGrid> {
-// with TickerProviderStateMixin {
-  // AnimationController _controller;
-  // Animation<Color> animation;
+
   int _current = 0;
   GlobalKey<RefreshIndicatorState> refreshHomeKey =
       GlobalKey<RefreshIndicatorState>();
@@ -33,59 +31,6 @@ class _PexelsGridState extends State<PexelsGrid> {
   @override
   void initState() {
     super.initState();
-    // _controller = AnimationController(
-    //   duration: const Duration(milliseconds: 800),
-    //   vsync: this,
-    // );
-    // animation = Provider.of<ThemeModel>(context, listen: false)
-    //             .returnThemeType() ==
-    //         "Dark"
-    //     ? TweenSequence<Color>(
-    //         [
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: Colors.white10,
-    //               end: const Color(0x22FFFFFF),
-    //             ),
-    //           ),
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: const Color(0x22FFFFFF),
-    //               end: Colors.white10,
-    //             ),
-    //           ),
-    //         ],
-    //       ).animate(_controller)
-    //     : TweenSequence<Color>(
-    //         [
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: Colors.black.withOpacity(.1),
-    //               end: Colors.black.withOpacity(.14),
-    //             ),
-    //           ),
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: Colors.black.withOpacity(.14),
-    //               end: Colors.black.withOpacity(.1),
-    //             ),
-    //           ),
-    //         ],
-    //       ).animate(_controller)
-    //   ..addListener(() {
-    //     setState(() {});
-    //   });
-    // _controller.repeat();
-  }
-
-  @override
-  void dispose() {
-    // _controller?.dispose();
-    super.dispose();
   }
 
   Future<void> refreshList() async {
@@ -321,12 +266,8 @@ class _PexelsGridState extends State<PexelsGrid> {
                 return FocusedMenuHolder(
                   provider: widget.provider,
                   index: index,
-                  // child: AnimatedBuilder(
-                  //   animation: offsetAnimation,
-                  //   builder: (buildContext, child) {
+
                   child: PexelsTile(widget: widget, index: index),
-                  //   },
-                  // ),
                 );
               },
             ),

@@ -72,12 +72,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
     super.initState();
   }
 
-  // getData() async {
-  //   await sdata.getSetupFromName(name).then((value) {
-  //     setState(() {});
-  //   });
-  // }
-
   @override
   void dispose() {
     shakeController.dispose();
@@ -97,9 +91,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
       setState(() {
         isLoading = false;
       });
-      // navStack.removeLast();
-      // debugPrint(navStack.toString());
-      // Navigator.pop(context);
     });
   }
 
@@ -155,23 +146,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                     parallaxEnabled: true,
                     parallaxOffset: 0.00,
                     color: Colors.transparent,
-                    maxHeight:
-                        // Provider.of<SetupProvider>(context, listen: false)
-                        //                 .setups[index]["widget2"] ==
-                        //             "" ||
-                        //         Provider.of<SetupProvider>(context, listen: false)
-                        //                 .setups[index]["widget2"] ==
-                        //             null
-                        // ?
-                        globals.prismUser.premium == true
-                            ? MediaQuery.of(context).size.height * .70 > 600
-                                ? MediaQuery.of(context).size.height * .70
-                                : 600
-                            : 300
-                    // : MediaQuery.of(context).size.height * .85 > 650
-                    //     ? MediaQuery.of(context).size.height * .85
-                    //     : 650
-                    ,
+                    maxHeight: globals.prismUser.premium == true
+                        ? MediaQuery.of(context).size.height * .70 > 600
+                            ? MediaQuery.of(context).size.height * .70
+                            : 600
+                        : 300,
                     controller: panelController,
                     onPanelOpened: () {
                       setState(() {
@@ -185,23 +164,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                     },
                     panel: Container(
                       margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                      height:
-                          // Provider.of<SetupProvider>(context, listen: false)
-                          //                 .setups[index]["widget2"] ==
-                          //             "" ||
-                          //         Provider.of<SetupProvider>(context, listen: false)
-                          //                 .setups[index]["widget2"] ==
-                          //             null
-                          // ?
-                          globals.prismUser.premium == true
-                              ? MediaQuery.of(context).size.height * .70 > 600
-                                  ? MediaQuery.of(context).size.height * .70
-                                  : 600
-                              : 300
-                      // : MediaQuery.of(context).size.height * .85 > 650
-                      //     ? MediaQuery.of(context).size.height * .85
-                      //     : 650
-                      ,
+                      height: globals.prismUser.premium == true
+                          ? MediaQuery.of(context).size.height * .70 > 600
+                              ? MediaQuery.of(context).size.height * .70
+                              : 600
+                          : 300,
                       width: MediaQuery.of(context).size.width,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(30),
@@ -545,23 +512,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                         context,
                                                                         followerProfileRoute,
                                                                         arguments: [
-                                                                          // sdata.setup![
-                                                                          //     "by"],
                                                                           sdata.setup![
                                                                               "email"],
-                                                                          // sdata.setup![
-                                                                          //     "userPhoto"],
-                                                                          // false,
-                                                                          // if (sdata.setup!["twitter"] != null &&
-                                                                          //     sdata.setup!["twitter"] != "")
-                                                                          //   sdata.setup!["twitter"].toString().split("https://www.twitter.com/")[1]
-                                                                          // else
-                                                                          //   "",
-                                                                          // if (sdata.setup!["instagram"] != null &&
-                                                                          //     sdata.setup!["instagram"] != "")
-                                                                          //   sdata.setup!["instagram"].toString().split("https://www.instagram.com/")[1]
-                                                                          // else
-                                                                          //   "",
                                                                         ]);
                                                                   }),
                                                             ),
@@ -1299,7 +1251,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                 onPanUpdate: (details) {
                                   if (details.delta.dy < -10) {
                                     panelController.open();
-                                    // HapticFeedback.vibrate();
                                   }
                                 },
                                 onLongPress: () {
@@ -1404,32 +1355,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                             ),
                           ),
                         ),
-                        // Align(
-                        //   alignment: Alignment.topRight,
-                        //   child: Padding(
-                        //     padding: const EdgeInsets.all(8.0),
-                        //     child: IconButton(
-                        //       onPressed: () {
-                        //         createSetupDynamicLink(
-                        //             index.toString(),
-                        //             Provider.of<SetupProvider>(context, listen: false)
-                        //                 .liked[index]["name"]
-                        //                 .toString(),
-                        //             Provider.of<SetupProvider>(context, listen: false)
-                        //                 .liked[index]["image"]
-                        //                 .toString());
-                        //       },
-                        //       color: isLoading
-                        //           ? Theme.of(context).accentColor
-                        //           : colors[0].computeLuminance() > 0.5
-                        //               ? Colors.black
-                        //               : Colors.white,
-                        //       icon: const Icon(
-                        //         JamIcons.share_alt,
-                        //       ),
-                        //     ),
-                        //   ),
-                        // ),
                       ],
                     ),
                   );

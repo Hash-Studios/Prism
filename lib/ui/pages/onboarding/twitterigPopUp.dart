@@ -1,9 +1,6 @@
 import 'dart:convert';
 
-// import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/gitkey.dart';
-// import 'package:Prism/global/svgAssets.dart';
-// import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
@@ -11,9 +8,7 @@ import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
-// import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
 // class OptionalInfo extends StatefulWidget {

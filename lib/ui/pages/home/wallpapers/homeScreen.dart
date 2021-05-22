@@ -66,30 +66,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _updateToken() {
     f.requestPermission();
-    // f.configure(
-    //   onMessage: (Map<String, dynamic> message) async {
-    //     writeNotifications(message);
-    //   },
-    //   onBackgroundMessage: myBackgroundMessageHandler,
-    //   onLaunch: (Map<String, dynamic> message) async {
-    //     debugPrint("onLaunch: $message");
-    //     writeNotifications(message);
-    //   },
-    //   onResume: (Map<String, dynamic> message) async {
-    //     debugPrint("onResume: $message");
-    //     writeNotifications(message);
-    //   },
-    // );
-
-    // f.getToken().then((value) {
-    //   debugPrint("FCM Token $value");
-    //   FirebaseFirestore.instance.collection('tokens').doc(value).set({
-    //     "devtoken": value.toString(),
-    //     "createdAt": DateTime.now().toIso8601String()
-    //   }).then((value) {});
-    // }).catchError((onError) {
-    //   debugPrint(onError.toString());
-    // });
   }
 
   void showChangelogCheck(BuildContext context) {

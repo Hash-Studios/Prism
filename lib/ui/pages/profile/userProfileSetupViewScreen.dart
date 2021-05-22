@@ -120,21 +120,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
           parallaxEnabled: true,
           parallaxOffset: 0.00,
           color: Colors.transparent,
-          maxHeight:
-              // Provider.of<SetupProvider>(context, listen: false)
-              //                 .setups[index]["widget2"] ==
-              //             "" ||
-              //         Provider.of<SetupProvider>(context, listen: false)
-              //                 .setups[index]["widget2"] ==
-              //             null
-              // ?
-              MediaQuery.of(context).size.height * .70 > 600
-                  ? MediaQuery.of(context).size.height * .70
-                  : 600
-          // : MediaQuery.of(context).size.height * .85 > 650
-          //     ? MediaQuery.of(context).size.height * .85
-          //     : 650
-          ,
+          maxHeight: MediaQuery.of(context).size.height * .70 > 600
+              ? MediaQuery.of(context).size.height * .70
+              : 600,
           controller: panelController,
           onPanelOpened: () {
             setState(() {
@@ -148,21 +136,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
           },
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            height:
-                // Provider.of<SetupProvider>(context, listen: false)
-                //                 .setups[index]["widget2"] ==
-                //             "" ||
-                //         Provider.of<SetupProvider>(context, listen: false)
-                //                 .setups[index]["widget2"] ==
-                //             null
-                // ?
-                MediaQuery.of(context).size.height * .70 > 600
-                    ? MediaQuery.of(context).size.height * .70
-                    : 600
-            // : MediaQuery.of(context).size.height * .85 > 650
-            //     ? MediaQuery.of(context).size.height * .85
-            //     : 650
-            ,
+            height: MediaQuery.of(context).size.height * .70 > 600
+                ? MediaQuery.of(context).size.height * .70
+                : 600,
             width: MediaQuery.of(context).size.width,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(30),
@@ -485,52 +461,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                               context,
                                                               followerProfileRoute,
                                                               arguments: [
-                                                                // user_data.userProfileSetups![
-                                                                //         index!]
-                                                                //     ["by"],
                                                                 user_data.userProfileSetups![
                                                                         index!]
                                                                     ["email"],
-                                                                // user_data.userProfileSetups![
-                                                                //         index!][
-                                                                //     "userPhoto"],
-                                                                // false,
-                                                                // if (user_data.userProfileSetups![index!]
-                                                                //             [
-                                                                //             "twitter"] !=
-                                                                //         null &&
-                                                                //     user_data.userProfileSetups![index!]
-                                                                //             [
-                                                                //             "twitter"] !=
-                                                                //         "")
-                                                                //   user_data
-                                                                //       .userProfileSetups![
-                                                                //           index!]
-                                                                //           [
-                                                                //           "twitter"]
-                                                                //       .toString()
-                                                                //       .split(
-                                                                //           "https://www.twitter.com/")[1]
-                                                                // else
-                                                                //   "",
-                                                                // if (user_data.userProfileSetups![index!]
-                                                                //             [
-                                                                //             "instagram"] !=
-                                                                //         null &&
-                                                                //     user_data.userProfileSetups![index!]
-                                                                //             [
-                                                                //             "instagram"] !=
-                                                                //         "")
-                                                                //   user_data
-                                                                //       .userProfileSetups![
-                                                                //           index!]
-                                                                //           [
-                                                                //           "instagram"]
-                                                                //       .toString()
-                                                                //       .split(
-                                                                //           "https://www.instagram.com/")[1]
-                                                                // else
-                                                                //   "",
                                                               ]);
                                                         }),
                                                   ),
@@ -1253,7 +1186,6 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                       onPanUpdate: (details) {
                         if (details.delta.dy < -10) {
                           panelController.open();
-                          // HapticFeedback.vibrate();
                         }
                       },
                       onLongPress: () {

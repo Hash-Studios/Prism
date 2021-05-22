@@ -124,21 +124,9 @@ class _SetupViewScreenState extends State<SetupViewScreen>
           parallaxEnabled: true,
           parallaxOffset: 0.00,
           color: Colors.transparent,
-          maxHeight:
-              // Provider.of<SetupProvider>(context, listen: false)
-              //                 .setups[index]["widget2"] ==
-              //             "" ||
-              //         Provider.of<SetupProvider>(context, listen: false)
-              //                 .setups[index]["widget2"] ==
-              //             null
-              // ?
-              MediaQuery.of(context).size.height * .70 > 600
-                  ? MediaQuery.of(context).size.height * .70
-                  : 600
-          // : MediaQuery.of(context).size.height * .85 > 650
-          //     ? MediaQuery.of(context).size.height * .85
-          //     : 650
-          ,
+          maxHeight: MediaQuery.of(context).size.height * .70 > 600
+              ? MediaQuery.of(context).size.height * .70
+              : 600,
           controller: panelController,
           onPanelOpened: () {
             setState(() {
@@ -152,21 +140,9 @@ class _SetupViewScreenState extends State<SetupViewScreen>
           },
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            height:
-                // Provider.of<SetupProvider>(context, listen: false)
-                //                 .setups[index]["widget2"] ==
-                //             "" ||
-                //         Provider.of<SetupProvider>(context, listen: false)
-                //                 .setups[index]["widget2"] ==
-                //             null
-                // ?
-                MediaQuery.of(context).size.height * .70 > 600
-                    ? MediaQuery.of(context).size.height * .70
-                    : 600
-            // : MediaQuery.of(context).size.height * .85 > 650
-            //     ? MediaQuery.of(context).size.height * .85
-            //     : 650
-            ,
+            height: MediaQuery.of(context).size.height * .70 > 600
+                ? MediaQuery.of(context).size.height * .70
+                : 600,
             width: MediaQuery.of(context).size.width,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(30),
@@ -502,60 +478,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               context,
                                                               followerProfileRoute,
                                                               arguments: [
-                                                                // Provider.of<SetupProvider>(
-                                                                //         context,
-                                                                //         listen:
-                                                                //             false)
-                                                                //     .setups![index!]["by"],
                                                                 Provider.of<SetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
                                                                     .setups![index!]["email"],
-                                                                // Provider.of<SetupProvider>(
-                                                                //         context,
-                                                                //         listen:
-                                                                //             false)
-                                                                //     .setups![index!]["userPhoto"],
-                                                                // false,
-                                                                // if (Provider.of<SetupProvider>(context, listen: false).setups![index!][
-                                                                //             "twitter"] !=
-                                                                //         null &&
-                                                                //     Provider.of<SetupProvider>(context, listen: false).setups![index!][
-                                                                //             "twitter"] !=
-                                                                //         "")
-                                                                //   Provider.of<SetupProvider>(
-                                                                //           context,
-                                                                //           listen:
-                                                                //               false)
-                                                                //       .setups![
-                                                                //           index!]
-                                                                //           [
-                                                                //           "twitter"]
-                                                                //       .toString()
-                                                                //       .split(
-                                                                //           "https://www.twitter.com/")[1]
-                                                                // else
-                                                                //   "",
-                                                                // if (Provider.of<SetupProvider>(context, listen: false).setups![index!][
-                                                                //             "instagram"] !=
-                                                                //         null &&
-                                                                //     Provider.of<SetupProvider>(context, listen: false).setups![index!][
-                                                                //             "instagram"] !=
-                                                                //         "")
-                                                                //   Provider.of<SetupProvider>(
-                                                                //           context,
-                                                                //           listen:
-                                                                //               false)
-                                                                //       .setups![
-                                                                //           index!]
-                                                                //           [
-                                                                //           "instagram"]
-                                                                //       .toString()
-                                                                //       .split(
-                                                                //           "https://www.instagram.com/")[1]
-                                                                // else
-                                                                //   "",
                                                               ]);
                                                         }),
                                                   ),
@@ -1446,7 +1373,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                       onPanUpdate: (details) {
                         if (details.delta.dy < -10) {
                           panelController.open();
-                          // HapticFeedback.vibrate();
                         }
                       },
                       onLongPress: () {
@@ -1554,32 +1480,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                   ),
                 ),
               ),
-              // Align(
-              //   alignment: Alignment.topRight,
-              //   child: Padding(
-              //     padding: const EdgeInsets.all(8.0),
-              //     child: IconButton(
-              //       onPressed: () {
-              //         createSetupDynamicLink(
-              //             index.toString(),
-              //             Provider.of<SetupProvider>(context, listen: false)
-              //                 .setups[index]["name"]
-              //                 .toString(),
-              //             Provider.of<SetupProvider>(context, listen: false)
-              //                 .setups[index]["image"]
-              //                 .toString());
-              //       },
-              //       color: isLoading
-              //           ? Theme.of(context).accentColor
-              //           : colors[0].computeLuminance() > 0.5
-              //               ? Colors.black
-              //               : Colors.white,
-              //       icon: const Icon(
-              //         JamIcons.share_alt,
-              //       ),
-              //     ),
-              //   ),
-              // ),
             ],
           ),
         ),

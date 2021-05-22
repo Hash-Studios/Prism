@@ -489,7 +489,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                           return GestureDetector(
                             onPanUpdate: (details) {
                               if (details.delta.dy < -10) {
-                                // HapticFeedback.vibrate();
                                 panelController.open();
                               }
                             },
@@ -987,7 +986,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                           return GestureDetector(
                             onPanUpdate: (details) {
                               if (details.delta.dy < -10) {
-                                // HapticFeedback.vibrate();
                                 panelController.open();
                               }
                             },

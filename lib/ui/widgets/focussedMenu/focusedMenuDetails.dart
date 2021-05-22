@@ -417,55 +417,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   Navigator.pushNamed(context,
                                                       followerProfileRoute,
                                                       arguments: [
-                                                        // Data.subPrismWalls![
-                                                        //     widget.index]["by"],
                                                         Data.subPrismWalls![
                                                                 widget.index]
                                                             ["email"],
-                                                        // Data.subPrismWalls![
-                                                        //         widget.index]
-                                                        //     ["userPhoto"],
-                                                        // false,
-                                                        // if (Data.subPrismWalls![
-                                                        //                 widget
-                                                        //                     .index]
-                                                        //             [
-                                                        //             "twitter"] !=
-                                                        //         null &&
-                                                        //     Data.subPrismWalls![
-                                                        //                 widget
-                                                        //                     .index]
-                                                        //             [
-                                                        //             "twitter"] !=
-                                                        //         "")
-                                                        //   Data.subPrismWalls![
-                                                        //           widget.index]
-                                                        //           ["twitter"]
-                                                        //       .toString()
-                                                        //       .split(
-                                                        //           "https://www.twitter.com/")[1]
-                                                        // else
-                                                        //   "",
-                                                        // if (Data.subPrismWalls![
-                                                        //                 widget
-                                                        //                     .index]
-                                                        //             [
-                                                        //             "instagram"] !=
-                                                        //         null &&
-                                                        //     Data.subPrismWalls![
-                                                        //                 widget
-                                                        //                     .index]
-                                                        //             [
-                                                        //             "instagram"] !=
-                                                        //         "")
-                                                        //   Data.subPrismWalls![
-                                                        //           widget.index]
-                                                        //           ["instagram"]
-                                                        //       .toString()
-                                                        //       .split(
-                                                        //           "https://www.instagram.com/")[1]
-                                                        // else
-                                                        //   "",
                                                       ]);
                                                 }),
                                             if (globals.verifiedUsers.contains(

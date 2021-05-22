@@ -543,7 +543,6 @@ class _ProfileChildState extends State<ProfileChild> {
                                             ]),
                                           ],
                                         ),
-                                        // const Spacer(),
                                       ],
                                     ),
                                   ),
@@ -722,18 +721,10 @@ class _ProfileChildState extends State<ProfileChild> {
                     UserList(
                       expanded: false,
                     ),
-                    // const StudioList(),
                     AboutList(),
                     const SizedBox(
                       height: 300,
                     ),
-                    // const SizedBox(
-                    //   height: 300,
-                    //   child: FlareActor(
-                    //     "assets/animations/Update.flr",
-                    //     animation: "update",
-                    //   ),
-                    // ),
                   ]))
                 ]),
               ));
