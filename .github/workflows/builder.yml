@@ -1,34 +1,34 @@
-name: Build and Send APKs
-# on: [push,pull_request]
-on: []
+# name: Build and Send APKs
+# # on: [push,pull_request]
+# on: []
 
-jobs:
-  build:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: subosito/flutter-action@v1
-        with:
-          flutter-version: '1.22.4'
-          channel: 'stable'
-      - uses: actions/setup-java@v1
-        with:
-          java-version: '12.x'
-      - run: flutter pub get
-      - run: 'echo "$FIREBASE_SECRET" > android/app/google-services.json'
-      - run: 'echo "$GITKEY_DART" > lib/gitkey.dart'
-        env:
-          FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
-          GITKEY_DART: ${{ secrets.GITKEY_DART }}
-      - run: flutter build apk --split-per-abi --tree-shake-icons --shrink
-      - name: Uploading build artifacts
-        uses: actions/upload-artifact@v2.2.1
-        with:
-          name: APKs
-          path:  build/app/outputs/apk/release/app*
-      - name: Telegram Notification
-        uses: appleboy/telegram-action@0.0.3
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          args: The build was complete.
+# jobs:
+#   build:
+#     runs-on: windows-latest
+#     steps:
+#       - uses: actions/checkout@v1
+#       - uses: subosito/flutter-action@v1
+#         with:
+#           flutter-version: '1.22.4'
+#           channel: 'stable'
+#       - uses: actions/setup-java@v1
+#         with:
+#           java-version: '12.x'
+#       - run: flutter pub get
+#       - run: 'echo "$FIREBASE_SECRET" > android/app/google-services.json'
+#       - run: 'echo "$GITKEY_DART" > lib/gitkey.dart'
+#         env:
+#           FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
+#           GITKEY_DART: ${{ secrets.GITKEY_DART }}
+#       - run: flutter build apk --split-per-abi --tree-shake-icons --shrink
+#       - name: Uploading build artifacts
+#         uses: actions/upload-artifact@v2.2.1
+#         with:
+#           name: APKs
+#           path:  build/app/outputs/apk/release/app*
+#       - name: Telegram Notification
+#         uses: appleboy/telegram-action@0.0.3
+#         with:
+#           to: ${{ secrets.TELEGRAM_TO }}
+#           token: ${{ secrets.TELEGRAM_TOKEN }}
+#           args: The build was complete.
