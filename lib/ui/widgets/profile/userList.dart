@@ -1,6 +1,5 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
@@ -10,8 +9,6 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:provider/provider.dart';
 
 class UserList extends StatelessWidget {
-  final TextEditingController _twitterController = TextEditingController();
-  final TextEditingController _igController = TextEditingController();
   final bool expanded;
   UserList({required this.expanded});
   @override
@@ -114,7 +111,7 @@ class UserList extends StatelessWidget {
                               Radius.circular(10),
                             ),
                           ),
-                          content: Container(
+                          content: SizedBox(
                             height: 50,
                             width: 250,
                             child: Center(
@@ -192,7 +189,7 @@ class UserList extends StatelessWidget {
                               Radius.circular(10),
                             ),
                           ),
-                          content: Container(
+                          content: SizedBox(
                             height: 50,
                             width: 250,
                             child: Center(

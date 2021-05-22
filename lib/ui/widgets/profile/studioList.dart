@@ -1,12 +1,5 @@
-import 'dart:async';
-
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:animations/animations.dart';
-import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 // import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 // final List<String> supportPurchase = ['support', 'support_more', 'support_max'];
 
@@ -152,27 +145,6 @@ class _StudioListState extends State<StudioList> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        // ListTile(
-        //     leading: const Icon(
-        //       JamIcons.coffee,
-        //     ),
-        //     title: Text(
-        //       "Buy us a cup of tea",
-        //       style: TextStyle(
-        //           color: Theme.of(context).accentColor,
-        //           fontWeight: FontWeight.w500,
-        //           fontFamily: "Proxima Nova"),
-        //     ),
-        //     subtitle: const Text(
-        //       "Support us if you like what we do",
-        //       style: TextStyle(fontSize: 12),
-        //     ),
-        //     onTap: () {
-        //       onSupport(context);
-        //     }),
-      ],
-    );
+    return Column();
   }
 }

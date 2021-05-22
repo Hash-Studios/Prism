@@ -475,7 +475,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       "Prism"
                                   ? Expanded(
                                       flex: 8,
-                                      child: Container(
+                                      child: SizedBox(
                                         width:
                                             MediaQuery.of(context).size.width *
                                                 0.36,
@@ -776,7 +776,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                             ),
                                                             const SizedBox(
                                                                 width: 10),
-                                                            Container(
+                                                            SizedBox(
                                                               width: MediaQuery.of(
                                                                           context)
                                                                       .size

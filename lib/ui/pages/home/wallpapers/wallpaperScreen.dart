@@ -770,7 +770,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: <Widget>[
-                                            Container(
+                                            SizedBox(
                                               width: MediaQuery.of(context)
                                                       .size
                                                       .width *
@@ -1045,7 +1045,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       Align(
                                                         alignment:
                                                             Alignment.topRight,
-                                                        child: Container(
+                                                        child: SizedBox(
                                                           width: 20,
                                                           height: 20,
                                                           child: SvgPicture.string(verifiedIcon.replaceAll(
@@ -1482,7 +1482,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               padding:
                                                   const EdgeInsets.fromLTRB(
                                                       0, 5, 0, 10),
-                                              child: Container(
+                                              child: SizedBox(
                                                 width: MediaQuery.of(context)
                                                         .size
                                                         .width *
@@ -2031,7 +2031,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   padding:
                                                       const EdgeInsets.fromLTRB(
                                                           0, 5, 0, 10),
-                                                  child: Container(
+                                                  child: SizedBox(
                                                     width:
                                                         MediaQuery.of(context)
                                                                 .size

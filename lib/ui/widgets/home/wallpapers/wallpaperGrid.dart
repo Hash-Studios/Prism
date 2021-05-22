@@ -15,7 +15,6 @@ import 'package:provider/provider.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/main.dart' as main;
 
 class WallpaperGrid extends StatefulWidget {
   final String? provider;

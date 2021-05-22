@@ -1089,8 +1089,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                 alignment:
                                                                     Alignment
                                                                         .topRight,
-                                                                child:
-                                                                    Container(
+                                                                child: SizedBox(
                                                                   width: 20,
                                                                   height: 20,
                                                                   child: SvgPicture.string(verifiedIcon.replaceAll(
@@ -1631,7 +1630,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                             const EdgeInsets
                                                                     .fromLTRB(
                                                                 0, 5, 0, 10),
-                                                        child: Container(
+                                                        child: SizedBox(
                                                           width: MediaQuery.of(
                                                                       context)
                                                                   .size
@@ -1715,7 +1714,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                   const SizedBox(
                                                                       width:
                                                                           10),
-                                                                  Container(
+                                                                  SizedBox(
                                                                     width: MediaQuery.of(context)
                                                                             .size
                                                                             .width *

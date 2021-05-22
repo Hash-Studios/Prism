@@ -112,7 +112,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                     Navigator.pop(context);
                   },
                   child: AbsorbPointer(
-                      child: Container(
+                      child: SizedBox(
                           width: childSize!.width,
                           height: childSize!.height,
                           child: child)),

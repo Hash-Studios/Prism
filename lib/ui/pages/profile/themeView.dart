@@ -313,7 +313,7 @@ class _ThemeViewState extends State<ThemeView> {
               Container(),
             if (Provider.of<ThemeModeExtended>(context).currentMode !=
                 ThemeMode.dark)
-              Container(
+              SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.07,
                 child: ListView.builder(
@@ -429,7 +429,7 @@ class _ThemeViewState extends State<ThemeView> {
               Container(),
             if (Provider.of<ThemeModeExtended>(context).currentMode !=
                 ThemeMode.light)
-              Container(
+              SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.07,
                 child: ListView.builder(
@@ -550,7 +550,7 @@ class _ThemeViewState extends State<ThemeView> {
               Container(),
             if (Provider.of<ThemeModeExtended>(context).currentMode !=
                 ThemeMode.dark)
-              Container(
+              SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.055,
                 child: ListView.builder(
@@ -628,7 +628,7 @@ class _ThemeViewState extends State<ThemeView> {
               Container(),
             if (Provider.of<ThemeModeExtended>(context).currentMode !=
                 ThemeMode.light)
-              Container(
+              SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.055,
                 child: ListView.builder(
@@ -775,7 +775,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                                     .instance!.window.platformBrightness) ==
                             "Light");
                   },
-                  child: Container(
+                  child: SizedBox(
                     width: width - 20,
                     height: 60,
                     child: Container(
@@ -817,7 +817,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                         .changeThemeMode("Light");
                     widget.func!(true);
                   },
-                  child: Container(
+                  child: SizedBox(
                     width: width - 20,
                     height: 60,
                     child: Container(
@@ -859,7 +859,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                         .changeThemeMode("Dark");
                     widget.func!(false);
                   },
-                  child: Container(
+                  child: SizedBox(
                     width: width - 20,
                     height: 60,
                     child: Container(
@@ -894,7 +894,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
           const Spacer(flex: 2),
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-            child: Container(
+            child: SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               child: Text(
                 "Select your preferred theme mode. System mode automatically switches between light and dark depending on your device mode.",

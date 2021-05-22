@@ -77,7 +77,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 const SizedBox(
                   width: 20,
                 ),
-                Container(
+                SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to favourite wallpapers.",
@@ -107,7 +107,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 const SizedBox(
                   width: 20,
                 ),
-                Container(
+                SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to upload wallpapers.",
@@ -137,7 +137,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 const SizedBox(
                   width: 20,
                 ),
-                Container(
+                SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to upload setups.",
@@ -167,7 +167,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 const SizedBox(
                   width: 20,
                 ),
-                Container(
+                SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to buy premium.",
@@ -197,7 +197,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 const SizedBox(
                   width: 20,
                 ),
-                Container(
+                SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to cloud sync data.",

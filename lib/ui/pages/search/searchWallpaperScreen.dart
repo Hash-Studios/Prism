@@ -743,7 +743,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                     Padding(
                                       padding: const EdgeInsets.fromLTRB(
                                           0, 5, 0, 10),
-                                      child: Container(
+                                      child: SizedBox(
                                         width:
                                             MediaQuery.of(context).size.width *
                                                 .8,

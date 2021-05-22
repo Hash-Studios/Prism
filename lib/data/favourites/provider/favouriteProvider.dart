@@ -2,7 +2,6 @@ import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:hive/hive.dart';
 
@@ -58,7 +57,7 @@ class FavouriteProvider extends ChangeNotifier {
 
   Future<bool> createDataByWall(String provider, WallPaper? wallhaven,
       WallPaperP? pexels, Map? prism) async {
-    final String? uid = globals.prismUser.id;
+    final String uid = globals.prismUser.id;
     if (provider == "WallHaven") {
       await databaseReference
           .collection("users")
@@ -100,7 +99,7 @@ class FavouriteProvider extends ChangeNotifier {
     } else if (provider == "Prism") {
       await databaseReference
           .collection("users")
-          .doc(uid!)
+          .doc(uid)
           .collection("images")
           .doc(prism!["id"].toString())
           .set({

@@ -403,7 +403,7 @@ class _PageManagerChildState extends State<PageManagerChild>
                           children: <Widget>[
                             const Spacer(),
                             Center(
-                              child: Container(
+                              child: SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.7,
                                 child: const Text(
                                   "Please sign-in to view the latest walls from the artists you follow here.",
@@ -424,9 +424,9 @@ class _PageManagerChildState extends State<PageManagerChild>
                                 backgroundColor: MaterialStateColor.resolveWith(
                                     (states) => Colors.white),
                               ),
-                              child: Container(
+                              child: const SizedBox(
                                 width: 60,
-                                child: const Text(
+                                child: Text(
                                   'SIGN-IN',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(

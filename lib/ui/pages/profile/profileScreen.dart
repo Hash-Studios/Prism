@@ -45,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         body: BottomBar(
           child: ProfileChild(),
         ),
-        endDrawer: Container(
+        endDrawer: SizedBox(
             width: MediaQuery.of(context).size.width * 0.68,
             child: ProfileDrawer()));
   }
@@ -57,8 +57,6 @@ class ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<ProfileChild> {
-  final TextEditingController _twitterController = TextEditingController();
-  final TextEditingController _igController = TextEditingController();
   late ConfettiController _controllerBottomCenter;
   int favCount = main.prefs.get('userFavs') as int? ?? 0;
   int profileCount = ((main.prefs.get('userPosts') as int?) ?? 0) +
@@ -242,7 +240,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       Positioned(
                                                         top: 5,
                                                         left: 100,
-                                                        child: Container(
+                                                        child: SizedBox(
                                                           width: 30,
                                                           height: 30,
                                                           child: SvgPicture

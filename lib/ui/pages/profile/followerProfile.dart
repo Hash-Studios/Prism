@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userData;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -162,7 +161,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                                         Positioned(
                                                           top: 5,
                                                           left: 100,
-                                                          child: Container(
+                                                          child: SizedBox(
                                                             width: 30,
                                                             height: 30,
                                                             child: SvgPicture

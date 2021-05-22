@@ -7,7 +7,6 @@ import 'package:Prism/ui/widgets/home/wallpapers/pexelsGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallhavenGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;

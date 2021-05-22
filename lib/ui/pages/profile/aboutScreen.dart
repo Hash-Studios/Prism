@@ -50,7 +50,7 @@ class AboutScreen extends StatelessWidget {
           ),
         ),
         backgroundColor: Theme.of(context).primaryColor,
-        body: Container(
+        body: SizedBox(
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height,
             child: ListView(
@@ -236,7 +236,7 @@ class AboutScreen extends StatelessWidget {
                 PrismList(),
               ],
             )),
-        bottomNavigationBar: Container(
+        bottomNavigationBar: SizedBox(
           width: MediaQuery.of(context).size.width,
           child: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -292,7 +292,7 @@ class ContributorWidget extends StatelessWidget {
                   .copyWith(color: Theme.of(context).accentColor),
             ),
           ),
-          Container(
+          SizedBox(
             width: MediaQuery.of(context).size.width * 0.3,
             child: Text(
               "${contributor.contributions} commits",

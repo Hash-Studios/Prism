@@ -22,7 +22,6 @@ import 'package:photofilters/filters/filters.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photofilters/filters/preset_filters.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
@@ -323,7 +322,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   children: [
                     Expanded(
                       flex: 6,
-                      child: Container(
+                      child: SizedBox(
                         width: double.infinity,
                         height: double.infinity,
                         child: _buildFilteredImage(
@@ -441,14 +440,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   color: Theme.of(context).primaryColor,
                   child: Image(
                     image: MemoryImage(
-                      snapshot.data as Uint8List,
+                      (snapshot.data as Uint8List?)!,
                     ),
                     fit: BoxFit.cover,
                   ),
                 ),
               );
           }
-          return Container(); // unreachable
+          // return Container(); // unreachable
         },
       );
     } else {
@@ -460,7 +459,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           color: Theme.of(context).primaryColor,
           child: Image(
             image: MemoryImage(
-              cachedFilters[filter.name ?? "_"] as Uint8List,
+              (cachedFilters[filter.name ?? "_"] as Uint8List?)!,
             ),
             fit: BoxFit.cover,
           ),
@@ -509,7 +508,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                     children: [
                       PhotoView(
                         imageProvider: MemoryImage(
-                          cachedFilters[filter?.name ?? "_"] as Uint8List,
+                          (cachedFilters[filter?.name ?? "_"] as Uint8List?)!,
                         ),
                         backgroundDecoration: BoxDecoration(
                           color: Theme.of(context).primaryColor,
@@ -521,7 +520,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            Container(
+                            SizedBox(
                               height: 25,
                               width: 25,
                               child: CircularProgressIndicator(
@@ -557,7 +556,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                     children: [
                       PhotoView(
                         imageProvider: MemoryImage(
-                          cachedFilters[filter?.name ?? "_"] as Uint8List,
+                          (cachedFilters[filter?.name ?? "_"] as Uint8List?)!,
                         ),
                         backgroundDecoration: BoxDecoration(
                           color: Theme.of(context).primaryColor,
@@ -569,7 +568,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            Container(
+                            SizedBox(
                               height: 25,
                               width: 25,
                               child: CircularProgressIndicator(
@@ -604,14 +603,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
             cachedFilters[filter?.name ?? "_"] = snapshot.data;
             return PhotoView(
               imageProvider: MemoryImage(
-                snapshot.data as Uint8List,
+                (snapshot.data as Uint8List?)!,
               ),
               backgroundDecoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
               ),
             );
         }
-        return Container(); // unreachable
+        // return Container(); // unreachable
       },
     );
   }

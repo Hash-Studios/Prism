@@ -313,10 +313,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: wallpaperFilterRoute);
       return CupertinoPageRoute(
           builder: (context) => WallpaperFilterScreen(
-                image: (settings.arguments as List)[0] as imagelib.Image,
-                finalImage: (settings.arguments as List)[1] as imagelib.Image,
-                filename: (settings.arguments as List)[2] as String,
-                finalFilename: (settings.arguments as List)[3] as String,
+                image: (settings.arguments as List?)![0] as imagelib.Image,
+                finalImage: (settings.arguments as List?)![1] as imagelib.Image,
+                filename: (settings.arguments as List?)![2] as String,
+                finalFilename: (settings.arguments as List?)![3] as String,
               ),
           fullscreenDialog: true);
     case onboardingRoute:

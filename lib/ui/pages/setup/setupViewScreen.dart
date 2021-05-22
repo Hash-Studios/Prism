@@ -11,7 +11,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
-import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockSetupOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -24,7 +23,6 @@ import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -281,7 +279,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: <Widget>[
-                                          Container(
+                                          SizedBox(
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width *
@@ -572,7 +570,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     Align(
                                                       alignment:
                                                           Alignment.topRight,
-                                                      child: Container(
+                                                      child: SizedBox(
                                                         width: 20,
                                                         height: 20,
                                                         child: SvgPicture.string(verifiedIcon.replaceAll(

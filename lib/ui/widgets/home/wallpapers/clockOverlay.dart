@@ -50,7 +50,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
               ),
             )
           else
-            Container(
+            SizedBox(
               height: MediaQuery.of(context).size.height,
               width: MediaQuery.of(context).size.width,
               child: Image.file(
@@ -104,7 +104,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
           ),
           Positioned(
             bottom: 100,
-            child: Container(
+            child: SizedBox(
               width: MediaQuery.of(context).size.width,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,

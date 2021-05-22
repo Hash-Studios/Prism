@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:animations/animations.dart';
@@ -15,10 +14,8 @@ import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class ProfileDrawer extends StatelessWidget {
-  final TextEditingController _twitterController = TextEditingController();
-  final TextEditingController _igController = TextEditingController();
   Widget createDrawerHeader(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 150,
       child: DrawerHeader(
           margin: EdgeInsets.zero,
@@ -28,12 +25,12 @@ class ProfileDrawer extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Padding(
                 padding: const EdgeInsets.only(left: 16.0),
-                child: Container(
+                child: SizedBox(
                   height: 70,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
+                      SizedBox(
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
                           globals.prismUser.premium == true
@@ -45,7 +42,7 @@ class ProfileDrawer extends StatelessWidget {
                               .copyWith(color: Theme.of(context).accentColor),
                         ),
                       ),
-                      Container(
+                      SizedBox(
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
                           globals.prismUser.premium == true
@@ -82,7 +79,7 @@ class ProfileDrawer extends StatelessWidget {
         icon,
         color: Theme.of(context).accentColor,
       ),
-      title: Container(
+      title: SizedBox(
         width: MediaQuery.of(context).size.width / 2,
         child: Text(
           text,
@@ -98,7 +95,7 @@ class ProfileDrawer extends StatelessWidget {
       {required String text, required BuildContext context}) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
-      child: Container(
+      child: SizedBox(
         width: MediaQuery.of(context).size.width / 2,
         child: Text(text,
             style: Theme.of(context).textTheme.headline3!.copyWith(
@@ -178,7 +175,7 @@ class ProfileDrawer extends StatelessWidget {
                         Radius.circular(10),
                       ),
                     ),
-                    content: Container(
+                    content: SizedBox(
                       height: 50,
                       width: 250,
                       child: Center(
@@ -220,14 +217,14 @@ class ProfileDrawer extends StatelessWidget {
                               msg: "Deleted all downloads!",
                               toastLength: Toast.LENGTH_LONG,
                               textColor: Colors.white,
-                              backgroundColor: Colors.green[400]!,
+                              backgroundColor: Colors.green[400],
                             );
                           } else {
                             Fluttertoast.showToast(
                               msg: "No downloads!",
                               toastLength: Toast.LENGTH_LONG,
                               textColor: Colors.white,
-                              backgroundColor: Colors.red[400]!,
+                              backgroundColor: Colors.red[400],
                             );
                           }
                         },

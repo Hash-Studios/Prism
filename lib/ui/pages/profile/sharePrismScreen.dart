@@ -2,7 +2,6 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:share/share.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/global/globals.dart' as globals;
@@ -48,7 +47,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
           ),
         ),
         backgroundColor: Theme.of(context).primaryColor,
-        body: Container(
+        body: SizedBox(
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height,
             child: Column(
@@ -93,7 +92,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                   style: Theme.of(context).textTheme.bodyText2!.copyWith(
                       fontSize: 18, color: Theme.of(context).accentColor),
                 ),
-                Container(
+                SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "Get 50 coins when your friend launches the app from the link!",
@@ -102,7 +101,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                         color: Theme.of(context).accentColor.withOpacity(0.5)),
                   ),
                 ),
-                Container(
+                SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "They also get 50 coins, which you can spend on exclusives.",

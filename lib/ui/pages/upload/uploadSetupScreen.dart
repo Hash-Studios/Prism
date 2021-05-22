@@ -15,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 
 class UploadSetupScreen extends StatefulWidget {

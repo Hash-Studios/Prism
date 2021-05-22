@@ -263,7 +263,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
-                                    Container(
+                                    SizedBox(
                                       width: MediaQuery.of(context).size.width *
                                           0.36,
                                       child: Padding(

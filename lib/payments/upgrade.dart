@@ -218,12 +218,12 @@ class _UpsellScreenState extends State<UpsellScreen> {
                 child: Scaffold(
                     backgroundColor: Colors.transparent,
                     body: SingleChildScrollView(
-                      child: Container(
+                      child: SizedBox(
                         height: MediaQuery.of(context).size.height -
                             (globals.notchSize ?? 24),
                         child: Stack(
                           children: [
-                            Container(
+                            SizedBox(
                               height: 420,
                               width: MediaQuery.of(context).size.width,
                               child: CachedNetworkImage(
@@ -251,7 +251,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                     const SizedBox(
                                       width: 10,
                                     ),
-                                    Container(
+                                    SizedBox(
                                       width: MediaQuery.of(context).size.width *
                                           0.8,
                                       child: Text(
@@ -274,7 +274,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                     const SizedBox(
                                       width: 30,
                                     ),
-                                    Container(
+                                    SizedBox(
                                       width: MediaQuery.of(context).size.width *
                                           0.8,
                                       child: Text(
@@ -450,7 +450,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                 const SizedBox(
                                   height: 10,
                                 ),
-                                Container(
+                                SizedBox(
                                   width:
                                       MediaQuery.of(context).size.width * 0.8,
                                   child: Text(

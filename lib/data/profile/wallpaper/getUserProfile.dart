@@ -1,6 +1,5 @@
 import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:flutter/material.dart';
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
@@ -113,7 +112,7 @@ Future<int> getProfileSetupsLength(String? email) async {
 // }
 
 Future setUserLinks(List<LinksModel> linklist, String id) async {
-  Map updateLink = {};
+  final Map updateLink = {};
   linklist.forEach((element) {
     updateLink[element.name] = element.link;
   });

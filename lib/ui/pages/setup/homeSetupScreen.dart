@@ -10,7 +10,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 
 class HomeSetupScreen extends StatefulWidget {
@@ -257,7 +256,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                       ),
                                       progressIndicatorBuilder:
                                           (context, url, downloadProgress) =>
-                                              Container(
+                                              SizedBox(
                                         width:
                                             MediaQuery.of(context).size.width *
                                                 0.642,
