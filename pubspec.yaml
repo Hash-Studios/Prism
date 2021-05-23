@@ -46,6 +46,7 @@ dependencies:
   fluttertoast: ^8.0.6
   gallery_saver: ^2.1.0
   github: ^8.1.0
+  google_mobile_ads: ^0.13.0
   google_sign_in: ^5.0.2
   hive: ^2.0.4
   hive_flutter: ^1.0.0

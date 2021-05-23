@@ -10,8 +10,12 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/services.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:gallery_saver/gallery_saver.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:flutter/foundation.dart';
+
+const int maxFailedLoadAttempts = 3;
 
 class DownloadButton extends StatefulWidget {
   final String? link;
@@ -206,15 +210,95 @@ class DownloadDialogContent extends StatefulWidget {
 }
 
 class _DownloadDialogContentState extends State<DownloadDialogContent> {
-  int downloadCoins = 0;
-  void reward(int rewardAmount) {
+  num downloadCoins = 0;
+  static const AdRequest request = AdRequest(
+    nonPersonalizedAds: false,
+    keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
+  );
+  RewardedAd? _rewardedAd;
+  int _numRewardedLoadAttempts = 0;
+
+  void rewardFn(num rewardAmount) {
     downloadCoins += rewardAmount;
     debugPrint("Coins : ${downloadCoins.toString()}");
   }
 
   @override
   void initState() {
+    _createRewardedAd();
     super.initState();
+  }
+
+  void _createRewardedAd() {
+    RewardedAd.load(
+        adUnitId: kReleaseMode
+            ? "ca-app-pub-4649644680694757/3358009164"
+            : RewardedAd.testAdUnitId,
+        request: request,
+        rewardedAdLoadCallback: RewardedAdLoadCallback(
+          onAdLoaded: (RewardedAd ad) {
+            debugPrint('$ad loaded.');
+            _rewardedAd = ad;
+            _numRewardedLoadAttempts = 0;
+            setState(() {
+              globals.loadingAd = false;
+            });
+          },
+          onAdFailedToLoad: (LoadAdError error) {
+            debugPrint('RewardedAd failed to load: $error');
+            _rewardedAd = null;
+            _numRewardedLoadAttempts += 1;
+            if (_numRewardedLoadAttempts <= maxFailedLoadAttempts) {
+              _createRewardedAd();
+            } else {
+              if (mounted) {
+                Navigator.pop(context);
+                widget.rewardFunc();
+              }
+            }
+          },
+        ));
+  }
+
+  void _showRewardedAd() {
+    if (_rewardedAd == null) {
+      debugPrint('Warning: attempt to show rewarded before loaded.');
+      return;
+    }
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (RewardedAd ad) =>
+          debugPrint('ad onAdShowedFullScreenContent.'),
+      onAdDismissedFullScreenContent: (RewardedAd ad) {
+        debugPrint('$ad onAdDismissedFullScreenContent.');
+        ad.dispose();
+        _createRewardedAd();
+        setState(() {
+          globals.loadingAd = true;
+        });
+      },
+      onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+        debugPrint('$ad onAdFailedToShowFullScreenContent: $error');
+        ad.dispose();
+        _createRewardedAd();
+        setState(() {
+          globals.loadingAd = true;
+        });
+      },
+    );
+
+    _rewardedAd!.show(onUserEarnedReward: (RewardedAd ad, RewardItem reward) {
+      debugPrint(
+          '$ad with reward $RewardItem(${reward.amount}, ${reward.type}');
+      rewardFn(reward.amount);
+      if (downloadCoins >= 10) widget.rewardFunc();
+    });
+    _rewardedAd = null;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _rewardedAd?.dispose();
   }
 
   @override
@@ -298,6 +382,9 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                 shape: const StadiumBorder(),
                 color: Theme.of(context).accentColor.withOpacity(0.3),
                 onPressed: () {
+                  globals.loadingAd
+                      ? toasts.error("Loading ads")
+                      : _showRewardedAd();
                   globals.loadingAd
                       ? debugPrint("")
                       : Navigator.of(context).pop();
