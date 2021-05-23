@@ -136,4 +136,14 @@ class PrismUsers {
         loggedIn: true,
         profilePhoto: (doc.data()!["profilePhoto"] ?? user.photoURL).toString(),
       );
+
+  Map<String, dynamic> toJson() => {
+        "bio": bio,
+        "createdAt":createdAt,
+        "email": email,
+        "username": username,
+        "links": links,
+        "premium": premium,
+        "profilePhoto": profilePhoto,
+      };
 }
