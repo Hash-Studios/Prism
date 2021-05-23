@@ -35,7 +35,6 @@ class _PexelsGridState extends State<PexelsGrid> {
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
     PData.wallsP = [];
     Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(
         Provider.of<CategorySupplier>(context, listen: false).selectedChoice,

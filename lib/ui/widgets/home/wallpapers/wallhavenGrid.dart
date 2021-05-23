@@ -35,7 +35,6 @@ class _WallHavenGridState extends State<WallHavenGrid> {
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
     wData.walls = [];
     Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(
         Provider.of<CategorySupplier>(context, listen: false).selectedChoice,

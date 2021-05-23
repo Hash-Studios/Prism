@@ -92,7 +92,6 @@ class _UserProfileGridState extends State<UserProfileGrid>
 
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
     userdata.getuserProfileWalls(widget.email);
   }
 

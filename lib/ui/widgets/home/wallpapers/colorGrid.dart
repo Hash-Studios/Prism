@@ -91,7 +91,6 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
     PData.wallsC = [];
     PData.getWallsPbyColor(widget.provider.substring(9));
   }

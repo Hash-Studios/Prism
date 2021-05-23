@@ -91,7 +91,6 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
 
   Future<void> refreshList() async {
     refreshProfileSetupKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
     Provider.of<ProfileSetupProvider>(context, listen: false)
         .getProfileSetups();
   }
