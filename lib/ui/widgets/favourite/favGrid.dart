@@ -88,7 +88,6 @@ class _FavouriteGridState extends State<FavouriteGrid>
 
   Future<void> refreshList() async {
     refreshFavKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
     Provider.of<FavouriteProvider>(context, listen: false).getDataBase();
   }
 

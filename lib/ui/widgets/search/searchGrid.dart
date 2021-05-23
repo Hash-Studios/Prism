@@ -95,7 +95,6 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
     if (widget.selectedProvider == "WallHaven") {
       wData.wallsS = [];
       wData.getWallsbyQuery(widget.query, main.prefs.get('WHcategories') as int?,

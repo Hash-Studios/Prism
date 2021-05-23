@@ -35,7 +35,6 @@ class _WallpaperGridState extends State<WallpaperGrid> {
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
     Data.prismWalls = [];
     Data.subPrismWalls = [];
     Data.getPrismWalls();

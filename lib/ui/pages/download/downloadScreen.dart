@@ -82,7 +82,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
   // ignore: prefer_void_to_null
   Future<Null> refreshList() async {
     refreshDownloadKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
     setState(() {
       files = [];
       dataFetched = false;

@@ -87,7 +87,6 @@ class _ProfileGridState extends State<ProfileGrid>
 
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
     Provider.of<ProfileWallProvider>(context, listen: false).getProfileWalls();
   }
 
