@@ -55,7 +55,6 @@ void main() {
     getApplicationDocumentsDirectory().then(
       (dir) async {
         Hive.init(dir.path);
-        await Hive.openBox('collections');
         await Hive.openBox('setups');
         await Hive.openBox('localFav');
         Hive.registerAdapter(InAppNotifAdapter());

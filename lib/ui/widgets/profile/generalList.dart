@@ -80,8 +80,6 @@ class _GeneralListState extends State<GeneralList> {
               await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
               await Hive.openBox<InAppNotif>('inAppNotifs');
               main.prefs.delete('lastFetchTime');
-              await Hive.box('collections').deleteFromDisk();
-              await Hive.openBox('collections');
               await Hive.box('setups').deleteFromDisk();
               await Hive.openBox('setups');
               toasts.codeSend("Cleared cache!");
