@@ -4,34 +4,39 @@ import 'package:Prism/global/globals.dart' as globals;
 
 class ProfileSetupProvider extends ChangeNotifier {
   final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
-  List? profileSetups;
-  int len = 0;
-  Future<List?> getProfileSetups() async {
+  List<QueryDocumentSnapshot>? profileSetups;
+
+  Future<void> getProfileSetups() async {
+    debugPrint("Fetching first 8 profile setups");
     profileSetups = [];
-    Query db;
-    if (globals.prismUser.premium == true) {
-      db = databaseReference
-          .collection("setups")
-          .where('email', isEqualTo: globals.prismUser.email)
-          .orderBy("created_at", descending: true);
-    } else {
-      db = databaseReference
-          .collection("setups")
-          .where('review', isEqualTo: true)
-          .where('email', isEqualTo: globals.prismUser.email)
-          .orderBy("created_at", descending: true);
-    }
-    await db.get().then((value) {
-      profileSetups = [];
-      for (final f in value.docs) {
-        profileSetups!.add(f.data());
-      }
-      len = profileSetups!.length;
-      debugPrint(len.toString());
-    }).catchError((e) {
-      debugPrint(e.toString());
-      debugPrint("data done with error");
+    await databaseReference
+        .collection("setups")
+        .where('review', isEqualTo: true)
+        .where('email', isEqualTo: globals.prismUser.email)
+        .orderBy("created_at", descending: true)
+        .limit(8)
+        .get()
+        .then((value) {
+      profileSetups = value.docs;
     });
-    return profileSetups;
+    notifyListeners();
+  }
+
+  Future<void> seeMoreProfileSetups() async {
+    debugPrint("Fetching more profile setups");
+    await databaseReference
+        .collection("setups")
+        .where('review', isEqualTo: true)
+        .where('email', isEqualTo: globals.prismUser.email)
+        .orderBy("created_at", descending: true)
+        .startAfterDocument(profileSetups![profileSetups!.length - 1])
+        .limit(8)
+        .get()
+        .then((value) {
+      for (final doc in value.docs) {
+        profileSetups!.add(doc);
+      }
+    });
+    notifyListeners();
   }
 }
