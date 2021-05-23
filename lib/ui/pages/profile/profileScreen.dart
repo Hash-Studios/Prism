@@ -18,13 +18,11 @@ import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dar
 import 'package:Prism/ui/widgets/profile/uploadedWallsLoader.dart';
 import 'package:Prism/ui/widgets/profile/uploadedSetupsLoader.dart';
 import 'package:Prism/ui/widgets/profile/userList.dart';
-import 'package:confetti/confetti.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -57,7 +55,6 @@ class ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<ProfileChild> {
-  late ConfettiController _controllerBottomCenter;
   int favCount = main.prefs.get('userFavs') as int? ?? 0;
   int profileCount = ((main.prefs.get('userPosts') as int?) ?? 0) +
       ((main.prefs.get('userSetups') as int?) ?? 0);
@@ -68,8 +65,6 @@ class _ProfileChildState extends State<ProfileChild> {
   void initState() {
     count = main.prefs.get('easterCount', defaultValue: 0) as int;
     checkFav();
-    _controllerBottomCenter =
-        ConfettiController(duration: const Duration(seconds: 1));
     super.initState();
   }
 
@@ -77,12 +72,6 @@ class _ProfileChildState extends State<ProfileChild> {
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
     return true;
-  }
-
-  @override
-  void dispose() {
-    _controllerBottomCenter.dispose();
-    super.dispose();
   }
 
   Future checkFav() async {
@@ -189,49 +178,13 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                     .withOpacity(
                                                                         0.24))
                                                           ]),
-                                                      child: GestureDetector(
-                                                        onTap: () {
-                                                          _controllerBottomCenter
-                                                              .play();
-                                                          count++;
-                                                          if (count > 50) {
-                                                            main.prefs.put(
-                                                                'easterCount',
-                                                                0);
-                                                            count = 0;
-                                                            toasts.codeSend(
-                                                                "Congratulations, champ.");
-                                                            firestore
-                                                                .collection(
-                                                                    "easter")
-                                                                .add({
-                                                              "name": globals
-                                                                  .prismUser
-                                                                  .username,
-                                                              "email": globals
-                                                                  .prismUser
-                                                                  .email,
-                                                              "userPhoto": globals
-                                                                  .prismUser
-                                                                  .profilePhoto,
-                                                              "createdAt":
-                                                                  DateTime
-                                                                      .now(),
-                                                            });
-                                                          } else {
-                                                            main.prefs.put(
-                                                                'easterCount',
-                                                                count);
-                                                          }
-                                                        },
-                                                        child: CircleAvatar(
-                                                          radius: 50,
-                                                          backgroundImage:
-                                                              NetworkImage(globals
-                                                                  .prismUser
-                                                                  .profilePhoto
-                                                                  .toString()),
-                                                        ),
+                                                      child: CircleAvatar(
+                                                        radius: 50,
+                                                        backgroundImage:
+                                                            NetworkImage(globals
+                                                                .prismUser
+                                                                .profilePhoto
+                                                                .toString()),
                                                       ),
                                                     ),
                                                     if (globals.verifiedUsers
@@ -613,61 +566,6 @@ class _ProfileChildState extends State<ProfileChild> {
                             ),
                           ),
                         ]),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: ConfettiWidget(
-                        confettiController: _controllerBottomCenter,
-                        blastDirection: -pi / 2,
-                        emissionFrequency: 0.05,
-                        numberOfParticles: 20,
-                        maxBlastForce: 100,
-                        minBlastForce: 80,
-                        gravity: 0.1,
-                        colors: const [
-                          Colors.green,
-                          Colors.blue,
-                          Colors.pink,
-                          Colors.orange,
-                          Colors.purple
-                        ],
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: ConfettiWidget(
-                        confettiController: _controllerBottomCenter,
-                        blastDirection: -pi / 3,
-                        emissionFrequency: 0.05,
-                        maxBlastForce: 100,
-                        minBlastForce: 80,
-                        gravity: 0.1,
-                        colors: const [
-                          Colors.green,
-                          Colors.teal,
-                          Colors.pink,
-                          Colors.red,
-                          Colors.purple
-                        ],
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: ConfettiWidget(
-                        confettiController: _controllerBottomCenter,
-                        blastDirection: -2 * pi / 3,
-                        emissionFrequency: 0.05,
-                        maxBlastForce: 100,
-                        minBlastForce: 80,
-                        gravity: 0.1,
-                        colors: const [
-                          Colors.indigo,
-                          Colors.blue,
-                          Colors.pink,
-                          Colors.deepOrange,
-                          Colors.purple
-                        ],
                       ),
                     ),
                   ],
