@@ -5,7 +5,7 @@
 
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
-![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-60K+-green.svg)
+![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-100K+-green.svg)
 ![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.7-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
@@ -108,7 +108,7 @@ You can also report bugs, upload your setups/walls on our telegram channel
 ## Features
 
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
-- Over 1300+ exclusive wallpapers, making it the best selection ever
+- Over 2000+ exclusive wallpapers, making it the best selection ever
 - Community wallpapers uploaded by users all-around the world
 - Homescreen setups - Unique and exclusive setups designed with the perfect combination of wallpapers, icon pack and widgets
 - Exclusive collections updated daily with premium wallpapers
@@ -128,7 +128,7 @@ You can also report bugs, upload your setups/walls on our telegram channel
 - Search for Wallpapers by color
 - Find wallpapers with a similar color
 - Set any wallpaper on the home screen, lock screen or both
-- Find wallpapers by category (Trending, Curated, Abstract, Nature, Landscape, Art, 4K, Sports, Architecture, Marvel, Neon, etc.)
+- Find wallpapers by category (Curated, Abstract, Nature, Landscape, Art, 4K, Sports, Architecture, Marvel, Neon, etc.)
 - Extensive settings menu with various options
 - Toast/Snackbar supported buttons
 - Minimal design with smooth transitions and animations
@@ -227,53 +227,54 @@ Prism Wallpapers app is now available on Google Play, so you can support us by g
 
 The following packages are needed for the development of this application.
 
-- `animations: ^1.1.2` for dialog/transition animations
-- `cached_network_image: ^2.2.0+1` for caching wallpapers
-- `carousel_slider: ^2.2.1` for carousel widget
-- `cloud_firestore: ^0.13.5` for storing liked images and other user based data
-- `confetti: ^0.5.4+1` for showing confetti animations
+- `animations: ^2.0.0` for dialog/transition animations
+- `cached_network_image: ^3.0.0` for caching wallpapers
+- `carousel_slider: ^3.0.0` for carousel widget
+- `cloud_firestore: ^1.0.7` for storing liked images and other user based data
+- `confetti: ^0.5.5` for showing confetti animations
 - `data_connection_checker: ^0.3.4` for checking Internet connection
-- `device_apps: ^1.2.0` for opening installed apps from Prism
-- `device_info: ^0.4.2+7` for getting device info for bug reports
+- `device_apps: ^2.1.1` for opening installed apps from Prism
+- `device_info: ^2.0.0` for getting device info for bug reports
 - `extended_image: ^0.9.0` for cropping wallpapers before uploading
-- `firebase_admob: ^0.9.3+4` for rewarded video ads
-- `firebase_analytics: ^5.0.16` for analytics
-- `firebase_auth: ^0.16.0` for user authentication
-- `firebase_core: ^0.4.4+3` for firebase support
+- `firebase_analytics: ^8.0.2` for analytics
+- `firebase_auth: ^1.1.2` for user authentication
+- `firebase_core: ^1.1.0` for firebase support
 - `firebase_dynamic_links: ^0.5.1` for wallpaper link generation and handling
-- `firebase_messaging: ^6.0.16` for notifications
-- `firebase_remote_config: ^0.3.1+1` for manipulating the app remotely
+- `firebase_messaging: ^9.1.3` for notifications
+- `firebase_remote_config: ^0.6.0` for manipulating the app remotely
 - `flare_flutter: ^2.0.5` for animations
 - `flare_splash_screen: ^3.0.1` for the animated splash screen
-- `flutter_displaymode: ^0.1.1` for checking display resolution and refresh rate
-- `flutter_image_compress: ^0.7.0` for compressing uploaded images
-- `flutter_local_notifications: ^4.0.0` for showing local notifications
-- `flutter_staggered_grid_view: ^0.3.3` for showing staggered grid view in followers feed
-- `flutter_svg: ^0.19.0` for svg assets
-- `fluttertoast: ^4.0.1` for toast notifications
-- `gallery_saver: ^2.0.1` for saving wallpapers to gallery
-- `github: ^6.2.2` for communicating with GitHub API
-- `google_sign_in: ^4.4.4` for Google sign in support
-- `hive: ^1.4.1+1` for caaching data
-- `hive_flutter: ^0.3.0+1` for caaching data
+- `flutter_displaymode: ^0.3.1-nullsafety.0` for checking display resolution and refresh rate
+- `flutter_image_compress: ^1.0.0` for compressing uploaded images
+- `flutter_local_notifications: ^5.0.0+3` for showing local notifications
+- `flutter_staggered_grid_view: ^0.4.0` for showing staggered grid view in followers feed
+- `flutter_svg: ^0.22.0` for svg assets
+- `fluttertoast: ^8.0.6` for toast notifications
+- `gallery_saver: ^2.1.0` for saving wallpapers to gallery
+- `github: ^8.1.0` for communicating with GitHub API
+- `google_mobile_ads: ^0.13.0` for rewarded video ads
+- `google_sign_in: ^5.0.2` for Google sign in support
+- `hive: ^2.0.4` for caching data
+- `hive_flutter: ^1.0.0` for caching data
+- `image: ^3.0.2` for image
 - `image_editor: ^0.7.1` for editing wallpapers during upload
-- `image_picker: ^0.6.7+4` for picking images
-- `in_app_purchase: ^0.3.4+1` for in-app purchases
-- `in_app_update: ^1.1.13` for updating app
-- `palette_generator: ^0.2.2` for generating wallpaper colors
-- `path_provider: ^1.6.11` for getting Application storage directory path
-- `permission_handler: ^5.0.1+1` for handling required device permissions
-- `photo_view: ^0.9.2` for showing images before uploading
+- `image_picker: ^0.7.4` for picking images
+- `in_app_update: ^2.0.0` for updating app
+- `palette_generator: ^0.3.0` for generating wallpaper colors
+- `path_provider: ^2.0.1` for getting Application storage directory path
+- `permission_handler: ^7.1.0` for handling required device permissions
+- `photo_view: ^0.11.1` for showing images before uploading
 - `photofilters: ^2.0.1` for editing filters
 - `provider: ^4.1.3` for caching data, and state management
-- `purchases_flutter: ^1.2.1` for RevenueCat support
-- `quick_actions: ^0.4.0+10` for showing shortcuts/quick actions in launcher
-- `rate_my_app: ^0.7.2` for showing app rating popup
-- `screenshot: ^0.2.0` for setting wallpapers
-- `share: ^0.6.4` for sharing the wallpaper links
-- `sliding_up_panel: ^1.0.2` for sliding info panel
-- `timeago: ^2.0.29` for showing time in a readible manner
-- `url_launcher: ^5.4.5` for launching urls
+- `purchases_flutter: ^3.2.1` for RevenueCat support
+- `quick_actions: ^0.6.0+1` for showing shortcuts/quick actions in launcher
+- `rate_my_app: ^1.1.0+1` for showing app rating popup
+- `screenshot: ^0.3.0` for setting wallpapers
+- `share: ^2.0.1` for sharing the wallpaper links
+- `sliding_up_panel: ^2.0.0+1` for sliding info panel
+- `smooth_star_rating: ^1.1.1` for showing rate dialog
+- `timeago: ^3.0.2` for showing time in a readible manner
+- `url_launcher: ^6.0.3` for launching urls
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
 
