@@ -33,9 +33,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: FutureBuilder<Map?>(
+      child: FutureBuilder<List?>(
         future: getCollections(), // async work
-        builder: (BuildContext context, AsyncSnapshot<Map?> snapshot) {
+        builder: (BuildContext context, AsyncSnapshot<List?> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
               return Center(child: Loader());
