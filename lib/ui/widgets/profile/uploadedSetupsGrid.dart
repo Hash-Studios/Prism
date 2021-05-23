@@ -4,6 +4,7 @@ import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +30,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
       GlobalKey<RefreshIndicatorState>();
   PaletteGenerator? paletteGenerator;
   List<Color>? colors;
+  bool seeMoreLoader = false;
 
   @override
   void initState() {
@@ -111,7 +113,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       SizedBox(
-                        width: MediaQuery.of(context).size.width,
+                        width: MediaQuery.of(context).size.width * 0.7,
                         child: Provider.of<ThemeModeExtended>(context)
                                     .getCurrentModeStyle(MediaQuery.of(context)
                                         .platformBrightness) ==
@@ -225,7 +227,6 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                   )
                 : GridView.builder(
                     shrinkWrap: true,
-                    cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
                     itemCount: Provider.of<ProfileSetupProvider>(context)
                         .profileSetups!
@@ -240,6 +241,30 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
+                                           if (index ==
+                          Provider.of<ProfileSetupProvider>(context,
+                                      listen: false)
+                                  .profileSetups!
+                                  .length -
+                              1) {
+                        return SeeMoreButton(
+                          seeMoreLoader: seeMoreLoader,
+                          func: () {
+                            if (!seeMoreLoader) {
+                              setState(() {
+                                seeMoreLoader = true;
+                              });
+                              Provider.of<ProfileSetupProvider>(context,
+                                      listen: false)
+                                  .seeMoreProfileSetups();
+                              setState(() {
+                                Future.delayed(const Duration(seconds: 1))
+                                    .then((value) => seeMoreLoader = false);
+                              });
+                            }
+                          },
+                        );
+                      }
                       return Stack(
                         children: [
                           Container(
