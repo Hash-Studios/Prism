@@ -1,10 +1,10 @@
 import 'dart:math';
 
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:Prism/ui/widgets/premiumBanners/premiumBanner.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -113,10 +113,6 @@ class _CollectionsGridState extends State<CollectionsGrid>
 
   Future<void> refreshList() async {
     refreshKey.currentState?.show();
-    await Future.delayed(const Duration(milliseconds: 500));
-    CData.wallpapersForCollections = [];
-    CData.collectionNames = {};
-    CData.collections = {};
     CData.getCollections();
   }
 
@@ -132,66 +128,51 @@ class _CollectionsGridState extends State<CollectionsGrid>
         controller: controller,
         physics: const ScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
-        itemCount:
-            CData.collectionNames.isEmpty ? 11 : CData.collectionNames.length,
+        itemCount: CData.collections!.length,
         shrinkWrap: true,
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent:
-                MediaQuery.of(context).orientation == Orientation.portrait
-                    ? 300
-                    : 250,
-            childAspectRatio: 0.6225,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.6225,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+        ),
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () {
-              if (CData.collections == {}) {
+              if (CData.collections![index]['premium'] == false) {
+                Navigator.pushNamed(
+                  context,
+                  collectionViewRoute,
+                  arguments: [
+                    CData.collections![index]['name']
+                        .toString()
+                        .trim()
+                        .toLowerCase()
+                  ],
+                );
               } else {
-                if (globals.premiumCollections.contains(
-                        CData.collectionNames.toList()[index].toString()) ==
-                    false) {
-                  Navigator.pushNamed(context, collectionViewRoute, arguments: [
-                    CData.collectionNames
-                            .toList()[index]
-                            .toString()[0]
-                            .toUpperCase() +
-                        CData.collectionNames
-                            .toList()[index]
-                            .toString()
-                            .substring(1),
-                    CData.collections![CData.collectionNames.toList()[index]],
-                  ]);
+                if (globals.prismUser.premium == true) {
+                  Navigator.pushNamed(
+                    context,
+                    collectionViewRoute,
+                    arguments: [
+                      CData.collections![index]['name']
+                          .toString()
+                          .trim()
+                          .toLowerCase()
+                    ],
+                  );
                 } else {
-                  if (globals.prismUser.premium == true) {
-                    Navigator
-                        .pushNamed(context, collectionViewRoute, arguments: [
-                      CData.collectionNames
-                              .toList()[index]
-                              .toString()[0]
-                              .toUpperCase() +
-                          CData.collectionNames
-                              .toList()[index]
-                              .toString()
-                              .substring(1),
-                      CData.collections![CData.collectionNames.toList()[index]],
-                    ]);
-                  } else {
-                    showGooglePopUp(() {
-                      showPremiumPopUp(() {
-                        main.RestartWidget.restartApp(context);
-                      });
+                  showGooglePopUp(() {
+                    showPremiumPopUp(() {
+                      main.RestartWidget.restartApp(context);
                     });
-                  }
+                  });
                 }
               }
             },
             child: PremiumBanner(
-              comparator: globals.premiumCollections.contains(
-                      CData.collectionNames.isEmpty
-                          ? "none"
-                          : CData.collectionNames.toList()[index].toString()) ==
-                  false,
+              comparator: CData.collections![index]['premium'] == false,
               child: Stack(
                 children: <Widget>[
                   Positioned(
@@ -225,10 +206,9 @@ class _CollectionsGridState extends State<CollectionsGrid>
                         bottom: 25,
                         left: 25,
                       ),
-                      child: CData.collectionNames.toList().isNotEmpty
+                      child: CData.collections!.toList().isNotEmpty
                           ? Text(
-                              CData.collectionNames
-                                  .toList()[index]
+                              CData.collections![index]['name']
                                   .toString()
                                   .toUpperCase(),
                               textAlign: TextAlign.center,
@@ -290,43 +270,20 @@ class _CollectionsGridState extends State<CollectionsGrid>
                       top: 20,
                       left: 20,
                       child: Container(
-                          decoration: CData.collectionNames.isEmpty
+                          decoration: CData.collections!.isEmpty
                               ? BoxDecoration(
                                   color: animation.value,
                                   borderRadius: BorderRadius.circular(20),
                                 )
-                              : CData
-                                          .collections![CData.collectionNames
-                                              .toList()[index]
-                                              .toString()]
-                                          .length ==
-                                      1
-                                  ? BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                            CData.collections![CData
-                                                        .collectionNames
-                                                        .toList()[index]
-                                                        .toString()][0]
-                                                    ["wallpaper_thumb"]
-                                                .toString(),
-                                          ),
-                                          fit: BoxFit.cover))
-                                  : BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                            CData.collections![CData
-                                                        .collectionNames
-                                                        .toList()[index]
-                                                        .toString()][1]
-                                                    ["wallpaper_thumb"]
-                                                .toString(),
-                                          ),
-                                          fit: BoxFit.cover)),
+                              : BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                      image: CachedNetworkImageProvider(
+                                        CData.collections![index]['thumb2']
+                                            .toString(),
+                                      ),
+                                      fit: BoxFit.cover)),
                           height:
                               (MediaQuery.of(context).size.width / 2) / 0.6225 -
                                   108.5,
@@ -359,7 +316,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                       top: 0,
                       left: 0,
                       child: Container(
-                          decoration: CData.collectionNames.isEmpty
+                          decoration: CData.collections!.isEmpty
                               ? BoxDecoration(
                                   color: animation.value,
                                   borderRadius: BorderRadius.circular(20),
@@ -369,10 +326,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        CData.collections![CData.collectionNames
-                                                    .toList()[index]
-                                                    .toString()][0]
-                                                ["wallpaper_thumb"]
+                                        CData.collections![index]['thumb1']
                                             .toString(),
                                       ),
                                       fit: BoxFit.cover)),
@@ -387,252 +341,5 @@ class _CollectionsGridState extends State<CollectionsGrid>
         },
       ),
     );
-  }
-}
-
-class PremiumBanner extends StatelessWidget {
-  final bool? comparator;
-  final Widget? child;
-  const PremiumBanner({this.comparator, this.child});
-  @override
-  Widget build(BuildContext context) {
-    return comparator!
-        ? child!
-        : Stack(
-            children: [
-              child,
-              Positioned(
-                top: (MediaQuery.of(context).size.width / 2) / 0.6225 - 142,
-                left: MediaQuery.of(context).size.width / 2 - 102.5,
-                child: Container(
-                  decoration: const BoxDecoration(
-                      color: Color(0xFFFFB800),
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20))),
-                  padding: const EdgeInsets.all(0),
-                  child: const Padding(
-                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-                    child: Icon(
-                      JamIcons.star_f,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ] as List<Widget>,
-          );
-  }
-}
-
-class PremiumBannerWalls extends StatelessWidget {
-  final bool? comparator;
-  final Widget? defaultChild;
-  final Widget? trueChild;
-  const PremiumBannerWalls(
-      {this.comparator, this.defaultChild, this.trueChild});
-  @override
-  Widget build(BuildContext context) {
-    return comparator!
-        ? defaultChild!
-        : Stack(
-            children: [
-              trueChild,
-              Positioned(
-                top: (MediaQuery.of(context).size.width / 2) / 0.6225 - 68,
-                left: MediaQuery.of(context).size.width / 2 - 53.5,
-                child: Container(
-                  decoration: const BoxDecoration(
-                      color: Color(0xFFFFB800),
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20))),
-                  padding: const EdgeInsets.all(0),
-                  child: const Padding(
-                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-                    child: Icon(
-                      JamIcons.star_f,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ] as List<Widget>,
-          );
-  }
-}
-
-class PremiumBannerFollowingFeed extends StatelessWidget {
-  final bool? comparator;
-  final Widget? child;
-  const PremiumBannerFollowingFeed({this.comparator, this.child});
-  @override
-  Widget build(BuildContext context) {
-    return comparator!
-        ? child!
-        : Stack(
-            children: [
-              child,
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  decoration: const BoxDecoration(
-                      color: Color(0xFFFFB800),
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(25),
-                          bottomRight: Radius.circular(25))),
-                  padding: const EdgeInsets.all(0),
-                  child: const Padding(
-                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-                    child: Icon(
-                      JamIcons.star_f,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ] as List<Widget>,
-          );
-  }
-}
-
-class PremiumBannerWallsCarousel extends StatelessWidget {
-  final bool? comparator;
-  final Widget? child;
-  const PremiumBannerWallsCarousel({this.comparator, this.child});
-  @override
-  Widget build(BuildContext context) {
-    return comparator!
-        ? child!
-        : Stack(
-            children: [
-              child,
-              Positioned(
-                top: 160,
-                left: MediaQuery.of(context).size.width * 0.8 - 50,
-                child: Container(
-                  decoration: const BoxDecoration(
-                      color: Color(0xFFFFB800),
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20))),
-                  padding: const EdgeInsets.all(0),
-                  child: const Padding(
-                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-                    child: Icon(
-                      JamIcons.star_f,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ] as List<Widget>,
-          );
-  }
-}
-
-class PremiumBannerSetup extends StatelessWidget {
-  final bool? comparator;
-  final Widget? child;
-  const PremiumBannerSetup({this.comparator, this.child});
-  @override
-  Widget build(BuildContext context) {
-    return comparator!
-        ? child!
-        : Stack(
-            children: [
-              child,
-              Positioned(
-                top: MediaQuery.of(context).size.height * 0.62 - 32,
-                left: MediaQuery.of(context).size.width * 0.642 - 15,
-                child: Container(
-                  decoration: const BoxDecoration(
-                      color: Color(0xFFFFB800),
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(10))),
-                  padding: const EdgeInsets.all(0),
-                  child: const Padding(
-                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-                    child: Icon(
-                      JamIcons.star_f,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ] as List<Widget>,
-          );
-  }
-}
-
-class PremiumBannerSetupOld extends StatelessWidget {
-  final bool? comparator;
-  final Widget? child;
-  const PremiumBannerSetupOld({this.comparator, this.child});
-  @override
-  Widget build(BuildContext context) {
-    return comparator!
-        ? child!
-        : Stack(
-            children: [
-              child,
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  decoration: const BoxDecoration(
-                      color: Color(0xFFFFB800),
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(10))),
-                  padding: const EdgeInsets.all(0),
-                  child: const Padding(
-                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-                    child: Icon(
-                      JamIcons.star_f,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ] as List<Widget>,
-          );
-  }
-}
-
-class PremiumBannerSetupPhotographer extends StatelessWidget {
-  final bool? comparator;
-  final Widget? child;
-  const PremiumBannerSetupPhotographer({this.comparator, this.child});
-  @override
-  Widget build(BuildContext context) {
-    return comparator!
-        ? child!
-        : Stack(
-            children: [
-              child,
-              Positioned(
-                top: (MediaQuery.of(context).size.width / 2) / 0.5025 - 52,
-                left: MediaQuery.of(context).size.width / 2 - 53.5,
-                child: Container(
-                  decoration: const BoxDecoration(
-                      color: Color(0xFFFFB800),
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20))),
-                  padding: const EdgeInsets.all(0),
-                  child: const Padding(
-                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-                    child: Icon(
-                      JamIcons.star_f,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ] as List<Widget>,
-          );
   }
 }

@@ -1,7 +1,9 @@
+import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -9,8 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class CollectionViewGrid extends StatefulWidget {
-  final List arguments;
-  const CollectionViewGrid({required this.arguments});
+  const CollectionViewGrid();
   @override
   _CollectionViewGridState createState() => _CollectionViewGridState();
 }
@@ -102,7 +103,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
     return GridView.builder(
       controller: controller,
       padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-      itemCount: widget.arguments.length,
+      itemCount: anyCollectionWalls!.length,
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent:
@@ -113,6 +114,23 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
           mainAxisSpacing: 8,
           crossAxisSpacing: 8),
       itemBuilder: (context, index) {
+        if (index == anyCollectionWalls!.length - 1) {
+          return SeeMoreButton(
+            seeMoreLoader: seeMoreLoader,
+            func: () {
+              if (!seeMoreLoader) {
+                setState(() {
+                  seeMoreLoader = true;
+                });
+                seeMoreCollectionWithName();
+                setState(() {
+                  Future.delayed(const Duration(seconds: 1))
+                      .then((value) => seeMoreLoader = false);
+                });
+              }
+            },
+          );
+        }
         return AnimatedBuilder(
             animation: offsetAnimation,
             builder: (buildContext, child) {
@@ -132,9 +150,9 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                           color: animation.value,
                           borderRadius: BorderRadius.circular(20),
                           image: DecorationImage(
-                              image: CachedNetworkImageProvider(widget
-                                  .arguments[index]["wallpaper_thumb"]
-                                  .toString()),
+                              image: CachedNetworkImageProvider(
+                                  anyCollectionWalls![index]["wallpaper_thumb"]
+                                      .toString()),
                               fit: BoxFit.cover)),
                     ),
                     ClipRRect(
@@ -149,10 +167,11 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                           onTap: () {
                             Navigator.pushNamed(context, shareRoute,
                                 arguments: [
-                                  widget.arguments[index]["id"],
-                                  widget.arguments[index]["wallpaper_provider"],
-                                  widget.arguments[index]["wallpaper_url"],
-                                  widget.arguments[index]["wallpaper_thumb"]
+                                  anyCollectionWalls![index]["id"],
+                                  anyCollectionWalls![index]
+                                      ["wallpaper_provider"],
+                                  anyCollectionWalls![index]["wallpaper_url"],
+                                  anyCollectionWalls![index]["wallpaper_thumb"]
                                 ]);
                           },
                           onLongPress: () {
@@ -162,12 +181,12 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                             shakeController.forward(from: 0.0);
                             HapticFeedback.vibrate();
                             createDynamicLink(
-                                widget.arguments[index]["id"].toString(),
-                                widget.arguments[index]["wallpaper_provider"]
+                                anyCollectionWalls![index]["id"].toString(),
+                                anyCollectionWalls![index]["wallpaper_provider"]
                                     .toString(),
-                                widget.arguments[index]["wallpaper_url"]
+                                anyCollectionWalls![index]["wallpaper_url"]
                                     .toString(),
-                                widget.arguments[index]["wallpaper_thumb"]
+                                anyCollectionWalls![index]["wallpaper_thumb"]
                                     .toString());
                           },
                         ),
