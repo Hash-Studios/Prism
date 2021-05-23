@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/pages/home/core/oldVersionScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
@@ -71,6 +72,11 @@ class SplashWidget extends StatelessWidget {
       tempVar.forEach((element) {
         cList.add(element.split('"name": "')[1].split('",')[0].toString());
         categories[tempVar.indexOf(element)] = json.decode("$element}");
+        for (final category in categories) {
+          if (category["name"] == "Trending") {
+            categories.remove(category);
+          }
+        }
       });
       debugPrint(cList.toString());
       globals.followersTab =
