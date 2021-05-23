@@ -4,6 +4,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -25,6 +26,7 @@ class _ProfileGridState extends State<ProfileGrid>
   late Animation<Color?> animation;
   GlobalKey<RefreshIndicatorState> refreshProfileKey =
       GlobalKey<RefreshIndicatorState>();
+  bool seeMoreLoader = false;
 
   @override
   void initState() {
@@ -106,7 +108,7 @@ class _ProfileGridState extends State<ProfileGrid>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       SizedBox(
-                        width: MediaQuery.of(context).size.width,
+                        width: MediaQuery.of(context).size.width * 0.7,
                         child: Provider.of<ThemeModeExtended>(context)
                                     .getCurrentModeStyle(MediaQuery.of(context)
                                         .platformBrightness) ==
@@ -220,7 +222,6 @@ class _ProfileGridState extends State<ProfileGrid>
                   )
                 : GridView.builder(
                     shrinkWrap: true,
-                    cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
                     itemCount: Provider.of<ProfileWallProvider>(context)
                         .profileWalls!
@@ -235,6 +236,30 @@ class _ProfileGridState extends State<ProfileGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
+                      if (index ==
+                          Provider.of<ProfileWallProvider>(context,
+                                      listen: false)
+                                  .profileWalls!
+                                  .length -
+                              1) {
+                        return SeeMoreButton(
+                          seeMoreLoader: seeMoreLoader,
+                          func: () {
+                            if (!seeMoreLoader) {
+                              setState(() {
+                                seeMoreLoader = true;
+                              });
+                              Provider.of<ProfileWallProvider>(context,
+                                      listen: false)
+                                  .seeMoreProfileWalls();
+                              setState(() {
+                                Future.delayed(const Duration(seconds: 1))
+                                    .then((value) => seeMoreLoader = false);
+                              });
+                            }
+                          },
+                        );
+                      }
                       return FocusedMenuHolder(
                         provider: "ProfileWall",
                         index: index,

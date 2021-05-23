@@ -357,44 +357,44 @@ class _ProfileChildState extends State<ProfileChild> {
                                                         ],
                                                       ),
                                                     ),
-                                                    Row(
-                                                      children: <Widget>[
-                                                        FutureBuilder(
-                                                            future: Provider.of<
-                                                                        ProfileWallProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .getProfileWallsLength(),
-                                                            builder: (context,
-                                                                snapshot) {
-                                                              return Text(
-                                                                snapshot.data ==
-                                                                        null
-                                                                    ? "${profileCount.toString()} "
-                                                                    : "${snapshot.data.toString()} ",
-                                                                style: TextStyle(
-                                                                    fontFamily:
-                                                                        "Proxima Nova",
-                                                                    fontSize:
-                                                                        22,
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .accentColor,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .normal),
-                                                              );
-                                                            }),
-                                                        Icon(
-                                                          JamIcons.upload,
-                                                          size: 20,
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor,
-                                                        ),
-                                                      ],
-                                                    ),
+                                                    // Row(
+                                                    //   children: <Widget>[
+                                                    //     FutureBuilder(
+                                                    //         future: Provider.of<
+                                                    //                     ProfileWallProvider>(
+                                                    //                 context,
+                                                    //                 listen:
+                                                    //                     false)
+                                                    //             .getProfileWallsLength(),
+                                                    //         builder: (context,
+                                                    //             snapshot) {
+                                                    //           return Text(
+                                                    //             snapshot.data ==
+                                                    //                     null
+                                                    //                 ? "${profileCount.toString()} "
+                                                    //                 : "${snapshot.data.toString()} ",
+                                                    //             style: TextStyle(
+                                                    //                 fontFamily:
+                                                    //                     "Proxima Nova",
+                                                    //                 fontSize:
+                                                    //                     22,
+                                                    //                 color: Theme.of(
+                                                    //                         context)
+                                                    //                     .accentColor,
+                                                    //                 fontWeight:
+                                                    //                     FontWeight
+                                                    //                         .normal),
+                                                    //           );
+                                                    //         }),
+                                                    //     Icon(
+                                                    //       JamIcons.upload,
+                                                    //       size: 20,
+                                                    //       color:
+                                                    //           Theme.of(context)
+                                                    //               .accentColor,
+                                                    //     ),
+                                                    //   ],
+                                                    // ),
                                                     StreamBuilder<
                                                             QuerySnapshot>(
                                                         stream: users

@@ -1,4 +1,4 @@
-import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/profile/uploadedWallsGrid.dart';
 import 'package:flutter/material.dart';
 
@@ -27,12 +27,16 @@ class _ProfileLoaderState extends State<ProfileLoader> {
         builder: (ctx, snapshot) {
           if (snapshot == null) {
             debugPrint("snapshot null");
-            return const LoadingCards();
+            return Center(
+              child: Loader(),
+            );
           }
           if (snapshot.connectionState == ConnectionState.waiting ||
               snapshot.connectionState == ConnectionState.none) {
             debugPrint("snapshot none, waiting");
-            return const LoadingCards();
+            return Center(
+              child: Loader(),
+            );
           } else {
             return const ProfileGrid();
           }
