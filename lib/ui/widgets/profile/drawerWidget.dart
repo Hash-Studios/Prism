@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/popup/enterCodePanel.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -352,14 +353,27 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
+            createDrawerBodyItem(
+              icon: JamIcons.info,
+              text: 'About Prism',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, aboutRoute);
+              },
+              context: context,
+            ),
             Padding(
               padding: const EdgeInsets.only(bottom: 100),
               child: createDrawerBodyItem(
-                icon: JamIcons.info,
-                text: 'About Prism',
+                icon: JamIcons.coin,
+                text: 'Enter Code',
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, aboutRoute);
+                  showModalBottomSheet(
+                    isScrollControlled: true,
+                    context: context,
+                    builder: (context) => const EnterCodePanel(),
+                  );
                 },
                 context: context,
               ),
