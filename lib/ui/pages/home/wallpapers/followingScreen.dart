@@ -13,7 +13,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
+import 'package:Prism/ui/widgets/premiumBanners/followingFeed.dart';
 
 class FollowingScreen extends StatefulWidget {
   const FollowingScreen({

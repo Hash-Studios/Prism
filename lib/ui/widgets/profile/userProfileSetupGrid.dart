@@ -2,7 +2,7 @@ import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userdata;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
+import 'package:Prism/ui/widgets/premiumBanners/setupPhotographer.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:cached_network_image/cached_network_image.dart';

@@ -6,7 +6,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
-import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
+import 'package:Prism/ui/widgets/premiumBanners/setupOld.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
