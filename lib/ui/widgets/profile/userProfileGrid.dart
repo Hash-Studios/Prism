@@ -3,7 +3,7 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
+import 'package:Prism/ui/widgets/premiumBanners/walls.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';

@@ -2,7 +2,8 @@ import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
+import 'package:Prism/ui/widgets/premiumBanners/wallsCarousel.dart';
+import 'package:Prism/ui/widgets/premiumBanners/walls.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
@@ -309,7 +310,6 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                         defaultChild: FocusedMenuHolder(
                           provider: widget.provider,
                           index: index,
-                        
                           child: WallpaperTile(widget: widget, index: index),
                         ),
                         trueChild: WallpaperTile(widget: widget, index: index),
