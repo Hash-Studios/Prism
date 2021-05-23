@@ -39,7 +39,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
   @override
   void initState() {
-    future = Provider.of<SetupProvider>(context, listen: false).getDataBase();
+    future = Provider.of<SetupProvider>(context, listen: false).getSetups();
     super.initState();
   }
 
@@ -165,42 +165,49 @@ class _SetupPageState extends State<SetupPage> {
                 } else {
                   Future.delayed(const Duration())
                       .then((value) => setState(() {}));
-                  return GestureDetector(
-                    onTap: () {
-                      if (pageNumber >= 5) {
-                        showPremiumPopUp(() {
-                          Navigator.pushNamed(context, setupViewRoute,
-                              arguments: [pageNumber]);
+                  return SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height * 0.9,
+                    child: PageView.builder(
+                      onPageChanged: (value) {
+                        setState(() {
+                          pageNumber = value;
                         });
-                      } else {
-                        Navigator.pushNamed(context, setupViewRoute,
-                            arguments: [pageNumber]);
-                      }
-                    },
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height * 0.9,
-                      child: PageView.builder(
-                        onPageChanged: (value) {
-                          setState(() {
-                            pageNumber = value;
-                          });
-                        },
-                        controller: widget.controller,
-                        itemCount: Provider.of<SetupProvider>(context,
-                                    listen: false)
+                        if (pageNumber + 1 ==
+                            Provider.of<SetupProvider>(context, listen: false)
                                 .setups!
-                                .isEmpty
-                            ? 1
-                            : Provider.of<SetupProvider>(context, listen: false)
-                                .setups!
-                                .length,
-                        itemBuilder: (context, index) => Provider.of<
-                                    SetupProvider>(context, listen: false)
-                                .setups!
-                                .isEmpty
-                            ? Loader()
-                            : AnimatedContainer(
+                                .length) {
+                          Provider.of<SetupProvider>(context, listen: false)
+                              .seeMoreSetups();
+                        }
+                      },
+                      controller: widget.controller,
+                      itemCount: Provider.of<SetupProvider>(context,
+                                  listen: false)
+                              .setups!
+                              .isEmpty
+                          ? 1
+                          : Provider.of<SetupProvider>(context, listen: false)
+                              .setups!
+                              .length,
+                      itemBuilder: (context, index) => Provider.of<
+                                  SetupProvider>(context, listen: false)
+                              .setups!
+                              .isEmpty
+                          ? Loader()
+                          : GestureDetector(
+                              onTap: () {
+                                if (pageNumber >= 5) {
+                                  showPremiumPopUp(() {
+                                    Navigator.pushNamed(context, setupViewRoute,
+                                        arguments: [pageNumber]);
+                                  });
+                                } else {
+                                  Navigator.pushNamed(context, setupViewRoute,
+                                      arguments: [pageNumber]);
+                                }
+                              },
+                              child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: EdgeInsets.only(
                                   top: pageNumber == index + 1 ||
@@ -340,7 +347,7 @@ class _SetupPageState extends State<SetupPage> {
                                   ),
                                 ),
                               ),
-                      ),
+                            ),
                     ),
                   );
                 }
