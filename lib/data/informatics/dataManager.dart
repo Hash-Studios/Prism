@@ -49,11 +49,13 @@ Future<void> updateViews(String id) async {
         : "1"
   };
   await github.repositories.updateFile(
-      RepositorySlug(gitUserName, repoName3),
-      jsonFile,
-      "Updated views for $id",
-      stringToBase64.encode(json.encode(jsonMap)),
-      repoContents.file!.sha!);
+    RepositorySlug(gitUserName, repoName3),
+    jsonFile,
+    "Updated views for $id",
+    stringToBase64.encode(json.encode(jsonMap)),
+    repoContents.file!.sha!,
+    branch: "main",
+  );
 }
 
 Future<void> updateDownloads(String id) async {
@@ -73,11 +75,13 @@ Future<void> updateDownloads(String id) async {
         : "1"
   };
   await github.repositories.updateFile(
-      RepositorySlug(gitUserName, repoName3),
-      jsonFile,
-      "Updated downloads for $id",
-      stringToBase64.encode(json.encode(jsonMap)),
-      repoContents.file!.sha!);
+    RepositorySlug(gitUserName, repoName3),
+    jsonFile,
+    "Updated downloads for $id",
+    stringToBase64.encode(json.encode(jsonMap)),
+    repoContents.file!.sha!,
+    branch: "main",
+  );
 }
 
 Future<void> updateFavorites(String id) async {
@@ -97,11 +101,13 @@ Future<void> updateFavorites(String id) async {
         : "1"
   };
   await github.repositories.updateFile(
-      RepositorySlug(gitUserName, repoName3),
-      jsonFile,
-      "Updated favorites for $id",
-      stringToBase64.encode(json.encode(jsonMap)),
-      repoContents.file!.sha!);
+    RepositorySlug(gitUserName, repoName3),
+    jsonFile,
+    "Updated favorites for $id",
+    stringToBase64.encode(json.encode(jsonMap)),
+    repoContents.file!.sha!,
+    branch: "main",
+  );
 }
 
 Future<String> getViewsSetup(String id) async {
@@ -135,11 +141,13 @@ Future<void> updateViewsSetup(String id) async {
         : "1"
   };
   await github.repositories.updateFile(
-      RepositorySlug(gitUserName, repoName3),
-      jsonFile,
-      "Updated views for $id",
-      stringToBase64.encode(json.encode(jsonMap)),
-      repoContents.file!.sha!);
+    RepositorySlug(gitUserName, repoName3),
+    jsonFile,
+    "Updated views for $id",
+    stringToBase64.encode(json.encode(jsonMap)),
+    repoContents.file!.sha!,
+    branch: "main",
+  );
 }
 
 Future<void> updateDownloadsSetup(String id) async {
@@ -159,11 +167,13 @@ Future<void> updateDownloadsSetup(String id) async {
         : "1"
   };
   await github.repositories.updateFile(
-      RepositorySlug(gitUserName, repoName3),
-      jsonFile,
-      "Updated downloads for $id",
-      stringToBase64.encode(json.encode(jsonMap)),
-      repoContents.file!.sha!);
+    RepositorySlug(gitUserName, repoName3),
+    jsonFile,
+    "Updated downloads for $id",
+    stringToBase64.encode(json.encode(jsonMap)),
+    repoContents.file!.sha!,
+    branch: "main",
+  );
 }
 
 Future<void> updateFavsSetup(String id) async {
@@ -183,9 +193,11 @@ Future<void> updateFavsSetup(String id) async {
         : "1"
   };
   await github.repositories.updateFile(
-      RepositorySlug(gitUserName, repoName3),
-      jsonFile,
-      "Updated favorites for $id",
-      stringToBase64.encode(json.encode(jsonMap)),
-      repoContents.file!.sha!);
+    RepositorySlug(gitUserName, repoName3),
+    jsonFile,
+    "Updated favorites for $id",
+    stringToBase64.encode(json.encode(jsonMap)),
+    repoContents.file!.sha!,
+    branch: "main",
+  );
 }
