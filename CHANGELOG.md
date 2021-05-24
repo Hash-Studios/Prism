@@ -2,6 +2,7 @@
 
 ### v2.6.5
 - Migrate to Flutter 2.0.0, and most packages to null safety
+- Update minSDKVersion to 19 from 16
 - Fix displaymode errors
 - Add intent filter for dynamic links
 - Favs sorted by createdAt
