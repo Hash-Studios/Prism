@@ -13,9 +13,9 @@ PrismUsers prismUser = main.prefs.get(
     following: [],
   ),
 ) as PrismUsers;
-String currentAppVersion = '2.6.4';
+String currentAppVersion = '2.6.5';
 String obsoleteAppVersion = '2.6.0';
-String currentAppVersionCode = '63';
+String currentAppVersionCode = '64';
 bool updateChecked = false;
 bool updateAvailable = false;
 Map versionInfo = {};
