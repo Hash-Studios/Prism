@@ -215,7 +215,6 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
     nonPersonalizedAds: false,
     keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
   );
-  RewardedAd? _rewardedAd;
   int _numRewardedLoadAttempts = 0;
 
   void rewardFn(num rewardAmount) {
@@ -225,13 +224,18 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
 
   @override
   void initState() {
+    print("loadingAd - ${globals.loadingAd}");
+    print("adLoaded - ${globals.adLoaded}");
     _createRewardedAd();
     super.initState();
   }
 
-  void _createRewardedAd() {
-    if (globals.loadingAd == false) {
-      RewardedAd.load(
+  void _createRewardedAd() async {
+    if (globals.loadingAd == false && globals.adLoaded == false) {
+      setState(() {
+        globals.loadingAd = true;
+      });
+      await RewardedAd.load(
         adUnitId: kReleaseMode
             ? "ca-app-pub-4649644680694757/3358009164"
             : RewardedAd.testAdUnitId,
@@ -239,15 +243,19 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (RewardedAd ad) {
             debugPrint('$ad loaded.');
-            _rewardedAd = ad;
+            globals.rewardedAd = ad;
             _numRewardedLoadAttempts = 0;
             setState(() {
               globals.loadingAd = false;
+              globals.adLoaded = true;
             });
           },
           onAdFailedToLoad: (LoadAdError error) {
             debugPrint('RewardedAd failed to load: $error');
-            _rewardedAd = null;
+            setState(() {
+              globals.loadingAd = false;
+            });
+            globals.rewardedAd = null;
             _numRewardedLoadAttempts += 1;
             if (_numRewardedLoadAttempts <= maxFailedLoadAttempts) {
               _createRewardedAd();
@@ -264,44 +272,36 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
   }
 
   void _showRewardedAd() {
-    if (_rewardedAd == null) {
+    setState(() {
+      globals.adLoaded = false;
+    });
+    if (globals.rewardedAd == null) {
       debugPrint('Warning: attempt to show rewarded before loaded.');
       return;
     }
-    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+    globals.rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (RewardedAd ad) =>
           debugPrint('ad onAdShowedFullScreenContent.'),
       onAdDismissedFullScreenContent: (RewardedAd ad) {
         debugPrint('$ad onAdDismissedFullScreenContent.');
         ad.dispose();
         _createRewardedAd();
-        setState(() {
-          globals.loadingAd = true;
-        });
       },
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
         debugPrint('$ad onAdFailedToShowFullScreenContent: $error');
         ad.dispose();
         _createRewardedAd();
-        setState(() {
-          globals.loadingAd = true;
-        });
       },
     );
 
-    _rewardedAd!.show(onUserEarnedReward: (RewardedAd ad, RewardItem reward) {
+    globals.rewardedAd!.show(
+        onUserEarnedReward: (RewardedAd ad, RewardItem reward) {
       debugPrint(
           '$ad with reward $RewardItem(${reward.amount}, ${reward.type}');
       rewardFn(reward.amount);
       if (downloadCoins >= 10) widget.rewardFunc();
     });
-    _rewardedAd = null;
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _rewardedAd?.dispose();
+    globals.rewardedAd = null;
   }
 
   @override
@@ -385,19 +385,14 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                 shape: const StadiumBorder(),
                 color: Theme.of(context).accentColor.withOpacity(0.3),
                 onPressed: () {
-                  globals.loadingAd
-                      ? toasts.error("Loading ads")
-                      : _showRewardedAd();
-                  globals.loadingAd
-                      ? debugPrint("")
-                      : Navigator.of(context).pop();
-                  setState(() {
-                    globals.loadingAd
-                        ? debugPrint("")
-                        : globals.loadingAd = true;
-                  });
+                  if (globals.loadingAd == false && globals.adLoaded == true) {
+                    _showRewardedAd();
+                    Navigator.of(context).pop();
+                  } else {
+                    toasts.error("Loading ads");
+                  }
                 },
-                child: !globals.loadingAd
+                child: globals.loadingAd == false && globals.adLoaded == true
                     ? Text(
                         'WATCH AD',
                         style: TextStyle(

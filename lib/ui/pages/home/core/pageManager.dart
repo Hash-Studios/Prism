@@ -71,16 +71,18 @@ class _PageManagerChildState extends State<PageManagerChild>
   }
 
   Future<void> saveFavToLocal() async {
-    await Provider.of<FavouriteProvider>(context, listen: false)
-        .getDataBase()
-        .then(
-      (value) {
-        for (final element in value!) {
-          box.put(element['id'].toString(), true);
-        }
-        box.put('dataSaved', true);
-      },
-    );
+    if (globals.prismUser.loggedIn) {
+      await Provider.of<FavouriteProvider>(context, listen: false)
+          .getDataBase()
+          .then(
+        (value) {
+          for (final element in value!) {
+            box.put(element['id'].toString(), true);
+          }
+          box.put('dataSaved', true);
+        },
+      );
+    }
   }
 
   @override

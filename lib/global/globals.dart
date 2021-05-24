@@ -1,6 +1,7 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 GoogleAuth gAuth = GoogleAuth();
 PrismUsers prismUser = main.prefs.get(
@@ -19,7 +20,9 @@ String currentAppVersionCode = '64';
 bool updateChecked = false;
 bool updateAvailable = false;
 Map versionInfo = {};
-bool loadingAd = true;
+bool loadingAd = false;
+bool adLoaded = false;
+RewardedAd? rewardedAd;
 bool updateAlerted = false;
 bool hasNotch = false;
 double? notchSize;
