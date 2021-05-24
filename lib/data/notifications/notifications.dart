@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
+import 'package:flutter/material.dart';
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 
@@ -26,8 +27,10 @@ Future<QuerySnapshot> getLatestNotifs(String modifier) async {
 }
 
 Future<void> getNotifs() async {
+  debugPrint("Fetching notifs");
   final Box<InAppNotif> box = Hive.box('inAppNotifs');
   if (main.prefs.get('lastFetchTime') != null) {
+  debugPrint("Last fetch time ${main.prefs.get('lastFetchTime')}");
     if (globals.prismUser.premium == false) {
       getLatestNotifs('free').then((snap) {
         for (final doc in snap.docs) {
@@ -59,6 +62,7 @@ Future<void> getNotifs() async {
     });
     main.prefs.put('lastFetchTime', DateTime.now());
   } else {
+    debugPrint("Fetching for first time");
     box.clear();
     if (globals.prismUser.premium == false) {
       getLastMonthNotifs('free').then((snap) {
