@@ -230,7 +230,8 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
   }
 
   void _createRewardedAd() {
-    RewardedAd.load(
+    if (globals.loadingAd == false) {
+      RewardedAd.load(
         adUnitId: kReleaseMode
             ? "ca-app-pub-4649644680694757/3358009164"
             : RewardedAd.testAdUnitId,
@@ -257,7 +258,9 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
               }
             }
           },
-        ));
+        ),
+      );
+    }
   }
 
   void _showRewardedAd() {
