@@ -304,9 +304,11 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     : PremiumBannerWalls(
                         comparator: !globals.isPremiumWall(
                             globals.premiumCollections,
-                            Data.subPrismWalls![index]["collections"]
-                                    as List? ??
-                                []),
+                            Data.subPrismWalls!.isEmpty
+                                ? []
+                                : Data.subPrismWalls![index]["collections"]
+                                        as List? ??
+                                    []),
                         defaultChild: FocusedMenuHolder(
                           provider: widget.provider,
                           index: index,
