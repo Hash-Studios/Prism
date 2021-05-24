@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/pages/home/core/oldVersionScreen.dart';
@@ -16,7 +17,7 @@ late RemoteConfig remoteConfig;
 
 class SplashWidget extends StatelessWidget {
   bool notchChecked = false;
-  Future<void> rcInit() async {
+  Future<void> loading() async {
     try {
       remoteConfig = await RemoteConfig.instance;
       await remoteConfig.setConfigSettings(RemoteConfigSettings());
@@ -39,7 +40,7 @@ class SplashWidget extends StatelessWidget {
       });
       debugPrint("Started Fetching Values from rc");
       await remoteConfig.fetch(expiration: const Duration(hours: 6));
-      await remoteConfig.activateFetched();
+      final rcBool = await remoteConfig.activateFetched();
       debugPrint("Fetched Values from rc");
       globals.topImageLink = remoteConfig.getString('topImageLink');
       globals.bannerText = remoteConfig.getString('bannerText');
@@ -69,18 +70,21 @@ class SplashWidget extends StatelessWidget {
           .replaceAll(']', "")
           .split("},");
       tempVar = tempVar.sublist(0, tempVar.length - 1);
-      tempVar.forEach((element) {
+      categories = [];
+      for (final element in tempVar) {
         cList.add(element.split('"name": "')[1].split('",')[0].toString());
-        categories[tempVar.indexOf(element)] = json.decode("$element}");
-        for (final category in categories) {
-          if (category["name"] == "Trending") {
-            categories.remove(category);
-          }
-        }
-      });
+        categories.add(json.decode("$element}"));
+      }
+      categories.removeWhere((element) => element['name'] == "Trending");
       debugPrint(cList.toString());
       globals.followersTab =
           main.prefs.get('followersTab', defaultValue: true) as bool;
+      await getNotifs();
+      debugPrint("splash done");
+      debugPrint(
+          "Current App Version: ${globals.currentAppVersion.replaceAll(".", "")}");
+      debugPrint(
+          "Obsolete App Version: ${globals.obsoleteAppVersion.replaceAll(".", "")}");
     } catch (e) {
       debugPrint(e.toString());
     }
@@ -105,11 +109,6 @@ class SplashWidget extends StatelessWidget {
     return SplashScreen(
       'assets/animations/Prism Splash.flr',
       (context) {
-        debugPrint("splash done");
-        debugPrint(
-            "Current App Version: ${globals.currentAppVersion.replaceAll(".", "")}");
-        debugPrint(
-            "Obsolete App Version: ${globals.obsoleteAppVersion.replaceAll(".", "")}");
         if ((int.parse(globals.currentAppVersion.replaceAll(".", "")) <
                 int.parse(globals.obsoleteAppVersion.replaceAll(".", ""))) ==
             true) {
@@ -118,19 +117,20 @@ class SplashWidget extends StatelessWidget {
         return PageManager();
       },
       fit: BoxFit.cover,
-      startAnimation: Provider.of<ThemeModeExtended>(context)
-                  .getCurrentModeStyle(
-                      MediaQuery.of(context).platformBrightness) ==
+      startAnimation: 'Start',
+      loopAnimation: 'Loading',
+      endAnimation: Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
+                  MediaQuery.of(context).platformBrightness) ==
               "Light"
-          ? 'Main'
-          : 'Dark',
+          ? 'EndMain'
+          : 'EndDark',
       backgroundColor: Provider.of<ThemeModeExtended>(context)
                   .getCurrentModeStyle(
                       MediaQuery.of(context).platformBrightness) ==
               "Light"
           ? config.Colors().mainColor(1)
           : config.Colors().mainDarkColor(1),
-      until: rcInit,
+      until: loading,
     );
   }
 }

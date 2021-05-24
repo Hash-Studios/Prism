@@ -40,7 +40,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
   }
 
   Future<void> fetchNotifications() async {
-    await getNotifs();
     setState(() {
       notifications = box.values.toList();
     });
