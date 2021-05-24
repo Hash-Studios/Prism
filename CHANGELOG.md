@@ -1,5 +1,13 @@
 ## Changelog
 
+### v2.6.6
+- Fix share profile not working
+- Remove Licenses from in-app
+- Add local caching for search providers
+- Fix profile image clipping edge
+- Fix GitHub package branch null error
+- Minor bug fixes and improvements
+
 ### v2.6.5
 - Migrate to Flutter 2.0.0, and most packages to null safety
 - Update minSDKVersion to 19 from 16
