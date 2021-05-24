@@ -274,7 +274,7 @@ class _ProfileGridState extends State<ProfileGrid>
                                         Provider.of<ProfileWallProvider>(
                                                 context)
                                             .profileWalls![index]
-                                                ["wallpaper_thumb"]
+                                            .data()["wallpaper_thumb"]
                                             .toString(),
                                       ),
                                       fit: BoxFit.cover)),
@@ -302,10 +302,10 @@ class _ProfileGridState extends State<ProfileGrid>
                                           arguments: [
                                             index,
                                             Provider.of<ProfileWallProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .profileWalls![index]
-                                                ["wallpaper_thumb"],
+                                                    context,
+                                                    listen: false)
+                                                .profileWalls![index]
+                                                .data()["wallpaper_thumb"],
                                           ]);
                                     }
                                   },

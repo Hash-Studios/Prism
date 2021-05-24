@@ -113,12 +113,14 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
     thumb = widget.arguments![1].toString();
     isLoading = true;
     updateViews(Provider.of<ProfileWallProvider>(context, listen: false)
-        .profileWalls![index]["id"]
+        .profileWalls![index]
+        .data()["id"]
         .toString()
         .toUpperCase());
     _futureView = getViews(
         Provider.of<ProfileWallProvider>(context, listen: false)
-            .profileWalls![index]["id"]
+            .profileWalls![index]
+            .data()["id"]
             .toString()
             .toUpperCase());
     _updatePaletteGenerator();
@@ -275,7 +277,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                               Provider.of<ProfileWallProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileWalls![index]["id"]
+                                                  .profileWalls![index]
+                                                  .data()["id"]
                                                   .toString()
                                                   .toUpperCase(),
                                               style: Theme.of(context)
@@ -375,7 +378,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                           Provider.of<ProfileWallProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileWalls![index]["by"]
+                                              .profileWalls![index]
+                                              .data()["by"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
@@ -401,7 +405,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                           Provider.of<ProfileWallProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileWalls![index]["desc"]
+                                              .profileWalls![index]
+                                              .data()["desc"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
@@ -427,7 +432,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                           Provider.of<ProfileWallProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileWalls![index]["size"]
+                                              .profileWalls![index]
+                                              .data()["size"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
@@ -451,7 +457,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                                   context,
                                                   listen: false)
                                               .profileWalls![index]
-                                                  ["resolution"]
+                                              .data()["resolution"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
@@ -478,7 +484,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                                   context,
                                                   listen: false)
                                               .profileWalls![index]
-                                                  ["wallpaper_provider"]
+                                              .data()["wallpaper_provider"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
@@ -514,7 +520,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                     ? _imageFile.path
                                     : Provider.of<ProfileWallProvider>(context,
                                             listen: false)
-                                        .profileWalls![index]["wallpaper_url"]
+                                        .profileWalls![index]
+                                        .data()["wallpaper_url"]
                                         .toString(),
                               ),
                               SetWallpaperButton(
@@ -523,48 +530,56 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                     ? _imageFile.path
                                     : Provider.of<ProfileWallProvider>(context,
                                             listen: false)
-                                        .profileWalls![index]["wallpaper_url"]
+                                        .profileWalls![index]
+                                        .data()["wallpaper_url"]
                                         .toString(),
                               ),
                               FavouriteWallpaperButton(
                                 id: Provider.of<ProfileWallProvider>(context,
                                         listen: false)
-                                    .profileWalls![index]["id"]
+                                    .profileWalls![index]
+                                    .data()["id"]
                                     .toString(),
                                 provider: Provider.of<ProfileWallProvider>(
                                         context,
                                         listen: false)
-                                    .profileWalls![index]["wallpaper_provider"]
+                                    .profileWalls![index]
+                                    .data()["wallpaper_provider"]
                                     .toString(),
                                 prism: Provider.of<ProfileWallProvider>(context,
                                         listen: false)
-                                    .profileWalls![index] as Map,
+                                    .profileWalls![index]
+                                    .data(),
                                 trash: false,
                               ),
                               ShareButton(
                                   id: Provider.of<ProfileWallProvider>(context,
                                           listen: false)
-                                      .profileWalls![index]["id"]
+                                      .profileWalls![index]
+                                      .data()["id"]
                                       .toString(),
                                   provider: Provider.of<ProfileWallProvider>(
                                           context,
                                           listen: false)
                                       .profileWalls![index]
-                                          ["wallpaper_provider"]
+                                      .data()["wallpaper_provider"]
                                       .toString(),
                                   url: Provider.of<ProfileWallProvider>(context,
                                           listen: false)
-                                      .profileWalls![index]["wallpaper_url"]
+                                      .profileWalls![index]
+                                      .data()["wallpaper_url"]
                                       .toString(),
                                   thumbUrl: Provider.of<ProfileWallProvider>(
                                           context,
                                           listen: false)
-                                      .profileWalls![index]["wallpaper_thumb"]
+                                      .profileWalls![index]
+                                      .data()["wallpaper_thumb"]
                                       .toString()),
                               EditButton(
                                 url: Provider.of<ProfileWallProvider>(context,
                                         listen: false)
-                                    .profileWalls![index]["wallpaper_url"]
+                                    .profileWalls![index]
+                                    .data()["wallpaper_url"]
                                     .toString(),
                               ),
                             ],
@@ -605,7 +620,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                         child: CachedNetworkImage(
                           imageUrl: Provider.of<ProfileWallProvider>(context,
                                   listen: false)
-                              .profileWalls![index]["wallpaper_url"]
+                              .profileWalls![index]
+                              .data()["wallpaper_url"]
                               .toString(),
                           imageBuilder: (context, imageProvider) => Screenshot(
                             controller: screenshotController,
@@ -682,7 +698,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                       onPressed: () {
                         final link = Provider.of<ProfileWallProvider>(context,
                                 listen: false)
-                            .profileWalls![index]["wallpaper_url"];
+                            .profileWalls![index]
+                            .data()["wallpaper_url"];
                         Navigator.push(
                             context,
                             PageRouteBuilder(
