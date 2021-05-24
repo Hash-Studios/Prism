@@ -1,5 +1,6 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/data/ads/adHelper.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -20,9 +21,7 @@ String currentAppVersionCode = '64';
 bool updateChecked = false;
 bool updateAvailable = false;
 Map versionInfo = {};
-bool loadingAd = false;
-bool adLoaded = false;
-RewardedAd? rewardedAd;
+AdHelper adHelper = AdHelper();
 bool updateAlerted = false;
 bool hasNotch = false;
 double? notchSize;

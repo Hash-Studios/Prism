@@ -224,16 +224,17 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
 
   @override
   void initState() {
-    print("loadingAd - ${globals.loadingAd}");
-    print("adLoaded - ${globals.adLoaded}");
+    print("loadingAd - ${globals.adHelper.loadingAd}");
+    print("adLoaded - ${globals.adHelper.adLoaded}");
     _createRewardedAd();
     super.initState();
   }
 
   void _createRewardedAd() async {
-    if (globals.loadingAd == false && globals.adLoaded == false) {
+    if (globals.adHelper.loadingAd == false &&
+        globals.adHelper.adLoaded == false) {
       setState(() {
-        globals.loadingAd = true;
+        globals.adHelper.loadingAd = true;
       });
       await RewardedAd.load(
         adUnitId: kReleaseMode
@@ -243,19 +244,19 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (RewardedAd ad) {
             debugPrint('$ad loaded.');
-            globals.rewardedAd = ad;
+            globals.adHelper.rewardedAd = ad;
             _numRewardedLoadAttempts = 0;
             setState(() {
-              globals.loadingAd = false;
-              globals.adLoaded = true;
+              globals.adHelper.loadingAd = false;
+              globals.adHelper.adLoaded = true;
             });
           },
           onAdFailedToLoad: (LoadAdError error) {
             debugPrint('RewardedAd failed to load: $error');
             setState(() {
-              globals.loadingAd = false;
+              globals.adHelper.loadingAd = false;
             });
-            globals.rewardedAd = null;
+            globals.adHelper.rewardedAd = null;
             _numRewardedLoadAttempts += 1;
             if (_numRewardedLoadAttempts <= maxFailedLoadAttempts) {
               _createRewardedAd();
@@ -273,13 +274,14 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
 
   void _showRewardedAd() {
     setState(() {
-      globals.adLoaded = false;
+      globals.adHelper.adLoaded = false;
     });
-    if (globals.rewardedAd == null) {
+    if (globals.adHelper.rewardedAd == null) {
       debugPrint('Warning: attempt to show rewarded before loaded.');
       return;
     }
-    globals.rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+    globals.adHelper.rewardedAd!.fullScreenContentCallback =
+        FullScreenContentCallback(
       onAdShowedFullScreenContent: (RewardedAd ad) =>
           debugPrint('ad onAdShowedFullScreenContent.'),
       onAdDismissedFullScreenContent: (RewardedAd ad) {
@@ -294,14 +296,14 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
       },
     );
 
-    globals.rewardedAd!.show(
+    globals.adHelper.rewardedAd!.show(
         onUserEarnedReward: (RewardedAd ad, RewardItem reward) {
       debugPrint(
           '$ad with reward $RewardItem(${reward.amount}, ${reward.type}');
       rewardFn(reward.amount);
       if (downloadCoins >= 10) widget.rewardFunc();
     });
-    globals.rewardedAd = null;
+    globals.adHelper.rewardedAd = null;
   }
 
   @override
@@ -385,14 +387,16 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                 shape: const StadiumBorder(),
                 color: Theme.of(context).accentColor.withOpacity(0.3),
                 onPressed: () {
-                  if (globals.loadingAd == false && globals.adLoaded == true) {
+                  if (globals.adHelper.loadingAd == false &&
+                      globals.adHelper.adLoaded == true) {
                     _showRewardedAd();
                     Navigator.of(context).pop();
                   } else {
                     toasts.error("Loading ads");
                   }
                 },
-                child: globals.loadingAd == false && globals.adLoaded == true
+                child: globals.adHelper.loadingAd == false &&
+                        globals.adHelper.adLoaded == true
                     ? Text(
                         'WATCH AD',
                         style: TextStyle(
