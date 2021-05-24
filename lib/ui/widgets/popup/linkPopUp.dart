@@ -36,24 +36,28 @@ void showLinksPopUp(BuildContext context, String id) {
               debugPrint("snapshot none, waiting");
               return SizedBox(height: 300, child: Center(child: Loader()));
             } else {
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    children: snapshot.data!
-                        .map(
-                          (e) => ActionButton(
-                            icon: e.icon,
-                            link: e.link,
-                            text: "@${e.username}",
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-              );
+              if (snapshot.data!.isNotEmpty) {
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      children: snapshot.data!
+                          .map(
+                            (e) => ActionButton(
+                              icon: e.icon,
+                              link: e.link,
+                              text: "@${e.username}",
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                );
+              }
+              Navigator.pop(context);
+              return Container();
             }
           }),
     ),
