@@ -40,7 +40,7 @@ Future<List?> getUserProfileSetups(String? email) async {
       .then((value) {
     userProfileSetups = [];
     for (final f in value.docs) {
-      userProfileSetups!.add(f.data);
+      userProfileSetups!.add(f.data());
     }
     len2 = userProfileSetups!.length;
     debugPrint(len.toString());
@@ -62,7 +62,7 @@ Future<int> getProfileWallsLength(String? email) async {
       .then((value) {
     tempList = [];
     value.docs.forEach((f) {
-      tempList.add(f.data);
+      tempList.add(f.data());
     });
     len = tempList.length;
     debugPrint(len.toString());
@@ -84,7 +84,7 @@ Future<int> getProfileSetupsLength(String? email) async {
       .then((value) {
     tempList = [];
     value.docs.forEach((f) {
-      tempList.add(f.data);
+      tempList.add(f.data());
     });
     len2 = tempList.length;
     debugPrint(len2.toString());
