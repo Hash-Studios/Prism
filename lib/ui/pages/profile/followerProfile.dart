@@ -7,6 +7,7 @@ import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/ui/widgets/profile/userProfileLoader.dart';
 import 'package:Prism/ui/widgets/profile/userProfileSetupLoader.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userData;
@@ -125,29 +126,60 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                                     alignment: Alignment.center,
                                                     children: [
                                                       Container(
-                                                        decoration: BoxDecoration(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        5000),
-                                                            boxShadow: [
-                                                              BoxShadow(
-                                                                  blurRadius:
-                                                                      16,
-                                                                  offset:
-                                                                      const Offset(
-                                                                          0, 4),
-                                                                  color: const Color(
-                                                                          0xFF000000)
-                                                                      .withOpacity(
-                                                                          0.24))
-                                                            ]),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(0),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .errorColor,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      5000),
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                                blurRadius: 16,
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 4),
+                                                                color: const Color(
+                                                                        0xFF000000)
+                                                                    .withOpacity(
+                                                                        0.24))
+                                                          ],
+                                                        ),
                                                         child: CircleAvatar(
+                                                          backgroundColor:
+                                                              Colors
+                                                                  .transparent,
+                                                          foregroundColor:
+                                                              Colors
+                                                                  .transparent,
                                                           radius: 50,
-                                                          backgroundImage:
-                                                              NetworkImage(
-                                                                  userPhoto
-                                                                      .toString()),
+                                                          child: ClipOval(
+                                                            child: Container(
+                                                              height: 120,
+                                                              margin:
+                                                                  const EdgeInsets
+                                                                      .all(0),
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(0),
+                                                              child:
+                                                                  CachedNetworkImage(
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                                imageUrl: userPhoto
+                                                                    .toString(),
+                                                                errorWidget: (context,
+                                                                        url,
+                                                                        error) =>
+                                                                    Container(),
+                                                              ),
+                                                            ),
+                                                          ),
                                                         ),
                                                       ),
                                                       if (globals.verifiedUsers
