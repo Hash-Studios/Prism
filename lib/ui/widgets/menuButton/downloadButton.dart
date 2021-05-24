@@ -224,8 +224,6 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
 
   @override
   void initState() {
-    print("loadingAd - ${globals.adHelper.loadingAd}");
-    print("adLoaded - ${globals.adHelper.adLoaded}");
     _createRewardedAd();
     super.initState();
   }

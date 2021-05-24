@@ -65,6 +65,9 @@ class _BottomBarState extends State<BottomBar>
   }
 
   Future<void> _createAnchoredBanner(BuildContext context) async {
+    setState(() {
+      _anchoredBanner = null;
+    });
     final AnchoredAdaptiveBannerAdSize? size =
         await AdSize.getAnchoredAdaptiveBannerAdSize(
       Orientation.portrait,
