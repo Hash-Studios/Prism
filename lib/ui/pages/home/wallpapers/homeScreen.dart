@@ -1,8 +1,6 @@
-import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/pexelsGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallhavenGrid.dart';

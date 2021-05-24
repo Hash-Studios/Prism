@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:Prism/routes/router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:Prism/data/informatics/dataManager.dart';
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 List? prismWalls;
