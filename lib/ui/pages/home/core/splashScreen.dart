@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/notifications/notifications.dart';
-import 'package:Prism/data/prism/provider/prismWithoutProvider.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/pages/home/core/oldVersionScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';

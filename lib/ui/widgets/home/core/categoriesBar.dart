@@ -1,5 +1,4 @@
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';

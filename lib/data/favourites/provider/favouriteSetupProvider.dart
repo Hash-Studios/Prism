@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 
 class FavouriteSetupProvider extends ChangeNotifier {

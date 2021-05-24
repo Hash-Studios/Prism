@@ -4,5 +4,5 @@ class AdHelper {
   bool loadingAd;
   bool adLoaded;
   RewardedAd? rewardedAd;
-  AdHelper({this.loadingAd = false, this.adLoaded = false, rewardedAd});
+  AdHelper({this.loadingAd = false, this.adLoaded = false, this.rewardedAd});
 }

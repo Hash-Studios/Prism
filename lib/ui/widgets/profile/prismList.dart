@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 class PrismList extends StatelessWidget {
   @override
