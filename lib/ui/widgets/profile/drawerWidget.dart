@@ -296,22 +296,10 @@ class ProfileDrawer extends StatelessWidget {
                 context: context,
                 onTap: () {
                   createUserDynamicLink(
-                      globals.prismUser.username.toString(),
-                      globals.prismUser.email.toString(),
-                      globals.prismUser.profilePhoto.toString(),
-                      globals.prismUser.premium,
-                      main.prefs.get("twitter") != ""
-                          ? main.prefs
-                              .get("twitter")
-                              .toString()
-                              .split("https://www.twitter.com/")[1]
-                          : "",
-                      main.prefs.get("instagram") != ""
-                          ? main.prefs
-                              .get("instagram")
-                              .toString()
-                              .split("https://www.instagram.com/")[1]
-                          : "");
+                    globals.prismUser.username.toString(),
+                    globals.prismUser.email.toString(),
+                    globals.prismUser.profilePhoto.toString(),
+                  );
                 }),
             createDrawerBodyItem(
               icon: JamIcons.log_out,
