@@ -18,6 +18,7 @@ import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dar
 import 'package:Prism/ui/widgets/profile/uploadedWallsLoader.dart';
 import 'package:Prism/ui/widgets/profile/uploadedSetupsLoader.dart';
 import 'package:Prism/ui/widgets/profile/userList.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -162,29 +163,56 @@ class _ProfileChildState extends State<ProfileChild> {
                                                   alignment: Alignment.center,
                                                   children: [
                                                     Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              0),
                                                       decoration: BoxDecoration(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      5000),
-                                                          boxShadow: [
-                                                            BoxShadow(
-                                                                blurRadius: 16,
-                                                                offset:
-                                                                    const Offset(
-                                                                        0, 4),
-                                                                color: const Color(
-                                                                        0xFF000000)
-                                                                    .withOpacity(
-                                                                        0.24))
-                                                          ]),
+                                                        color: Theme.of(context)
+                                                            .errorColor,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5000),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                              blurRadius: 16,
+                                                              offset:
+                                                                  const Offset(
+                                                                      0, 4),
+                                                              color: const Color(
+                                                                      0xFF000000)
+                                                                  .withOpacity(
+                                                                      0.24))
+                                                        ],
+                                                      ),
                                                       child: CircleAvatar(
+                                                        backgroundColor:
+                                                            Colors.transparent,
+                                                        foregroundColor:
+                                                            Colors.transparent,
                                                         radius: 50,
-                                                        backgroundImage:
-                                                            NetworkImage(globals
-                                                                .prismUser
-                                                                .profilePhoto
-                                                                .toString()),
+                                                        child: ClipOval(
+                                                          child: Container(
+                                                            height: 120,
+                                                            margin:
+                                                                const EdgeInsets
+                                                                    .all(0),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(0),
+                                                            child:
+                                                                CachedNetworkImage(
+                                                              fit: BoxFit.cover,
+                                                              imageUrl: globals
+                                                                  .prismUser
+                                                                  .profilePhoto
+                                                                  .toString(),
+                                                              errorWidget: (context,
+                                                                      url,
+                                                                      error) =>
+                                                                  Container(),
+                                                            ),
+                                                          ),
+                                                        ),
                                                       ),
                                                     ),
                                                     if (globals.verifiedUsers
