@@ -141,6 +141,14 @@ You can also report bugs, upload your setups/walls on our telegram channel
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
+### v2.6.6
+- Fix share profile not working
+- Remove Licenses from in-app
+- Add local caching for search providers
+- Fix profile image clipping edge
+- Fix GitHub package branch null error
+- Minor bug fixes and improvements
+
 ### v2.6.5
 - Migrate to Flutter 2.0.0, and most packages to null safety
 - Fix displaymode errors
@@ -160,15 +168,6 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 - Fixed minor UI bugs
 - Major bug fixes and improvements
 
-### v2.6.4
-- Added quick tile, to change wallpaper
-- Added option to turn follower feed on/off
-- Quick Actions fixed
-- Improved post/setup notifications
-- Updated Splash Screen Animation
-- Added toast in variants
-- Fixed minor UI bugs
-- Minor bug fixes and improvements
 
 ## Demo
 
