@@ -62,6 +62,10 @@ class _SearchScreenState extends State<SearchScreen> {
     'Space',
     'Winter',
     'Beach',
+    'Ninja',
+    'Summer',
+    'Titan',
+    'White',
   ];
   late bool isSubmitted;
   TextEditingController searchController = TextEditingController();
@@ -69,8 +73,13 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     isSubmitted = false;
-    selectedProvider = "WallHaven";
-    selectedProviders = providers[0] as SearchProviderMenuItem;
+
+    selectedProvider = main.prefs
+        .get('selectedSearchProvider', defaultValue: "WallHaven")
+        .toString();
+    selectedProviders = selectedProvider == "WallHaven"
+        ? providers[0] as SearchProviderMenuItem
+        : providers[1] as SearchProviderMenuItem;
     tags.shuffle();
     super.initState();
   }
@@ -164,6 +173,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       setState(() {
                         selectedProviders = choice as SearchProviderMenuItem;
                         selectedProvider = choice.title.toString();
+                        main.prefs
+                            .put('selectedSearchProvider', selectedProvider);
                         if (searchController.text != "") {
                           isSubmitted = true;
                           if (choice.title == "WallHaven") {
@@ -245,7 +256,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                       wdata.wallsS = [];
                                       _future = wdata.getWallsbyQuery(
                                           tags[index],
-                                          main.prefs.get('WHcategories') as int?,
+                                          main.prefs.get('WHcategories')
+                                              as int?,
                                           main.prefs.get('WHpurity') as int?);
                                     } else if (selectedProvider == "Pexels") {
                                       pdata.wallsPS = [];
