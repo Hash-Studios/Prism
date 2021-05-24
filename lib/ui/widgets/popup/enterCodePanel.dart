@@ -171,7 +171,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                             : Theme.of(context).errorColor.withOpacity(0.2),
                         border: Border.all(
                             color: !enabled
-                                ? Theme.of(context).accentColor
+                                ? Theme.of(context).accentColor.withOpacity(0.5)
                                 : Theme.of(context).errorColor,
                             width: 3),
                         borderRadius: BorderRadius.circular(10),
@@ -183,7 +183,11 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                                 "Redeem Code",
                                 style: TextStyle(
                                     fontSize: 16,
-                                    color: Theme.of(context).accentColor,
+                                    color: !enabled
+                                        ? Theme.of(context)
+                                            .accentColor
+                                            .withOpacity(0.5)
+                                        : Theme.of(context).accentColor,
                                     fontWeight: FontWeight.bold),
                               ),
                       ),
@@ -199,7 +203,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
             child: SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               child: Text(
-                "We regularly give these codes on our Twitter/ Telegram @PrismWallpapers. Enter the code here, and if you are the first to redeem it, you get Prism Premium for free!",
+                "We regularly give these codes on our Twitter/ Telegram @PrismWallpapers. Enter the code here, and if you are the first to redeem it, you get Prism Premium or any other reward for free!",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
