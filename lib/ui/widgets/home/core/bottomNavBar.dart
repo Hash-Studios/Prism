@@ -493,7 +493,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 10, 18, 10),
               child: IconButton(
-                tooltip: 'Settings',
+                tooltip: 'Profile',
                 padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
