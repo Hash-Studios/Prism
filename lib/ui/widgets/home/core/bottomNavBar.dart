@@ -5,8 +5,10 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
@@ -28,11 +30,24 @@ class _BottomBarState extends State<BottomBar>
   late Animation<Offset> _offsetAnimation;
   bool isScrollingDown = false;
   bool isOnTop = true;
+  late double bottom;
+  static const AdRequest request = AdRequest(
+    nonPersonalizedAds: false,
+    keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
+  );
+
+  BannerAd? _anchoredBanner;
+  bool _loadingAnchoredBanner = false;
 
   @override
   void initState() {
     myScroll();
     super.initState();
+    if (globals.prismUser.premium) {
+      bottom = 10;
+    } else {
+      bottom = 100;
+    }
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -47,6 +62,42 @@ class _BottomBarState extends State<BottomBar>
       ..addListener(() {
         setState(() {});
       });
+  }
+
+  Future<void> _createAnchoredBanner(BuildContext context) async {
+    final AnchoredAdaptiveBannerAdSize? size =
+        await AdSize.getAnchoredAdaptiveBannerAdSize(
+      Orientation.portrait,
+      MediaQuery.of(context).size.width.truncate(),
+    );
+
+    if (size == null) {
+      debugPrint('Unable to get height of anchored banner.');
+      return;
+    }
+
+    final BannerAd banner = BannerAd(
+      size: size,
+      request: request,
+      adUnitId: kReleaseMode
+          ? "ca-app-pub-4649644680694757/8480286673"
+          : BannerAd.testAdUnitId,
+      listener: BannerAdListener(
+        onAdLoaded: (Ad ad) {
+          debugPrint('$BannerAd loaded.');
+          setState(() {
+            _anchoredBanner = ad as BannerAd?;
+          });
+        },
+        onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          debugPrint('$BannerAd failedToLoad: $error');
+          ad.dispose();
+        },
+        onAdOpened: (Ad ad) => debugPrint('$BannerAd onAdOpened.'),
+        onAdClosed: (Ad ad) => debugPrint('$BannerAd onAdClosed.'),
+      ),
+    );
+    return banner.load();
   }
 
   void showBottomBar() {
@@ -86,6 +137,7 @@ class _BottomBarState extends State<BottomBar>
   void dispose() {
     scrollBottomBarController.removeListener(() {});
     _controller.dispose();
+    _anchoredBanner?.dispose();
     super.dispose();
   }
 
@@ -100,18 +152,44 @@ class _BottomBarState extends State<BottomBar>
           child: widget.child!,
         ),
         Positioned(
-          bottom: 10,
+          bottom: bottom,
           child: SlideTransition(
             position: _offsetAnimation,
             child: BottomNavBar(),
           ),
         ),
+        if (bottom != 10)
+          Positioned(
+            bottom: 0,
+            child: Builder(
+              builder: (context) {
+                if (!_loadingAnchoredBanner && bottom != 10) {
+                  _loadingAnchoredBanner = true;
+                  _createAnchoredBanner(context);
+                }
+                return Container(
+                  color: Colors.black,
+                  width: _anchoredBanner != null
+                      ? _anchoredBanner!.size.width.toDouble()
+                      : MediaQuery.of(context).size.width.toDouble(),
+                  height: 80,
+                  child: _anchoredBanner != null
+                      ? AdWidget(
+                          ad: _anchoredBanner!,
+                          key: ValueKey(
+                              _anchoredBanner!.responseInfo!.responseId),
+                        )
+                      : Container(),
+                );
+              },
+            ),
+          ),
         if (isOnTop == true)
           Container()
         else
           Positioned(
             right: 10,
-            bottom: 10,
+            bottom: bottom,
             child: FloatingActionButton(
               mini: true,
               onPressed: () {
