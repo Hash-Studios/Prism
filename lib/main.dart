@@ -45,7 +45,7 @@ int? purity;
 LocalNotification localNotification = LocalNotification();
 void main() {
   //TODO: Uncomment next line before release
-  // debugPrint = (String message, {int wrapWidth}) {};
+  debugPrint = (String? message, {int? wrapWidth}) {};
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
   FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
