@@ -116,23 +116,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            ListTile(
-              onTap: () {
-                Navigator.pushNamed(context, themeViewRoute);
-              },
-              leading: const Icon(JamIcons.wrench),
-              title: Text(
-                "Themes",
-                style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
-              ),
-              subtitle: const Text(
-                "Toggle app theme",
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
+            // ListTile(
+            //   onTap: () {
+            //     Navigator.pushNamed(context, themeViewRoute);
+            //   },
+            //   leading: const Icon(JamIcons.wrench),
+            //   title: Text(
+            //     "Themes",
+            //     style: TextStyle(
+            //         color: Theme.of(context).accentColor,
+            //         fontWeight: FontWeight.w500,
+            //         fontFamily: "Proxima Nova"),
+            //   ),
+            //   subtitle: const Text(
+            //     "Toggle app theme",
+            //     style: TextStyle(fontSize: 12),
+            //   ),
+            // ),
             ListTile(
                 leading: const Icon(
                   JamIcons.pie_chart_alt,
