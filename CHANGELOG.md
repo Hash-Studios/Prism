@@ -1,5 +1,24 @@
 ## Changelog
 
+### v2.6.5
+- Migrate to Flutter 2.0.0, and most packages to null safety
+- Fix displaymode errors
+- Add intent filter for dynamic links
+- Favs sorted by createdAt
+- Improved touch response by removing Gesture binding resampling
+- New user model (username, profile photo, links, bio)
+- New enter code option for giveaways
+- Improved network requests by pagination
+- Remove easter egg
+- Remove Trending category
+- Update splash with loading animation
+- Add new ads package
+- Remove in-app donation support
+- Add download notifications
+- Fixed followers page UI as well as requests
+- Fixed minor UI bugs
+- Major bug fixes and improvements
+
 ### v2.6.4
 - Added quick tile, to change wallpaper
 - Added option to turn follower feed on/off

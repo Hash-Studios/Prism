@@ -46,6 +46,13 @@ void showChangelog(BuildContext context, Function func) {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
+                    ChangeVersion(number: 'v2.6.5'),
+                    Change(
+                        icon: JamIcons.user,
+                        text: "Improved overall user experience."),
+                    Change(
+                        icon: JamIcons.bug,
+                        text: "Major bug fixes and improvements."),
                     ChangeVersion(number: 'v2.6.4'),
                     Change(
                         icon: JamIcons.bell,
