@@ -1,11 +1,12 @@
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/ui/widgets/profile/userProfileSetupGrid.dart';
 import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class UserProfileSetupLoader extends StatefulWidget {
-  final Future future;
   final String? email;
-  const UserProfileSetupLoader({required this.future, required this.email});
+  const UserProfileSetupLoader({required this.email});
   @override
   _UserProfileSetupLoaderState createState() => _UserProfileSetupLoaderState();
 }
@@ -15,7 +16,8 @@ class _UserProfileSetupLoaderState extends State<UserProfileSetupLoader> {
 
   @override
   void initState() {
-    _future = widget.future;
+    _future = Provider.of<UserProfileProvider>(context, listen: false)
+        .getUserProfileSetups(widget.email);
     super.initState();
   }
 

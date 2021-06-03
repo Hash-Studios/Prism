@@ -11,13 +11,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userData;
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class FollowerProfile extends StatefulWidget {
   final List? arguments;
@@ -76,7 +77,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
           child: Scaffold(
             backgroundColor: Theme.of(context).primaryColor,
             body: StreamBuilder<QuerySnapshot>(
-              stream: userData.getUserProfile(email!),
+              stream: getUserProfile(email!),
               builder: (context, snap) {
                 if (snap.hasData && snap.data != null) {
                   name = snap.data!.docs[0].data()["name"].toString();
@@ -454,8 +455,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
                               IconButton(
                                 icon: const Icon(JamIcons.user_remove),
                                 onPressed: () {
-                                  userData.unfollow(
-                                      email!, snap.data!.docs[0].id);
+                                  unfollow(email!, snap.data!.docs[0].id);
                                   toasts.error("Unfollowed $name!");
                                 },
                               )
@@ -475,8 +475,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                 child: IconButton(
                                   icon: const Icon(JamIcons.user_plus),
                                   onPressed: () {
-                                    userData.follow(
-                                        email!, snap.data!.docs[0].id);
+                                    follow(email!, snap.data!.docs[0].id);
                                     http.post(
                                       Uri.parse(
                                         'https://fcm.googleapis.com/fcm/send',
@@ -568,14 +567,12 @@ class _FollowerProfileState extends State<FollowerProfile> {
                           padding: const EdgeInsets.only(top: 5.0),
                           child: UserProfileLoader(
                             email: email,
-                            future: userData.getuserProfileWalls(email),
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.only(top: 5.0),
                           child: UserProfileSetupLoader(
                             email: email,
-                            future: userData.getUserProfileSetups(email),
                           ),
                         ),
                       ],

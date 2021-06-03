@@ -59,10 +59,18 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments![0] as int;
-    updateViewsSetup(
-        user_data.userProfileSetups![index!]["id"].toString().toUpperCase());
-    _futureView = getViewsSetup(
-        user_data.userProfileSetups![index!]["id"].toString().toUpperCase());
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      updateViewsSetup(
+          Provider.of<user_data.UserProfileProvider>(context, listen: false)
+              .userProfileSetups![index!]["id"]
+              .toString()
+              .toUpperCase());
+      _futureView = getViewsSetup(
+          Provider.of<user_data.UserProfileProvider>(context, listen: false)
+              .userProfileSetups![index!]["id"]
+              .toString()
+              .toUpperCase());
+    });
     isLoading = true;
     box = Hive.box('localFav');
     super.initState();
@@ -187,8 +195,12 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                       forward: true,
                                       slideSide: SlideFromSlide.bottom,
                                       child: Text(
-                                        user_data.userProfileSetups![index!]
-                                                ["name"]
+                                        Provider.of<
+                                                    user_data
+                                                        .UserProfileProvider>(
+                                                context)
+                                            .userProfileSetups![index!]
+                                            .data()["name"]
                                             .toString()
                                             .toUpperCase(),
                                         maxLines: 1,
@@ -212,8 +224,12 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                       slideSide: SlideFromSlide.bottom,
                                       delay: const Duration(milliseconds: 50),
                                       child: Text(
-                                        user_data.userProfileSetups![index!]
-                                                ["desc"]
+                                        Provider.of<
+                                                    user_data
+                                                        .UserProfileProvider>(
+                                                context)
+                                            .userProfileSetups![index!]
+                                            .data()["desc"]
                                             .toString(),
                                         maxLines: 2,
                                         overflow: TextOverflow.fade,
@@ -261,9 +277,13 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               child: Row(
                                                 children: [
                                                   Text(
-                                                    user_data
+                                                    Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context)
                                                         .userProfileSetups![
-                                                            index!]["id"]
+                                                            index!]
+                                                        .data()["id"]
                                                         .toString()
                                                         .toUpperCase(),
                                                     overflow: TextOverflow.fade,
@@ -370,13 +390,23 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               await createCopyrightLink(
                                                   true, context,
                                                   index: index.toString(),
-                                                  name: user_data
+                                                  name: Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
                                                       .userProfileSetups![
-                                                          index!]["name"]
+                                                          index!]
+                                                      .data()["name"]
                                                       .toString(),
-                                                  thumbUrl: user_data
+                                                  thumbUrl: Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
                                                       .userProfileSetups![
-                                                          index!]["image"]
+                                                          index!]
+                                                      .data()["image"]
                                                       .toString());
                                             },
                                             child: Row(
@@ -424,9 +454,13 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                         Alignment.topRight,
                                                     child: ActionChip(
                                                         label: Text(
-                                                          user_data
+                                                          Provider.of<
+                                                                      user_data
+                                                                          .UserProfileProvider>(
+                                                                  context)
                                                               .userProfileSetups![
-                                                                  index!]["by"]
+                                                                  index!]
+                                                              .data()["by"]
                                                               .toString(),
                                                           overflow:
                                                               TextOverflow.fade,
@@ -446,9 +480,12 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                                 horizontal: 5),
                                                         avatar: CircleAvatar(
                                                           backgroundImage:
-                                                              CachedNetworkImageProvider(user_data
+                                                              CachedNetworkImageProvider(Provider
+                                                                      .of<user_data.UserProfileProvider>(
+                                                                          context)
                                                                   .userProfileSetups![
-                                                                      index!][
+                                                                      index!]
+                                                                  .data()[
                                                                       "userPhoto"]
                                                                   .toString()),
                                                         ),
@@ -461,16 +498,24 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                               context,
                                                               followerProfileRoute,
                                                               arguments: [
-                                                                user_data.userProfileSetups![
+                                                                Provider.of<user_data.UserProfileProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .userProfileSetups![
                                                                         index!]
-                                                                    ["email"],
+                                                                    .data()["email"],
                                                               ]);
                                                         }),
                                                   ),
                                                   if (globals.verifiedUsers
-                                                      .contains(user_data
+                                                      .contains(Provider.of<
+                                                                  user_data
+                                                                      .UserProfileProvider>(
+                                                              context)
                                                           .userProfileSetups![
-                                                              index!]["email"]
+                                                              index!]
+                                                          .data()["email"]
                                                           .toString()))
                                                     Align(
                                                       alignment:
@@ -513,11 +558,15 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                         flex: 16,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                          child: user_data.userProfileSetups![index!]
-                                          ["widget"] ==
+                          child: Provider.of<user_data.UserProfileProvider>(
+                                              context)
+                                          .userProfileSetups![index!]
+                                          .data()["widget"] ==
                                       "" ||
-                                  user_data.userProfileSetups![index!]
-                                          ["widget"] ==
+                                  Provider.of<user_data.UserProfileProvider>(
+                                              context)
+                                          .userProfileSetups![index!]
+                                          .data()["widget"] ==
                                       null
                               ? Column(
                                   mainAxisAlignment:
@@ -527,107 +576,173 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        if (user_data.userProfileSetups![index!]
-                                                    ["wallpaper_url"]
+                                        if (Provider.of<
+                                                        user_data
+                                                            .UserProfileProvider>(
+                                                    context)
+                                                .userProfileSetups![index!]
+                                                .data()["wallpaper_url"]
                                                 .toString()[0] !=
                                             "[") {
-                                          if (user_data.userProfileSetups![
-                                                      index!]["wall_id"] ==
+                                          if (Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context)
+                                                      .userProfileSetups![
+                                                          index!]
+                                                      .data()["wall_id"] ==
                                                   null ||
-                                              user_data.userProfileSetups![
-                                                      index!]["wall_id"] ==
+                                              Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context)
+                                                      .userProfileSetups![
+                                                          index!]
+                                                      .data()["wall_id"] ==
                                                   "") {
                                             debugPrint("Id Not Found!");
-                                            launch(user_data
+                                            launch(Provider.of<
+                                                        user_data
+                                                            .UserProfileProvider>(
+                                                    context)
                                                 .userProfileSetups![index!]
-                                                    ["wallpaper_url"]
+                                                .data()["wallpaper_url"]
                                                 .toString());
                                           } else {
                                             Navigator.pushNamed(
                                                 context, shareRoute,
                                                 arguments: [
-                                                  user_data.userProfileSetups![
-                                                          index!]["wall_id"]
-                                                      .toString(),
-                                                  user_data.userProfileSetups![
+                                                  Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context)
+                                                      .userProfileSetups![
                                                           index!]
-                                                          ["wallpaper_provider"]
+                                                      .data()["wall_id"]
                                                       .toString(),
-                                                  user_data.userProfileSetups![
+                                                  Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context)
+                                                      .userProfileSetups![
                                                           index!]
-                                                          ["wallpaper_url"]
+                                                      .data()[
+                                                          "wallpaper_provider"]
                                                       .toString(),
-                                                  user_data.userProfileSetups![
+                                                  Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context)
+                                                      .userProfileSetups![
                                                           index!]
-                                                          ["wallpaper_url"]
+                                                      .data()["wallpaper_url"]
+                                                      .toString(),
+                                                  Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context)
+                                                      .userProfileSetups![
+                                                          index!]
+                                                      .data()["wallpaper_url"]
                                                       .toString(),
                                                 ]);
                                           }
                                         } else {
-                                          launch(user_data
+                                          launch(Provider.of<
+                                                      user_data
+                                                          .UserProfileProvider>(
+                                                  context)
                                               .userProfileSetups![index!]
-                                                  ["wallpaper_url"][1]
+                                              .data()["wallpaper_url"][1]
                                               .toString());
                                         }
                                       },
-                                      tileText: user_data
+                                      tileText: Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context)
                                                   .userProfileSetups![index!]
-                                                      ["wallpaper_url"]
+                                                  .data()["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
                                           ? "Prism"
-                                          : "${user_data.userProfileSetups![index!]["wallpaper_url"][0]} - ${(user_data.userProfileSetups![index!]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups![index!]["wallpaper_url"][2].toString() : ""}",
+                                          : "${Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled: user_data
+                                      isInstalled: Provider.of<
+                                                      user_data
+                                                          .UserProfileProvider>(
+                                                  context)
                                               .userProfileSetups![index!]
-                                                  ["icon_url"]
+                                              .data()["icon_url"]
                                               .toString()
                                               .contains(
                                                   'play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(user_data
+                                          ? DeviceApps.isAppInstalled(Provider.of<
+                                                      user_data
+                                                          .UserProfileProvider>(
+                                                  context)
                                               .userProfileSetups![index!]
-                                                  ["icon_url"]
+                                              .data()["icon_url"]
                                               .toString()
                                               .split("details?id=")[1]
                                               .split("&")[0])
                                           : Future.value(false),
                                       onTap: () async {
-                                        if (user_data.userProfileSetups![index!]
-                                                ["icon_url"]
+                                        if (Provider.of<
+                                                    user_data
+                                                        .UserProfileProvider>(
+                                                context)
+                                            .userProfileSetups![index!]
+                                            .data()["icon_url"]
                                             .toString()
                                             .contains(
                                                 'play.google.com/store/apps/details?id=')) {
                                           final isInstalled = await DeviceApps
-                                              .isAppInstalled(user_data
+                                              .isAppInstalled(Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context)
                                                   .userProfileSetups![index!]
-                                                      ["icon_url"]
+                                                  .data()["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0]);
                                           isInstalled
-                                              ? DeviceApps.openApp(user_data
+                                              ? DeviceApps.openApp(Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context)
                                                   .userProfileSetups![index!]
-                                                      ["icon_url"]
+                                                  .data()["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0])
-                                              : launch(user_data
+                                              : launch(Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context)
                                                   .userProfileSetups![index!]
-                                                      ["icon_url"]
+                                                  .data()["icon_url"]
                                                   .toString());
                                         } else {
-                                          launch(user_data
+                                          launch(Provider.of<
+                                                      user_data
+                                                          .UserProfileProvider>(
+                                                  context)
                                               .userProfileSetups![index!]
-                                                  ["icon_url"]
+                                              .data()["icon_url"]
                                               .toString());
                                         }
                                       },
-                                      tileText: user_data
-                                          .userProfileSetups![index!]["icon"]
+                                      tileText: Provider.of<
+                                              user_data
+                                                  .UserProfileProvider>(context)
+                                          .userProfileSetups![index!]
+                                          .data()["icon"]
                                           .toString(),
                                       tileType: "Icons",
                                       panelCollapsed: panelCollapsed,
@@ -635,11 +750,17 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                     ),
                                   ],
                                 )
-                              : user_data.userProfileSetups![index!]
-                                              ["widget2"] ==
+                              : Provider.of<user_data.UserProfileProvider>(
+                                                  context)
+                                              .userProfileSetups![index!]
+                                              .data()["widget2"] ==
                                           "" ||
-                                      user_data.userProfileSetups![index!]
-                                              ["widget2"] ==
+                                      Provider.of<
+                                                      user_data
+                                                          .UserProfileProvider>(
+                                                  context)
+                                              .userProfileSetups![index!]
+                                              .data()["widget2"] ==
                                           null
                                   ? Column(
                                       mainAxisAlignment:
@@ -649,119 +770,199 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                         SetupDetailsTile(
                                           isInstalled: Future.value(false),
                                           onTap: () async {
-                                            if (user_data
+                                            if (Provider.of<
+                                                            user_data
+                                                                .UserProfileProvider>(
+                                                        context,
+                                                        listen: false)
                                                     .userProfileSetups![index!]
-                                                        ["wallpaper_url"]
+                                                    .data()["wallpaper_url"]
                                                     .toString()[0] !=
                                                 "[") {
-                                              if (user_data.userProfileSetups![
-                                                          index!]["wall_id"] ==
+                                              if (Provider.of<
+                                                                  user_data
+                                                                      .UserProfileProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .userProfileSetups![
+                                                              index!]
+                                                          .data()["wall_id"] ==
                                                       null ||
-                                                  user_data.userProfileSetups![
-                                                          index!]["wall_id"] ==
+                                                  Provider.of<
+                                                                  user_data
+                                                                      .UserProfileProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .userProfileSetups![
+                                                              index!]
+                                                          .data()["wall_id"] ==
                                                       "") {
                                                 debugPrint("Id Not Found!");
-                                                launch(user_data
+                                                launch(Provider.of<
+                                                            user_data
+                                                                .UserProfileProvider>(
+                                                        context,
+                                                        listen: false)
                                                     .userProfileSetups![index!]
-                                                        ["wallpaper_url"]
+                                                    .data()["wallpaper_url"]
                                                     .toString());
                                               } else {
                                                 Navigator.pushNamed(
                                                     context, shareRoute,
                                                     arguments: [
-                                                      user_data
+                                                      Provider.of<
+                                                                  user_data
+                                                                      .UserProfileProvider>(
+                                                              context,
+                                                              listen: false)
                                                           .userProfileSetups![
-                                                              index!]["wall_id"]
+                                                              index!]
+                                                          .data()["wall_id"]
                                                           .toString(),
-                                                      user_data
+                                                      Provider.of<
+                                                                  user_data
+                                                                      .UserProfileProvider>(
+                                                              context,
+                                                              listen: false)
                                                           .userProfileSetups![
-                                                              index!][
+                                                              index!]
+                                                          .data()[
                                                               "wallpaper_provider"]
                                                           .toString(),
-                                                      user_data
+                                                      Provider.of<
+                                                                  user_data
+                                                                      .UserProfileProvider>(
+                                                              context,
+                                                              listen: false)
                                                           .userProfileSetups![
                                                               index!]
-                                                              ["wallpaper_url"]
+                                                          .data()[
+                                                              "wallpaper_url"]
                                                           .toString(),
-                                                      user_data
+                                                      Provider.of<
+                                                                  user_data
+                                                                      .UserProfileProvider>(
+                                                              context,
+                                                              listen: false)
                                                           .userProfileSetups![
                                                               index!]
-                                                              ["wallpaper_url"]
+                                                          .data()[
+                                                              "wallpaper_url"]
                                                           .toString(),
                                                     ]);
                                               }
                                             } else {
-                                              launch(user_data
+                                              launch(Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context,
+                                                      listen: false)
                                                   .userProfileSetups![index!]
-                                                      ["wallpaper_url"][1]
+                                                  .data()["wallpaper_url"][1]
                                                   .toString());
                                             }
                                           },
-                                          tileText: user_data
+                                          tileText: Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
                                                       .userProfileSetups![
                                                           index!]
-                                                          ["wallpaper_url"]
+                                                      .data()["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
                                               ? "Prism"
-                                              : "${user_data.userProfileSetups![index!]["wallpaper_url"][0]} - ${(user_data.userProfileSetups![index!]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups![index!]["wallpaper_url"][2].toString() : ""}",
+                                              : "${Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay:
                                               const Duration(milliseconds: 150),
                                         ),
                                         SetupDetailsTile(
-                                          isInstalled: user_data
+                                          isInstalled: Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context)
                                                   .userProfileSetups![index!]
-                                                      ["icon_url"]
+                                                  .data()["icon_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')
                                               ? DeviceApps.isAppInstalled(
-                                                  user_data.userProfileSetups![
-                                                          index!]["icon_url"]
+                                                  Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context)
+                                                      .userProfileSetups![
+                                                          index!]
+                                                      .data()["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
                                               : Future.value(false),
                                           onTap: () async {
-                                            if (user_data
+                                            if (Provider.of<
+                                                        user_data
+                                                            .UserProfileProvider>(
+                                                    context,
+                                                    listen: false)
                                                 .userProfileSetups![index!]
-                                                    ["icon_url"]
+                                                .data()["icon_url"]
                                                 .toString()
                                                 .contains(
                                                     'play.google.com/store/apps/details?id=')) {
-                                              final isInstalled =
-                                                  await DeviceApps
-                                                      .isAppInstalled(user_data
-                                                          .userProfileSetups![
-                                                              index!]
-                                                              ["icon_url"]
-                                                          .toString()
-                                                          .split(
-                                                              "details?id=")[1]
-                                                          .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(user_data
+                                              final isInstalled = await DeviceApps
+                                                  .isAppInstalled(Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
                                                       .userProfileSetups![
-                                                          index!]["icon_url"]
+                                                          index!]
+                                                      .data()["icon_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .userProfileSetups![
+                                                          index!]
+                                                      .data()["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
-                                                  : launch(user_data
+                                                  : launch(Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
                                                       .userProfileSetups![
-                                                          index!]["icon_url"]
+                                                          index!]
+                                                      .data()["icon_url"]
                                                       .toString());
                                             } else {
-                                              launch(user_data
+                                              launch(Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context,
+                                                      listen: false)
                                                   .userProfileSetups![index!]
-                                                      ["icon_url"]
+                                                  .data()["icon_url"]
                                                   .toString());
                                             }
                                           },
-                                          tileText: user_data
+                                          tileText: Provider.of<
+                                                      user_data
+                                                          .UserProfileProvider>(
+                                                  context,
+                                                  listen: false)
                                               .userProfileSetups![index!]
-                                                  ["icon"]
+                                              .data()["icon"]
                                               .toString(),
                                           tileType: "Icons",
                                           panelCollapsed: panelCollapsed,
@@ -769,57 +970,89 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               const Duration(milliseconds: 200),
                                         ),
                                         SetupDetailsTile(
-                                          isInstalled: user_data
+                                          isInstalled: Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context,
+                                                      listen: false)
                                                   .userProfileSetups![index!]
-                                                      ["widget_url"]
+                                                  .data()["widget_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')
                                               ? DeviceApps.isAppInstalled(
-                                                  user_data.userProfileSetups![
-                                                          index!]["widget_url"]
+                                                  Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context)
+                                                      .userProfileSetups![
+                                                          index!]
+                                                      .data()["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
                                               : Future.value(false),
                                           onTap: () async {
-                                            if (user_data
+                                            if (Provider.of<
+                                                        user_data
+                                                            .UserProfileProvider>(
+                                                    context,
+                                                    listen: false)
                                                 .userProfileSetups![index!]
-                                                    ["widget_url"]
+                                                .data()["widget_url"]
                                                 .toString()
                                                 .contains(
                                                     'play.google.com/store/apps/details?id=')) {
-                                              final isInstalled =
-                                                  await DeviceApps
-                                                      .isAppInstalled(user_data
-                                                          .userProfileSetups![
-                                                              index!]
-                                                              ["widget_url"]
-                                                          .toString()
-                                                          .split(
-                                                              "details?id=")[1]
-                                                          .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(user_data
+                                              final isInstalled = await DeviceApps
+                                                  .isAppInstalled(Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
                                                       .userProfileSetups![
-                                                          index!]["widget_url"]
+                                                          index!]
+                                                      .data()["widget_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .userProfileSetups![
+                                                          index!]
+                                                      .data()["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
-                                                  : launch(user_data
+                                                  : launch(Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
                                                       .userProfileSetups![
-                                                          index!]["widget_url"]
+                                                          index!]
+                                                      .data()["widget_url"]
                                                       .toString());
                                             } else {
-                                              launch(user_data
+                                              launch(Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context,
+                                                      listen: false)
                                                   .userProfileSetups![index!]
-                                                      ["widget_url"]
+                                                  .data()["widget_url"]
                                                   .toString());
                                             }
                                           },
-                                          tileText: user_data
+                                          tileText: Provider.of<
+                                                      user_data
+                                                          .UserProfileProvider>(
+                                                  context)
                                               .userProfileSetups![index!]
-                                                  ["widget"]
+                                              .data()["widget"]
                                               .toString(),
                                           tileType: "Widget",
                                           panelCollapsed: panelCollapsed,
@@ -836,124 +1069,197 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           SetupDetailsTile(
                                             isInstalled: Future.value(false),
                                             onTap: () async {
-                                              if (user_data.userProfileSetups![
-                                                          index!]
-                                                          ["wallpaper_url"]
-                                                      .toString()[0] !=
-                                                  "[") {
-                                                if (user_data.userProfileSetups![
-                                                                index!]
-                                                            ["wall_id"] ==
-                                                        null ||
-                                                    user_data.userProfileSetups![
-                                                                index!]
-                                                            ["wall_id"] ==
-                                                        "") {
-                                                  debugPrint("Id Not Found!");
-                                                  launch(user_data
+                                              if (Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
                                                       .userProfileSetups![
                                                           index!]
-                                                          ["wallpaper_url"]
+                                                      .data()["wallpaper_url"]
+                                                      .toString()[0] !=
+                                                  "[") {
+                                                if (Provider.of<user_data.UserProfileProvider>(
+                                                                    context,
+                                                                    listen: false)
+                                                                .userProfileSetups![
+                                                                    index!]
+                                                                .data()[
+                                                            "wall_id"] ==
+                                                        null ||
+                                                    Provider.of<
+                                                                    user_data
+                                                                        .UserProfileProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .userProfileSetups![
+                                                                index!]
+                                                            .data()["wall_id"] ==
+                                                        "") {
+                                                  debugPrint("Id Not Found!");
+                                                  launch(Provider.of<
+                                                              user_data
+                                                                  .UserProfileProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .userProfileSetups![
+                                                          index!]
+                                                      .data()["wallpaper_url"]
                                                       .toString());
                                                 } else {
                                                   Navigator.pushNamed(
                                                       context, shareRoute,
                                                       arguments: [
-                                                        user_data
+                                                        Provider.of<
+                                                                    user_data
+                                                                        .UserProfileProvider>(
+                                                                context,
+                                                                listen: false)
                                                             .userProfileSetups![
                                                                 index!]
-                                                                ["wall_id"]
+                                                            .data()["wall_id"]
                                                             .toString(),
-                                                        user_data
+                                                        Provider.of<
+                                                                    user_data
+                                                                        .UserProfileProvider>(
+                                                                context,
+                                                                listen: false)
                                                             .userProfileSetups![
-                                                                index!][
+                                                                index!]
+                                                            .data()[
                                                                 "wallpaper_provider"]
                                                             .toString(),
-                                                        user_data
+                                                        Provider.of<
+                                                                    user_data
+                                                                        .UserProfileProvider>(
+                                                                context,
+                                                                listen: false)
                                                             .userProfileSetups![
-                                                                index!][
+                                                                index!]
+                                                            .data()[
                                                                 "wallpaper_url"]
                                                             .toString(),
-                                                        user_data
+                                                        Provider.of<
+                                                                    user_data
+                                                                        .UserProfileProvider>(
+                                                                context,
+                                                                listen: false)
                                                             .userProfileSetups![
-                                                                index!][
+                                                                index!]
+                                                            .data()[
                                                                 "wallpaper_url"]
                                                             .toString(),
                                                       ]);
                                                 }
                                               } else {
-                                                launch(user_data
+                                                launch(Provider.of<
+                                                            user_data
+                                                                .UserProfileProvider>(
+                                                        context)
                                                     .userProfileSetups![index!]
-                                                        ["wallpaper_url"][1]
+                                                    .data()["wallpaper_url"][1]
                                                     .toString());
                                               }
                                             },
-                                            tileText: user_data
+                                            tileText: Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context)
                                                         .userProfileSetups![
                                                             index!]
-                                                            ["wallpaper_url"]
+                                                        .data()["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
                                                 ? "Prism"
-                                                : "${user_data.userProfileSetups![index!]["wallpaper_url"][0]} - ${(user_data.userProfileSetups![index!]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups![index!]["wallpaper_url"][2].toString() : ""}",
+                                                : "${Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(
                                                 milliseconds: 150),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: user_data
+                                            isInstalled: Provider.of<
+                                                            user_data
+                                                                .UserProfileProvider>(
+                                                        context)
                                                     .userProfileSetups![index!]
-                                                        ["icon_url"]
+                                                    .data()["icon_url"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
                                                 ? DeviceApps.isAppInstalled(
-                                                    user_data
+                                                    Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context)
                                                         .userProfileSetups![
-                                                            index!]["icon_url"]
+                                                            index!]
+                                                        .data()["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
-                                              if (user_data
+                                              if (Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context,
+                                                      listen: false)
                                                   .userProfileSetups![index!]
-                                                      ["icon_url"]
+                                                  .data()["icon_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')) {
-                                                final isInstalled =
-                                                    await DeviceApps
-                                                        .isAppInstalled(user_data
-                                                            .userProfileSetups![
-                                                                index!]
-                                                                ["icon_url"]
-                                                            .toString()
-                                                            .split(
-                                                                "details?id=")[1]
-                                                            .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(user_data
+                                                final isInstalled = await DeviceApps
+                                                    .isAppInstalled(Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context,
+                                                            listen: false)
                                                         .userProfileSetups![
-                                                            index!]["icon_url"]
+                                                            index!]
+                                                        .data()["icon_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .userProfileSetups![
+                                                            index!]
+                                                        .data()["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                    : launch(user_data
+                                                    : launch(Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context,
+                                                            listen: false)
                                                         .userProfileSetups![
-                                                            index!]["icon_url"]
+                                                            index!]
+                                                        .data()["icon_url"]
                                                         .toString());
                                               } else {
-                                                launch(user_data
+                                                launch(Provider.of<
+                                                            user_data
+                                                                .UserProfileProvider>(
+                                                        context,
+                                                        listen: false)
                                                     .userProfileSetups![index!]
-                                                        ["icon_url"]
+                                                    .data()["icon_url"]
                                                     .toString());
                                               }
                                             },
-                                            tileText: user_data
+                                            tileText: Provider.of<
+                                                        user_data
+                                                            .UserProfileProvider>(
+                                                    context)
                                                 .userProfileSetups![index!]
-                                                    ["icon"]
+                                                .data()["icon"]
                                                 .toString(),
                                             tileType: "Icons",
                                             panelCollapsed: panelCollapsed,
@@ -961,61 +1267,89 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 milliseconds: 200),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: user_data
+                                            isInstalled: Provider.of<
+                                                            user_data
+                                                                .UserProfileProvider>(
+                                                        context)
                                                     .userProfileSetups![index!]
-                                                        ["widget_url"]
+                                                    .data()["widget_url"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
                                                 ? DeviceApps.isAppInstalled(
-                                                    user_data
+                                                    Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context)
                                                         .userProfileSetups![
                                                             index!]
-                                                            ["widget_url"]
+                                                        .data()["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
-                                              if (user_data
+                                              if (Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context,
+                                                      listen: false)
                                                   .userProfileSetups![index!]
-                                                      ["widget_url"]
+                                                  .data()["widget_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')) {
-                                                final isInstalled =
-                                                    await DeviceApps
-                                                        .isAppInstalled(user_data
-                                                            .userProfileSetups![
-                                                                index!]
-                                                                ["widget_url"]
-                                                            .toString()
-                                                            .split(
-                                                                "details?id=")[1]
-                                                            .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(user_data
+                                                final isInstalled = await DeviceApps
+                                                    .isAppInstalled(Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context,
+                                                            listen: false)
                                                         .userProfileSetups![
                                                             index!]
-                                                            ["widget_url"]
+                                                        .data()["widget_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .userProfileSetups![
+                                                            index!]
+                                                        .data()["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                    : launch(user_data
+                                                    : launch(Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context,
+                                                            listen: false)
                                                         .userProfileSetups![
                                                             index!]
-                                                            ["widget_url"]
+                                                        .data()["widget_url"]
                                                         .toString());
                                               } else {
-                                                launch(user_data
+                                                launch(Provider.of<
+                                                            user_data
+                                                                .UserProfileProvider>(
+                                                        context,
+                                                        listen: false)
                                                     .userProfileSetups![index!]
-                                                        ["widget_url"]
+                                                    .data()["widget_url"]
                                                     .toString());
                                               }
                                             },
-                                            tileText: user_data
+                                            tileText: Provider.of<
+                                                        user_data
+                                                            .UserProfileProvider>(
+                                                    context,
+                                                    listen: false)
                                                 .userProfileSetups![index!]
-                                                    ["widget"]
+                                                .data()["widget"]
                                                 .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
@@ -1023,61 +1357,89 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 milliseconds: 250),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: user_data
+                                            isInstalled: Provider.of<
+                                                            user_data
+                                                                .UserProfileProvider>(
+                                                        context)
                                                     .userProfileSetups![index!]
-                                                        ["widget_url2"]
+                                                    .data()["widget_url2"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
                                                 ? DeviceApps.isAppInstalled(
-                                                    user_data
+                                                    Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context)
                                                         .userProfileSetups![
                                                             index!]
-                                                            ["widget_url2"]
+                                                        .data()["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
-                                              if (user_data
+                                              if (Provider.of<
+                                                          user_data
+                                                              .UserProfileProvider>(
+                                                      context,
+                                                      listen: false)
                                                   .userProfileSetups![index!]
-                                                      ["widget_url2"]
+                                                  .data()["widget_url2"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')) {
-                                                final isInstalled =
-                                                    await DeviceApps
-                                                        .isAppInstalled(user_data
-                                                            .userProfileSetups![
-                                                                index!]
-                                                                ["widget_url2"]
-                                                            .toString()
-                                                            .split(
-                                                                "details?id=")[1]
-                                                            .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(user_data
+                                                final isInstalled = await DeviceApps
+                                                    .isAppInstalled(Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context,
+                                                            listen: false)
                                                         .userProfileSetups![
                                                             index!]
-                                                            ["widget_url2"]
+                                                        .data()["widget_url2"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .userProfileSetups![
+                                                            index!]
+                                                        .data()["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                    : launch(user_data
+                                                    : launch(Provider.of<
+                                                                user_data
+                                                                    .UserProfileProvider>(
+                                                            context,
+                                                            listen: false)
                                                         .userProfileSetups![
                                                             index!]
-                                                            ["widget_url2"]
+                                                        .data()["widget_url2"]
                                                         .toString());
                                               } else {
-                                                launch(user_data
+                                                launch(Provider.of<
+                                                            user_data
+                                                                .UserProfileProvider>(
+                                                        context,
+                                                        listen: false)
                                                     .userProfileSetups![index!]
-                                                        ["widget_url2"]
+                                                    .data()["widget_url2"]
                                                     .toString());
                                               }
                                             },
-                                            tileText: user_data
+                                            tileText: Provider.of<
+                                                        user_data
+                                                            .UserProfileProvider>(
+                                                    context,
+                                                    listen: false)
                                                 .userProfileSetups![index!]
-                                                    ["widget2"]
+                                                .data()["widget2"]
                                                 .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
@@ -1113,25 +1475,48 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                   if (globals.prismUser.loggedIn == false) {
                                     googleSignInPopUp(context, () {
                                       onFavSetup(
-                                          user_data.userProfileSetups![index!].data()
-                                                  ["id"]
+                                          Provider.of<
+                                                      user_data
+                                                          .UserProfileProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .userProfileSetups![index!]
+                                              .data()["id"]
                                               .toString(),
-                                          user_data.userProfileSetups![index!].data()
-                                              as Map);
+                                          Provider.of<
+                                                      user_data
+                                                          .UserProfileProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .userProfileSetups![index!]
+                                              .data());
                                     });
                                   } else {
                                     onFavSetup(
-                                        user_data.userProfileSetups![index!].data()
-                                                ["id"]
+                                        Provider.of<
+                                                    user_data
+                                                        .UserProfileProvider>(
+                                                context,
+                                                listen: false)
+                                            .userProfileSetups![index!]
+                                            .data()["id"]
                                             .toString(),
-                                        user_data.userProfileSetups![index!].data()
-                                            as Map);
+                                        Provider.of<
+                                                    user_data
+                                                        .UserProfileProvider>(
+                                                context,
+                                                listen: false)
+                                            .userProfileSetups![index!]
+                                            .data());
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,
                                 iconSize: 30,
                                 isFavorite: box.get(
-                                    user_data.userProfileSetups![index!]["id"]
+                                    Provider.of<user_data.UserProfileProvider>(
+                                            context)
+                                        .userProfileSetups![index!]
+                                        .data()["id"]
                                         .toString(),
                                     defaultValue: false) as bool,
                               ),
@@ -1140,10 +1525,17 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                               onTap: () {
                                 createSetupDynamicLink(
                                     index.toString(),
-                                    user_data.userProfileSetups![index!]["name"]
+                                    Provider.of<user_data.UserProfileProvider>(
+                                            context,
+                                            listen: false)
+                                        .userProfileSetups![index!]
+                                        .data()["name"]
                                         .toString(),
-                                    user_data.userProfileSetups![index!]
-                                            ["image"]
+                                    Provider.of<user_data.UserProfileProvider>(
+                                            context,
+                                            listen: false)
+                                        .userProfileSetups![index!]
+                                        .data()["image"]
                                         .toString());
                               },
                               child: Container(
@@ -1197,8 +1589,11 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                         shakeController.forward(from: 0.0);
                       },
                       child: CachedNetworkImage(
-                        imageUrl: user_data.userProfileSetups![index!]["image"]
-                            .toString(),
+                        imageUrl:
+                            Provider.of<user_data.UserProfileProvider>(context)
+                                .userProfileSetups![index!]
+                                .data()["image"]
+                                .toString(),
                         imageBuilder: (context, imageProvider) => Container(
                           margin: EdgeInsets.symmetric(
                               vertical: offsetAnimation.value * 1.25,
@@ -1275,8 +1670,11 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                 return FadeTransition(
                                     opacity: animation,
                                     child: SetupOverlay(
-                                      link: user_data.userProfileSetups![index!]
-                                              ["image"]
+                                      link: Provider.of<
+                                              user_data
+                                                  .UserProfileProvider>(context)
+                                          .userProfileSetups![index!]
+                                          .data()["image"]
                                           .toString(),
                                     ));
                               },
@@ -1423,19 +1821,31 @@ class ModifiedDownloadButton extends StatelessWidget {
   const ModifiedDownloadButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return user_data.userProfileSetups![index!]["wallpaper_url"]
+    return Provider.of<user_data.UserProfileProvider>(context)
+                .userProfileSetups![index!]
+                .data()["wallpaper_url"]
                 .toString()[0] !=
             "["
-        ? user_data.userProfileSetups![index!]["wall_id"] != null &&
-                user_data.userProfileSetups![index!]["wall_id"] != ""
+        ? Provider.of<user_data.UserProfileProvider>(context)
+                        .userProfileSetups![index!]
+                        .data()["wall_id"] !=
+                    null &&
+                Provider.of<user_data.UserProfileProvider>(context)
+                        .userProfileSetups![index!]
+                        .data()["wall_id"] !=
+                    ""
             ? DownloadButton(
-                link: user_data.userProfileSetups![index!]["wallpaper_url"]
+                link: Provider.of<user_data.UserProfileProvider>(context)
+                    .userProfileSetups![index!]
+                    .data()["wallpaper_url"]
                     .toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(user_data.userProfileSetups![index!]["wallpaper_url"]
+                  launch(Provider.of<user_data.UserProfileProvider>(context)
+                      .userProfileSetups![index!]
+                      .data()["wallpaper_url"]
                       .toString());
                 },
                 child: Container(
@@ -1459,7 +1869,10 @@ class ModifiedDownloadButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(user_data.userProfileSetups![index!]["wallpaper_url"][1]
+              launch(Provider.of<user_data.UserProfileProvider>(context,
+                      listen: false)
+                  .userProfileSetups![index!]
+                  .data()["wallpaper_url"][1]
                   .toString());
             },
             child: Container(
@@ -1489,19 +1902,31 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return user_data.userProfileSetups![index!]["wallpaper_url"]
+    return Provider.of<user_data.UserProfileProvider>(context)
+                .userProfileSetups![index!]
+                .data()["wallpaper_url"]
                 .toString()[0] !=
             "["
-        ? user_data.userProfileSetups![index!]["wall_id"] != null &&
-                user_data.userProfileSetups![index!]["wall_id"] != ""
+        ? Provider.of<user_data.UserProfileProvider>(context)
+                        .userProfileSetups![index!]
+                        .data()["wall_id"] !=
+                    null &&
+                Provider.of<user_data.UserProfileProvider>(context)
+                        .userProfileSetups![index!]
+                        .data()["wall_id"] !=
+                    ""
             ? SetWallpaperButton(
-                url: user_data.userProfileSetups![index!]["wallpaper_url"]
+                url: Provider.of<user_data.UserProfileProvider>(context)
+                    .userProfileSetups![index!]
+                    .data()["wallpaper_url"]
                     .toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(user_data.userProfileSetups![index!]["wallpaper_url"]
+                  launch(Provider.of<user_data.UserProfileProvider>(context)
+                      .userProfileSetups![index!]
+                      .data()["wallpaper_url"]
                       .toString());
                 },
                 child: Container(
@@ -1525,7 +1950,10 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(user_data.userProfileSetups![index!]["wallpaper_url"][1]
+              launch(Provider.of<user_data.UserProfileProvider>(context,
+                      listen: false)
+                  .userProfileSetups![index!]
+                  .data()["wallpaper_url"][1]
                   .toString());
             },
             child: Container(
