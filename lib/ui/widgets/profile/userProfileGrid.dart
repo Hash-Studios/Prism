@@ -1,8 +1,9 @@
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userdata;
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/ui/widgets/premiumBanners/walls.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
@@ -30,6 +31,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
   Animation<Color?>? animation;
   GlobalKey<RefreshIndicatorState> refreshProfileKey =
       GlobalKey<RefreshIndicatorState>();
+  bool seeMoreLoader = false;
 
   @override
   void initState() {
@@ -92,7 +94,8 @@ class _UserProfileGridState extends State<UserProfileGrid>
 
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
-    userdata.getuserProfileWalls(widget.email);
+    Provider.of<UserProfileProvider>(context, listen: false)
+        .getuserProfileWalls(widget.email);
   }
 
   @override
@@ -101,8 +104,11 @@ class _UserProfileGridState extends State<UserProfileGrid>
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileKey,
         onRefresh: refreshList,
-        child: userdata.userProfileWalls != null
-            ? userdata.userProfileWalls!.isEmpty
+        child: Provider.of<UserProfileProvider>(context).userProfileWalls !=
+                null
+            ? Provider.of<UserProfileProvider>(context)
+                    .userProfileWalls!
+                    .isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -221,9 +227,10 @@ class _UserProfileGridState extends State<UserProfileGrid>
                   )
                 : GridView.builder(
                     shrinkWrap: true,
-                    cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: userdata.userProfileWalls!.length,
+                    itemCount: Provider.of<UserProfileProvider>(context)
+                        .userProfileWalls!
+                        .length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
                             MediaQuery.of(context).orientation ==
@@ -234,12 +241,42 @@ class _UserProfileGridState extends State<UserProfileGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
+                      if (index ==
+                              Provider.of<UserProfileProvider>(context,
+                                          listen: false)
+                                      .userProfileWalls!
+                                      .length -
+                                  1 &&
+                          !(Provider.of<UserProfileProvider>(context,
+                                      listen: false)
+                                  .userProfileWalls!
+                                  .length <
+                              12)) {
+                        return SeeMoreButton(
+                          seeMoreLoader: seeMoreLoader,
+                          func: () {
+                            if (!seeMoreLoader) {
+                              setState(() {
+                                seeMoreLoader = true;
+                              });
+                              Provider.of<UserProfileProvider>(context,
+                                      listen: false)
+                                  .seeMoreUserProfileWalls(widget.email);
+                              setState(() {
+                                Future.delayed(const Duration(seconds: 1))
+                                    .then((value) => seeMoreLoader = false);
+                              });
+                            }
+                          },
+                        );
+                      }
                       return globals.prismUser.premium != true
                           ? PremiumBannerWalls(
                               comparator: !globals.isPremiumWall(
                                   globals.premiumCollections,
-                                  userdata.userProfileWalls![index]
-                                          ["collections"] as List? ??
+                                  Provider.of<UserProfileProvider>(context)
+                                          .userProfileWalls![index]
+                                          .data()["collections"] as List? ??
                                       []),
                               defaultChild: FocusedMenuHolder(
                                 provider: "UserProfileWall",
@@ -292,7 +329,9 @@ class PhotographerWallTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               image: DecorationImage(
                   image: CachedNetworkImageProvider(
-                    userdata.userProfileWalls![index]["wallpaper_thumb"]
+                    Provider.of<UserProfileProvider>(context)
+                        .userProfileWalls![index]
+                        .data()["wallpaper_thumb"]
                         .toString(),
                   ),
                   fit: BoxFit.cover)),
@@ -305,12 +344,16 @@ class PhotographerWallTile extends StatelessWidget {
               splashColor: Theme.of(context).accentColor.withOpacity(0.3),
               highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
               onTap: () {
-                if (userdata.userProfileWalls == []) {
+                if (Provider.of<UserProfileProvider>(context, listen: false)
+                        .userProfileWalls ==
+                    []) {
                 } else {
                   globals.isPremiumWall(
                                   globals.premiumCollections,
-                                  userdata.userProfileWalls![index]
-                                          ["collections"] as List? ??
+                                  Provider.of<UserProfileProvider>(context,
+                                              listen: false)
+                                          .userProfileWalls![index]
+                                          .data()["collections"] as List? ??
                                       []) ==
                               true &&
                           globals.prismUser.premium != true
@@ -323,8 +366,10 @@ class PhotographerWallTile extends StatelessWidget {
                       : Navigator.pushNamed(context, userProfileWallViewRoute,
                           arguments: [
                               index,
-                              userdata.userProfileWalls![index]
-                                  ["wallpaper_thumb"],
+                              Provider.of<UserProfileProvider>(context,
+                                      listen: false)
+                                  .userProfileWalls![index]
+                                  .data()["wallpaper_thumb"],
                             ]);
                 }
               },

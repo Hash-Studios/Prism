@@ -1,7 +1,8 @@
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userdata;
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/ui/widgets/premiumBanners/setupPhotographer.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
@@ -30,6 +31,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
   late Animation<Color?> animation;
   GlobalKey<RefreshIndicatorState> refreshProfileKey =
       GlobalKey<RefreshIndicatorState>();
+  bool seeMoreLoader = false;
 
   void showPremiumPopUp(Function func) {
     if (globals.prismUser.premium == false) {
@@ -109,7 +111,8 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
 
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
-    userdata.getUserProfileSetups(widget.email);
+    Provider.of<UserProfileProvider>(context, listen: false)
+        .getUserProfileSetups(widget.email);
   }
 
   @override
@@ -118,8 +121,11 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileKey,
         onRefresh: refreshList,
-        child: userdata.userProfileSetups != null
-            ? userdata.userProfileSetups!.isEmpty
+        child: Provider.of<UserProfileProvider>(context).userProfileSetups !=
+                null
+            ? Provider.of<UserProfileProvider>(context)
+                    .userProfileSetups!
+                    .isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -238,9 +244,10 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
                   )
                 : GridView.builder(
                     shrinkWrap: true,
-                    cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: userdata.userProfileSetups!.length,
+                    itemCount: Provider.of<UserProfileProvider>(context)
+                        .userProfileSetups!
+                        .length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
                             MediaQuery.of(context).orientation ==
@@ -251,6 +258,35 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
+                      if (index ==
+                              Provider.of<UserProfileProvider>(context,
+                                          listen: false)
+                                      .userProfileSetups!
+                                      .length -
+                                  1 &&
+                          !(Provider.of<UserProfileProvider>(context,
+                                      listen: false)
+                                  .userProfileSetups!
+                                  .length <
+                              8)) {
+                        return SeeMoreButton(
+                          seeMoreLoader: seeMoreLoader,
+                          func: () {
+                            if (!seeMoreLoader) {
+                              setState(() {
+                                seeMoreLoader = true;
+                              });
+                              Provider.of<UserProfileProvider>(context,
+                                      listen: false)
+                                  .seeMoreUserProfileSetups(widget.email);
+                              setState(() {
+                                Future.delayed(const Duration(seconds: 1))
+                                    .then((value) => seeMoreLoader = false);
+                              });
+                            }
+                          },
+                        );
+                      }
                       return PremiumBannerSetupPhotographer(
                         comparator: false,
                         child: Stack(
@@ -261,8 +297,10 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        userdata.userProfileSetups![index]
-                                                ["image"]
+                                        Provider.of<UserProfileProvider>(
+                                                context)
+                                            .userProfileSetups![index]
+                                            .data()["image"]
                                             .toString(),
                                       ),
                                       fit: BoxFit.cover)),
@@ -279,7 +317,11 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
                                       .accentColor
                                       .withOpacity(0.1),
                                   onTap: () {
-                                    if (userdata.userProfileSetups == []) {
+                                    if (Provider.of<UserProfileProvider>(
+                                                context,
+                                                listen: false)
+                                            .userProfileSetups ==
+                                        []) {
                                     } else {
                                       if (globals.prismUser.premium == true) {
                                         Navigator.pushNamed(

@@ -1,11 +1,12 @@
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/profile/userProfileGrid.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class UserProfileLoader extends StatefulWidget {
-  final Future future;
   final String? email;
-  const UserProfileLoader({required this.future, required this.email});
+  const UserProfileLoader({required this.email});
   @override
   _UserProfileLoaderState createState() => _UserProfileLoaderState();
 }
@@ -15,7 +16,8 @@ class _UserProfileLoaderState extends State<UserProfileLoader> {
 
   @override
   void initState() {
-    _future = widget.future;
+    _future = Provider.of<UserProfileProvider>(context, listen: false)
+        .getuserProfileWalls(widget.email);
     super.initState();
   }
 

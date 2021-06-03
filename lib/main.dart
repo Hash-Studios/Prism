@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
@@ -126,6 +127,9 @@ void main() {
                 RestartWidget(
                   child: MultiProvider(
                     providers: [
+                      ChangeNotifierProvider<UserProfileProvider>(
+                        create: (context) => UserProfileProvider(),
+                      ),
                       ChangeNotifierProvider<FavouriteProvider>(
                         create: (context) => FavouriteProvider(),
                       ),

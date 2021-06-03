@@ -775,15 +775,20 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   ),
                                                   backgroundColor: Colors.black,
                                                   label: Text(
-                                                    UserData.userProfileWalls![
-                                                                widget.index]
-                                                                ["by"]
-                                                            .toString()[0]
-                                                            .toUpperCase() +
-                                                        UserData
+                                                    Provider.of<UserData.UserProfileProvider>(
+                                                                context)
                                                             .userProfileWalls![
                                                                 widget.index]
-                                                                ["by"]
+                                                            .data()["by"]
+                                                            .toString()[0]
+                                                            .toUpperCase() +
+                                                        Provider.of<
+                                                                    UserData
+                                                                        .UserProfileProvider>(
+                                                                context)
+                                                            .userProfileWalls![
+                                                                widget.index]
+                                                            .data()["by"]
                                                             .toString()
                                                             .substring(1),
                                                     style: Theme.of(context)
@@ -799,8 +804,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     const EdgeInsets.fromLTRB(
                                                         0, 5, 0, 10),
                                                 child: Text(
-                                                  UserData.userProfileWalls![
-                                                          widget.index]["id"]
+                                                  Provider.of<
+                                                              UserData
+                                                                  .UserProfileProvider>(
+                                                          context)
+                                                      .userProfileWalls![
+                                                          widget.index]
+                                                      .data()["id"]
                                                       .toString()
                                                       .toUpperCase(),
                                                   style: Theme.of(context)
@@ -822,9 +832,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    UserData.userProfileWalls![
+                                                    Provider.of<
+                                                                UserData
+                                                                    .UserProfileProvider>(
+                                                            context)
+                                                        .userProfileWalls![
                                                             widget.index]
-                                                            ["size"]
+                                                        .data()["size"]
                                                         .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
@@ -846,9 +860,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    UserData.userProfileWalls![
+                                                    Provider.of<
+                                                                UserData
+                                                                    .UserProfileProvider>(
+                                                            context)
+                                                        .userProfileWalls![
                                                             widget.index]
-                                                            ["resolution"]
+                                                        .data()["resolution"]
                                                         .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
@@ -2139,8 +2157,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                 .profileWalls![widget.index]["wallpaper_url"]
                                 .toString()
                             : widget.provider == "UserProfileWall"
-                                ? UserData.userProfileWalls![widget.index]
-                                        ["wallpaper_url"]
+                                ? Provider.of<UserData.UserProfileProvider>(
+                                        context)
+                                    .userProfileWalls![widget.index]
+                                    .data()["wallpaper_url"]
                                     .toString()
                                 : widget.provider == "Pexels"
                                     ? PData
@@ -2190,12 +2210,16 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                             )
                           : widget.provider == "UserProfileWall"
                               ? FavouriteWallpaperButton(
-                                  id: UserData.userProfileWalls![widget.index]
-                                          ["id"]
+                                  id: Provider.of<UserData.UserProfileProvider>(
+                                          context)
+                                      .userProfileWalls![widget.index]["id"]
                                       .toString(),
                                   provider: "Prism",
-                                  prism: UserData
-                                      .userProfileWalls![widget.index] as Map,
+                                  prism:
+                                      Provider.of<UserData.UserProfileProvider>(
+                                              context)
+                                          .userProfileWalls![widget.index]
+                                          .data(),
                                   trash: false,
                                 )
                               : widget.provider == "Pexels"
@@ -2246,8 +2270,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                 .profileWalls![widget.index]["wallpaper_url"]
                                 .toString()
                             : widget.provider == "UserProfileWall"
-                                ? UserData.userProfileWalls![widget.index]
-                                        ["wallpaper_url"]
+                                ? Provider.of<UserData.UserProfileProvider>(
+                                        context)
+                                    .userProfileWalls![widget.index]
+                                    .data()["wallpaper_url"]
                                     .toString()
                                 : widget.provider == "Pexels"
                                     ? PData
