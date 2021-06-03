@@ -597,14 +597,16 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                             context,
                                                             listen: false)
                                                         .profileWalls![
-                                                            widget.index]["by"]
+                                                            widget.index]
+                                                        .data()["by"]
                                                         .toString()[0]
                                                         .toUpperCase() +
                                                     Provider.of<ProfileWallProvider>(
                                                             context,
                                                             listen: false)
                                                         .profileWalls![
-                                                            widget.index]["by"]
+                                                            widget.index]
+                                                        .data()["by"]
                                                         .toString()
                                                         .substring(1),
                                                 style: Theme.of(context)
@@ -623,7 +625,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                       context,
                                                       listen: false)
                                                   .profileWalls![widget.index]
-                                                      ["id"]
+                                                  .data()["id"]
                                                   .toString()
                                                   .toUpperCase(),
                                               style: Theme.of(context)
@@ -648,7 +650,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         context,
                                                         listen: false)
                                                     .profileWalls![widget.index]
-                                                        ["size"]
+                                                    .data()["size"]
                                                     .toString(),
                                                 style: Theme.of(context)
                                                     .textTheme
@@ -673,7 +675,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         context,
                                                         listen: false)
                                                     .profileWalls![widget.index]
-                                                        ["resolution"]
+                                                    .data()["resolution"]
                                                     .toString(),
                                                 style: Theme.of(context)
                                                     .textTheme
@@ -2182,7 +2184,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                               provider: "Prism",
                               prism: Provider.of<ProfileWallProvider>(context,
                                       listen: false)
-                                  .profileWalls![widget.index] as Map,
+                                  .profileWalls![widget.index]
+                                  .data(),
                               trash: false,
                             )
                           : widget.provider == "UserProfileWall"
