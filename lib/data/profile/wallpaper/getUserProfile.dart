@@ -1,6 +1,7 @@
 import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 List? userProfileWalls;
@@ -51,48 +52,29 @@ Future<List?> getUserProfileSetups(String? email) async {
   return userProfileSetups;
 }
 
-Future<int> getProfileWallsLength(String? email) async {
-  var tempList = [];
-  await databaseReference
-      .collection("walls")
-      .where('review', isEqualTo: true)
+Stream<QuerySnapshot> getUserProfile(String email) {
+  return databaseReference
+      .collection('users')
       .where('email', isEqualTo: email)
-      .orderBy("createdAt", descending: true)
-      .get()
-      .then((value) {
-    tempList = [];
-    value.docs.forEach((f) {
-      tempList.add(f.data());
-    });
-    len = tempList.length;
-    debugPrint(len.toString());
-  }).catchError((e) {
-    debugPrint(e.toString());
-    debugPrint("data done with error");
-  });
-  return len;
+      .snapshots();
 }
 
-Future<int> getProfileSetupsLength(String? email) async {
-  var tempList = [];
-  await databaseReference
-      .collection("setups")
-      .where('review', isEqualTo: true)
-      .where('email', isEqualTo: email)
-      .orderBy("created_at", descending: true)
-      .get()
-      .then((value) {
-    tempList = [];
-    value.docs.forEach((f) {
-      tempList.add(f.data());
-    });
-    len2 = tempList.length;
-    debugPrint(len2.toString());
-  }).catchError((e) {
-    debugPrint(e.toString());
-    debugPrint("data done with error");
+Future<void> follow(String email, String id) async {
+  await databaseReference.collection('users').doc(globals.prismUser.id).update({
+    'following': FieldValue.arrayUnion([email]),
   });
-  return len2;
+  await databaseReference.collection('users').doc(id).update({
+    'followers': FieldValue.arrayUnion([globals.prismUser.email]),
+  });
+}
+
+Future<void> unfollow(String email, String id) async {
+  await databaseReference.collection('users').doc(globals.prismUser.id).update({
+    'following': FieldValue.arrayRemove([email]),
+  });
+  await databaseReference.collection('users').doc(id).update({
+    'followers': FieldValue.arrayRemove([globals.prismUser.email]),
+  });
 }
 
 Future setUserLinks(List<LinksModel> linklist, String id) async {

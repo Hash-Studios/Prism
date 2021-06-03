@@ -8,6 +8,7 @@ import 'package:Prism/ui/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/ui/widgets/profile/userProfileLoader.dart';
 import 'package:Prism/ui/widgets/profile/userProfileSetupLoader.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userData;
@@ -16,7 +17,6 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 
 class FollowerProfile extends StatefulWidget {
@@ -32,14 +32,11 @@ class _FollowerProfileState extends State<FollowerProfile> {
   String? userPhoto;
   bool? premium;
   Map? links;
-  late CollectionReference users;
   final ScrollController scrollController = ScrollController();
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final key = GlobalKey();
   @override
   void initState() {
     email = widget.arguments![0].toString();
-    users = firestore.collection('users');
     super.initState();
   }
 
@@ -72,15 +69,14 @@ class _FollowerProfileState extends State<FollowerProfile> {
         }
       });
     }
-    final CollectionReference users = firestore.collection('users');
     return WillPopScope(
         onWillPop: onWillPop,
         child: DefaultTabController(
           length: 2,
           child: Scaffold(
             backgroundColor: Theme.of(context).primaryColor,
-            body: FutureBuilder<QuerySnapshot>(
-              future: users.where('email', isEqualTo: email).get(),
+            body: StreamBuilder<QuerySnapshot>(
+              stream: userData.getUserProfile(email!),
               builder: (context, snap) {
                 if (snap.hasData && snap.data != null) {
                   name = snap.data!.docs[0].data()["name"].toString();
@@ -324,156 +320,101 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                               mainAxisSize: MainAxisSize.min,
                                               children: <Widget>[
                                                 const Spacer(flex: 2),
+                                                // Row(
+                                                //   children: <Widget>[
+                                                //     FutureBuilder(
+                                                //         future: userData
+                                                //             .getProfileWallsLength(
+                                                //                 email),
+                                                //         builder: (context,
+                                                //             snapshot) {
+                                                //           return Text(
+                                                //             snapshot.data ==
+                                                //                     null
+                                                //                 ? "0 "
+                                                //                 : "${snapshot.data.toString()} ",
+                                                //             style: TextStyle(
+                                                //                 fontFamily:
+                                                //                     "Proxima Nova",
+                                                //                 fontSize: 22,
+                                                //                 color: Theme.of(
+                                                //                         context)
+                                                //                     .accentColor,
+                                                //                 fontWeight:
+                                                //                     FontWeight
+                                                //                         .normal),
+                                                //           );
+                                                //         }),
+                                                //     Icon(
+                                                //       JamIcons.picture,
+                                                //       size: 20,
+                                                //       color: Theme.of(context)
+                                                //           .accentColor,
+                                                //     ),
+                                                //   ],
+                                                // ),
+                                                // const Spacer(),
+                                                // Row(
+                                                //   children: <Widget>[
+                                                //     FutureBuilder(
+                                                //         future: userData
+                                                //             .getProfileSetupsLength(
+                                                //                 email),
+                                                //         builder: (context,
+                                                //             snapshot) {
+                                                //           return Text(
+                                                //             snapshot.data ==
+                                                //                     null
+                                                //                 ? "0 "
+                                                //                 : "${snapshot.data.toString()} ",
+                                                //             style: TextStyle(
+                                                //                 fontFamily:
+                                                //                     "Proxima Nova",
+                                                //                 fontSize: 22,
+                                                //                 color: Theme.of(
+                                                //                         context)
+                                                //                     .accentColor,
+                                                //                 fontWeight:
+                                                //                     FontWeight
+                                                //                         .normal),
+                                                //           );
+                                                //         }),
+                                                //     Icon(
+                                                //       JamIcons.instant_picture,
+                                                //       size: 20,
+                                                //       color: Theme.of(context)
+                                                //           .accentColor,
+                                                //     ),
+                                                //   ],
+                                                // ),
                                                 Row(
-                                                  children: <Widget>[
-                                                    FutureBuilder(
-                                                        future: userData
-                                                            .getProfileWallsLength(
-                                                                email),
-                                                        builder: (context,
-                                                            snapshot) {
-                                                          return Text(
-                                                            snapshot.data ==
-                                                                    null
-                                                                ? "0 "
-                                                                : "${snapshot.data.toString()} ",
-                                                            style: TextStyle(
-                                                                fontFamily:
-                                                                    "Proxima Nova",
-                                                                fontSize: 22,
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .normal),
-                                                          );
-                                                        }),
+                                                  children: [
+                                                    const SizedBox(width: 15),
+                                                    Text(
+                                                      (snap.data!.docs[0].data()[
+                                                                      'followers']
+                                                                  as List? ??
+                                                              [])
+                                                          .length
+                                                          .toString(),
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          fontSize: 22,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                          fontWeight: FontWeight
+                                                              .normal),
+                                                    ),
                                                     Icon(
-                                                      JamIcons.picture,
+                                                      JamIcons.users,
                                                       size: 20,
                                                       color: Theme.of(context)
                                                           .accentColor,
                                                     ),
                                                   ],
                                                 ),
-                                                const Spacer(),
-                                                Row(
-                                                  children: <Widget>[
-                                                    FutureBuilder(
-                                                        future: userData
-                                                            .getProfileSetupsLength(
-                                                                email),
-                                                        builder: (context,
-                                                            snapshot) {
-                                                          return Text(
-                                                            snapshot.data ==
-                                                                    null
-                                                                ? "0 "
-                                                                : "${snapshot.data.toString()} ",
-                                                            style: TextStyle(
-                                                                fontFamily:
-                                                                    "Proxima Nova",
-                                                                fontSize: 22,
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .normal),
-                                                          );
-                                                        }),
-                                                    Icon(
-                                                      JamIcons.instant_picture,
-                                                      size: 20,
-                                                      color: Theme.of(context)
-                                                          .accentColor,
-                                                    ),
-                                                  ],
-                                                ),
-                                                StreamBuilder<QuerySnapshot>(
-                                                    stream: users
-                                                        .where("email",
-                                                            isEqualTo: email)
-                                                        .snapshots(),
-                                                    builder: (BuildContext
-                                                            context,
-                                                        AsyncSnapshot<
-                                                                QuerySnapshot>
-                                                            snapshot) {
-                                                      if (!snapshot.hasData) {
-                                                        return Row(
-                                                          children: [
-                                                            const SizedBox(
-                                                                width: 15),
-                                                            Text(
-                                                              "0",
-                                                              style: TextStyle(
-                                                                  fontFamily:
-                                                                      "Proxima Nova",
-                                                                  fontSize: 22,
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .normal),
-                                                            ),
-                                                            Icon(
-                                                              JamIcons.users,
-                                                              size: 20,
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor,
-                                                            ),
-                                                          ],
-                                                        );
-                                                      } else if (snapshot
-                                                                  .data!.docs !=
-                                                              null &&
-                                                          snapshot.data!.docs
-                                                              .isNotEmpty) {
-                                                        List followers = [];
-
-                                                        followers = snapshot
-                                                                        .data!
-                                                                        .docs[0]
-                                                                        .data()[
-                                                                    'followers']
-                                                                as List? ??
-                                                            [];
-
-                                                        return Row(
-                                                          children: [
-                                                            const SizedBox(
-                                                                width: 15),
-                                                            Text(
-                                                              followers.length
-                                                                  .toString(),
-                                                              style: TextStyle(
-                                                                  fontFamily:
-                                                                      "Proxima Nova",
-                                                                  fontSize: 22,
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .normal),
-                                                            ),
-                                                            Icon(
-                                                              JamIcons.users,
-                                                              size: 20,
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor,
-                                                            ),
-                                                          ],
-                                                        );
-                                                      } else {
-                                                        return Container();
-                                                      }
-                                                    }),
                                                 const Spacer(flex: 2),
                                               ],
                                             ),
@@ -506,132 +447,74 @@ class _FollowerProfileState extends State<FollowerProfile> {
                         actions: [
                           if (globals.prismUser.loggedIn == true &&
                               globals.prismUser.email != email)
-                            StreamBuilder<QuerySnapshot>(
-                              stream: users
-                                  .where("email",
-                                      isEqualTo: globals.prismUser.email)
-                                  .snapshots(),
-                              builder: (BuildContext context,
-                                  AsyncSnapshot<QuerySnapshot> snapshot) {
-                                if (!snapshot.hasData) {
-                                  return Container();
-                                } else {
-                                  final List following = snapshot.data!.docs[0]
-                                          .data()['following'] as List? ??
-                                      [];
-                                  if (following.contains(email)) {
-                                    return IconButton(
-                                      icon: const Icon(JamIcons.user_remove),
-                                      onPressed: () {
-                                        following
-                                            .removeAt(following.indexOf(email));
-                                        snapshot.data!.docs[0].reference
-                                            .update({'following': following});
-                                        users
-                                            .where("email", isEqualTo: email)
-                                            .get()
-                                            .then((value) {
-                                          if (value.docs.isEmpty ||
-                                              value.docs == null) {
-                                          } else {
-                                            final List followers = value.docs[0]
-                                                        .data()['followers']
-                                                    as List? ??
-                                                [];
-                                            followers.removeAt(
-                                                followers.indexOf(
-                                                    globals.prismUser.email));
-                                            value.docs[0].reference.update(
-                                                {'followers': followers});
-                                          }
-                                        });
-                                        toasts.error("Unfollowed $name!");
+                            if ((snap.data!.docs[0].data()['followers']
+                                        as List? ??
+                                    [])
+                                .contains(globals.prismUser.email))
+                              IconButton(
+                                icon: const Icon(JamIcons.user_remove),
+                                onPressed: () {
+                                  userData.unfollow(
+                                      email!, snap.data!.docs[0].id);
+                                  toasts.error("Unfollowed $name!");
+                                },
+                              )
+                            else
+                              Tooltip(
+                                margin: EdgeInsets.fromLTRB(
+                                    MediaQuery.of(context).size.width * 0.4,
+                                    0,
+                                    16,
+                                    0),
+                                showDuration: const Duration(seconds: 4),
+                                key: key,
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                message:
+                                    "Follow $name to get notified for new posts!",
+                                child: IconButton(
+                                  icon: const Icon(JamIcons.user_plus),
+                                  onPressed: () {
+                                    userData.follow(
+                                        email!, snap.data!.docs[0].id);
+                                    http.post(
+                                      Uri.parse(
+                                        'https://fcm.googleapis.com/fcm/send',
+                                      ),
+                                      headers: <String, String>{
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'key=$fcmServerToken',
                                       },
-                                    );
-                                  } else {
-                                    return Tooltip(
-                                      margin: EdgeInsets.fromLTRB(
-                                          MediaQuery.of(context).size.width *
-                                              0.4,
-                                          0,
-                                          16,
-                                          0),
-                                      showDuration: const Duration(seconds: 4),
-                                      key: key,
-                                      padding: const EdgeInsets.fromLTRB(
-                                          16, 8, 16, 8),
-                                      message:
-                                          "Follow $name to get notified for new posts!",
-                                      child: IconButton(
-                                        icon: const Icon(JamIcons.user_plus),
-                                        onPressed: () {
-                                          following.add(email);
-                                          snapshot.data!.docs[0].reference
-                                              .update({'following': following});
-                                          users
-                                              .where("email", isEqualTo: email)
-                                              .get()
-                                              .then((value) {
-                                            if (value.docs.isEmpty ||
-                                                value.docs == null) {
-                                            } else {
-                                              final List followers = value
-                                                          .docs[0]
-                                                          .data()['followers']
-                                                      as List? ??
-                                                  [];
-                                              followers
-                                                  .add(globals.prismUser.email);
-                                              value.docs[0].reference.update(
-                                                  {'followers': followers});
-                                            }
-                                          });
-                                          http.post(
-                                            Uri.parse(
-                                              'https://fcm.googleapis.com/fcm/send',
-                                            ),
-                                            headers: <String, String>{
-                                              'Content-Type':
-                                                  'application/json',
-                                              'Authorization':
-                                                  'key=$fcmServerToken',
-                                            },
-                                            body: jsonEncode(
-                                              <String, dynamic>{
-                                                'notification':
-                                                    <String, dynamic>{
-                                                  'title': '🎉 New Follower!',
-                                                  'body':
-                                                      '${globals.prismUser.username} is now following you.',
-                                                  'color': "#e57697",
-                                                  'tag':
-                                                      '${globals.prismUser.username} Follow',
-                                                  'image': globals
-                                                      .prismUser.profilePhoto,
-                                                  'android_channel_id':
-                                                      "followers",
-                                                  'icon': '@drawable/ic_follow'
-                                                },
-                                                'priority': 'high',
-                                                'data': <String, dynamic>{
-                                                  'click_action':
-                                                      'FLUTTER_NOTIFICATION_CLICK',
-                                                  'id': '1',
-                                                  'status': 'done'
-                                                },
-                                                'to':
-                                                    "/topics/${email!.split("@")[0]}"
-                                              },
-                                            ),
-                                          );
-                                          toasts.codeSend("Followed $name!");
+                                      body: jsonEncode(
+                                        <String, dynamic>{
+                                          'notification': <String, dynamic>{
+                                            'title': '🎉 New Follower!',
+                                            'body':
+                                                '${globals.prismUser.username} is now following you.',
+                                            'color': "#e57697",
+                                            'tag':
+                                                '${globals.prismUser.username} Follow',
+                                            'image':
+                                                globals.prismUser.profilePhoto,
+                                            'android_channel_id': "followers",
+                                            'icon': '@drawable/ic_follow'
+                                          },
+                                          'priority': 'high',
+                                          'data': <String, dynamic>{
+                                            'click_action':
+                                                'FLUTTER_NOTIFICATION_CLICK',
+                                            'id': '1',
+                                            'status': 'done'
+                                          },
+                                          'to':
+                                              "/topics/${email!.split("@")[0]}"
                                         },
                                       ),
                                     );
-                                  }
-                                }
-                              },
-                            )
+                                    toasts.codeSend("Followed $name!");
+                                  },
+                                ),
+                              )
                           else
                             Container(),
                         ],
