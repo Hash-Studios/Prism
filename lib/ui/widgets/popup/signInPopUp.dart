@@ -170,7 +170,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
-                    "The ability to buy premium.",
+                    "The ability to view premium content.",
                     style: Theme.of(context)
                         .textTheme
                         .headline6!
