@@ -794,6 +794,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   }
 }
 
+int adHeight = 80;
+
 class AdBannerWidget extends StatefulWidget {
   const AdBannerWidget(this.bottom, {Key? key}) : super(key: key);
   static const AdRequest request = AdRequest(
@@ -823,6 +825,13 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
     if (size == null) {
       debugPrint('Unable to get height of anchored banner.');
       return;
+    } else {
+      if (mounted) {
+        setState(() {
+          adHeight = size.height;
+        });
+      }
+      debugPrint('ad height is equal to $adHeight');
     }
 
     final BannerAd banner = BannerAd(
@@ -866,15 +875,27 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
             _createAnchoredBanner(context);
           }
           return Container(
-            color: Colors.black,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).primaryColor.withOpacity(0),
+                  Theme.of(context).primaryColor
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
             width: _anchoredBanner != null
                 ? _anchoredBanner!.size.width.toDouble()
                 : MediaQuery.of(context).size.width.toDouble(),
-            height: 80,
+            height: adHeight * 1.0,
             child: _anchoredBanner != null
-                ? AdWidget(
-                    ad: _anchoredBanner!,
-                    key: ValueKey(_anchoredBanner!.adUnitId),
+                ? Align(
+                    alignment: Alignment.bottomCenter,
+                    child: AdWidget(
+                      ad: _anchoredBanner!,
+                      key: ValueKey(_anchoredBanner!.adUnitId),
+                    ),
                   )
                 : Container(),
           );
