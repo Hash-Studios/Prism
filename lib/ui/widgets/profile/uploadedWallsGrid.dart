@@ -237,11 +237,16 @@ class _ProfileGridState extends State<ProfileGrid>
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
                       if (index ==
-                          Provider.of<ProfileWallProvider>(context,
+                              Provider.of<ProfileWallProvider>(context,
+                                          listen: false)
+                                      .profileWalls!
+                                      .length -
+                                  1 &&
+                          !(Provider.of<ProfileWallProvider>(context,
                                       listen: false)
                                   .profileWalls!
-                                  .length -
-                              1) {
+                                  .length <
+                              24)) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
                           func: () {

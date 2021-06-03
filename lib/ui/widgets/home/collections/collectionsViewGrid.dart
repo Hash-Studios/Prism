@@ -114,7 +114,8 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
           mainAxisSpacing: 8,
           crossAxisSpacing: 8),
       itemBuilder: (context, index) {
-        if (index == anyCollectionWalls!.length - 1) {
+        if (index == anyCollectionWalls!.length - 1 &&
+            !(anyCollectionWalls!.length < 24)) {
           return SeeMoreButton(
             seeMoreLoader: seeMoreLoader,
             func: () {
