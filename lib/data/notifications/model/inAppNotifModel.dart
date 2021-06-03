@@ -17,6 +17,8 @@ class InAppNotif {
   final String? url;
   @HiveField(6)
   final DateTime? createdAt;
+  @HiveField(7)
+  final bool? read;
 
   InAppNotif({
     required this.pageName,
@@ -26,16 +28,19 @@ class InAppNotif {
     required this.arguments,
     required this.url,
     required this.createdAt,
+    required this.read,
   });
 
   factory InAppNotif.fromSnapshot(Map<String, dynamic> data) => InAppNotif(
-      pageName: data['data']['pageName'].toString(),
-      title: data['notification']['title'].toString(),
-      body: data['notification']['body'].toString(),
-      imageUrl: (data['data']['imageUrl'] ??
-              "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg")
-          .toString(),
-      arguments: data['data']['arguments'] as List,
-      url: data['data']['url'].toString(),
-      createdAt: data['createdAt'].toDate() as DateTime);
+        pageName: data['data']['pageName'].toString(),
+        title: data['notification']['title'].toString(),
+        body: data['notification']['body'].toString(),
+        imageUrl: (data['data']['imageUrl'] ??
+                "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg")
+            .toString(),
+        arguments: data['data']['arguments'] as List,
+        url: data['data']['url'].toString(),
+        createdAt: data['createdAt'].toDate() as DateTime,
+        read: false,
+      );
 }
