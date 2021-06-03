@@ -23,6 +23,7 @@ import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive/hive.dart';
@@ -176,6 +177,15 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   Future<bool> getLoginStatus() async {
     await globals.gAuth.googleSignIn.isSignedIn().then((value) {
+      if (value) {
+        if (prefs.get("logouteveryonejune2021", defaultValue: false) == false) {
+          globals.gAuth.signOutGoogle();
+          prefs.put("logouteveryonejune2021", true);
+          toasts.codeSend("Please login again, to enjoy the app!");
+        }
+      } else if (!value) {
+        prefs.put("logouteveryonejune2021", true);
+      }
       if (value) checkPremium();
       globals.prismUser.loggedIn = value;
       prefs.put("prismUser", globals.prismUser);
