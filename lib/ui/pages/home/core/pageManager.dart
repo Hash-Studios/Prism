@@ -374,11 +374,13 @@ class _RatePopUpState extends State<RatePopUp> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      title: Text(
         'Rate Prism',
         style: TextStyle(
           fontSize: 20.0,
-          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).accentColor,
         ),
       ),
       content: Column(
@@ -386,7 +388,10 @@ class _RatePopUpState extends State<RatePopUp> {
         children: [
           Text(
             "You like Prism?\nThen please take a little bit of your time to leave a rating :",
-            style: Theme.of(context).textTheme.bodyText2,
+            style: Theme.of(context)
+                .textTheme
+                .bodyText2!
+                .copyWith(color: Theme.of(context).accentColor),
           ),
           const SizedBox(height: 24),
           SmoothStarRating(
