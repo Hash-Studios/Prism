@@ -11,6 +11,9 @@ import 'package:flutter/rendering.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/main.dart' as main;
+import 'package:intl/intl.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 class BottomBar extends StatefulWidget {
   final Widget? child;
@@ -661,7 +664,39 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
                       onTap: () async {
-                        await getImage();
+                        int dailyWallUpload = main.prefs
+                            .get("dailyWallUpload", defaultValue: 0) as int;
+                        if (main.prefs.get('date') !=
+                            DateFormat("yy-MM-dd").format(
+                              DateTime.now(),
+                            )) {
+                          dailyWallUpload = 0;
+                        }
+                        main.prefs.put(
+                          'date',
+                          DateFormat("yy-MM-dd").format(
+                            DateTime.now(),
+                          ),
+                        );
+                        if (globals.prismUser.premium == false) {
+                          if (dailyWallUpload < 5) {
+                            await getImage();
+                          } else {
+                            toasts.codeSend(
+                                "Free users can only upload 5 walls a day.");
+                            if (globals.prismUser.loggedIn == false) {
+                              googleSignInPopUp(context, () {
+                                Navigator.of(context).pop();
+                                Navigator.pushNamed(context, premiumRoute);
+                              });
+                            } else {
+                              Navigator.of(context).pop();
+                              Navigator.pushNamed(context, premiumRoute);
+                            }
+                          }
+                        } else {
+                          await getImage();
+                        }
                       },
                       child: SizedBox(
                         width: width / 2 - 20,
@@ -815,7 +850,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             child: SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               child: Text(
-                "Please only upload high-quaity original wallpapers and setups. Please do not upload wallpapers from other apps. You can also report wallpapers or setups by clicking the copyright button after opening them.",
+                "Please only upload high-quality original wallpapers and setups. Please do not upload wallpapers from other apps. You can also report wallpapers or setups by clicking the copyright button after opening them.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
