@@ -1078,7 +1078,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               child: Row(
                                                 children: [
                                                   Text(
-                                                    "Copyright",
+                                                    "Report",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2!

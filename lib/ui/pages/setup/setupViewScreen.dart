@@ -401,7 +401,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
-                                                  "Copyright",
+                                                  "Report",
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context)
                                                       .textTheme

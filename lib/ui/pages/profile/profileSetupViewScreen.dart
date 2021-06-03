@@ -418,7 +418,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
-                                                  "Copyright",
+                                                  "Report",
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context)
                                                       .textTheme
