@@ -46,7 +46,7 @@ void showChangelog(BuildContext context, Function func) {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
-                  ChangeVersion(number: 'v2.6.6'),
+                    ChangeVersion(number: 'v2.6.6'),
                     Change(
                         icon: JamIcons.bug,
                         text: "Minor bug fixes and improvements."),
@@ -89,11 +89,11 @@ void showChangelog(BuildContext context, Function func) {
           launch("https://bit.ly/prismchanges");
           func();
         },
-        child: const Text(
+        child: Text(
           'VIEW FULL',
           style: TextStyle(
             fontSize: 16.0,
-            color: Colors.white,
+            color: Theme.of(context).errorColor,
           ),
         ),
       ),
