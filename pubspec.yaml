@@ -20,9 +20,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  extended_image:
-    git:
-      url: git://github.com/codenameakshay/extended_image.git
   animations: ^2.0.0
   cached_network_image: ^3.0.0
   carousel_slider: ^3.0.0
@@ -30,6 +27,7 @@ dependencies:
   data_connection_checker: ^0.3.4
   device_apps: ^2.1.1
   device_info: ^2.0.0
+  extended_image: ^4.1.0
   firebase_analytics: ^8.0.2
   firebase_auth: ^1.1.2
   firebase_dynamic_links: ^0.5.1
