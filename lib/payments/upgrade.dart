@@ -151,6 +151,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
       width: 30,
     ),
     const FeatureChip(icon: JamIcons.picture, text: "Exclusive wallpapers"),
+    const FeatureChip(icon: JamIcons.picture, text: "Upload unlimited walls"),
     const FeatureChip(
         icon: JamIcons.instant_picture, text: "No restrictions on setups"),
     const FeatureChip(icon: JamIcons.trophy, text: "Premium only giveaways"),
@@ -174,6 +175,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
     for (var i = 0; i < 100; i++) {
       features.addAll(const [
         FeatureChip(icon: JamIcons.picture, text: "Exclusive wallpapers"),
+        FeatureChip(icon: JamIcons.picture, text: "Upload unlimited walls"),
         FeatureChip(
             icon: JamIcons.instant_picture, text: "No restrictions on setups"),
         FeatureChip(icon: JamIcons.trophy, text: "Premium only giveaways"),
@@ -261,7 +263,8 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                             .headline2!
                                             .copyWith(
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.white),
+                                                color: Theme.of(context)
+                                                    .accentColor),
                                       ),
                                     ),
                                   ],
@@ -331,7 +334,8 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                                 .headline3!
                                                 .copyWith(
                                                     fontWeight: FontWeight.bold,
-                                                    color: Colors.white),
+                                                    color: Theme.of(context)
+                                                        .accentColor),
                                             textAlign: TextAlign.center,
                                           ),
                                           if (lifetime.product.title
@@ -354,7 +358,9 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                         style: Theme.of(context)
                                             .textTheme
                                             .headline3!
-                                            .copyWith(color: Colors.white),
+                                            .copyWith(
+                                                color: Theme.of(context)
+                                                    .accentColor),
                                         textAlign: TextAlign.center,
                                       ),
                                       const Spacer(),
@@ -423,8 +429,10 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       decoration: BoxDecoration(
                                           color: Theme.of(context).errorColor ==
                                                   Colors.black
-                                              ? Colors.white10
-                                              : Colors.white,
+                                              ? Theme.of(context)
+                                                  .accentColor
+                                                  .withOpacity(0.1)
+                                              : Theme.of(context).accentColor,
                                           borderRadius:
                                               BorderRadius.circular(500)),
                                       padding: const EdgeInsets.symmetric(
@@ -460,7 +468,9 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                         .textTheme
                                         .headline6!
                                         .copyWith(
-                                            fontSize: 12, color: Colors.white),
+                                            fontSize: 12,
+                                            color:
+                                                Theme.of(context).accentColor),
                                   ),
                                 ),
                                 const Spacer(),
@@ -621,13 +631,14 @@ class FeatureChip extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 10, 8, 10),
       child: ActionChip(
+          backgroundColor: Theme.of(context).errorColor.withOpacity(0.3),
           labelPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
           avatar: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8.0),
             child: Icon(
               icon,
               size: 22,
-              color: Colors.white,
+              color: Theme.of(context).accentColor,
             ),
           ),
           label: Text(
@@ -635,7 +646,7 @@ class FeatureChip extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .headline5!
-                .copyWith(color: Colors.white),
+                .copyWith(color: Theme.of(context).accentColor),
           ),
           onPressed: () {}),
     );
