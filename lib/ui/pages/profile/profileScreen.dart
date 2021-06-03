@@ -258,7 +258,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               color: Theme.of(
                                                                       context)
                                                                   .accentColor,
-                                                              fontSize: 20,
+                                                              fontSize: 18,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .w600),
@@ -281,7 +281,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                   color: Theme.of(
                                                                           context)
                                                                       .accentColor,
-                                                                  fontSize: 20,
+                                                                  fontSize: 18,
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w600),
@@ -330,20 +330,22 @@ class _ProfileChildState extends State<ProfileChild> {
                                             ]),
                                             TableRow(children: [
                                               TableCell(
-                                                verticalAlignment:
-                                                    TableCellVerticalAlignment
-                                                        .middle,
-                                                child: IconButton(
-                                                    icon: Icon(
-                                                      JamIcons.link,
-                                                      color: Theme.of(context)
-                                                          .accentColor,
-                                                    ),
-                                                    onPressed: () {
-                                                      showLinksPopUp(context,
-                                                          globals.prismUser.id);
-                                                    }),
-                                              ),
+                                                  verticalAlignment:
+                                                      TableCellVerticalAlignment
+                                                          .middle,
+                                                  child: Container()
+                                                  //ToDo Add link button in profile
+                                                  // IconButton(
+                                                  //     icon: Icon(
+                                                  //       JamIcons.link,
+                                                  //       color: Theme.of(context)
+                                                  //           .accentColor,
+                                                  //     ),
+                                                  //     onPressed: () {
+                                                  //       showLinksPopUp(context,
+                                                  //           globals.prismUser.id);
+                                                  //     }),
+                                                  ),
                                               TableCell(
                                                 verticalAlignment:
                                                     TableCellVerticalAlignment
