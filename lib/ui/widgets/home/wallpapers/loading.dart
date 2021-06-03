@@ -81,7 +81,9 @@ class _LoadingCardsState extends State<LoadingCards>
   Widget build(BuildContext context) {
     ScrollController? controller;
     try {
-      controller = InheritedDataProvider.of(context)!.scrollController;
+      if (InheritedDataProvider.of(context) != null) {
+        controller = InheritedDataProvider.of(context)!.scrollController;
+      }
     } catch (e) {
       debugPrint(e.toString());
     }
