@@ -1293,21 +1293,25 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       onFavSetup(
                                           Provider.of<SetupProvider>(context,
                                                   listen: false)
-                                              .setups![index!]["id"]
+                                              .setups![index!]
+                                              .data()["id"]
                                               .toString(),
                                           Provider.of<SetupProvider>(context,
                                                   listen: false)
-                                              .setups![index!] as Map);
+                                              .setups![index!]
+                                              .data());
                                     });
                                   } else {
                                     onFavSetup(
                                         Provider.of<SetupProvider>(context,
                                                 listen: false)
-                                            .setups![index!]["id"]
+                                            .setups![index!]
+                                            .data()["id"]
                                             .toString(),
                                         Provider.of<SetupProvider>(context,
                                                 listen: false)
-                                            .setups![index!] as Map);
+                                            .setups![index!]
+                                            .data());
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,

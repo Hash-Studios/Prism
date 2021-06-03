@@ -1113,18 +1113,18 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                   if (globals.prismUser.loggedIn == false) {
                                     googleSignInPopUp(context, () {
                                       onFavSetup(
-                                          user_data.userProfileSetups![index!]
+                                          user_data.userProfileSetups![index!].data()
                                                   ["id"]
                                               .toString(),
-                                          user_data.userProfileSetups![index!]
+                                          user_data.userProfileSetups![index!].data()
                                               as Map);
                                     });
                                   } else {
                                     onFavSetup(
-                                        user_data.userProfileSetups![index!]
+                                        user_data.userProfileSetups![index!].data()
                                                 ["id"]
                                             .toString(),
-                                        user_data.userProfileSetups![index!]
+                                        user_data.userProfileSetups![index!].data()
                                             as Map);
                                   }
                                 },
