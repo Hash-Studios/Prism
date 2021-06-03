@@ -47,7 +47,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
 
   void checkNewNotification() {
     final Box<InAppNotif> box = Hive.box('inAppNotifs');
-    final notifications = box.values.toList();
+    notifications = box.values.toList();
+    notifications.removeWhere((element) => element.read == true);
     if (notifications.isEmpty) {
       setState(() {
         noNotification = true;

@@ -24,13 +24,14 @@ class InAppNotifAdapter extends TypeAdapter<InAppNotif> {
       arguments: (fields[4] as List?)?.cast<dynamic>(),
       url: fields[5] as String?,
       createdAt: fields[6] as DateTime?,
+      read: fields[7] as bool?,
     );
   }
 
   @override
   void write(BinaryWriter writer, InAppNotif obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -44,7 +45,9 @@ class InAppNotifAdapter extends TypeAdapter<InAppNotif> {
       ..writeByte(5)
       ..write(obj.url)
       ..writeByte(6)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(7)
+      ..write(obj.read);
   }
 
   @override
