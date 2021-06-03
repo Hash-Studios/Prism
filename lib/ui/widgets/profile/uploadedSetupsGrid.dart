@@ -241,12 +241,17 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                                           if (index ==
-                          Provider.of<ProfileSetupProvider>(context,
+                      if (index ==
+                              Provider.of<ProfileSetupProvider>(context,
+                                          listen: false)
+                                      .profileSetups!
+                                      .length -
+                                  1 &&
+                          !(Provider.of<ProfileSetupProvider>(context,
                                       listen: false)
                                   .profileSetups!
-                                  .length -
-                              1) {
+                                  .length <
+                              8)) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
                           func: () {
