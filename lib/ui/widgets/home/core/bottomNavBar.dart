@@ -34,13 +34,6 @@ class _BottomBarState extends State<BottomBar>
   bool isScrollingDown = false;
   bool isOnTop = true;
   late double bottom;
-  static const AdRequest request = AdRequest(
-    nonPersonalizedAds: false,
-    keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
-  );
-
-  BannerAd? _anchoredBanner;
-  bool _loadingAnchoredBanner = false;
 
   @override
   void initState() {
@@ -65,45 +58,6 @@ class _BottomBarState extends State<BottomBar>
       ..addListener(() {
         setState(() {});
       });
-  }
-
-  Future<void> _createAnchoredBanner(BuildContext context) async {
-    setState(() {
-      _anchoredBanner = null;
-    });
-    final AnchoredAdaptiveBannerAdSize? size =
-        await AdSize.getAnchoredAdaptiveBannerAdSize(
-      Orientation.portrait,
-      MediaQuery.of(context).size.width.truncate(),
-    );
-
-    if (size == null) {
-      debugPrint('Unable to get height of anchored banner.');
-      return;
-    }
-
-    final BannerAd banner = BannerAd(
-      size: size,
-      request: request,
-      adUnitId: kReleaseMode
-          ? "ca-app-pub-4649644680694757/8480286673"
-          : BannerAd.testAdUnitId,
-      listener: BannerAdListener(
-        onAdLoaded: (Ad ad) {
-          debugPrint('$BannerAd loaded.');
-          setState(() {
-            _anchoredBanner = ad as BannerAd?;
-          });
-        },
-        onAdFailedToLoad: (Ad ad, LoadAdError error) {
-          debugPrint('$BannerAd failedToLoad: $error');
-          ad.dispose();
-        },
-        onAdOpened: (Ad ad) => debugPrint('$BannerAd onAdOpened.'),
-        onAdClosed: (Ad ad) => debugPrint('$BannerAd onAdClosed.'),
-      ),
-    );
-    return banner.load();
   }
 
   void showBottomBar() {
@@ -143,7 +97,6 @@ class _BottomBarState extends State<BottomBar>
   void dispose() {
     scrollBottomBarController.removeListener(() {});
     _controller.dispose();
-    _anchoredBanner?.dispose();
     super.dispose();
   }
 
@@ -164,32 +117,7 @@ class _BottomBarState extends State<BottomBar>
             child: BottomNavBar(),
           ),
         ),
-        if (bottom != 10)
-          Positioned(
-            bottom: 0,
-            child: Builder(
-              builder: (context) {
-                if (!_loadingAnchoredBanner && bottom != 10) {
-                  _loadingAnchoredBanner = true;
-                  _createAnchoredBanner(context);
-                }
-                return Container(
-                  color: Colors.black,
-                  width: _anchoredBanner != null
-                      ? _anchoredBanner!.size.width.toDouble()
-                      : MediaQuery.of(context).size.width.toDouble(),
-                  height: 80,
-                  child: _anchoredBanner != null
-                      ? AdWidget(
-                          ad: _anchoredBanner!,
-                          key: ValueKey(
-                              _anchoredBanner!.responseInfo!.responseId),
-                        )
-                      : Container(),
-                );
-              },
-            ),
-          ),
+        if (bottom != 10) AdBannerWidget(bottom),
         if (isOnTop == true)
           Container()
         else
@@ -861,6 +789,96 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
           ),
           const Spacer(),
         ],
+      ),
+    );
+  }
+}
+
+class AdBannerWidget extends StatefulWidget {
+  const AdBannerWidget(this.bottom, {Key? key}) : super(key: key);
+  static const AdRequest request = AdRequest(
+    nonPersonalizedAds: false,
+    keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
+  );
+  final double bottom;
+  @override
+  _AdBannerWidgetState createState() => _AdBannerWidgetState();
+}
+
+class _AdBannerWidgetState extends State<AdBannerWidget> {
+  BannerAd? _anchoredBanner;
+
+  bool _loadingAnchoredBanner = false;
+
+  Future<void> _createAnchoredBanner(BuildContext context) async {
+    Future.delayed(const Duration()).then((value) => setState(() {
+          _anchoredBanner = null;
+        }));
+    final AnchoredAdaptiveBannerAdSize? size =
+        await AdSize.getAnchoredAdaptiveBannerAdSize(
+      Orientation.portrait,
+      MediaQuery.of(context).size.width.truncate(),
+    );
+
+    if (size == null) {
+      debugPrint('Unable to get height of anchored banner.');
+      return;
+    }
+
+    final BannerAd banner = BannerAd(
+      size: size,
+      request: AdBannerWidget.request,
+      adUnitId: kReleaseMode
+          ? "ca-app-pub-4649644680694757/8480286673"
+          : BannerAd.testAdUnitId,
+      listener: BannerAdListener(
+        onAdLoaded: (Ad ad) {
+          debugPrint('$BannerAd loaded.');
+          setState(() {
+            _anchoredBanner = ad as BannerAd?;
+          });
+        },
+        onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          debugPrint('$BannerAd failedToLoad: $error');
+          ad.dispose();
+        },
+        onAdOpened: (Ad ad) => debugPrint('$BannerAd onAdOpened.'),
+        onAdClosed: (Ad ad) => debugPrint('$BannerAd onAdClosed.'),
+      ),
+    );
+    return banner.load();
+  }
+
+  @override
+  void dispose() {
+    _anchoredBanner?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: 0,
+      child: Builder(
+        builder: (context) {
+          if (!_loadingAnchoredBanner && widget.bottom != 10) {
+            _loadingAnchoredBanner = true;
+            _createAnchoredBanner(context);
+          }
+          return Container(
+            color: Colors.black,
+            width: _anchoredBanner != null
+                ? _anchoredBanner!.size.width.toDouble()
+                : MediaQuery.of(context).size.width.toDouble(),
+            height: 80,
+            child: _anchoredBanner != null
+                ? AdWidget(
+                    ad: _anchoredBanner!,
+                    key: ValueKey(_anchoredBanner!.adUnitId),
+                  )
+                : Container(),
+          );
+        },
       ),
     );
   }
