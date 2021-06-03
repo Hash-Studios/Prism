@@ -147,7 +147,9 @@ class _PageManagerChildState extends State<PageManagerChild>
     checkConnection();
     WidgetsBinding.instance!.addPostFrameCallback((_) async {
       await rateMyApp.init();
-      if (mounted && rateMyApp.shouldOpenDialog) {
+      if (mounted &&
+          rateMyApp.shouldOpenDialog &&
+          (main.prefs.get("ratedApp", defaultValue: false) == false)) {
         showModal(
             context: context,
             configuration: const FadeScaleTransitionConfiguration(),
@@ -443,6 +445,7 @@ class _RatePopUpState extends State<RatePopUp> {
                   "https://play.google.com/store/apps/details?id=com.hash.prism");
             }
             await rateMyApp.callEvent(RateMyAppEventType.rateButtonPressed);
+            main.prefs.put("ratedApp", true);
             Navigator.pop<RateMyAppDialogButton>(
                 context, RateMyAppDialogButton.rate);
           },
