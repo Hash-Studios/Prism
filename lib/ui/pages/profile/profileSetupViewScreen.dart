@@ -1350,24 +1350,24 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                           Provider.of<ProfileSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileSetups![index!]["id"]
+                                              .profileSetups![index!].data()["id"]
                                               .toString(),
                                           Provider.of<ProfileSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileSetups![index!] as Map);
+                                              .profileSetups![index!].data());
                                     });
                                   } else {
                                     onFavSetup(
                                         Provider.of<ProfileSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .profileSetups![index!]["id"]
+                                            .profileSetups![index!].data()["id"]
                                             .toString(),
                                         Provider.of<ProfileSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .profileSetups![index!] as Map);
+                                            .profileSetups![index!].data());
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,

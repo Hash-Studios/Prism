@@ -1328,24 +1328,24 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                           Provider.of<FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked![index!]["id"]
+                                              .liked![index!].data()["id"]
                                               .toString(),
                                           Provider.of<FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked![index!] as Map);
+                                              .liked![index!].data() as Map);
                                     });
                                   } else {
                                     onFavSetup(
                                         Provider.of<FavouriteSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked![index!]["id"]
+                                            .liked![index!].data()["id"]
                                             .toString(),
                                         Provider.of<FavouriteSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked![index!] as Map);
+                                            .liked![index!].data() as Map);
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,
