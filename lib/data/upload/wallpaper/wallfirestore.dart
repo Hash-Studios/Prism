@@ -18,6 +18,25 @@ Future<void> createRecord(
     String? wallpaperCategory,
     String? wallpaperDesc,
     dynamic review) async {
+  int dailyWallUpload =
+      main.prefs.get("dailyWallUpload", defaultValue: 0) as int;
+  if (main.prefs.get('date') !=
+      DateFormat("yy-MM-dd").format(
+        DateTime.now(),
+      )) {
+    dailyWallUpload = 0;
+  }
+  main.prefs.put(
+    'date',
+    DateFormat("yy-MM-dd").format(
+      DateTime.now(),
+    ),
+  );
+  dailyWallUpload++;
+  main.prefs.put("dailyWallUpload", dailyWallUpload);
+  if (dailyWallUpload > 5) {
+    toasts.codeSend("Please try to upload less than 5 walls a day.");
+  }
   await firestore.collection("walls").add({
     'by': globals.prismUser.username,
     'email': globals.prismUser.email,
@@ -34,24 +53,6 @@ Future<void> createRecord(
     'createdAt': DateTime.now(),
     'collections': ["community"],
   });
-  int wallsUploaded = main.prefs.get("wallsUploaded") as int? ?? 0;
-  if (main.prefs.get('date') !=
-      DateFormat("yy-MM-dd").format(
-        DateTime.now(),
-      )) {
-    wallsUploaded = 0;
-  }
-  main.prefs.put(
-    'date',
-    DateFormat("yy-MM-dd").format(
-      DateTime.now(),
-    ),
-  );
-  wallsUploaded++;
-  main.prefs.put("wallsUploaded", wallsUploaded);
-  if (wallsUploaded > 5) {
-    toasts.codeSend("Please try to upload less than 5 walls a day.");
-  }
   if (globals.prismUser.premium == true) {
     http.post(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
