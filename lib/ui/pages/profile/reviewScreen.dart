@@ -1398,97 +1398,96 @@ class SetupTile extends StatelessWidget {
                                     },
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 8,
-                                ),
-                                Container(
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(JamIcons.trash,
-                                        color: Colors.white),
-                                    onPressed: () async {
-                                      final AlertDialog deleteWallPopUp =
-                                          AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
-                                        title: Text(
-                                          'Delete this setup?',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 16,
-                                              color: Theme.of(context)
-                                                  .accentColor),
-                                        ),
-                                        content: Text(
-                                          "This is permanent, and this action can't be undone!",
-                                          style: TextStyle(
-                                              fontFamily: "Proxima Nova",
-                                              fontWeight: FontWeight.normal,
-                                              fontSize: 14,
-                                              color: Theme.of(context)
-                                                  .accentColor),
-                                        ),
-                                        actions: [
-                                          FlatButton(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(5)),
-                                            color: Theme.of(context).hintColor,
-                                            onPressed: () async {
-                                              Navigator.pop(context);
-                                              await firestore
-                                                  .collection("setups")
-                                                  .doc(wallpaper.id)
-                                                  .delete();
-                                              toasts.codeSend(
-                                                  "Setup successfully deleted from server!");
-                                            },
-                                            child: const Text(
-                                              'DELETE',
-                                              style: TextStyle(
-                                                fontSize: 16.0,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                          FlatButton(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(5)),
-                                            color: Theme.of(context).errorColor,
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: const Text(
-                                              'CANCEL',
-                                              style: TextStyle(
-                                                fontSize: 16.0,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                        backgroundColor:
-                                            Theme.of(context).primaryColor,
-                                        actionsPadding:
-                                            const EdgeInsets.fromLTRB(
-                                                10, 0, 10, 0),
-                                      );
-
-                                      showModal(
-                                          context: context,
-                                          configuration:
-                                              const FadeScaleTransitionConfiguration(),
-                                          builder: (BuildContext context) =>
-                                              deleteWallPopUp);
-                                    },
-                                  ),
-                                ),
                               ],
+                            ),
+                            const SizedBox(
+                              height: 16,
+                            ),
+                            ActionChip(
+                              backgroundColor: Colors.red,
+                              avatar: const Icon(
+                                JamIcons.trash,
+                                color: Colors.white,
+                              ),
+                              label: Text(
+                                "DELETE",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyText2!
+                                    .copyWith(color: Colors.white),
+                              ),
+                              onPressed: () async {
+                                final AlertDialog deleteWallPopUp = AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)),
+                                  title: Text(
+                                    'Delete this setup?',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                        color: Theme.of(context).accentColor),
+                                  ),
+                                  content: Text(
+                                    "This is permanent, and this action can't be undone!",
+                                    style: TextStyle(
+                                        fontFamily: "Proxima Nova",
+                                        fontWeight: FontWeight.normal,
+                                        fontSize: 14,
+                                        color: Theme.of(context).accentColor),
+                                  ),
+                                  actions: [
+                                    FlatButton(
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(5)),
+                                      color: Theme.of(context).hintColor,
+                                      onPressed: () async {
+                                        Navigator.pop(context);
+                                        await firestore
+                                            .collection("setups")
+                                            .doc(wallpaper.id)
+                                            .delete();
+                                        toasts.codeSend(
+                                            "Setup successfully deleted from server!");
+                                      },
+                                      child: const Text(
+                                        'DELETE',
+                                        style: TextStyle(
+                                          fontSize: 16.0,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    FlatButton(
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(5)),
+                                      color: Theme.of(context).errorColor,
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text(
+                                        'CANCEL',
+                                        style: TextStyle(
+                                          fontSize: 16.0,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  backgroundColor:
+                                      Theme.of(context).primaryColor,
+                                  actionsPadding:
+                                      const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                                );
+
+                                showModal(
+                                    context: context,
+                                    configuration:
+                                        const FadeScaleTransitionConfiguration(),
+                                    builder: (BuildContext context) =>
+                                        deleteWallPopUp);
+                              },
                             ),
                           ],
                         )
