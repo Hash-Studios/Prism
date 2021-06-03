@@ -1143,7 +1143,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       child: Row(
                                                         children: [
                                                           Text(
-                                                            "Copyright",
+                                                            "Report",
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme

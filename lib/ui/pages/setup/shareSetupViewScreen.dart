@@ -431,7 +431,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                           const SizedBox(
                                                               width: 10),
                                                           Text(
-                                                            "Copyright",
+                                                            "Report",
                                                             overflow:
                                                                 TextOverflow
                                                                     .fade,
