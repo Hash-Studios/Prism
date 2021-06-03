@@ -292,7 +292,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
           extendedImageEditorKey: editorKey,
           mode: ExtendedImageMode.editor,
           fit: BoxFit.contain,
-          initEditorConfigHandler: (ExtendedImageState state) {
+          initEditorConfigHandler: (ExtendedImageState? state) {
             return EditorConfig(
               maxScale: 8.0,
               cropAspectRatio: cropRatio,
@@ -389,9 +389,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Future<void> crop([bool test = false]) async {
     final ExtendedImageEditorState state = editorKey.currentState!;
-    final Rect rect = state.getCropRect();
-    final EditActionDetails action = state.editAction;
-    final double radian = action.rotateAngle;
+    final Rect? rect = state.getCropRect();
+    final EditActionDetails? action = state.editAction;
+    final double radian = action!.rotateAngle;
 
     final bool flipHorizontal = action.flipY;
     final bool flipVertical = action.flipX;
