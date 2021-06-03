@@ -286,7 +286,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
               ? Colors.white.withOpacity(bright)
               : Colors.black.withOpacity(-bright),
           colorBlendMode: bright > 0 ? BlendMode.lighten : BlendMode.darken,
-          image: ExtendedFileImageProvider(image!),
+          image: ExtendedFileImageProvider(image!, cacheRawData: true),
           height: MediaQuery.of(context).size.width,
           width: MediaQuery.of(context).size.width,
           extendedImageEditorKey: editorKey,
