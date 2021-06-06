@@ -43,9 +43,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         body: BottomBar(
           child: ProfileChild(),
         ),
-        endDrawer: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.68,
-            child: ProfileDrawer()));
+        endDrawer: globals.prismUser.loggedIn
+            ? SizedBox(
+                width: MediaQuery.of(context).size.width * 0.68,
+                child: ProfileDrawer())
+            : null);
   }
 }
 
