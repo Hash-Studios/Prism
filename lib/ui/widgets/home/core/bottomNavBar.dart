@@ -168,7 +168,7 @@ class _BottomNavBarState extends State<BottomNavBar>
       vsync: this,
     );
     _paddingAnimation = Tween(
-      begin: 18.0,
+      begin: 14.0,
       end: 20.0,
     ).animate(CurvedAnimation(
       parent: _controller2,
