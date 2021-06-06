@@ -12,10 +12,9 @@ Future<String> createDynamicLink(
     String id, String provider, String? url, String thumbUrl) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
-          title: "Prism Wallpapers - $id",
+          title: "$id - Prism",
           imageUrl: Uri.parse(thumbUrl),
-          description:
-              "Check out this amazing wallpaper I got, from Prism Wallpapers App."),
+          description: "Check out this amazing wallpaper I got from Prism."),
       dynamicLinkParametersOptions: DynamicLinkParametersOptions(
           shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
       uriPrefix: 'https://prismwallpapers.page.link',
@@ -33,7 +32,7 @@ Future<String> createDynamicLink(
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(
-      ClipboardData(text: "🔥Check this out ➜ ${shortUrl.toString()}"));
+      ClipboardData(text: "Hey check this out ➜ ${shortUrl.toString()}"));
   analytics.logShare(contentType: 'focussedMenu', itemId: id, method: 'link');
   toasts.codeSend("Sharing link copied!");
   debugPrint(shortUrl.toString());
@@ -44,9 +43,9 @@ Future<void> createUserDynamicLink(
     String name, String email, String userPhoto) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
-          title: "$name - Prism Wallpapers",
+          title: "$name - Prism",
           imageUrl: Uri.parse(userPhoto),
-          description: "Check out my wallpapers, on Prism Wallpapers App."),
+          description: "Check out my walls & setups on Prism."),
       dynamicLinkParametersOptions: DynamicLinkParametersOptions(
           shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
       uriPrefix: 'https://prismwallpapers.page.link',
@@ -64,7 +63,7 @@ Future<void> createUserDynamicLink(
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-  Share.share("🔥Check my profile out ➜ $shortUrl");
+  Share.share("Hey check out my profile on Prism ➜ $shortUrl");
   analytics.logShare(contentType: 'userShare', itemId: email, method: 'link');
   debugPrint(shortUrl.toString());
 }
@@ -73,10 +72,9 @@ Future<void> createSetupDynamicLink(
     String index, String name, String thumbUrl) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
-          title: "$name - Prism Wallpapers",
+          title: "$name - Prism",
           imageUrl: Uri.parse(thumbUrl),
-          description:
-              "Check out this amazing setup I got, from Prism Wallpapers App."),
+          description: "Check out this amazing setup I got from Prism."),
       dynamicLinkParametersOptions: DynamicLinkParametersOptions(
           shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
       uriPrefix: 'https://prismwallpapers.page.link',
@@ -94,7 +92,7 @@ Future<void> createSetupDynamicLink(
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-  Share.share("🔥Check this out ➜ $shortUrl");
+  Share.share("Hey check this out ➜ $shortUrl");
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
   debugPrint(shortUrl.toString());
 }
@@ -102,7 +100,7 @@ Future<void> createSetupDynamicLink(
 Future<String> createSharingPrismLink(String userID) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
-          title: "Prism Wallpapers",
+          title: "Prism",
           imageUrl: Uri.parse(
               "https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"),
           description:
@@ -138,10 +136,9 @@ Future<String> createCopyrightLink(bool setup, BuildContext context,
   if (setup == true) {
     final DynamicLinkParameters parameters = DynamicLinkParameters(
         socialMetaTagParameters: SocialMetaTagParameters(
-            title: "$name - Prism Wallpapers",
+            title: "$name - Prism",
             imageUrl: Uri.parse(thumbUrl!),
-            description:
-                "Check out this amazing setup I got, from Prism Wallpapers App."),
+            description: "Check out this amazing setup I got from Prism."),
         dynamicLinkParametersOptions: DynamicLinkParametersOptions(
             shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
         uriPrefix: 'https://prismwallpapers.page.link',
@@ -163,10 +160,9 @@ Future<String> createCopyrightLink(bool setup, BuildContext context,
   } else {
     final DynamicLinkParameters parameters = DynamicLinkParameters(
         socialMetaTagParameters: SocialMetaTagParameters(
-            title: "Prism Wallpapers - $id",
+            title: "$id - Prism",
             imageUrl: Uri.parse(thumbUrl!),
-            description:
-                "Check out this amazing wallpaper I got, from Prism Wallpapers App."),
+            description: "Check out this amazing wallpaper I got from Prism."),
         dynamicLinkParametersOptions: DynamicLinkParametersOptions(
             shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
         uriPrefix: 'https://prismwallpapers.page.link',
