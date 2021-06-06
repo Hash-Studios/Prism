@@ -81,7 +81,9 @@ class _FollowerProfileState extends State<FollowerProfile> {
               builder: (context, snap) {
                 if (snap.hasData && snap.data != null) {
                   name = snap.data!.docs[0].data()["name"].toString();
-                  userPhoto = snap.data!.docs[0].data()["userPhoto"].toString();
+                  userPhoto =
+                      snap.data!.docs[0].data()["profilePhoto"].toString() ??
+                          snap.data!.docs[0].data()["userPhoto"].toString();
                   premium = snap.data!.docs[0].data()["premium"] as bool;
                   links = snap.data!.docs[0].data()["links"] as Map;
                   debugPrint("Name : $name");
