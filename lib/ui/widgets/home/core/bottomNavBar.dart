@@ -42,7 +42,7 @@ class _BottomBarState extends State<BottomBar>
     if (globals.prismUser.premium) {
       bottom = 10;
     } else {
-      bottom = 100;
+      bottom = 90;
     }
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -849,6 +849,9 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
         },
         onAdFailedToLoad: (Ad ad, LoadAdError error) {
           debugPrint('$BannerAd failedToLoad: $error');
+          setState(() {
+            adHeight = 0;
+          });
           ad.dispose();
         },
         onAdOpened: (Ad ad) => debugPrint('$BannerAd onAdOpened.'),
@@ -874,31 +877,37 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
             _loadingAnchoredBanner = true;
             _createAnchoredBanner(context);
           }
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).primaryColor.withOpacity(0),
-                  Theme.of(context).primaryColor
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            width: _anchoredBanner != null
-                ? _anchoredBanner!.size.width.toDouble()
-                : MediaQuery.of(context).size.width.toDouble(),
-            height: adHeight * 1.0,
-            child: _anchoredBanner != null
-                ? Align(
-                    alignment: Alignment.bottomCenter,
-                    child: AdWidget(
-                      ad: _anchoredBanner!,
-                      key: ValueKey(_anchoredBanner!.adUnitId),
+          return adHeight == 0
+              ? Container(
+                  width: MediaQuery.of(context).size.width.toDouble(),
+                  height: 60,
+                  color: Theme.of(context).primaryColor,
+                )
+              : Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).primaryColor.withOpacity(0),
+                        Theme.of(context).primaryColor
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
-                  )
-                : Container(),
-          );
+                  ),
+                  width: _anchoredBanner != null
+                      ? _anchoredBanner!.size.width.toDouble()
+                      : MediaQuery.of(context).size.width.toDouble(),
+                  height: adHeight * 1.0,
+                  child: _anchoredBanner != null
+                      ? Align(
+                          alignment: Alignment.bottomCenter,
+                          child: AdWidget(
+                            ad: _anchoredBanner!,
+                            key: ValueKey(_anchoredBanner!.adUnitId),
+                          ),
+                        )
+                      : Container(),
+                );
         },
       ),
     );
