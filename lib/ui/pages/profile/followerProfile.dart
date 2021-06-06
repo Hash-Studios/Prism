@@ -19,6 +19,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class FollowerProfile extends StatefulWidget {
   final List? arguments;
@@ -395,11 +396,29 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                                     const SizedBox(width: 15),
                                                     Text(
                                                       (snap.data!.docs[0].data()[
-                                                                      'followers']
-                                                                  as List? ??
-                                                              [])
-                                                          .length
-                                                          .toString(),
+                                                                              'followers']
+                                                                          as List? ??
+                                                                      [])
+                                                                  .length >
+                                                              1000
+                                                          ? NumberFormat
+                                                                  .compactCurrency(
+                                                              decimalDigits: 2,
+                                                              symbol: '',
+                                                            )
+                                                              .format((snap.data!.docs[0]
+                                                                              .data()['followers']
+                                                                          as List? ??
+                                                                      [])
+                                                                  .length)
+                                                              .toString()
+                                                          : (snap.data!.docs[0]
+                                                                              .data()[
+                                                                          'followers']
+                                                                      as List? ??
+                                                                  [])
+                                                              .length
+                                                              .toString(),
                                                       style: TextStyle(
                                                           fontFamily:
                                                               "Proxima Nova",

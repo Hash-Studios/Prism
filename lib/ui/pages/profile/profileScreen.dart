@@ -27,6 +27,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
 
@@ -485,19 +486,31 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             }
                                                             return GestureDetector(
                                                               onTap: () {
-                                                                Navigator.pushNamed(
-                                                                    context,
-                                                                    followersRoute,
-                                                                    arguments: [
-                                                                      followers
-                                                                    ]);
+                                                                // Navigator.pushNamed(
+                                                                //     context,
+                                                                //     followersRoute,
+                                                                //     arguments: [
+                                                                //       followers
+                                                                //     ]);
                                                               },
                                                               child: Row(
                                                                 children: [
                                                                   Text(
-                                                                    followers
-                                                                        .length
-                                                                        .toString(),
+                                                                    followers.length >
+                                                                            1000
+                                                                        ? NumberFormat
+                                                                                .compactCurrency(
+                                                                            decimalDigits:
+                                                                                2,
+                                                                            symbol:
+                                                                                '',
+                                                                          )
+                                                                            .format(followers
+                                                                                .length)
+                                                                            .toString()
+                                                                        : followers
+                                                                            .length
+                                                                            .toString(),
                                                                     style: TextStyle(
                                                                         fontFamily:
                                                                             "Proxima Nova",
