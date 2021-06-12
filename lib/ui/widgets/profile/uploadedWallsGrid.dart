@@ -246,7 +246,7 @@ class _ProfileGridState extends State<ProfileGrid>
                                       listen: false)
                                   .profileWalls!
                                   .length <
-                              24)) {
+                              12)) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
                           func: () {
