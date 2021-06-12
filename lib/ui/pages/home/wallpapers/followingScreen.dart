@@ -112,7 +112,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                   child: Text(
                     finalDocs.isEmpty
                         ? "Follow creators to see their latest posts here!"
-                        : "You have catched up to the recent posts, by the people you follow. Follow more people to see their posts.",
+                        : "You have caught up with the latest posts of the people you follow. Follow more people to see their posts.",
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -262,7 +262,7 @@ class _FollowingTileState extends State<FollowingTile> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(
-                            width: 110,
+                            width: MediaQuery.of(context).size.width * 0.2,
                             child: Text(
                               widget.finalDocs[widget.index]["by"].toString(),
                               overflow: TextOverflow.ellipsis,
@@ -277,7 +277,7 @@ class _FollowingTileState extends State<FollowingTile> {
                             ),
                           ),
                           SizedBox(
-                            width: 110,
+                            width: MediaQuery.of(context).size.width * 0.2,
                             child: Text(
                               timeago.format(
                                 now.subtract(
