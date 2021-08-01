@@ -8,6 +8,7 @@ import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
 
+import android.app.DownloadManager;
 import android.app.WallpaperManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
@@ -202,8 +203,30 @@ public class MainActivity extends FlutterActivity {
                     } else if (call.method.equals("save_setup")) {
                         String link = call.argument("link");
                         Picasso.get().load(link).into(saveSetupTarget);
+                    } else if (call.method.equals("download_image_dm")) {
+                        String link = call.argument("link");
+                        String filename = call.argument("filename");
+                        downloadImageNew(filename,link);
                     }
                 });
+    }
+
+    private void downloadImageNew(String filename, String downloadUrlOfImage){
+        try{
+            DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            Uri downloadUri = Uri.parse(downloadUrlOfImage);
+            DownloadManager.Request request = new DownloadManager.Request(downloadUri);
+            request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE)
+                    .setAllowedOverRoaming(false)
+                    .setTitle(filename)
+                    .setMimeType("image/jpeg") // Your file type. You can use this code to download other file types also.
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_PICTURES,File.separator + "Prism"+ File.separator + filename + ".jpg");
+            dm.enqueue(request);
+            Toast.makeText(this, "Image download started.", Toast.LENGTH_SHORT).show();
+        }catch (Exception e){
+            Toast.makeText(this, "Image download failed." + e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void saveImageToPictures(Bitmap bitmap, @NonNull String name) throws IOException {
