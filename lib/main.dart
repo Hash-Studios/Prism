@@ -11,6 +11,7 @@ import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
@@ -49,8 +50,12 @@ int? categories;
 int? purity;
 LocalNotification localNotification = LocalNotification();
 void main() {
-  //TODO: Uncomment next line before release
-  // debugPrint = (String? message, {int? wrapWidth}) {};
+  debugPrint = (String? message, {int? wrapWidth}) {
+    if (message!.contains("[Home,")) {
+      logger.i(message);
+    }
+    logger.d(message);
+  };
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
   FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
@@ -128,7 +133,7 @@ void main() {
             const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
         SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
             .then(
-          (value) => runZoned<Future<void>>(
+          (value) => runZonedGuarded<Future<void>>(
             () {
               runApp(
                 RestartWidget(
@@ -173,6 +178,9 @@ void main() {
                 ),
               );
             } as Future<void> Function(),
+            (obj, stacktrace) {
+              logger.e(obj, obj, stacktrace);
+            },
           ),
         );
       },
