@@ -39,11 +39,11 @@ class _BottomBarState extends State<BottomBar>
   void initState() {
     myScroll();
     super.initState();
-    if (globals.prismUser.premium) {
-      bottom = 10;
-    } else {
-      bottom = 90;
-    }
+    // if (globals.prismUser.premium) {
+    bottom = 10;
+    // } else {
+    //   bottom = 90;
+    // }
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -117,7 +117,7 @@ class _BottomBarState extends State<BottomBar>
             child: BottomNavBar(),
           ),
         ),
-        if (bottom != 10) AdBannerWidget(bottom),
+        // if (bottom != 10) AdBannerWidget(bottom),
         if (isOnTop == true)
           Container()
         else
