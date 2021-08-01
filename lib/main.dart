@@ -53,8 +53,9 @@ void main() {
   debugPrint = (String? message, {int? wrapWidth}) {
     if (message!.contains("[Home,")) {
       logger.i(message);
+    } else {
+      logger.d(message);
     }
-    logger.d(message);
   };
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
