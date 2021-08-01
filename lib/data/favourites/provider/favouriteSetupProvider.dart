@@ -1,3 +1,4 @@
+import 'package:Prism/auth/google_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -10,7 +11,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
     final String uid = globals.prismUser.id;
     liked = [];
     await databaseReference
-        .collection("users")
+        .collection(USER_NEW_COLLECTION)
         .doc(uid)
         .collection("setups")
         .get()
@@ -30,7 +31,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
     final String uid = globals.prismUser.id;
     try {
       await databaseReference
-          .collection("users")
+          .collection(USER_NEW_COLLECTION)
           .doc(uid)
           .collection("setups")
           .doc(id)
@@ -45,7 +46,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
   Future<bool> createFavSetup(Map setup) async {
     final String uid = globals.prismUser.id;
     await databaseReference
-        .collection("users")
+        .collection(USER_NEW_COLLECTION)
         .doc(uid)
         .collection("setups")
         .doc(setup["id"].toString())
@@ -121,7 +122,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
     final String uid = globals.prismUser.id;
     try {
       await databaseReference
-          .collection("users")
+          .collection(USER_NEW_COLLECTION)
           .doc(uid)
           .collection("setups")
           .get()

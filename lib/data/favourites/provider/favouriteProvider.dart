@@ -1,3 +1,4 @@
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,7 +13,7 @@ class FavouriteProvider extends ChangeNotifier {
     final String uid = globals.prismUser.id;
     liked = [];
     await databaseReference
-        .collection("users")
+        .collection(USER_NEW_COLLECTION)
         .doc(uid)
         .collection("images")
         .get()
@@ -43,7 +44,7 @@ class FavouriteProvider extends ChangeNotifier {
     final String uid = globals.prismUser.id;
     try {
       await databaseReference
-          .collection("users")
+          .collection(USER_NEW_COLLECTION)
           .doc(uid)
           .collection("images")
           .doc(id)
@@ -60,7 +61,7 @@ class FavouriteProvider extends ChangeNotifier {
     final String uid = globals.prismUser.id;
     if (provider == "WallHaven") {
       await databaseReference
-          .collection("users")
+          .collection(USER_NEW_COLLECTION)
           .doc(uid)
           .collection("images")
           .doc(wallhaven!.id.toString())
@@ -79,7 +80,7 @@ class FavouriteProvider extends ChangeNotifier {
       });
     } else if (provider == "Pexels") {
       await databaseReference
-          .collection("users")
+          .collection(USER_NEW_COLLECTION)
           .doc(uid)
           .collection("images")
           .doc(pexels!.id.toString())
@@ -98,7 +99,7 @@ class FavouriteProvider extends ChangeNotifier {
       });
     } else if (provider == "Prism") {
       await databaseReference
-          .collection("users")
+          .collection(USER_NEW_COLLECTION)
           .doc(uid)
           .collection("images")
           .doc(prism!["id"].toString())
@@ -180,7 +181,7 @@ class FavouriteProvider extends ChangeNotifier {
     final String uid = globals.prismUser.id;
     try {
       await databaseReference
-          .collection("users")
+          .collection(USER_NEW_COLLECTION)
           .doc(uid)
           .collection("images")
           .get()
