@@ -53,6 +53,7 @@ dependencies:
   image_picker: ^0.7.4
   in_app_update: ^2.0.0
   json_serializable: ^4.1.4
+  logger: ^1.0.0
   paginate_firestore: ^0.3.1
   palette_generator: ^0.3.0
   permission_handler: ^7.1.0
