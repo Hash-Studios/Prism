@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/badgeModel.dart';
+import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
@@ -47,7 +50,7 @@ int? purity;
 LocalNotification localNotification = LocalNotification();
 void main() {
   //TODO: Uncomment next line before release
-  debugPrint = (String? message, {int? wrapWidth}) {};
+  // debugPrint = (String? message, {int? wrapWidth}) {};
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
   FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
@@ -61,9 +64,13 @@ void main() {
         Hive.init(dir.path);
         await Hive.openBox('setups');
         await Hive.openBox('localFav');
+        // await Hive.deleteFromDisk();
         Hive.registerAdapter(InAppNotifAdapter());
         await Hive.openBox<InAppNotif>('inAppNotifs');
-        Hive.registerAdapter(PrismUsersAdapter());
+        // Hive.registerAdapter<PrismUsers>(PrismUsersAdapter());
+        Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
+        Hive.registerAdapter<Badge>(BadgeAdapter());
+        Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
         prefs = await Hive.openBox('prefs');
         debugPrint("Box Opened");
         if (prefs.get("systemOverlayColor") == null) {

@@ -135,7 +135,7 @@ class FollowingTile extends StatefulWidget {
 }
 
 class _FollowingTileState extends State<FollowingTile> {
-  final now = DateTime.now();
+  final now = DateTime.now().toUtc();
   double? height;
 
   @override

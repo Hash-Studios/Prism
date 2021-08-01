@@ -52,6 +52,7 @@ dependencies:
   image_editor: ^0.7.1
   image_picker: ^0.7.4
   in_app_update: ^2.0.0
+  json_serializable: ^4.1.4
   paginate_firestore: ^0.3.1
   palette_generator: ^0.3.0
   permission_handler: ^7.1.0
@@ -73,7 +74,7 @@ dependency_overrides:
   path_provider: ^2.0.1
   http: ^0.13.1
   crypto: ^3.0.0
-  convert: ^2.1.0
+  # convert: ^2.1.0
 dev_dependencies:
   analyzer: ^1.5.0
   build_runner: ^2.0.1

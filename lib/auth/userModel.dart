@@ -1,12 +1,18 @@
+import 'package:Prism/auth/badgeModel.dart';
+import 'package:Prism/auth/transactionModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 part 'userModel.g.dart';
 
-@HiveType(typeId: 1)
-class PrismUsers {
+@HiveType(typeId: 15)
+@JsonSerializable(
+  explicitToJson: true,
+)
+class PrismUsersV2 {
   @HiveField(0)
   String username;
   @HiveField(1)
@@ -18,7 +24,7 @@ class PrismUsers {
   @HiveField(4)
   bool premium;
   @HiveField(5)
-  DateTime lastLogin;
+  String lastLoginAt;
   @HiveField(6)
   Map links;
   @HiveField(7)
@@ -31,119 +37,164 @@ class PrismUsers {
   String bio;
   @HiveField(11)
   bool loggedIn;
+  @HiveField(12)
+  List<Badge> badges;
+  @HiveField(13)
+  List subPrisms;
+  @HiveField(14)
+  int coins;
+  @HiveField(15)
+  List<PrismTransaction> transactions;
 
-  PrismUsers({
+  PrismUsersV2({
     required this.username,
     required this.email,
     required this.id,
     required this.createdAt,
     required this.premium,
-    required this.lastLogin,
+    required this.lastLoginAt,
     required this.links,
     required this.followers,
     required this.following,
     required this.profilePhoto,
     required this.bio,
     required this.loggedIn,
+    required this.badges,
+    required this.subPrisms,
+    required this.coins,
+    required this.transactions,
   }) {
     debugPrint("Default constructor !!!!");
   }
 
-  PrismUsers.withSave({
-    required this.username,
-    required this.email,
-    required this.id,
-    required this.createdAt,
-    required this.premium,
-    required this.lastLogin,
-    required this.links,
-    required this.followers,
-    required this.following,
-    required this.profilePhoto,
-    required this.bio,
-    required this.loggedIn,
-  }) {
-    debugPrint("With Save constructor !!!!");
-    FirebaseFirestore.instance.collection('users').doc(id).update({
-      'bio': bio,
-      'username': username,
-      'email': email,
-      'id': id,
-      'createdAt': createdAt,
-      'premium': premium,
-      'lastLogin': lastLogin,
-      'links': links,
-      'followers': followers,
-      'following': following,
-      'profilePhoto': profilePhoto,
-    });
-  }
-  PrismUsers.initial({
-    this.bio = "",
-    this.email = "",
-    this.username = "",
-    this.id = "",
-    required this.createdAt,
-    this.premium = false,
-    required this.lastLogin,
-    required this.links,
-    required this.followers,
-    required this.following,
-    this.profilePhoto = "",
-    this.loggedIn = false,
-  }) {
-    debugPrint("initial constructor !!!!");
-  }
+  // PrismUsers.withSave({
+  //   required this.username,
+  //   required this.email,
+  //   required this.id,
+  //   required this.createdAt,
+  //   required this.premium,
+  //   required this.lastLogin,
+  //   required this.links,
+  //   required this.followers,
+  //   required this.following,
+  //   required this.profilePhoto,
+  //   required this.bio,
+  //   required this.loggedIn,
+  //   required this.badges,
+  //   required this.subPrisms,
+  //   required this.coins,
+  //   required this.transactions,
+  // }) {
+  //   debugPrint("With Save constructor !!!!");
+  //   FirebaseFirestore.instance.collection('users').doc(id).update({
+  //     'bio': bio,
+  //     'username': username,
+  //     'email': email,
+  //     'id': id,
+  //     'createdAt': createdAt,
+  //     'premium': premium,
+  //     'lastLogin': lastLogin,
+  //     'links': links,
+  //     'followers': followers,
+  //     'following': following,
+  //     'profilePhoto': profilePhoto,
+  //   });
+  // }
+  // PrismUsers.initial({
+  //   this.bio = "",
+  //   this.email = "",
+  //   this.username = "",
+  //   this.id = "",
+  //   required this.createdAt,
+  //   this.premium = false,
+  //   required this.lastLogin,
+  //   required this.links,
+  //   required this.followers,
+  //   required this.following,
+  //   this.profilePhoto = "",
+  //   this.loggedIn = false,
+  // }) {
+  //   debugPrint("initial constructor !!!!");
+  // }
 
-  PrismUsers.withoutSave({
-    required this.username,
-    required this.email,
-    required this.id,
-    required this.createdAt,
-    required this.premium,
-    required this.lastLogin,
-    required this.links,
-    required this.followers,
-    required this.following,
-    required this.profilePhoto,
-    required this.bio,
-    required this.loggedIn,
-  }) {
-    debugPrint("Without save constructor !!!!");
-    FirebaseFirestore.instance.collection('users').doc(id).update({
-      'bio': bio,
-      'username': username,
-      'following': following,
-      'lastLogin': DateTime.now(),
-      'links': links,
-      'profilePhoto': profilePhoto,
-    });
-  }
+  // PrismUsers.withoutSave({
+  //   required this.username,
+  //   required this.email,
+  //   required this.id,
+  //   required this.createdAt,
+  //   required this.premium,
+  //   required this.lastLogin,
+  //   required this.links,
+  //   required this.followers,
+  //   required this.following,
+  //   required this.profilePhoto,
+  //   required this.bio,
+  //   required this.loggedIn,
+  // }) {
+  //   debugPrint("Without save constructor !!!!");
+  //   FirebaseFirestore.instance.collection('users').doc(id).update({
+  //     'bio': bio,
+  //     'username': username,
+  //     'following': following,
+  //     'lastLogin': DateTime.now(),
+  //     'links': links,
+  //     'profilePhoto': profilePhoto,
+  //   });
+  // }
 
-  factory PrismUsers.fromDocumentSnapshot(DocumentSnapshot doc, User user) =>
-      PrismUsers.withoutSave(
-        bio: (doc.data()!["bio"] ?? "").toString(),
-        createdAt: doc.data()!["createdAt"].toString(),
-        email: doc.data()!["email"].toString(),
+  // factory PrismUsers.fromDocumentSnapshot(DocumentSnapshot doc, User user) =>
+  //     PrismUsers.withoutSave(
+  //       bio: (doc.data()!["bio"] ?? "").toString(),
+  //       createdAt: doc.data()!["createdAt"].toString(),
+  //       email: doc.data()!["email"].toString(),
+  //       username: (doc.data()!["username"] ?? user.displayName).toString(),
+  //       followers: doc.data()!["followers"] as List ?? [],
+  //       following: doc.data()!["following"] as List ?? [],
+  //       id: doc.data()!["id"].toString(),
+  //       lastLogin: ((doc.data()!["lastLogin"] as Timestamp?) ?? Timestamp.now())
+  //           .toDate(),
+  //       links: doc.data()!["links"] as Map ?? {},
+  //       premium: doc.data()!["premium"] as bool,
+  //       loggedIn: true,
+  //       profilePhoto: (doc.data()!["profilePhoto"] ?? user.photoURL).toString(),
+  //     );
+
+  // Map<String, dynamic> toJson() => {
+  //       "bio": bio,
+  //       "createdAt": createdAt,
+  //       "email": email,
+  //       "username": username,
+  //       "links": links,
+  //       "premium": premium,
+  //       "profilePhoto": profilePhoto,
+  //       "badges": badges,
+  //     };
+
+  factory PrismUsersV2.fromJson(Map<String, dynamic> json) =>
+      _$PrismUsersV2FromJson(json);
+  factory PrismUsersV2.fromDocumentSnapshot(DocumentSnapshot doc, User user) =>
+      PrismUsersV2(
         username: (doc.data()!["username"] ?? user.displayName).toString(),
+        email: (doc.data()!["email"] ?? user.email).toString(),
+        id: doc.data()!["id"].toString(),
+        createdAt: doc.data()!["createdAt"].toString(),
+        premium: doc.data()!["premium"] as bool,
+        lastLoginAt: doc.data()!["lastLoginAt"]?.toString() ??
+            DateTime.now().toUtc().toIso8601String(),
+        links: doc.data()!["links"] as Map<String, dynamic> ?? {},
         followers: doc.data()!["followers"] as List ?? [],
         following: doc.data()!["following"] as List ?? [],
-        id: doc.data()!["id"].toString(),
-        lastLogin: ((doc.data()!["lastLogin"] as Timestamp?) ?? Timestamp.now())
-            .toDate(),
-        links: doc.data()!["links"] as Map ?? {},
-        premium: doc.data()!["premium"] as bool,
-        loggedIn: true,
         profilePhoto: (doc.data()!["profilePhoto"] ?? user.photoURL).toString(),
+        bio: (doc.data()!["bio"] ?? "").toString(),
+        loggedIn: true,
+        badges: (doc.data()!['badges'] as List<dynamic> ?? [])
+            .map((e) => Badge.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        subPrisms: doc.data()!['subPrisms'] as List<dynamic> ?? [],
+        coins: doc.data()!['coins'] as int ?? 0,
+        transactions: (doc.data()!['transactions'] as List<dynamic> ?? [])
+            .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
+            .toList(),
       );
-
-  Map<String, dynamic> toJson() => {
-        "bio": bio,
-        "createdAt":createdAt,
-        "email": email,
-        "username": username,
-        "links": links,
-        "premium": premium,
-        "profilePhoto": profilePhoto,
-      };
+  Map<String, dynamic> toJson() => _$PrismUsersV2ToJson(this);
 }

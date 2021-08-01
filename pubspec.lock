@@ -191,12 +191,12 @@ packages:
     source: hosted
     version: "1.15.0"
   convert:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
       name: convert
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.1"
+    version: "3.0.1"
   crypto:
     dependency: "direct overridden"
     description:
@@ -690,6 +690,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.0.1"
+  json_serializable:
+    dependency: "direct main"
+    description:
+      name: json_serializable
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "4.1.4"
   lint:
     dependency: "direct dev"
     description:

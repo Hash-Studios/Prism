@@ -141,7 +141,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                                       .update({
                                     "redeemed": true,
                                     "winner": globals.prismUser.toJson(),
-                                    "when": DateTime.now()
+                                    "when": DateTime.now().toUtc()
                                   });
                                   toasts.codeSend(
                                       "Congratulations, we will contact you!");

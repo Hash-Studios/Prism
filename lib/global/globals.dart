@@ -4,16 +4,27 @@ import 'package:Prism/data/ads/adHelper.dart';
 import 'package:Prism/main.dart' as main;
 
 GoogleAuth gAuth = GoogleAuth();
-PrismUsers prismUser = main.prefs.get(
-  'prismUser',
-  defaultValue: PrismUsers.initial(
-    createdAt: DateTime.now().toIso8601String(),
-    lastLogin: DateTime.now(),
-    links: {},
+PrismUsersV2 prismUser = main.prefs.get(
+  'prismUserV2',
+  defaultValue: PrismUsersV2(
+    bio: "",
+    createdAt: DateTime.now().toUtc().toIso8601String(),
+    email: "",
+    username: "",
     followers: [],
     following: [],
+    id: "",
+    lastLoginAt: DateTime.now().toUtc().toIso8601String(),
+    links: {},
+    premium: false,
+    loggedIn: false,
+    profilePhoto: "",
+    badges: [],
+    coins: 0,
+    subPrisms: [],
+    transactions: [],
   ),
-) as PrismUsers;
+) as PrismUsersV2;
 String currentAppVersion = '2.6.6';
 String obsoleteAppVersion = '2.6.0';
 String currentAppVersionCode = '68';
