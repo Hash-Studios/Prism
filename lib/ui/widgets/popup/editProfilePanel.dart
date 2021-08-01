@@ -481,7 +481,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           ),
                           child: Center(
                             child: isLoading
-                                ? const CircularProgressIndicator()
+                                ? CircularProgressIndicator(
+                                    color: Theme.of(context).primaryColor)
                                 : Text(
                                     "Continue",
                                     style: TextStyle(
