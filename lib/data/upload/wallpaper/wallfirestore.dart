@@ -50,7 +50,7 @@ Future<void> createRecord(
     'category': wallpaperCategory,
     'desc': wallpaperDesc,
     'review': review,
-    'createdAt': DateTime.now(),
+    'createdAt': DateTime.now().toUtc(),
     'collections': ["community"],
   });
   if (globals.prismUser.premium == true) {
@@ -147,7 +147,7 @@ Future<void> createSetup(
     'name': setupName,
     'desc': setupDesc,
     'review': review,
-    'created_at': DateTime.now(),
+    'created_at': DateTime.now().toUtc(),
     'wall_id': wallId
   });
   if (globals.prismUser.loggedIn == true && globals.prismUser.premium == true) {
@@ -242,7 +242,7 @@ Future<void> updateSetup(
     'name': setupName,
     'desc': setupDesc,
     'review': review,
-    'created_at': DateTime.now(),
+    'created_at': DateTime.now().toUtc(),
     'wall_id': wallId
   });
   toasts.codeSend("Your setup is edited, and is under review.");

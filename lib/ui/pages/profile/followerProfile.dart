@@ -81,6 +81,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
               stream: getUserProfile(email!),
               builder: (context, snap) {
                 if (snap.hasData && snap.data != null) {
+                  print("SNAP ERROR ${email}");
                   name = snap.data!.docs[0].data()["name"].toString();
                   userPhoto =
                       snap.data!.docs[0].data()["profilePhoto"].toString() ??

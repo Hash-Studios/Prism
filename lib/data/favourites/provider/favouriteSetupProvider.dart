@@ -53,7 +53,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
       "by": setup["by"].toString() ?? "",
       "icon": setup["icon"].toString() ?? "",
       "icon_url": setup["icon_url"].toString() ?? "",
-      "created_at": DateTime.now(),
+      "created_at": DateTime.now().toUtc(),
       "desc": setup["desc"].toString() ?? "",
       "email": setup["email"].toString() ?? "",
       "id": setup["id"].toString() ?? "",

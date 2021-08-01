@@ -54,141 +54,67 @@ class GoogleAuth {
       print("USERDATA1 ${usersData[1]}");
       if (usersData[0] != null && usersData[1] != null) {
         final doc = usersData[1]!;
-        globals.prismUser = PrismUsers(
-          bio: (doc.data()!["bio"] ?? "").toString(),
-          createdAt: doc.data()!["createdAt"].toString(),
-          email: doc.data()!["email"].toString(),
-          username: (doc.data()!["username"] ?? user.displayName).toString(),
-          followers: doc.data()!["followers"] as List ?? [],
-          following: doc.data()!["following"] as List ?? [],
-          id: doc.data()!["id"].toString(),
-          lastLogin:
-              ((doc.data()!["lastLogin"] as Timestamp?) ?? Timestamp.now())
-                  .toDate(),
-          links: doc.data()!["links"] as Map ?? {},
-          premium: doc.data()!["premium"] as bool,
-          loggedIn: true,
-          profilePhoto:
-              (doc.data()!["profilePhoto"] ?? user.photoURL).toString(),
-        );
+        globals.prismUser = PrismUsersV2.fromDocumentSnapshot(doc, user);
         FirebaseFirestore.instance
             .collection(USER_NEW_COLLECTION)
             .doc(globals.prismUser.id)
             .update({
-          'bio': globals.prismUser.bio,
-          'username': globals.prismUser.username,
-          'lastLogin': DateTime.now(),
-          'links': globals.prismUser.links,
-          'profilePhoto': globals.prismUser.profilePhoto,
+          'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
+          'loggedIn': true,
         });
         print("USERDATA CASE1 ${globals.prismUser.toJson()}");
       }
       // User exists in old database. Copy/create him in the new db.
       else if (usersData[0] != null && usersData[1] == null) {
         final doc = usersData[0]!;
-        globals.prismUser = PrismUsers(
-          bio: (doc.data()!["bio"] ?? "").toString(),
-          createdAt: doc.data()!["createdAt"].toString(),
-          email: doc.data()!["email"].toString(),
-          username: (doc.data()!["username"] ?? user.displayName).toString(),
-          followers: doc.data()!["followers"] as List ?? [],
-          following: doc.data()!["following"] as List ?? [],
-          id: doc.data()!["id"].toString(),
-          lastLogin:
-              ((doc.data()!["lastLogin"] as Timestamp?) ?? Timestamp.now())
-                  .toDate(),
-          links: doc.data()!["links"] as Map ?? {},
-          premium: doc.data()!["premium"] as bool,
-          loggedIn: true,
-          profilePhoto:
-              (doc.data()!["profilePhoto"] ?? user.photoURL).toString(),
-        );
+        globals.prismUser = PrismUsersV2.fromDocumentSnapshot(doc, user);
         FirebaseFirestore.instance
             .collection(USER_NEW_COLLECTION)
             .doc(globals.prismUser.id)
-            .set({
-          'bio': globals.prismUser.bio,
-          'username': globals.prismUser.username,
-          'email': globals.prismUser.email,
-          'id': globals.prismUser.id,
-          'createdAt': globals.prismUser.createdAt,
-          'premium': globals.prismUser.premium,
-          'lastLogin': DateTime.now(),
-          'links': globals.prismUser.links,
-          'followers': globals.prismUser.followers,
-          'following': globals.prismUser.following,
-          'profilePhoto': globals.prismUser.profilePhoto,
-        });
+            .set(globals.prismUser.toJson());
         print("USERDATA CASE2 ${globals.prismUser.toJson()}");
       }
       // User exists in new database. Simply sign him in.
       else if (usersData[0] == null && usersData[1] != null) {
         final doc = usersData[1]!;
-        globals.prismUser = PrismUsers(
-          bio: (doc.data()!["bio"] ?? "").toString(),
-          createdAt: doc.data()!["createdAt"].toString(),
-          email: doc.data()!["email"].toString(),
-          username: (doc.data()!["username"] ?? user.displayName).toString(),
-          followers: doc.data()!["followers"] as List ?? [],
-          following: doc.data()!["following"] as List ?? [],
-          id: doc.data()!["id"].toString(),
-          lastLogin:
-              ((doc.data()!["lastLogin"] as Timestamp?) ?? Timestamp.now())
-                  .toDate(),
-          links: doc.data()!["links"] as Map ?? {},
-          premium: doc.data()!["premium"] as bool,
-          loggedIn: true,
-          profilePhoto:
-              (doc.data()!["profilePhoto"] ?? user.photoURL).toString(),
-        );
+        globals.prismUser = PrismUsersV2.fromDocumentSnapshot(doc, user);
         FirebaseFirestore.instance
             .collection(USER_NEW_COLLECTION)
             .doc(globals.prismUser.id)
             .update({
-          'bio': globals.prismUser.bio,
-          'username': globals.prismUser.username,
-          'lastLogin': DateTime.now(),
-          'links': globals.prismUser.links,
-          'profilePhoto': globals.prismUser.profilePhoto,
+          'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
+          'loggedIn': true,
         });
         print("USERDATA CASE3 ${globals.prismUser.toJson()}");
       }
       // User exists in none. Create new data in new db and sign him in.
       else {
-        globals.prismUser = PrismUsers(
+        globals.prismUser = PrismUsersV2(
           bio: "",
-          createdAt: DateTime.now().toIso8601String(),
+          createdAt: DateTime.now().toUtc().toIso8601String(),
           email: user.email!,
           username: user.displayName!,
           followers: [],
           following: [],
           id: user.uid,
-          lastLogin: DateTime.now(),
+          lastLoginAt: DateTime.now().toUtc().toIso8601String(),
           links: {},
           premium: false,
           loggedIn: true,
           profilePhoto: user.photoURL!,
+          badges: [],
+          coins: 0,
+          subPrisms: [],
+          transactions: [],
         );
         FirebaseFirestore.instance
             .collection(USER_NEW_COLLECTION)
             .doc(globals.prismUser.id)
-            .set({
-          'bio': globals.prismUser.bio,
-          'username': globals.prismUser.username,
-          'email': globals.prismUser.email,
-          'id': globals.prismUser.id,
-          'createdAt': globals.prismUser.createdAt,
-          'premium': globals.prismUser.premium,
-          'lastLogin': DateTime.now(),
-          'links': globals.prismUser.links,
-          'followers': globals.prismUser.followers,
-          'following': globals.prismUser.following,
-          'profilePhoto': globals.prismUser.profilePhoto,
-        });
+            .set(globals.prismUser.toJson());
         print("USERDATA CASE4 ${globals.prismUser.toJson()}");
       }
 
-      await prefs.put('prismUser', globals.prismUser);
+      await prefs.put('prismUserV2', globals.prismUser);
       isLoading = false;
     }
     home.f.subscribeToTopic(user.email!.split("@")[0]);
@@ -203,15 +129,32 @@ class GoogleAuth {
 
   Future<bool> signOutGoogle() async {
     await googleSignIn.signOut();
-    globals.prismUser = PrismUsers.initial(
-      createdAt: DateTime.now().toIso8601String(),
-      lastLogin: DateTime.now(),
-      links: {},
+    FirebaseFirestore.instance
+        .collection(USER_NEW_COLLECTION)
+        .doc(globals.prismUser.id)
+        .update({
+      'loggedIn': false,
+    });
+    globals.prismUser = PrismUsersV2(
+      bio: "",
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+      email: "",
+      username: "",
       followers: [],
       following: [],
+      id: "",
+      lastLoginAt: DateTime.now().toUtc().toIso8601String(),
+      links: {},
+      premium: false,
+      loggedIn: false,
+      profilePhoto: "",
+      badges: [],
+      coins: 0,
+      subPrisms: [],
+      transactions: [],
     );
     Hive.openBox('prefs').then((value) {
-      value.put('prismUser', globals.prismUser);
+      value.put('prismUserV2', globals.prismUser);
     });
     await Purchases.reset();
     debugPrint("User Sign Out");

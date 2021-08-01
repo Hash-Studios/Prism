@@ -12,7 +12,8 @@ Future<QuerySnapshot> getLastMonthNotifs(String modifier) async {
       .collection("notifications")
       .orderBy("createdAt", descending: true)
       .where("createdAt",
-          isGreaterThan: DateTime.now().subtract(const Duration(days: 30)))
+          isGreaterThan:
+              DateTime.now().toUtc().subtract(const Duration(days: 30)))
       .where('modifier', isEqualTo: modifier)
       .get();
 }
@@ -30,7 +31,7 @@ Future<void> getNotifs() async {
   debugPrint("Fetching notifs");
   final Box<InAppNotif> box = Hive.box('inAppNotifs');
   if (main.prefs.get('lastFetchTime') != null) {
-  debugPrint("Last fetch time ${main.prefs.get('lastFetchTime')}");
+    debugPrint("Last fetch time ${main.prefs.get('lastFetchTime')}");
     if (globals.prismUser.premium == false) {
       getLatestNotifs('free').then((snap) {
         for (final doc in snap.docs) {
