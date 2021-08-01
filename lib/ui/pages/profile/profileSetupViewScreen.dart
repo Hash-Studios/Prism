@@ -128,13 +128,9 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
           parallaxEnabled: true,
           parallaxOffset: 0.00,
           color: Colors.transparent,
-          maxHeight:
-            
-              MediaQuery.of(context).size.height * .70 > 600
-                  ? MediaQuery.of(context).size.height * .70
-                  : 600
-        
-          ,
+          maxHeight: MediaQuery.of(context).size.height * .70 > 600
+              ? MediaQuery.of(context).size.height * .70
+              : 600,
           controller: panelController,
           onPanelOpened: () {
             setState(() {
@@ -148,13 +144,9 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
           },
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            height:
-             
-                MediaQuery.of(context).size.height * .70 > 600
-                    ? MediaQuery.of(context).size.height * .70
-                    : 600
-        
-            ,
+            height: MediaQuery.of(context).size.height * .70 > 600
+                ? MediaQuery.of(context).size.height * .70
+                : 600,
             width: MediaQuery.of(context).size.width,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(30),
@@ -495,7 +487,6 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               context,
                                                               followerProfileRoute,
                                                               arguments: [
-                                                            
                                                                 Provider.of<ProfileSetupProvider>(
                                                                         context,
                                                                         listen:
@@ -635,15 +626,27 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   .toString());
                                         }
                                       },
-                                      tileText: Provider.of<
-                                                          ProfileSetupProvider>(
+                                      tileText: Provider.of<ProfileSetupProvider>(
                                                       context,
                                                       listen: false)
                                                   .profileSetups![index!]
                                                       ["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
-                                          ? "Prism"
+                                          ? (Provider.of<ProfileSetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .profileSetups![index!]
+                                                          ["wall_id"] ==
+                                                      null ||
+                                                  Provider.of<ProfileSetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .profileSetups![index!]
+                                                          ["wall_id"] ==
+                                                      "")
+                                              ? "Wall Link"
+                                              : "Prism (${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wall_id"]})"
                                           : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
@@ -813,15 +816,27 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<
-                                                              ProfileSetupProvider>(
+                                          tileText: Provider.of<ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
                                                       .profileSetups![index!]
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
-                                              ? "Prism"
+                                              ? (Provider.of<ProfileSetupProvider>(
+                                                                      context,
+                                                                      listen: false)
+                                                                  .profileSetups![index!]
+                                                              ["wall_id"] ==
+                                                          null ||
+                                                      Provider.of<ProfileSetupProvider>(
+                                                                      context,
+                                                                      listen: false)
+                                                                  .profileSetups![index!]
+                                                              ["wall_id"] ==
+                                                          "")
+                                                  ? "Wall Link"
+                                                  : "Prism (${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wall_id"]})"
                                               : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
@@ -1067,15 +1082,27 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<
-                                                                ProfileSetupProvider>(
+                                            tileText: Provider.of<ProfileSetupProvider>(
                                                             context,
                                                             listen: false)
                                                         .profileSetups![index!]
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
-                                                ? "Prism"
+                                                ? (Provider.of<ProfileSetupProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .profileSetups![index!]
+                                                                ["wall_id"] ==
+                                                            null ||
+                                                        Provider.of<ProfileSetupProvider>(
+                                                                    context,
+                                                                    listen: false)
+                                                                .profileSetups![index!]["wall_id"] ==
+                                                            "")
+                                                    ? "Wall Link"
+                                                    : "Prism (${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wall_id"]})"
                                                 : "${Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
@@ -1350,24 +1377,28 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                           Provider.of<ProfileSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileSetups![index!].data()["id"]
+                                              .profileSetups![index!]
+                                              .data()["id"]
                                               .toString(),
                                           Provider.of<ProfileSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .profileSetups![index!].data());
+                                              .profileSetups![index!]
+                                              .data());
                                     });
                                   } else {
                                     onFavSetup(
                                         Provider.of<ProfileSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .profileSetups![index!].data()["id"]
+                                            .profileSetups![index!]
+                                            .data()["id"]
                                             .toString(),
                                         Provider.of<ProfileSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .profileSetups![index!].data());
+                                            .profileSetups![index!]
+                                            .data());
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,

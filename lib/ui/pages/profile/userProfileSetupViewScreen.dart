@@ -657,15 +657,26 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<
-                                                          user_data
-                                                              .UserProfileProvider>(
+                                      tileText: Provider.of<user_data.UserProfileProvider>(
                                                       context)
                                                   .userProfileSetups![index!]
                                                   .data()["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
-                                          ? "Prism"
+                                          ? (Provider.of<user_data.UserProfileProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .userProfileSetups![index!]
+                                                          ["wall_id"] ==
+                                                      null ||
+                                                  Provider.of<user_data.UserProfileProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .userProfileSetups![
+                                                          index!]["wall_id"] ==
+                                                      "")
+                                              ? "Wall Link"
+                                              : "Prism (${Provider.of<user_data.UserProfileProvider>(context, listen: false).userProfileSetups![index!]["wall_id"]})"
                                           : "${Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
@@ -862,9 +873,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<
-                                                              user_data
-                                                                  .UserProfileProvider>(
+                                          tileText: Provider.of<user_data.UserProfileProvider>(
                                                           context,
                                                           listen: false)
                                                       .userProfileSetups![
@@ -872,7 +881,20 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                       .data()["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
-                                              ? "Prism"
+                                              ? (Provider.of<user_data.UserProfileProvider>(
+                                                                      context,
+                                                                      listen: false)
+                                                                  .userProfileSetups![index!]
+                                                              ["wall_id"] ==
+                                                          null ||
+                                                      Provider.of<user_data.UserProfileProvider>(
+                                                                      context,
+                                                                      listen: false)
+                                                                  .userProfileSetups![index!]
+                                                              ["wall_id"] ==
+                                                          "")
+                                                  ? "Wall Link"
+                                                  : "Prism (${Provider.of<user_data.UserProfileProvider>(context, listen: false).userProfileSetups![index!]["wall_id"]})"
                                               : "${Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
@@ -1161,16 +1183,28 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<
-                                                                user_data
-                                                                    .UserProfileProvider>(
-                                                            context)
+                                            tileText: Provider.of<user_data.UserProfileProvider>(context)
                                                         .userProfileSetups![
                                                             index!]
                                                         .data()["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
-                                                ? "Prism"
+                                                ? (Provider.of<user_data.UserProfileProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .userProfileSetups![index!]
+                                                                ["wall_id"] ==
+                                                            null ||
+                                                        Provider.of<user_data.UserProfileProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .userProfileSetups![index!]
+                                                                ["wall_id"] ==
+                                                            "")
+                                                    ? "Wall Link"
+                                                    : "Prism (${Provider.of<user_data.UserProfileProvider>(context, listen: false).userProfileSetups![index!]["wall_id"]})"
                                                 : "${Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,

@@ -651,7 +651,19 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       ["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
-                                          ? "Prism"
+                                          ? (Provider.of<FavouriteSetupProvider>(context,
+                                                                  listen: false)
+                                                              .liked![index!]
+                                                          ["wall_id"] ==
+                                                      null ||
+                                                  Provider.of<FavouriteSetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .liked![index!]
+                                                          ["wall_id"] ==
+                                                      "")
+                                              ? "Wall Link"
+                                              : "Prism (${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"]})"
                                           : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
@@ -820,7 +832,19 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               ["wallpaper_url"]
                                                           .toString()[0] !=
                                                       "["
-                                                  ? "Prism"
+                                                  ? (Provider.of<FavouriteSetupProvider>(context,
+                                                                  listen: false)
+                                                              .liked![index!]
+                                                          ["wall_id"] ==
+                                                      null ||
+                                                  Provider.of<FavouriteSetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .liked![index!]
+                                                          ["wall_id"] ==
+                                                      "")
+                                              ? "Wall Link"
+                                              : "Prism (${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"]})"
                                                   : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
@@ -1060,7 +1084,19 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
-                                                ? "Prism"
+                                                ? (Provider.of<FavouriteSetupProvider>(context,
+                                                                  listen: false)
+                                                              .liked![index!]
+                                                          ["wall_id"] ==
+                                                      null ||
+                                                  Provider.of<FavouriteSetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .liked![index!]
+                                                          ["wall_id"] ==
+                                                      "")
+                                              ? "Wall Link"
+                                              : "Prism (${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"]})"
                                                 : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,

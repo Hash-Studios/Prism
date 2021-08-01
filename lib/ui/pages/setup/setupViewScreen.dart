@@ -622,7 +622,19 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                       ["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
-                                          ? "Prism"
+                                          ? (Provider.of<SetupProvider>(context,
+                                                                  listen: false)
+                                                              .setups![index!]
+                                                          ["wall_id"] ==
+                                                      null ||
+                                                  Provider.of<SetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .setups![index!]
+                                                          ["wall_id"] ==
+                                                      "")
+                                              ? "Wall Link"
+                                              : "Prism (${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"]})"
                                           : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
@@ -787,7 +799,20 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
-                                              ? "Prism"
+                                              ? (Provider.of<SetupProvider>(
+                                                                      context,
+                                                                      listen: false)
+                                                                  .setups![index!]
+                                                              ["wall_id"] ==
+                                                          null ||
+                                                      Provider.of<SetupProvider>(
+                                                                      context,
+                                                                      listen: false)
+                                                                  .setups![index!]
+                                                              ["wall_id"] ==
+                                                          "")
+                                                  ? "Wall Link"
+                                                  : "Prism (${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"]})"
                                               : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
@@ -1019,15 +1044,27 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                         .toString());
                                               }
                                             },
-                                            tileText: Provider.of<
-                                                                SetupProvider>(
+                                            tileText: Provider.of<SetupProvider>(
                                                             context,
                                                             listen: false)
                                                         .setups![index!]
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
-                                                ? "Prism"
+                                                ? (Provider.of<SetupProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .setups![index!]
+                                                                ["wall_id"] ==
+                                                            null ||
+                                                        Provider.of<SetupProvider>(
+                                                                    context,
+                                                                    listen: false)
+                                                                .setups![index!]["wall_id"] ==
+                                                            "")
+                                                    ? "Wall Link"
+                                                    : "Prism (${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"]})"
                                                 : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
