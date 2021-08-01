@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
 
 ThemeData kLightTheme = ThemeData(
+  colorScheme: const ColorScheme.light(primary: Color(0xFFE57697)),
   canvasColor: Colors.transparent,
   primaryColor: Colors.white,
   brightness: Brightness.light,
@@ -77,6 +78,7 @@ ThemeData kLightTheme = ThemeData(
 );
 
 ThemeData kDarkTheme = ThemeData(
+  colorScheme: const ColorScheme.dark(primary: Color(0xFFE57697)),
   canvasColor: Colors.transparent,
   primaryColor: config.Colors().mainDarkColor(1),
   brightness: Brightness.dark,
@@ -152,6 +154,7 @@ ThemeData kDarkTheme = ThemeData(
 );
 
 ThemeData kLightTheme2 = ThemeData(
+  colorScheme: const ColorScheme.light(primary: Color(0xFFC19439)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFFF7F1E3),
   brightness: Brightness.light,
@@ -227,6 +230,7 @@ ThemeData kLightTheme2 = ThemeData(
 );
 
 ThemeData kDarkTheme2 = ThemeData(
+  colorScheme: const ColorScheme.dark(primary: Color(0xFFFFFFFF)),
   canvasColor: Colors.transparent,
   primaryColor: Colors.black,
   brightness: Brightness.dark,
@@ -302,6 +306,7 @@ ThemeData kDarkTheme2 = ThemeData(
 );
 
 ThemeData kLightTheme3 = ThemeData(
+  colorScheme: const ColorScheme.light(primary: Color(0xFFA7796D)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFFC5A79F),
   brightness: Brightness.light,
@@ -377,6 +382,7 @@ ThemeData kLightTheme3 = ThemeData(
 );
 
 ThemeData kLightTheme4 = ThemeData(
+  colorScheme: const ColorScheme.light(primary: Color(0xFF596F95)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF8399BE),
   brightness: Brightness.light,
@@ -452,6 +458,7 @@ ThemeData kLightTheme4 = ThemeData(
 );
 
 ThemeData kDarkTheme3 = ThemeData(
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF767B45)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF202113),
   brightness: Brightness.dark,
@@ -527,6 +534,7 @@ ThemeData kDarkTheme3 = ThemeData(
 );
 
 ThemeData kDarkTheme4 = ThemeData(
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF427DA8)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF041B29),
   brightness: Brightness.dark,
@@ -602,6 +610,7 @@ ThemeData kDarkTheme4 = ThemeData(
 );
 
 ThemeData kDarkTheme5 = ThemeData(
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF4C7044)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF12210E),
   brightness: Brightness.dark,
@@ -677,6 +686,7 @@ ThemeData kDarkTheme5 = ThemeData(
 );
 
 ThemeData kDarkTheme6 = ThemeData(
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF703826)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF290D02),
   brightness: Brightness.dark,
@@ -752,6 +762,7 @@ ThemeData kDarkTheme6 = ThemeData(
 );
 
 ThemeData kDarkTheme7 = ThemeData(
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF2D6079)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF142431),
   brightness: Brightness.dark,
@@ -827,6 +838,7 @@ ThemeData kDarkTheme7 = ThemeData(
 );
 
 ThemeData kDarkTheme8 = ThemeData(
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF686E80)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF393D46),
   brightness: Brightness.dark,
