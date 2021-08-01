@@ -219,6 +219,7 @@ public class MainActivity extends FlutterActivity {
             request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE)
                     .setAllowedOverRoaming(false)
                     .setTitle(filename)
+                    .setDescription("Downloading wallpaper")
                     .setMimeType("image/jpeg") // Your file type. You can use this code to download other file types also.
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                     .setDestinationInExternalPublicDir(Environment.DIRECTORY_PICTURES,File.separator + "Prism"+ File.separator + filename + ".jpg");
