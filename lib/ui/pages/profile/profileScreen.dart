@@ -6,6 +6,7 @@ import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/ui/widgets/popup/linkPopUp.dart';
 import 'package:Prism/ui/widgets/profile/aboutList.dart';
 import 'package:Prism/ui/widgets/profile/drawerWidget.dart';
@@ -122,6 +123,23 @@ class _ProfileChildState extends State<ProfileChild> {
                         headerSliverBuilder: (context, innerBoxIsScrolled) =>
                             <Widget>[
                           SliverAppBar(
+                            leading: globals.prismUser.loggedIn == false
+                                ? Container()
+                                : Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: IconButton(
+                                        icon: Icon(JamIcons.pencil,
+                                            color:
+                                                Theme.of(context).accentColor),
+                                        onPressed: () async {
+                                          await showModalBottomSheet(
+                                            isScrollControlled: true,
+                                            context: context,
+                                            builder: (context) =>
+                                                const EditProfilePanel(),
+                                          );
+                                        }),
+                                  ),
                             actions: globals.prismUser.loggedIn == false
                                 ? []
                                 : [

@@ -1,23 +1,26 @@
+import 'package:Prism/auth/google_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 
-class EnterCodePanel extends StatefulWidget {
-  const EnterCodePanel({
+class EditProfilePanel extends StatefulWidget {
+  const EditProfilePanel({
     Key? key,
   }) : super(key: key);
 
   @override
-  _EnterCodePanelState createState() => _EnterCodePanelState();
+  _EditProfilePanelState createState() => _EditProfilePanelState();
 }
 
-class _EnterCodePanelState extends State<EnterCodePanel> {
+class _EditProfilePanelState extends State<EditProfilePanel> {
   final TextEditingController codeController = TextEditingController();
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   bool isLoading = false;
   bool enabled = false;
+  bool? available;
+  bool isCheckingUsername = false;
   @override
   void initState() {
     super.initState();
@@ -59,7 +62,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
             ),
             const Spacer(),
             Text(
-              "Enter Code",
+              "Edit username",
               style: Theme.of(context).textTheme.headline2,
             ),
             const Spacer(flex: 2),
@@ -96,24 +99,95 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                             borderRadius: BorderRadius.circular(10),
                             borderSide: const BorderSide(
                                 color: Colors.white, width: 2)),
-                        labelText: "Enter Code",
+                        labelText: "username",
                         labelStyle: Theme.of(context)
                             .textTheme
                             .headline5!
                             .copyWith(fontSize: 14, color: Colors.white),
-                        prefixIcon: const Icon(
-                          JamIcons.coin,
-                          color: Colors.white,
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text(
+                            "@",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
+                        suffixIcon: isCheckingUsername
+                            ? Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    color: Theme.of(context).errorColor,
+                                  ),
+                                ),
+                              )
+                            : Padding(
+                                padding: EdgeInsets.all(
+                                    available == null ? 16.0 : 8),
+                                child: available == null
+                                    ? const Text(
+                                        "",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    : Icon(
+                                        available!
+                                            ? JamIcons.check
+                                            : JamIcons.close,
+                                        color: available!
+                                            ? Colors.green
+                                            : Colors.red,
+                                        size: 24,
+                                      ),
+                              ),
                       ),
-                      onChanged: (value) {
-                        setState(() {
-                          if (value != "" && value.length >= 8) {
+                      onChanged: (value) async {
+                        if (value != "" &&
+                            value.length >= 8 &&
+                            !value.contains(RegExp(r"(?: |[^\w\s])+"))) {
+                          setState(() {
                             enabled = true;
-                          } else {
+                          });
+                        } else {
+                          setState(() {
                             enabled = false;
-                          }
-                        });
+                          });
+                        }
+                        if (enabled) {
+                          setState(() {
+                            isCheckingUsername = true;
+                          });
+                          await FirebaseFirestore.instance
+                              .collection(USER_NEW_COLLECTION)
+                              .where("username", isEqualTo: value)
+                              .get()
+                              .then((snapshot) {
+                            if (snapshot.size == 0) {
+                              setState(() {
+                                available = true;
+                              });
+                            } else {
+                              setState(() {
+                                available = false;
+                              });
+                            }
+                          });
+                          setState(() {
+                            isCheckingUsername = false;
+                          });
+                        } else {
+                          setState(() {
+                            available = null;
+                          });
+                        }
                       },
                     ),
                   ),
@@ -128,35 +202,35 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                               setState(() {
                                 isLoading = true;
                               });
-                              await firestore
-                                  .collection('codes')
-                                  .where('code',
-                                      isEqualTo:
-                                          codeController.text.toLowerCase())
-                                  .limit(1)
-                                  .get()
-                                  .then((value) {
-                                if (value.docs.isNotEmpty) {
-                                  if (value.docs[0].data()["redeemed"] ==
-                                      false) {
-                                    firestore
-                                        .collection('codes')
-                                        .doc(value.docs[0].id)
-                                        .update({
-                                      "redeemed": true,
-                                      "winner": globals.prismUser.toJson(),
-                                      "when": DateTime.now().toUtc()
-                                    });
-                                    toasts.codeSend(
-                                        "Congratulations, we will contact you!");
-                                  } else {
-                                    toasts.error(
-                                        "Sorry, this code has already been redeemed!");
-                                  }
-                                } else {
-                                  toasts.error("Invalid code!");
-                                }
-                              });
+                              // await firestore
+                              //     .collection('codes')
+                              //     .where('code',
+                              //         isEqualTo:
+                              //             codeController.text.toLowerCase())
+                              //     .limit(1)
+                              //     .get()
+                              //     .then((value) {
+                              //   if (value.docs.isNotEmpty) {
+                              //     if (value.docs[0].data()["redeemed"] ==
+                              //         false) {
+                              //       firestore
+                              //           .collection('codes')
+                              //           .doc(value.docs[0].id)
+                              //           .update({
+                              //         "redeemed": true,
+                              //         "winner": globals.prismUser.toJson(),
+                              //         "when": DateTime.now().toUtc()
+                              //       });
+                              //       toasts.codeSend(
+                              //           "Congratulations, we will contact you!");
+                              //     } else {
+                              //       toasts.error(
+                              //           "Sorry, this code has already been redeemed!");
+                              //     }
+                              //   } else {
+                              //     toasts.error("Invalid code!");
+                              //   }
+                              // });
                               setState(() {
                                 isLoading = false;
                               });
@@ -186,7 +260,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                           child: isLoading
                               ? const CircularProgressIndicator()
                               : Text(
-                                  "Redeem Code",
+                                  "Continue",
                                   style: TextStyle(
                                       fontSize: 16,
                                       color: !enabled
@@ -209,7 +283,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
               child: SizedBox(
                 width: MediaQuery.of(context).size.width * 0.8,
                 child: Text(
-                  "We regularly give these codes on our Twitter/ Telegram @PrismWallpapers. Enter the code here, and if you are the first to redeem it, you get Prism Premium or any other reward for free!",
+                  "Usernames are unique names through which fans can view your profile/search for you. They should be greater than 8 characters, and cannot contain any symbol except for underscore (_).",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
