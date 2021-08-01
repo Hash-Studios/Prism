@@ -34,6 +34,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
   String? userPhoto;
   bool? premium;
   Map? links;
+  String? bio;
   final ScrollController scrollController = ScrollController();
   final key = GlobalKey();
   @override
@@ -81,13 +82,26 @@ class _FollowerProfileState extends State<FollowerProfile> {
               stream: getUserProfile(email!),
               builder: (context, snap) {
                 if (snap.hasData && snap.data != null) {
+                  if (snap.data!.docs.isEmpty) {
+                    return Center(
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        child: const Text(
+                          "Sorry! This user is inactive on the latest version, and hence they are not currently viewable.",
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
                   print("SNAP ERROR ${email}");
-                  name = snap.data!.docs[0].data()["name"].toString();
+                  name = snap.data!.docs[0].data()["username"].toString() ??
+                      snap.data!.docs[0].data()["name"].toString();
                   userPhoto =
                       snap.data!.docs[0].data()["profilePhoto"].toString() ??
                           snap.data!.docs[0].data()["userPhoto"].toString();
                   premium = snap.data!.docs[0].data()["premium"] as bool;
                   links = snap.data!.docs[0].data()["links"] as Map;
+                  bio = snap.data!.docs[0].data()["bio"] as String;
                   debugPrint("Name : $name");
                   debugPrint("Email : $email");
                   debugPrint("Profile Photo : $userPhoto");
@@ -293,7 +307,13 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                                             )
                                                           ],
                                                         ),
-                                                // const Text("Write bio here...")
+                                                Text(
+                                                  bio ?? "",
+                                                  textAlign: TextAlign.center,
+                                                  maxLines: 3,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                )
                                               ],
                                             ),
                                           ),

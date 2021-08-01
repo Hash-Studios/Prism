@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -888,7 +889,7 @@ class FollowHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CollectionReference users = firestore.collection('users');
+    final CollectionReference users = firestore.collection(USER_NEW_COLLECTION);
     return ShowUpTransition(
       forward: true,
       slideSide: SlideFromSlide.bottom,

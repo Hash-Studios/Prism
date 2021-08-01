@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
@@ -107,7 +108,7 @@ class _ProfileChildState extends State<ProfileChild> {
   Widget build(BuildContext context) {
     final ScrollController? controller =
         InheritedDataProvider.of(context)!.scrollController;
-    final CollectionReference users = firestore.collection('users');
+    final CollectionReference users = firestore.collection(USER_NEW_COLLECTION);
 
     return WillPopScope(
         onWillPop: onWillPop,
@@ -260,42 +261,22 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 verticalAlignment:
                                                     TableCellVerticalAlignment
                                                         .bottom,
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          bottom: 20),
-                                                  child: globals.prismUser
-                                                              .premium ==
-                                                          false
-                                                      ? Text(
-                                                          globals.prismUser
-                                                              .username
-                                                              .toUpperCase(),
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  "Proxima Nova",
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor,
-                                                              fontSize: 18,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600),
-                                                        )
-                                                      : Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: <Widget>[
-                                                            Text(
+                                                child: Column(
+                                                  children: [
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              bottom: 5),
+                                                      child: globals.prismUser
+                                                                  .premium ==
+                                                              false
+                                                          ? Text(
                                                               globals.prismUser
                                                                   .username
                                                                   .toUpperCase(),
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
                                                               style: TextStyle(
                                                                   fontFamily:
                                                                       "Proxima Nova",
@@ -306,46 +287,87 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w600),
-                                                            ),
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets
+                                                            )
+                                                          : Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: <
+                                                                  Widget>[
+                                                                Text(
+                                                                  globals
+                                                                      .prismUser
+                                                                      .username
+                                                                      .toUpperCase(),
+                                                                  style: TextStyle(
+                                                                      fontFamily:
+                                                                          "Proxima Nova",
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor,
+                                                                      fontSize:
+                                                                          18,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w600),
+                                                                ),
+                                                                Padding(
+                                                                  padding: const EdgeInsets
                                                                           .only(
                                                                       left:
                                                                           6.0),
-                                                              child: Container(
-                                                                padding: const EdgeInsets
-                                                                        .symmetric(
-                                                                    vertical: 2,
-                                                                    horizontal:
-                                                                        4),
-                                                                decoration:
-                                                                    BoxDecoration(
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
+                                                                  child:
+                                                                      Container(
+                                                                    padding: const EdgeInsets
+                                                                            .symmetric(
+                                                                        vertical:
+                                                                            2,
+                                                                        horizontal:
+                                                                            4),
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
                                                                               50),
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor,
-                                                                ),
-                                                                child: Text(
-                                                                  "PRO",
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodyText2!
-                                                                      .copyWith(
-                                                                        fontSize:
-                                                                            9,
-                                                                        color: Theme.of(context)
-                                                                            .errorColor,
-                                                                      ),
-                                                                ),
-                                                              ),
-                                                            )
-                                                          ],
-                                                        ),
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor,
+                                                                    ),
+                                                                    child: Text(
+                                                                      "PRO",
+                                                                      style: Theme.of(
+                                                                              context)
+                                                                          .textTheme
+                                                                          .bodyText2!
+                                                                          .copyWith(
+                                                                            fontSize:
+                                                                                9,
+                                                                            color:
+                                                                                Theme.of(context).errorColor,
+                                                                          ),
+                                                                    ),
+                                                                  ),
+                                                                )
+                                                              ],
+                                                            ),
+                                                    ),
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              bottom: 15),
+                                                      child: Text(
+                                                        globals.prismUser.bio,
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        maxLines: 3,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    )
+                                                  ],
                                                 ),
                                               ),
                                             ]),
