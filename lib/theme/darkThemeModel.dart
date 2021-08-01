@@ -25,7 +25,9 @@ class DarkThemeModel extends ChangeNotifier {
 
   void changeAccent(Color? accentColor) {
     ThemeData newTheme = currentTheme!;
-    newTheme = newTheme.copyWith(errorColor: accentColor);
+    newTheme = newTheme.copyWith(
+        errorColor: accentColor,
+        colorScheme: ColorScheme.dark(primary: accentColor!));
     currentTheme = newTheme;
     main.prefs.put(
         "darkAccent",

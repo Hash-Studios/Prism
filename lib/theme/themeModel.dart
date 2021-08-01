@@ -21,7 +21,9 @@ class ThemeModel extends ChangeNotifier {
 
   void changeAccent(Color? accentColor) {
     ThemeData newTheme = currentTheme!;
-    newTheme = newTheme.copyWith(errorColor: accentColor);
+    newTheme = newTheme.copyWith(
+        errorColor: accentColor,
+        colorScheme: ColorScheme.light(primary: accentColor!));
     currentTheme = newTheme;
     main.prefs.put(
         "lightAccent",
@@ -32,7 +34,6 @@ class ThemeModel extends ChangeNotifier {
     return notifyListeners();
   }
 
-  
   int? getIndex(ThemeData? currentThemeData) {
     return themes.values.toList().contains(currentThemeData)
         ? themes.values.toList().indexOf(currentThemeData)

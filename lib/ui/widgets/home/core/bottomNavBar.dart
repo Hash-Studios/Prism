@@ -125,6 +125,7 @@ class _BottomBarState extends State<BottomBar>
             right: 10,
             bottom: bottom,
             child: FloatingActionButton(
+              backgroundColor: Theme.of(context).accentColor,
               mini: true,
               onPressed: () {
                 scrollBottomBarController
@@ -140,7 +141,10 @@ class _BottomBarState extends State<BottomBar>
                   showBottomBar();
                 });
               },
-              child: const Icon(JamIcons.arrow_up),
+              child: Icon(
+                JamIcons.arrow_up,
+                color: Theme.of(context).primaryColor,
+              ),
             ),
           )
       ],
