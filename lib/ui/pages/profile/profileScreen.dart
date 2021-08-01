@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
@@ -107,7 +108,7 @@ class _ProfileChildState extends State<ProfileChild> {
   Widget build(BuildContext context) {
     final ScrollController? controller =
         InheritedDataProvider.of(context)!.scrollController;
-    final CollectionReference users = firestore.collection('users');
+    final CollectionReference users = firestore.collection(USER_NEW_COLLECTION);
 
     return WillPopScope(
         onWillPop: onWillPop,

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -59,7 +60,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
   Future<void> load(StreamController<QuerySnapshot> sc) async {
     await databaseReference
-        .collection("users")
+        .collection(USER_NEW_COLLECTION)
         .where("email", isEqualTo: globals.prismUser.email)
         .get()
         .then((value) {

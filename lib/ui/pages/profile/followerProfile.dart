@@ -82,8 +82,20 @@ class _FollowerProfileState extends State<FollowerProfile> {
               stream: getUserProfile(email!),
               builder: (context, snap) {
                 if (snap.hasData && snap.data != null) {
+                  if (snap.data!.docs.isEmpty) {
+                    return Center(
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        child: const Text(
+                          "Sorry! This user is inactive on the latest version, and hence they are not currently viewable.",
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
                   print("SNAP ERROR ${email}");
-                  name = snap.data!.docs[0].data()["name"].toString();
+                  name = snap.data!.docs[0].data()["username"].toString() ??
+                      snap.data!.docs[0].data()["name"].toString();
                   userPhoto =
                       snap.data!.docs[0].data()["profilePhoto"].toString() ??
                           snap.data!.docs[0].data()["userPhoto"].toString();
@@ -296,7 +308,7 @@ class _FollowerProfileState extends State<FollowerProfile> {
                                                           ],
                                                         ),
                                                 Text(
-                                                  bio!,
+                                                  bio ?? "",
                                                   textAlign: TextAlign.center,
                                                   maxLines: 3,
                                                   overflow:

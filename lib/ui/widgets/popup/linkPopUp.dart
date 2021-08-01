@@ -1,3 +1,4 @@
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
@@ -10,7 +11,7 @@ void showLinksPopUp(BuildContext context, String id) {
     List<LinksModel> links = [];
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
     debugPrint(id);
-    await firestore.collection('users').doc(id).get().then((value) {
+    await firestore.collection(USER_NEW_COLLECTION).doc(id).get().then((value) {
       links = linksToModel(value.data()!["links"] as Map);
       debugPrint(links.toString());
     });
