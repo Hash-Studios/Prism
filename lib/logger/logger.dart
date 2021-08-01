@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_archive/flutter_archive.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
@@ -116,4 +117,20 @@ class LogOutputPrinter extends PrettyPrinter {
       yield line;
     }
   }
+}
+
+Future<String> zipLogs() async {
+  logger.v("Zipping Logs");
+  final sourceDir = Directory(printer.logsFolderPath());
+  final files = printer.filePathsForDates(2).map((e) => File(e)).toList();
+  final zipFile = File(join(printer.logsFolderPath(), 'logs.zip'));
+  try {
+    logger.v("Zipping Started");
+    await ZipFile.createFromFiles(
+        sourceDir: sourceDir, files: files, zipFile: zipFile);
+    logger.v("Zipping Finished Successfully");
+  } catch (e, strace) {
+    logger.e(e, e, strace);
+  }
+  return zipFile.path;
 }

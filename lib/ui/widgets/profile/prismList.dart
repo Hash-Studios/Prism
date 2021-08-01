@@ -1,12 +1,15 @@
 import 'dart:io' show Platform;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:animations/animations.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 class PrismList extends StatelessWidget {
   @override
@@ -209,8 +212,35 @@ class PrismList extends StatelessWidget {
                 final model = androidInfo.model;
                 debugPrint(
                     'Android $release (SDK $sdkInt), $manufacturer $model');
-                launch(
-                    "mailto:hash.studios.inc@gmail.com?subject=%5BBUG%20REPORT%5D&body=----x-x-x----%0D%0ADevice%20Info%20-%0D%0A%0D%0AAndroid%20Version%3A%20Android%20$release%0D%0ASDK%20Number%3A%20SDK%20$sdkInt%0D%0ADevice%20Manufacturer%3A%20$manufacturer%0D%0ADevice%20Model%3A%20$model%0D%0A----x-x-x----%0D%0A%0D%0AEnter%20the%20bug%2Fissue%20below%20---");
+                final String zipPath = await zipLogs();
+                final MailOptions mailOptions = MailOptions(
+                  body:
+                      '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
+                  subject: '[BUG REPORT::PRISM]',
+                  recipients: ['hash.studios.inc@gmail.com'],
+                  isHTML: true,
+                  attachments: [
+                    zipPath,
+                  ],
+                  appSchema: 'com.google.android.gm',
+                );
+                final MailerResponse response =
+                    await FlutterMailer.send(mailOptions);
+                if (response != MailerResponse.android) {
+                  final MailOptions mailOptions = MailOptions(
+                    body:
+                        '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
+                    subject: '[BUG REPORT::PRISM]',
+                    recipients: ['hash.studios.inc@gmail.com'],
+                    isHTML: true,
+                    attachments: [
+                      zipPath,
+                    ],
+                  );
+                  await FlutterMailer.send(mailOptions);
+                } else {
+                  toasts.codeSend("Bug report sent!");
+                }
               }
             }),
       ],

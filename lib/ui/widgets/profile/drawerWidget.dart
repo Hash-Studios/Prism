@@ -2,18 +2,22 @@ import 'dart:io';
 
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/popup/enterCodePanel.dart';
 import 'package:animations/animations.dart';
+import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter_mailer/flutter_mailer.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileDrawer extends StatelessWidget {
   Widget createDrawerHeader(BuildContext context) {
@@ -348,6 +352,52 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
+            const Divider(),
+            createDrawerBodyHeader(text: "MORE", context: context),
+            createDrawerBodyItem(
+                icon: JamIcons.bug,
+                text: 'Report a bug',
+                context: context,
+                onTap: () async {
+                  if (Platform.isAndroid) {
+                    final androidInfo = await DeviceInfoPlugin().androidInfo;
+                    final release = androidInfo.version.release;
+                    final sdkInt = androidInfo.version.sdkInt;
+                    final manufacturer = androidInfo.manufacturer;
+                    final model = androidInfo.model;
+                    debugPrint(
+                        'Android $release (SDK $sdkInt), $manufacturer $model');
+                    final String zipPath = await zipLogs();
+                    final MailOptions mailOptions = MailOptions(
+                      body:
+                          '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
+                      subject: '[BUG REPORT::PRISM]',
+                      recipients: ['hash.studios.inc@gmail.com'],
+                      isHTML: true,
+                      attachments: [
+                        zipPath,
+                      ],
+                      appSchema: 'com.google.android.gm',
+                    );
+                    final MailerResponse response =
+                        await FlutterMailer.send(mailOptions);
+                    if (response != MailerResponse.android) {
+                      final MailOptions mailOptions = MailOptions(
+                        body:
+                            '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
+                        subject: '[BUG REPORT::PRISM]',
+                        recipients: ['hash.studios.inc@gmail.com'],
+                        isHTML: true,
+                        attachments: [
+                          zipPath,
+                        ],
+                      );
+                      await FlutterMailer.send(mailOptions);
+                    } else {
+                      toasts.codeSend("Bug report sent!");
+                    }
+                  }
+                }),
             Padding(
               padding: const EdgeInsets.only(bottom: 100),
               child: createDrawerBodyItem(
