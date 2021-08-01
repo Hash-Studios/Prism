@@ -174,7 +174,9 @@ class PrismUsersV2 {
       _$PrismUsersV2FromJson(json);
   factory PrismUsersV2.fromDocumentSnapshot(DocumentSnapshot doc, User user) =>
       PrismUsersV2(
-        username: (doc.data()!["username"] ?? user.displayName).toString(),
+        username: (doc.data()!["username"] ?? user.displayName)
+            .toString()
+            .replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
         email: (doc.data()!["email"] ?? user.email).toString(),
         id: doc.data()!["id"].toString(),
         createdAt: doc.data()!["createdAt"].toString(),

@@ -4,6 +4,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/main.dart' as main;
 
 class EditProfilePanel extends StatefulWidget {
   const EditProfilePanel({
@@ -202,35 +203,15 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               setState(() {
                                 isLoading = true;
                               });
-                              // await firestore
-                              //     .collection('codes')
-                              //     .where('code',
-                              //         isEqualTo:
-                              //             codeController.text.toLowerCase())
-                              //     .limit(1)
-                              //     .get()
-                              //     .then((value) {
-                              //   if (value.docs.isNotEmpty) {
-                              //     if (value.docs[0].data()["redeemed"] ==
-                              //         false) {
-                              //       firestore
-                              //           .collection('codes')
-                              //           .doc(value.docs[0].id)
-                              //           .update({
-                              //         "redeemed": true,
-                              //         "winner": globals.prismUser.toJson(),
-                              //         "when": DateTime.now().toUtc()
-                              //       });
-                              //       toasts.codeSend(
-                              //           "Congratulations, we will contact you!");
-                              //     } else {
-                              //       toasts.error(
-                              //           "Sorry, this code has already been redeemed!");
-                              //     }
-                              //   } else {
-                              //     toasts.error("Invalid code!");
-                              //   }
-                              // });
+                              globals.prismUser.username = codeController.text;
+                              main.prefs.put("prismUserV2", globals.prismUser);
+                              await firestore
+                                  .collection(USER_NEW_COLLECTION)
+                                  .doc(globals.prismUser.id)
+                                  .update({
+                                "username": codeController.text,
+                              });
+                              toasts.codeSend("Username updated!");
                               setState(() {
                                 isLoading = false;
                               });
