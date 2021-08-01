@@ -617,7 +617,13 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                   "wallpaper_url"]
                                                               .toString()[0] !=
                                                           "["
-                                                      ? "Prism"
+                                                      ? (sdata.setup!["wall_id"] ==
+                                                                  null ||
+                                                              sdata.setup![
+                                                                      "wall_id"] ==
+                                                                  "")
+                                                          ? "Wall Link"
+                                                          : "Prism (${sdata.setup!["wall_id"]})"
                                                       : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
                                                   tileType: "Wallpaper",
                                                   panelCollapsed:
@@ -738,10 +744,17 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                         }
                                                       },
                                                       tileText: sdata.setup![
-                                                                      "wallpaper_url"]
-                                                                  .toString()[0] !=
+                                                                          "wallpaper_url"]
+                                                                      .toString()[
+                                                                  0] !=
                                                               "["
-                                                          ? "Prism"
+                                                          ? (sdata.setup!["wall_id"] ==
+                                                                      null ||
+                                                                  sdata.setup![
+                                                                          "wall_id"] ==
+                                                                      "")
+                                                              ? "Wall Link"
+                                                              : "Prism (${sdata.setup!["wall_id"]})"
                                                           : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
                                                       tileType: "Wallpaper",
                                                       panelCollapsed:
@@ -922,10 +935,17 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                           }
                                                         },
                                                         tileText: sdata.setup![
-                                                                        "wallpaper_url"]
-                                                                    .toString()[0] !=
+                                                                            "wallpaper_url"]
+                                                                        .toString()[
+                                                                    0] !=
                                                                 "["
-                                                            ? "Prism"
+                                                            ? (sdata.setup!["wall_id"] ==
+                                                                        null ||
+                                                                    sdata.setup![
+                                                                            "wall_id"] ==
+                                                                        "")
+                                                                ? "Wall Link"
+                                                                : "Prism (${sdata.setup!["wall_id"]})"
                                                             : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
                                                         tileType: "Wallpaper",
                                                         panelCollapsed:
