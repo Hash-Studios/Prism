@@ -26,9 +26,13 @@ class EditProfilePanel extends StatefulWidget {
 }
 
 class _EditProfilePanelState extends State<EditProfilePanel> {
-  final TextEditingController codeController = TextEditingController();
+  final TextEditingController bioController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   bool isLoading = false;
+  bool pfpEdit = false;
+  bool usernameEdit = false;
+  bool bioEdit = false;
   bool enabled = false;
   bool? available;
   bool isCheckingUsername = false;
@@ -48,6 +52,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     if (pickedFile != null) {
       setState(() {
         _pfp = File(pickedFile.path);
+        pfpEdit = true;
       });
     }
   }
@@ -94,7 +99,6 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           .update({
         "profilePhoto": pfpUrl,
       });
-      toasts.codeSend("Profile Photo updated!");
     } catch (e) {
       debugPrint(e.toString());
       toasts.error("Some uploading issue, please try again.");
@@ -202,7 +206,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             .textTheme
                             .headline5!
                             .copyWith(color: Colors.white),
-                        controller: codeController,
+                        controller: usernameController,
                         decoration: InputDecoration(
                           contentPadding:
                               const EdgeInsets.only(left: 30, top: 15),
@@ -273,6 +277,15 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 ),
                         ),
                         onChanged: (value) async {
+                          if (value == "") {
+                            setState(() {
+                              usernameEdit = false;
+                            });
+                          } else {
+                            setState(() {
+                              usernameEdit = true;
+                            });
+                          }
                           if (value != "" &&
                               value.length >= 8 &&
                               !value.contains(RegExp(r"(?: |[^\w\s])+"))) {
@@ -315,36 +328,135 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                       ),
                     ),
                   ),
+                  SizedBox(
+                    height: 80,
+                    width: width - 24,
+                    child: Center(
+                      child: TextField(
+                        cursorColor: const Color(0xFFE57697),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headline5!
+                            .copyWith(color: Colors.white),
+                        controller: bioController,
+                        decoration: InputDecoration(
+                          contentPadding:
+                              const EdgeInsets.only(left: 30, top: 15),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: Colors.white, width: 2)),
+                          disabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: Colors.white, width: 2)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: Colors.white, width: 2)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: Colors.white, width: 2)),
+                          labelText: "Bio",
+                          labelStyle: Theme.of(context)
+                              .textTheme
+                              .headline5!
+                              .copyWith(fontSize: 14, color: Colors.white),
+                          prefixIcon: const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text(
+                              "bio",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          if (value == "") {
+                            setState(() {
+                              bioEdit = false;
+                            });
+                          } else {
+                            setState(() {
+                              bioEdit = true;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
-                      onTap: enabled
+                      onTap: (!usernameEdit && (pfpEdit || bioEdit))
                           ? () async {
-                              if (codeController.text != "" &&
-                                  codeController.text.length >= 8) {
-                                setState(() {
-                                  isLoading = true;
-                                });
-                                globals.prismUser.username =
-                                    codeController.text;
+                              setState(() {
+                                isLoading = true;
+                              });
+                              if (_pfp != null && pfpEdit) {
+                                await processImage();
+                              }
+                              if (bioEdit && bioController.text != "") {
+                                globals.prismUser.bio = bioController.text;
                                 main.prefs
                                     .put("prismUserV2", globals.prismUser);
                                 await firestore
                                     .collection(USER_NEW_COLLECTION)
                                     .doc(globals.prismUser.id)
                                     .update({
-                                  "username": codeController.text,
-                                });
-                                toasts.codeSend("Username updated!");
-                                if (_pfp != null) {
-                                  await processImage();
-                                }
-                                setState(() {
-                                  isLoading = false;
+                                  "bio": bioController.text,
                                 });
                               }
+                              setState(() {
+                                isLoading = false;
+                              });
+                              Navigator.pop(context);
+                              toasts.codeSend("Details updated!");
                             }
-                          : null,
+                          : (usernameEdit && enabled)
+                              ? () async {
+                                  setState(() {
+                                    isLoading = true;
+                                  });
+                                  if (usernameEdit &&
+                                      usernameController.text != "" &&
+                                      usernameController.text.length >= 8) {
+                                    globals.prismUser.username =
+                                        usernameController.text;
+                                    main.prefs
+                                        .put("prismUserV2", globals.prismUser);
+                                    await firestore
+                                        .collection(USER_NEW_COLLECTION)
+                                        .doc(globals.prismUser.id)
+                                        .update({
+                                      "username": usernameController.text,
+                                    });
+                                  }
+                                  if (_pfp != null && pfpEdit) {
+                                    await processImage();
+                                  }
+                                  if (bioEdit && bioController.text != "") {
+                                    globals.prismUser.bio = bioController.text;
+                                    main.prefs
+                                        .put("prismUserV2", globals.prismUser);
+                                    await firestore
+                                        .collection(USER_NEW_COLLECTION)
+                                        .doc(globals.prismUser.id)
+                                        .update({
+                                      "bio": bioController.text,
+                                    });
+                                  }
+                                  setState(() {
+                                    isLoading = false;
+                                  });
+                                  Navigator.pop(context);
+                                  toasts.codeSend("Details updated!");
+                                }
+                              : null,
                       child: SizedBox(
                         width: width - 20,
                         height: 60,
@@ -352,15 +464,18 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           width: width - 14,
                           height: 60,
                           decoration: BoxDecoration(
-                            color: !enabled
+                            color: !((!usernameEdit && (pfpEdit || bioEdit)) ||
+                                    (usernameEdit && enabled))
                                 ? Theme.of(context).primaryColor
                                 : Theme.of(context).errorColor.withOpacity(0.2),
                             border: Border.all(
-                                color: !enabled
-                                    ? Theme.of(context)
-                                        .accentColor
-                                        .withOpacity(0.5)
-                                    : Theme.of(context).errorColor,
+                                color:
+                                    !((!usernameEdit && (pfpEdit || bioEdit)) ||
+                                            (usernameEdit && enabled))
+                                        ? Theme.of(context)
+                                            .accentColor
+                                            .withOpacity(0.5)
+                                        : Theme.of(context).errorColor,
                                 width: 3),
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -371,7 +486,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                     "Continue",
                                     style: TextStyle(
                                         fontSize: 16,
-                                        color: !enabled
+                                        color: !((!usernameEdit &&
+                                                    (pfpEdit || bioEdit)) ||
+                                                (usernameEdit && enabled))
                                             ? Theme.of(context)
                                                 .accentColor
                                                 .withOpacity(0.5)
