@@ -606,7 +606,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           toasts.codeSend("Login Successful!");
                                           globals.prismUser.loggedIn = true;
                                           main.prefs.put(
-                                              "prismUser", globals.prismUser);
+                                              "prismUserV2", globals.prismUser);
                                           Future.delayed(const Duration(
                                                   milliseconds: 500))
                                               .then((value) {
@@ -632,7 +632,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           debugPrint(e.toString());
                                           globals.prismUser.loggedIn = false;
                                           main.prefs.put(
-                                              "prismUser", globals.prismUser);
+                                              "prismUserV2", globals.prismUser);
                                           toasts.error(
                                               "Something went wrong, please try again!");
                                         });
@@ -715,7 +715,7 @@ class OBIndicator extends StatelessWidget {
   const OBIndicator({
     Key? key,
     required int? currentPage,
-  })   : _currentPage = currentPage,
+  })  : _currentPage = currentPage,
         super(key: key);
 
   final int? _currentPage;

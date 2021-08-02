@@ -240,14 +240,14 @@ void googleSignInPopUp(BuildContext context, Function func) {
           globals.gAuth.signInWithGoogle().then((value) {
             toasts.codeSend("Login Successful!");
             globals.prismUser.loggedIn = true;
-            main.prefs.put("prismUser", globals.prismUser);
+            main.prefs.put("prismUserV2", globals.prismUser);
             Navigator.pop(context);
             func();
           }).catchError((e) {
             debugPrint(e.toString());
             Navigator.pop(context);
             globals.prismUser.loggedIn = false;
-            main.prefs.put("prismUser", globals.prismUser);
+            main.prefs.put("prismUserV2", globals.prismUser);
             toasts.error("Something went wrong, please try again!");
           });
         },
