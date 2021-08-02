@@ -198,13 +198,14 @@ class _MyAppState extends State<MyApp> {
   Future<bool> getLoginStatus() async {
     await globals.gAuth.googleSignIn.isSignedIn().then((value) {
       if (value) {
-        if (prefs.get("logouteveryonejune2021", defaultValue: false) == false) {
+        if (prefs.get("logouteveryoneaugust2021", defaultValue: false) ==
+            false) {
           globals.gAuth.signOutGoogle();
-          prefs.put("logouteveryonejune2021", true);
+          prefs.put("logouteveryoneaugust2021", true);
           toasts.codeSend("Please login again, to enjoy the app!");
         }
       } else if (!value) {
-        prefs.put("logouteveryonejune2021", true);
+        prefs.put("logouteveryoneaugust2021", true);
       }
       if (value) checkPremium();
       globals.prismUser.loggedIn = value;
