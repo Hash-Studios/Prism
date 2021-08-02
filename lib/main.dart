@@ -208,7 +208,7 @@ class _MyAppState extends State<MyApp> {
       }
       if (value) checkPremium();
       globals.prismUser.loggedIn = value;
-      prefs.put("prismUser", globals.prismUser);
+      prefs.put("prismUserV2", globals.prismUser);
       return value;
     });
     return false;

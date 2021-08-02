@@ -33,7 +33,7 @@ Future<void> checkPremium() async {
   }
 
   globals.prismUser.premium = appData.isPro!;
-  main.prefs.put("prismUser", globals.prismUser);
+  main.prefs.put("prismUserV2", globals.prismUser);
   debugPrint('#### is user pro? ${appData.isPro}');
 }
 
@@ -393,7 +393,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                           globals.prismUser.premium =
                                               appData.isPro!;
                                           main.prefs.put(
-                                              "prismUser", globals.prismUser);
+                                              "prismUserV2", globals.prismUser);
                                           toasts.codeSend(
                                               "You are now a premium member.");
                                           main.RestartWidget.restartApp(
@@ -525,7 +525,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
             appData.isPro =
                 _purchaserInfo!.entitlements.all["prism_premium"]!.isActive;
             globals.prismUser.premium = appData.isPro!;
-            main.prefs.put("prismUser", globals.prismUser);
+            main.prefs.put("prismUserV2", globals.prismUser);
             debugPrint('is user pro? ${appData.isPro}');
 
             if (appData.isPro!) {
