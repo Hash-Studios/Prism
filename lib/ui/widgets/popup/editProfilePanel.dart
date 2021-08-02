@@ -26,6 +26,7 @@ class EditProfilePanel extends StatefulWidget {
 }
 
 class _EditProfilePanelState extends State<EditProfilePanel> {
+  final TextEditingController linkController = TextEditingController();
   final TextEditingController bioController = TextEditingController();
   final TextEditingController usernameController = TextEditingController();
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -33,6 +34,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   bool pfpEdit = false;
   bool usernameEdit = false;
   bool bioEdit = false;
+  bool linkEdit = false;
   bool enabled = false;
   bool? available;
   bool isCheckingUsername = false;
@@ -42,8 +44,37 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   late String pfpPath;
   late String pfpUrl;
   final picker2 = ImagePicker();
+  List<Map<String, dynamic>> linkIcons = [
+    {
+      'name': 'Edit links...',
+      'link': 'Select your link first',
+      'icon': JamIcons.link,
+    },
+    {
+      'name': 'github',
+      'link': 'https://github.com/username',
+      'icon': JamIcons.github,
+    },
+    {
+      'name': 'twitter',
+      'link': 'https://twitter.com/username',
+      'icon': JamIcons.twitter,
+    },
+    {
+      'name': 'instagram',
+      'link': 'https://instagram.com/username',
+      'icon': JamIcons.instagram,
+    },
+    {
+      'name': 'email',
+      'link': 'your@email.com',
+      'icon': JamIcons.message,
+    },
+  ];
+  Map<String, dynamic>? _link;
   @override
   void initState() {
+    _link = linkIcons[0];
     super.initState();
   }
 
@@ -112,7 +143,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       padding: MediaQuery.of(context).viewInsets,
       child: SingleChildScrollView(
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.7,
+          height: MediaQuery.of(context).size.height * 0.8,
           decoration: BoxDecoration(
             color: Theme.of(context).primaryColor,
             borderRadius: const BorderRadius.only(
@@ -388,6 +419,86 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                         },
                       ),
                     ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        height: 80,
+                        width: 48,
+                        child: Center(
+                          child: DropdownButton<Map<String, dynamic>>(
+                            items: linkIcons.map((Map<String, dynamic> link) {
+                              return DropdownMenuItem(
+                                value: link,
+                                child: Icon(link!["icon"] as IconData),
+                              );
+                            }).toList(),
+                            underline: Container(),
+                            onChanged: (value) {
+                              setState(() => _link = value);
+                            },
+                            value: _link,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 80,
+                        width: width - 72,
+                        child: Center(
+                          child: TextField(
+                            cursorColor: const Color(0xFFE57697),
+                            style: Theme.of(context)
+                                .textTheme
+                                .headline5!
+                                .copyWith(color: Colors.white),
+                            controller: linkController,
+                            decoration: InputDecoration(
+                              enabled: _link?["name"] != "Edit links...",
+                              contentPadding:
+                                  const EdgeInsets.only(left: 30, top: 15),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                      color: Colors.white, width: 2)),
+                              disabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                      color: Colors.white, width: 2)),
+                              enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                      color: Colors.white, width: 2)),
+                              focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                      color: Colors.white, width: 2)),
+                              labelText: _link?["name"].toString().inCaps ?? "",
+                              labelStyle: Theme.of(context)
+                                  .textTheme
+                                  .headline5!
+                                  .copyWith(fontSize: 14, color: Colors.white),
+                              hintText: _link?["link"].toString() ?? "",
+                              hintStyle: Theme.of(context)
+                                  .textTheme
+                                  .headline5!
+                                  .copyWith(fontSize: 14, color: Colors.white),
+                            ),
+                            onChanged: (value) {
+                              if (value == "") {
+                                setState(() {
+                                  linkEdit = false;
+                                });
+                              } else {
+                                setState(() {
+                                  linkEdit = true;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
