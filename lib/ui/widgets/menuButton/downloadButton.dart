@@ -120,55 +120,56 @@ class _DownloadButtonState extends State<DownloadButton> {
     final androidInfo = await DeviceInfoPlugin().androidInfo;
     final sdkInt = androidInfo.version.sdkInt;
     debugPrint('(SDK $sdkInt)');
-    toasts.codeSend("Starting Download");
-    main.localNotification.createDownloadNotification();
-    if (sdkInt >= 30) {
-      if (widget.link!.contains("com.hash.prism")) {
-        await platform.invokeMethod(
-            'save_image_file', {"link": widget.link}).then((value) {
-          if (value as bool) {
-            analytics.logEvent(
-                name: 'download_wallpaper', parameters: {'link': widget.link});
-            toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-          } else {
-            toasts.error("Couldn't download! Please Retry!");
-          }
-          setState(() {
-            isLoading = false;
-          });
-          main.localNotification.cancelDownloadNotification();
-        }).catchError((e) {
-          debugPrint(e.toString());
-          setState(() {
-            isLoading = false;
-          });
-        });
-      } else {
-        await platform
-            .invokeMethod('save_image', {"link": widget.link}).then((value) {
-          if (value as bool) {
-            analytics.logEvent(
-                name: 'download_wallpaper', parameters: {'link': widget.link});
-            toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-          } else {
-            toasts.error("Couldn't download! Please Retry!");
-          }
-          setState(() {
-            isLoading = false;
-          });
-          main.localNotification.cancelDownloadNotification();
-        }).catchError((e) {
-          debugPrint(e.toString());
-          setState(() {
-            isLoading = false;
-          });
-        });
-      }
-    } else {
+    // toasts.codeSend("Starting Download");
+    // main.localNotification.createDownloadNotification();
+    // if (sdkInt >= 30) {
+    // if (widget.link!.contains("com.hash.prism")) {
+    //   await platform.invokeMethod(
+    //       'save_image_file', {"link": widget.link}).then((value) {
+    //     if (value as bool) {
+    //       analytics.logEvent(
+    //           name: 'download_wallpaper', parameters: {'link': widget.link});
+    //       toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+    //     } else {
+    //       toasts.error("Couldn't download! Please Retry!");
+    //     }
+    //     setState(() {
+    //       isLoading = false;
+    //     });
+    //     main.localNotification.cancelDownloadNotification();
+    //   }).catchError((e) {
+    //     debugPrint(e.toString());
+    //     setState(() {
+    //       isLoading = false;
+    //     });
+    //   });
+    // } else {
+    //   await platform
+    //       .invokeMethod('save_image', {"link": widget.link}).then((value) {
+    //     if (value as bool) {
+    //       analytics.logEvent(
+    //           name: 'download_wallpaper', parameters: {'link': widget.link});
+    //       toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+    //     } else {
+    //       toasts.error("Couldn't download! Please Retry!");
+    //     }
+    //     setState(() {
+    //       isLoading = false;
+    //     });
+    //     main.localNotification.cancelDownloadNotification();
+    //   }).catchError((e) {
+    //     debugPrint(e.toString());
+    //     setState(() {
+    //       isLoading = false;
+    //     });
+    //   });
+    // }
+    // } else {
+    if (widget.link!.contains("com.hash.prism")) {
       GallerySaver.saveImage(widget.link!, albumName: "Prism").then((value) {
         analytics.logEvent(
             name: 'download_wallpaper', parameters: {'link': widget.link});
-        toasts.codeSend("Wall Downloaded in Internal Storage/Prism!");
+        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
         setState(() {
           isLoading = false;
         });
@@ -178,9 +179,34 @@ class _DownloadButtonState extends State<DownloadButton> {
           isLoading = false;
         });
         // TODO Cancel all
-        main.localNotification.cancelDownloadNotification();
+        // main.localNotification.cancelDownloadNotification();
       });
+    } else {
+      platform.invokeMethod('download_image_dm', {
+        "link": widget.link,
+        "filename": widget.link!
+            .split('/')
+            .last
+            .replaceAll(".jpg", "")
+            .replaceAll(".png", "")
+      });
+      analytics.logEvent(
+          name: 'download_wallpaper', parameters: {'link': widget.link});
     }
+    // .then((value) {
+    // if (value as bool) {
+    // toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+    // } else {
+    //   toasts.error("Couldn't download! Please Retry!");
+    // }
+    // main.localNotification.cancelDownloadNotification();
+    // }).catchError((e) {
+    //   debugPrint(e.toString());
+    //   setState(() {
+    //     isLoading = false;
+    //   });
+    // });
+    // }
   }
 }
 
