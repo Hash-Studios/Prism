@@ -51,7 +51,7 @@ int? purity;
 LocalNotification localNotification = LocalNotification();
 void main() {
   debugPrint = (String? message, {int? wrapWidth}) {
-    if (message!.contains("[Home,")) {
+    if (message!.contains("[Home")) {
       logger.i(message);
     } else {
       logger.d(message);
