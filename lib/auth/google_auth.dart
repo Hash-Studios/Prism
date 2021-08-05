@@ -90,6 +90,7 @@ class GoogleAuth {
       // User exists in none. Create new data in new db and sign him in.
       else {
         globals.prismUser = PrismUsersV2(
+          name: user.displayName!,
           bio: "",
           createdAt: DateTime.now().toUtc().toIso8601String(),
           email: user.email!,
@@ -136,6 +137,7 @@ class GoogleAuth {
       'loggedIn': false,
     });
     globals.prismUser = PrismUsersV2(
+      name: "",
       bio: "",
       createdAt: DateTime.now().toUtc().toIso8601String(),
       email: "",
