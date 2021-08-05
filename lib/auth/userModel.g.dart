@@ -33,13 +33,14 @@ class PrismUsersV2Adapter extends TypeAdapter<PrismUsersV2> {
       subPrisms: (fields[13] as List).cast<dynamic>(),
       coins: fields[14] as int,
       transactions: (fields[15] as List).cast<PrismTransaction>(),
+      name: fields[16] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, PrismUsersV2 obj) {
     writer
-      ..writeByte(16)
+      ..writeByte(17)
       ..writeByte(0)
       ..write(obj.username)
       ..writeByte(1)
@@ -71,7 +72,9 @@ class PrismUsersV2Adapter extends TypeAdapter<PrismUsersV2> {
       ..writeByte(14)
       ..write(obj.coins)
       ..writeByte(15)
-      ..write(obj.transactions);
+      ..write(obj.transactions)
+      ..writeByte(16)
+      ..write(obj.name);
   }
 
   @override
@@ -111,6 +114,7 @@ PrismUsersV2 _$PrismUsersV2FromJson(Map<String, dynamic> json) {
     transactions: (json['transactions'] as List<dynamic>)
         .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
         .toList(),
+    name: json['name'] as String,
   );
 }
 
@@ -132,4 +136,5 @@ Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) =>
       'subPrisms': instance.subPrisms,
       'coins': instance.coins,
       'transactions': instance.transactions.map((e) => e.toJson()).toList(),
+      'name': instance.name,
     };
