@@ -45,6 +45,8 @@ class PrismUsersV2 {
   int coins;
   @HiveField(15)
   List<PrismTransaction> transactions;
+  @HiveField(16)
+  String name;
 
   PrismUsersV2({
     required this.username,
@@ -63,6 +65,7 @@ class PrismUsersV2 {
     required this.subPrisms,
     required this.coins,
     required this.transactions,
+    required this.name,
   }) {
     debugPrint("Default constructor !!!!");
   }
@@ -71,6 +74,7 @@ class PrismUsersV2 {
       _$PrismUsersV2FromJson(json);
   factory PrismUsersV2.fromDocumentSnapshot(DocumentSnapshot doc, User user) =>
       PrismUsersV2(
+        name: (doc.data()!["name"] ?? user.displayName).toString(),
         username: (doc.data()!["username"] ?? user.displayName)
             .toString()
             .replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),

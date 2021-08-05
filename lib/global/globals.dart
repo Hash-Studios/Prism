@@ -7,6 +7,7 @@ GoogleAuth gAuth = GoogleAuth();
 PrismUsersV2 prismUser = main.prefs.get(
   'prismUserV2',
   defaultValue: PrismUsersV2(
+    name: "",
     bio: "",
     createdAt: DateTime.now().toUtc().toIso8601String(),
     email: "",
