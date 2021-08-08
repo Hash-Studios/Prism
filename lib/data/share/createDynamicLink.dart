@@ -39,18 +39,18 @@ Future<String> createDynamicLink(
   return shortUrl.toString();
 }
 
-Future<void> createUserDynamicLink(
-    String name, String email, String userPhoto) async {
+Future<void> createUserDynamicLink(String name, String username, String email,
+    String bio, String userPhoto) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
-          title: "$name - Prism",
+          title: "$name (@$username)",
           imageUrl: Uri.parse(userPhoto),
-          description: "Check out my walls & setups on Prism."),
+          description:
+              bio != "" ? bio : "Check out my walls & setups on Prism."),
       dynamicLinkParametersOptions: DynamicLinkParametersOptions(
           shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
       uriPrefix: 'https://prismwallpapers.page.link',
-      link: Uri.parse(
-          'http://prism.hash.com/user?name=$name&email=$email&userPhoto=$userPhoto'),
+      link: Uri.parse('http://prism.hash.com/user?name=$username'),
       androidParameters: AndroidParameters(
         packageName: 'com.hash.prism',
         minimumVersion: 1,
@@ -60,11 +60,13 @@ Future<void> createUserDynamicLink(
         minimumVersion: '1.0.1',
         appStoreId: '1405860595',
       ));
+  // final Uri shortUrl = await parameters.buildUrl();
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
   Share.share("Hey check out my profile on Prism ➜ $shortUrl");
-  analytics.logShare(contentType: 'userShare', itemId: email, method: 'link');
+  analytics.logShare(
+      contentType: 'userShare', itemId: username, method: 'link');
   debugPrint(shortUrl.toString());
 }
 
