@@ -71,7 +71,8 @@ void main() {
         await Hive.openBox('setups');
         await Hive.openBox('localFav');
         // await Hive.deleteFromDisk();
-        Hive.registerAdapter(InAppNotifAdapter());
+        Hive.ignoreTypeId(33);
+        Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
         await Hive.openBox<InAppNotif>('inAppNotifs');
         // Hive.registerAdapter<PrismUsers>(PrismUsersAdapter());
         Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
