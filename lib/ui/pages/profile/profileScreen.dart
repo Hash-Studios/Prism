@@ -30,7 +30,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:pixel_perfect/pixel_perfect.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
 
@@ -42,19 +41,17 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
-    return PixelPerfect(
-        assetPath: 'assets/images/ref.jpg',
-        scale: 1080 / 411.42857142857144,
-        child: Scaffold(
-            key: scaffoldKey,
-            body: BottomBar(
-              child: ProfileChild(),
-            ),
-            endDrawer: globals.prismUser.loggedIn
-                ? SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.68,
-                    child: ProfileDrawer())
-                : null));
+    return Scaffold(
+      key: scaffoldKey,
+      body: BottomBar(
+        child: ProfileChild(),
+      ),
+      endDrawer: globals.prismUser.loggedIn
+          ? SizedBox(
+              width: MediaQuery.of(context).size.width * 0.68,
+              child: ProfileDrawer())
+          : null,
+    );
   }
 }
 
