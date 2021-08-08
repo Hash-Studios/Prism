@@ -13,6 +13,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/logger/logger.dart';
 
 class SearchGrid extends StatefulWidget {
   final String query;
@@ -97,7 +98,9 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
     refreshHomeKey.currentState?.show();
     if (widget.selectedProvider == "WallHaven") {
       wData.wallsS = [];
-      wData.getWallsbyQuery(widget.query, main.prefs.get('WHcategories') as int?,
+      wData.getWallsbyQuery(
+          widget.query,
+          main.prefs.get('WHcategories') as int?,
           main.prefs.get('WHpurity') as int?);
     } else if (widget.selectedProvider == "Pexels") {
       pData.wallsPS = [];
@@ -222,7 +225,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                     animation: offsetAnimation,
                     builder: (buildContext, child) {
                       if (offsetAnimation.value < 0.0) {
-                        debugPrint('${offsetAnimation.value + 8.0}');
+                        logger.d('${offsetAnimation.value + 8.0}');
                       }
                       return Padding(
                         padding: index == longTapIndex
@@ -302,8 +305,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                               widget.selectedProvider,
                                               widget.query,
                                               index,
-                                              pData
-                                                  .wallsPS[index].src!["medium"],
+                                              pData.wallsPS[index]
+                                                  .src!["medium"],
                                             ]);
                                       }
                                     }
@@ -334,7 +337,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                         createDynamicLink(
                                             pData.wallsPS[index].id!,
                                             "Pexels",
-                                            pData.wallsPS[index].src!["original"]
+                                            pData
+                                                .wallsPS[index].src!["original"]
                                                 .toString(),
                                             pData.wallsPS[index].src!["medium"]
                                                 .toString());

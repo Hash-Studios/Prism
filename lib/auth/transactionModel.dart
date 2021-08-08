@@ -1,3 +1,4 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -33,7 +34,7 @@ class PrismTransaction {
     required this.by,
     required this.processedAt,
   }) {
-    debugPrint("Default constructor !!!!");
+    logger.d("Default constructor !!!!");
   }
 
   factory PrismTransaction.fromJson(Map<String, dynamic> json) =>

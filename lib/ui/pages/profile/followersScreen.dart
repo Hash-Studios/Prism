@@ -4,6 +4,7 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:Prism/logger/logger.dart';
 
 class FollowersScreen extends StatefulWidget {
   final List? arguments;
@@ -28,7 +29,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
     return WillPopScope(
         onWillPop: () async {
           if (navStack.length > 1) navStack.removeLast();
-          debugPrint(navStack.toString());
+          logger.d(navStack.toString());
           return true;
         },
         child: Scaffold(

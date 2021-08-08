@@ -78,7 +78,7 @@ void main() {
         Hive.registerAdapter<Badge>(BadgeAdapter());
         Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
         prefs = await Hive.openBox('prefs');
-        debugPrint("Box Opened");
+        logger.d("Box Opened");
         if (prefs.get("systemOverlayColor") == null) {
           prefs.put("systemOverlayColor", 0xFFE57697);
         }

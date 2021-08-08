@@ -5,6 +5,7 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:Prism/logger/logger.dart';
 
 class DownloadList extends StatelessWidget {
   @override
@@ -97,13 +98,13 @@ class DownloadList extends StatelessWidget {
                             dir.deleteSync(recursive: true);
                             deletedDir = true;
                           } catch (e) {
-                            debugPrint(e.toString());
+                            logger.d(e.toString());
                           }
                           try {
                             dir2.deleteSync(recursive: true);
                             deletedDir2 = true;
                           } catch (e) {
-                            debugPrint(e.toString());
+                            logger.d(e.toString());
                           }
                           if (deletedDir || deletedDir2) {
                             Fluttertoast.showToast(

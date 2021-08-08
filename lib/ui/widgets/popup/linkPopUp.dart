@@ -5,15 +5,16 @@ import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:Prism/logger/logger.dart';
 
 void showLinksPopUp(BuildContext context, String id) {
   Future<List<LinksModel>> getLinks(String id) async {
     List<LinksModel> links = [];
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
-    debugPrint(id);
+    logger.d(id);
     await firestore.collection(USER_NEW_COLLECTION).doc(id).get().then((value) {
       links = linksToModel(value.data()!["links"] as Map);
-      debugPrint(links.toString());
+      logger.d(links.toString());
     });
     return links;
   }
@@ -29,12 +30,12 @@ void showLinksPopUp(BuildContext context, String id) {
           future: getLinks(id),
           builder: (context, snapshot) {
             if (snapshot == null) {
-              debugPrint("snapshot null");
+              logger.d("snapshot null");
               return SizedBox(height: 300, child: Center(child: Loader()));
             }
             if (snapshot.connectionState == ConnectionState.waiting ||
                 snapshot.connectionState == ConnectionState.none) {
-              debugPrint("snapshot none, waiting");
+              logger.d("snapshot none, waiting");
               return SizedBox(height: 300, child: Center(child: Loader()));
             } else {
               if (snapshot.data!.isNotEmpty) {

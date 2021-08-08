@@ -1,4 +1,5 @@
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -21,7 +22,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
         liked!.add(f.data());
       }
     }).catchError((e) {
-      debugPrint("data done with error");
+      logger.d("data done with error");
     });
 
     return liked;
@@ -37,7 +38,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
           .doc(id)
           .delete();
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
     await getDataBase();
     return true;
@@ -84,7 +85,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
           }
         }
         if (index == null) {
-          debugPrint("Fav");
+          logger.d("Fav");
           createFavSetup(setup!);
           localFavSave(id);
         } else {
@@ -110,9 +111,9 @@ class FavouriteSetupProvider extends ChangeNotifier {
 
   Future<int> countFavSetups() async {
     int favs = 0;
-    debugPrint("in countfavsetup");
+    logger.d("in countfavsetup");
     await getDataBase().then((value) {
-      debugPrint(value!.length.toString());
+      logger.d(value!.length.toString());
       favs = value.length;
     });
     return favs;
@@ -132,7 +133,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
         }
       });
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
     await getDataBase();
     return true;

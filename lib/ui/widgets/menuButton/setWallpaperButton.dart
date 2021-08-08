@@ -5,6 +5,7 @@ import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/logger/logger.dart';
 
 class SetWallpaperButton extends StatefulWidget {
   final String? url;
@@ -42,12 +43,12 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
       if (result!) {
-        debugPrint("Success");
+        logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Both', 'result': 'Success'});
       } else {
-        debugPrint("Failed");
+        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
       if (mounted) {
@@ -58,7 +59,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
   }
 
@@ -82,13 +83,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
       if (result!) {
-        debugPrint("Success");
+        logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Both', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        debugPrint("Failed");
+        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
       if (mounted) {
@@ -99,7 +100,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
   }
 
@@ -123,13 +124,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
       if (result!) {
-        debugPrint("Success");
+        logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Lock', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        debugPrint("Failed");
+        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
       if (mounted) {
@@ -138,7 +139,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
     }
@@ -164,13 +165,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
       if (result!) {
-        debugPrint("Success");
+        logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Home', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        debugPrint("Failed");
+        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
       if (mounted) {
@@ -179,7 +180,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
     }
@@ -209,9 +210,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         if (Platform.isAndroid) {
           final androidInfo = await DeviceInfoPlugin().androidInfo;
           final sdkInt = androidInfo.version.sdkInt;
-          debugPrint('(SDK $sdkInt)');
+          logger.d('(SDK $sdkInt)');
           isLoading
-              ? debugPrint("")
+              ? logger.d("")
               : sdkInt >= 24
                   ? onPaint()
                   : toasts
@@ -222,7 +223,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       },
       onTap: () {
         isLoading
-            ? debugPrint("")
+            ? logger.d("")
             : showModalBottomSheet(
                 isScrollControlled: true,
                 context: context,

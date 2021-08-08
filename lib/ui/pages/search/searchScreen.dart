@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/logger/logger.dart';
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -22,7 +23,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -165,7 +166,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     elevation: 4,
                     initialValue: selectedProviders,
                     onCanceled: () {
-                      debugPrint('You have not choosed anything');
+                      logger.d('You have not choosed anything');
                     },
                     color: Theme.of(context).hintColor,
                     tooltip: 'Providers',
@@ -439,12 +440,12 @@ class _SearchLoaderState extends State<SearchLoader> {
       future: _future,
       builder: (ctx, snapshot) {
         if (snapshot == null) {
-          debugPrint("snapshot null");
+          logger.d("snapshot null");
           return const LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
-          debugPrint("snapshot none, waiting");
+          logger.d("snapshot none, waiting");
           return const LoadingCards();
         } else {
           return SearchGrid(

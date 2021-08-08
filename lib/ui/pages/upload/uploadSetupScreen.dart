@@ -16,6 +16,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class UploadSetupScreen extends StatefulWidget {
   final List? arguments;
@@ -145,7 +146,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
     setState(() {
       id = tempid;
     });
-    debugPrint(id);
+    logger.d(id);
   }
 
   Future processImage() async {
@@ -171,22 +172,22 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           .then((value) => setState(() {
                 imageURL = value.content!.downloadUrl;
               }));
-      debugPrint('File Uploaded');
+      logger.d('File Uploaded');
       setState(() {
         isUploading = false;
       });
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       Navigator.pop(context);
       navStack.removeLast();
-      debugPrint(navStack.toString());
+      logger.d(navStack.toString());
       toasts.error("Some uploading issue, please try again.");
     }
   }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -223,7 +224,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                         toasts.error("Please fill all required fields!");
                       } else {
                         navStack.removeLast();
-                        debugPrint(navStack.toString());
+                        logger.d(navStack.toString());
                         Navigator.pop(context);
                         analytics.logEvent(
                             name: 'upload_setup',

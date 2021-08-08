@@ -4,6 +4,7 @@ import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -42,7 +43,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -578,7 +579,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           .profileSetups![
                                                       index!]["wall_id"] ==
                                                   "") {
-                                            debugPrint("Id Not Found!");
+                                            logger.d("Id Not Found!");
                                             launch(Provider.of<
                                                         ProfileSetupProvider>(
                                                     context,
@@ -765,7 +766,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               .profileSetups![
                                                           index!]["wall_id"] ==
                                                       "") {
-                                                debugPrint("Id Not Found!");
+                                                logger.d("Id Not Found!");
                                                 launch(Provider.of<
                                                             ProfileSetupProvider>(
                                                         context,
@@ -1030,7 +1031,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                 .profileSetups![
                                                             index!]["wall_id"] ==
                                                         "") {
-                                                  debugPrint("Id Not Found!");
+                                                  logger.d("Id Not Found!");
                                                   launch(Provider.of<
                                                               ProfileSetupProvider>(
                                                           context,
@@ -1458,7 +1459,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                   animation: offsetAnimation,
                   builder: (buildContext, child) {
                     if (offsetAnimation.value < 0.0) {
-                      debugPrint('${offsetAnimation.value + 8.0}');
+                      logger.d('${offsetAnimation.value + 8.0}');
                     }
                     return GestureDetector(
                       onPanUpdate: (details) {
@@ -1526,7 +1527,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
-                      debugPrint(navStack.toString());
+                      logger.d(navStack.toString());
                       Navigator.pop(context);
                     },
                     color: Theme.of(context).accentColor,
@@ -1551,11 +1552,11 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                               listen: false)
                           .profileSetups![index!]["image"]
                           .toString();
-                      debugPrint(link);
+                      logger.d(link);
 
                       final androidInfo = await DeviceInfoPlugin().androidInfo;
                       final sdkInt = androidInfo.version.sdkInt;
-                      debugPrint('(SDK $sdkInt)');
+                      logger.d('(SDK $sdkInt)');
                       toasts.codeSend("Starting Download");
 
                       if (sdkInt >= 30) {
@@ -1574,7 +1575,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                             isLoading = false;
                           });
                         }).catchError((e) {
-                          debugPrint(e.toString());
+                          logger.d(e.toString());
                           setState(() {
                             isLoading = false;
                           });

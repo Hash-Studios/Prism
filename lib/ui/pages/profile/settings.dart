@@ -15,6 +15,7 @@ import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:animations/animations.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -35,7 +36,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return WillPopScope(
       onWillPop: () async {
         if (navStack.length > 1) navStack.removeLast();
-        debugPrint(navStack.toString());
+        logger.d(navStack.toString());
         return true;
       },
       child: Scaffold(
@@ -347,7 +348,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Navigator.pop(context);
                       main.RestartWidget.restartApp(context);
                     }).catchError((e) {
-                      debugPrint(e.toString());
+                      logger.d(e.toString());
                       Navigator.pop(context);
                       globals.prismUser.loggedIn = false;
                       main.prefs.put("prismUserV2", globals.prismUser);

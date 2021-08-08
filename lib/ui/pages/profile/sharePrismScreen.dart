@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:share/share.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class SharePrismScreen extends StatefulWidget {
   @override
@@ -31,7 +32,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 

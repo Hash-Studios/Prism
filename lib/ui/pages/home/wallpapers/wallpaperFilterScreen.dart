@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/darkThemeModel.dart';
@@ -129,7 +130,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -155,19 +156,19 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         });
       }
       if (result!) {
-        debugPrint("Success");
+        logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Both', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        debugPrint("Failed");
+        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
     } catch (e) {
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
     Navigator.of(context).pop();
   }
@@ -192,17 +193,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         });
       }
       if (result!) {
-        debugPrint("Success");
+        logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Lock', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        debugPrint("Failed");
+        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
     }
@@ -229,17 +230,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         });
       }
       if (result!) {
-        debugPrint("Success");
+        logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Home', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        debugPrint("Failed");
+        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
     }
@@ -280,7 +281,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               icon: const Icon(JamIcons.close),
               onPressed: () {
                 navStack.removeLast();
-                debugPrint(navStack.toString());
+                logger.d(navStack.toString());
                 Navigator.pop(context);
               }),
           backgroundColor: Theme.of(context).primaryColor,

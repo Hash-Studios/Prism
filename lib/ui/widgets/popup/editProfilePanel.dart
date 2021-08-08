@@ -271,8 +271,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       minWidth: 400,
       quality: 85,
     );
-    debugPrint(file.lengthSync().toString());
-    debugPrint(result!.length.toString());
+    logger.d(file.lengthSync().toString());
+    logger.d(result!.length.toString());
     return result;
   }
 
@@ -304,7 +304,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                 pfpPath = value.content!.path!;
                 pfpSha = value.content!.sha!;
               }));
-      debugPrint('File Uploaded');
+      logger.d('File Uploaded');
       globals.prismUser.profilePhoto = pfpUrl;
       main.prefs.put("prismUserV2", globals.prismUser);
       await firestore
@@ -314,7 +314,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         "profilePhoto": pfpUrl,
       });
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       toasts.error("Some uploading issue, please try again.");
     }
   }
@@ -335,7 +335,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                 coverPath = value.content!.path!;
                 coverSha = value.content!.sha!;
               }));
-      debugPrint('Cover File Uploaded');
+      logger.d('Cover File Uploaded');
       globals.prismUser.coverPhoto = coverUrl;
       main.prefs.put("prismUserV2", globals.prismUser);
       await firestore
@@ -352,7 +352,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -367,7 +367,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
               icon: const Icon(JamIcons.close),
               onPressed: () {
                 navStack.removeLast();
-                debugPrint(navStack.toString());
+                logger.d(navStack.toString());
                 Navigator.pop(context);
               }),
           title: Text(
@@ -878,13 +878,13 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                             fontSize: 14, color: Colors.white),
                                   ),
                                   onChanged: (value) {
-                                    // print("VALUE TEXT ${value.toLowerCase()}");
-                                    // print(
+                                    // logger.d("VALUE TEXT ${value.toLowerCase()}");
+                                    // logger.d(
                                     //     "VALUE LINK NAME ${_link?["name"].toString().toLowerCase()}");
-                                    // print(
+                                    // logger.d(
                                     //     "VALUE LINK VALUE ${_link?["value"].toString().toLowerCase()}");
-                                    // print("VALUE LINK EDIT ${linkEdit}");
-                                    // print(
+                                    // logger.d("VALUE LINK EDIT ${linkEdit}");
+                                    // logger.d(
                                     //     "VALUE LINK CONTAINS ${(value.toLowerCase().contains('${_link?["name"].toString().toLowerCase()}'))}");
 
                                     if (value.toLowerCase().contains(
@@ -1006,7 +1006,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             });
                             Navigator.pop(context);
                             navStack.removeLast();
-                            debugPrint(navStack.toString());
+                            logger.d(navStack.toString());
                             toasts.codeSend("Details updated!");
                           }
                         : (usernameEdit && enabled)
@@ -1079,7 +1079,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 });
                                 Navigator.pop(context);
                                 navStack.removeLast();
-                                debugPrint(navStack.toString());
+                                logger.d(navStack.toString());
                                 toasts.codeSend("Details updated!");
                               }
                             : null,

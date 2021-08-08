@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
+import 'package:Prism/logger/logger.dart';
 
 void showCategories(BuildContext context, CategoryMenu initialValue) {
   final controller = ScrollController();
@@ -69,8 +70,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                                 .changeSelectedChoice(choice as CategoryMenu);
                             Provider.of<CategorySupplier>(context,
                                     listen: false)
-                                .changeWallpaperFuture(
-                                    choice, "r");
+                                .changeWallpaperFuture(choice, "r");
                             PM.tabController!.animateTo(0,
                                 duration: const Duration(milliseconds: 200),
                                 curve: Curves.easeInCubic);
@@ -127,7 +127,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
         color: Theme.of(context).errorColor,
         onPressed: () {
           Navigator.of(context).pop();
-          debugPrint('You have not chossed anything');
+          logger.d('You have not chossed anything');
         },
         child: const Text(
           'OK',

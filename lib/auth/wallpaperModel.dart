@@ -74,7 +74,7 @@
 //     required this.name,
 //     this.coverPhoto,
 //   }) {
-//     debugPrint("Default constructor !!!!");
+//     logger.d("Default constructor !!!!");
 //   }
 
 //   factory PrismUsersV2.fromJson(Map<String, dynamic> json) =>

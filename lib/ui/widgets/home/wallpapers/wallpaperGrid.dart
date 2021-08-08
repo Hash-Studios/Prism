@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/logger/logger.dart';
 
 class WallpaperGrid extends StatefulWidget {
   final String? provider;
@@ -41,7 +42,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
   }
 
   void showGooglePopUp(BuildContext context, Function func) {
-    debugPrint(globals.prismUser.loggedIn.toString());
+    logger.d(globals.prismUser.loggedIn.toString());
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {

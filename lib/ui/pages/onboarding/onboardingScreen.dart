@@ -1,3 +1,4 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
@@ -629,7 +630,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             );
                                           });
                                         }).catchError((e) {
-                                          debugPrint(e.toString());
+                                          logger.d(e.toString());
                                           globals.prismUser.loggedIn = false;
                                           main.prefs.put(
                                               "prismUserV2", globals.prismUser);

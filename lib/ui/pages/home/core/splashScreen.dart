@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/logger/logger.dart';
 
 late RemoteConfig remoteConfig;
 
@@ -37,10 +38,10 @@ class SplashWidget extends StatelessWidget {
         'verifiedUsers':
             '["akshaymaurya3006@gmail.com","maurya.abhay30@gmail.com",]'
       });
-      debugPrint("Started Fetching Values from rc");
+      logger.d("Started Fetching Values from rc");
       await remoteConfig.fetch(expiration: const Duration(hours: 6));
       final rcBool = await remoteConfig.activateFetched();
-      debugPrint("Fetched Values from rc");
+      logger.d("Fetched Values from rc");
       globals.topImageLink = remoteConfig.getString('topImageLink');
       globals.bannerText = remoteConfig.getString('bannerText');
       globals.bannerTextOn = remoteConfig.getString('bannerTextOn');
@@ -75,17 +76,17 @@ class SplashWidget extends StatelessWidget {
         categories.add(json.decode("$element}"));
       }
       categories.removeWhere((element) => element['name'] == "Trending");
-      debugPrint(cList.toString());
+      logger.d(cList.toString());
       globals.followersTab =
           main.prefs.get('followersTab', defaultValue: true) as bool;
       await getNotifs();
-      debugPrint("splash done");
-      debugPrint(
+      logger.d("splash done");
+      logger.d(
           "Current App Version: ${globals.currentAppVersion.replaceAll(".", "")}");
-      debugPrint(
+      logger.d(
           "Obsolete App Version: ${globals.obsoleteAppVersion.replaceAll(".", "")}");
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
   }
 
@@ -94,7 +95,7 @@ class SplashWidget extends StatelessWidget {
     globals.hasNotch = height > 24;
     globals.notchSize = height;
     notchChecked = true;
-    debugPrint('Notch Height = $height');
+    logger.d('Notch Height = $height');
   }
 
   SplashWidget({

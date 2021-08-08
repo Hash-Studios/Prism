@@ -5,6 +5,7 @@ import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
+import 'package:Prism/logger/logger.dart';
 
 void showContributorDetails(BuildContext context, String username) {
   Future<User?> getUser(String username) async {
@@ -13,7 +14,7 @@ void showContributorDetails(BuildContext context, String username) {
     await github.users.getUser(username).then((value) {
       user = value;
     });
-    debugPrint(user!.blog);
+    logger.d(user!.blog);
     return user;
   }
 
@@ -28,12 +29,12 @@ void showContributorDetails(BuildContext context, String username) {
           future: getUser(username),
           builder: (context, snapshot) {
             if (snapshot == null) {
-              debugPrint("snapshot null");
+              logger.d("snapshot null");
               return SizedBox(height: 300, child: Center(child: Loader()));
             }
             if (snapshot.connectionState == ConnectionState.waiting ||
                 snapshot.connectionState == ConnectionState.none) {
-              debugPrint("snapshot none, waiting");
+              logger.d("snapshot none, waiting");
               return SizedBox(height: 300, child: Center(child: Loader()));
             } else {
               return Column(

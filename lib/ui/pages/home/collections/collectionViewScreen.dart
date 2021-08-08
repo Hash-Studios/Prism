@@ -5,6 +5,7 @@ import 'package:Prism/ui/widgets/home/collections/collectionsViewGrid.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/logger/logger.dart';
 
 class CollectionViewScreen extends StatelessWidget {
   final List? arguments;
@@ -17,7 +18,7 @@ class CollectionViewScreen extends StatelessWidget {
     return WillPopScope(
       onWillPop: () async {
         if (navStack.length > 1) navStack.removeLast();
-        debugPrint(navStack.toString());
+        logger.d(navStack.toString());
         return true;
       },
       child: Scaffold(
