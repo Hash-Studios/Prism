@@ -107,6 +107,7 @@ class GoogleAuth {
           coins: 0,
           subPrisms: [],
           transactions: [],
+          coverPhoto: "",
         );
         FirebaseFirestore.instance
             .collection(USER_NEW_COLLECTION)
@@ -154,6 +155,7 @@ class GoogleAuth {
       coins: 0,
       subPrisms: [],
       transactions: [],
+      coverPhoto: "",
     );
     Hive.openBox('prefs').then((value) {
       value.put('prismUserV2', globals.prismUser);
