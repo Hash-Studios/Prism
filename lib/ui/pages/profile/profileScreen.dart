@@ -648,9 +648,17 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             ),
                                                           ),
                                                           onPressed: () {
-                                                            launch(widget
-                                                                .links![e]
-                                                                .toString());
+                                                            if (widget.links![e]
+                                                                .toString()
+                                                                .contains(
+                                                                    "@gmail.com")) {
+                                                              launch(
+                                                                  "mailto:${widget.links![e].toString()}");
+                                                            } else {
+                                                              launch(widget
+                                                                  .links![e]
+                                                                  .toString());
+                                                            }
                                                           }))
                                                       .toList()
                                                       .sublist(
@@ -704,7 +712,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                                         onPressed: () {
                                                           showNoLoadLinksPopUp(
                                                               context,
-                                                              widget.links!);
+                                                              widget.links ??
+                                                                  {});
                                                         }),
                                                 ]),
                                           )
