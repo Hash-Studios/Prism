@@ -2,6 +2,7 @@ import 'package:Prism/ui/widgets/favourite/favGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:Prism/logger/logger.dart';
 
 class FavLoader extends StatefulWidget {
   final Future<List?>? future;
@@ -24,12 +25,12 @@ class _FavLoaderState extends State<FavLoader> {
       future: _future,
       builder: (ctx, snapshot) {
         if (snapshot == null) {
-          debugPrint("snapshot null");
+          logger.d("snapshot null");
           return const LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
-          debugPrint("snapshot none, waiting");
+          logger.d("snapshot none, waiting");
           return const LoadingCards();
         } else {
           return const FavouriteGrid();

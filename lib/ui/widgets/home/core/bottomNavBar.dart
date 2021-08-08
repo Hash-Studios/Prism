@@ -14,6 +14,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:intl/intl.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/logger/logger.dart';
 
 class BottomBar extends StatefulWidget {
   final Widget? child;
@@ -197,7 +198,7 @@ class _BottomNavBarState extends State<BottomNavBar>
   }
 
   void showGooglePopUp(Function func) {
-    debugPrint(isLoggedin.toString());
+    logger.d(isLoggedin.toString());
     if (isLoggedin == false) {
       googleSignInPopUp(context, func);
     } else {
@@ -258,14 +259,14 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   navStack.last == "Home"
-                      ? debugPrint("Currently on Home")
+                      ? logger.d("Currently on Home")
                       : Navigator.of(context).popUntil((route) {
                           if (navStack.last != "Home") {
                             navStack.removeLast();
-                            debugPrint(navStack.toString());
+                            logger.d(navStack.toString());
                             return false;
                           } else {
-                            debugPrint(navStack.toString());
+                            logger.d(navStack.toString());
                             return true;
                           }
                         });
@@ -306,7 +307,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   navStack.last == "Search"
-                      ? debugPrint("Currently on Search")
+                      ? logger.d("Currently on Search")
                       : navStack.last == "Home"
                           ? Navigator.of(context).pushNamed(searchRoute)
                           : Navigator.of(context).pushNamed(searchRoute);
@@ -418,7 +419,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   navStack.last == "Setups"
-                      ? debugPrint("Currently on Setups")
+                      ? logger.d("Currently on Setups")
                       : navStack.last == "Home"
                           ? Navigator.of(context).pushNamed(setupRoute)
                           : Navigator.of(context).pushNamed(setupRoute);
@@ -487,24 +488,26 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   if (navStack.last == "Profile") {
-                    debugPrint("Currently on Profile");
+                    logger.d("Currently on Profile");
                   } else {
                     if (navStack.last == "Home") {
-                      Navigator.of(context).pushNamed(profileRoute);
+                      Navigator.of(context).pushNamed(profileRoute,
+                          arguments: [globals.prismUser.email]);
                     } else {
                       Navigator.of(context).popUntil((route) {
                         if (navStack.last != "Home" &&
                             navStack.last != "Profile") {
                           navStack.removeLast();
-                          debugPrint(navStack.toString());
+                          logger.d(navStack.toString());
                           return false;
                         } else {
-                          debugPrint(navStack.toString());
+                          logger.d(navStack.toString());
                           return true;
                         }
                       });
                       if ((navStack.last == "Home") == true) {
-                        Navigator.of(context).pushNamed(profileRoute);
+                        Navigator.of(context).pushNamed(profileRoute,
+                            arguments: [globals.prismUser.email]);
                       }
                     }
                   }
@@ -827,7 +830,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
     );
 
     if (size == null) {
-      debugPrint('Unable to get height of anchored banner.');
+      logger.d('Unable to get height of anchored banner.');
       return;
     } else {
       if (mounted) {
@@ -835,7 +838,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
           adHeight = size.height;
         });
       }
-      debugPrint('ad height is equal to $adHeight');
+      logger.d('ad height is equal to $adHeight');
     }
 
     final BannerAd banner = BannerAd(
@@ -846,20 +849,20 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
           : BannerAd.testAdUnitId,
       listener: BannerAdListener(
         onAdLoaded: (Ad ad) {
-          debugPrint('$BannerAd loaded.');
+          logger.d('$BannerAd loaded.');
           setState(() {
             _anchoredBanner = ad as BannerAd?;
           });
         },
         onAdFailedToLoad: (Ad ad, LoadAdError error) {
-          debugPrint('$BannerAd failedToLoad: $error');
+          logger.d('$BannerAd failedToLoad: $error');
           setState(() {
             adHeight = 0;
           });
           ad.dispose();
         },
-        onAdOpened: (Ad ad) => debugPrint('$BannerAd onAdOpened.'),
-        onAdClosed: (Ad ad) => debugPrint('$BannerAd onAdClosed.'),
+        onAdOpened: (Ad ad) => logger.d('$BannerAd onAdOpened.'),
+        onAdClosed: (Ad ad) => logger.d('$BannerAd onAdClosed.'),
       ),
     );
     return banner.load();

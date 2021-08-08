@@ -51,7 +51,7 @@ int? purity;
 LocalNotification localNotification = LocalNotification();
 void main() {
   debugPrint = (String? message, {int? wrapWidth}) {
-    if (message!.contains("[Home,")) {
+    if (message!.contains("[Home")) {
       logger.i(message);
     } else {
       logger.d(message);
@@ -71,14 +71,15 @@ void main() {
         await Hive.openBox('setups');
         await Hive.openBox('localFav');
         // await Hive.deleteFromDisk();
-        Hive.registerAdapter(InAppNotifAdapter());
+        Hive.ignoreTypeId(33);
+        Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
         await Hive.openBox<InAppNotif>('inAppNotifs');
         // Hive.registerAdapter<PrismUsers>(PrismUsersAdapter());
         Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
         Hive.registerAdapter<Badge>(BadgeAdapter());
         Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
         prefs = await Hive.openBox('prefs');
-        debugPrint("Box Opened");
+        logger.d("Box Opened");
         if (prefs.get("systemOverlayColor") == null) {
           prefs.put("systemOverlayColor", 0xFFE57697);
         }

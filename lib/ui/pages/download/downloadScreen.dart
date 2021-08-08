@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/logger/logger.dart';
 
 class DownloadScreen extends StatefulWidget {
   @override
@@ -18,7 +19,7 @@ class DownloadScreen extends StatefulWidget {
 class _DownloadScreenState extends State<DownloadScreen> {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -61,12 +62,12 @@ class _DownloadScreenState extends State<DownloadScreen> {
     try {
       files = Directory(fileNew).listSync();
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
     try {
       files.addAll(Directory(file).listSync());
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
     if (files.isEmpty) {
       setState(() {

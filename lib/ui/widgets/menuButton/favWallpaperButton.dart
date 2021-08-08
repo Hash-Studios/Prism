@@ -9,6 +9,7 @@ import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class FavouriteWallpaperButton extends StatefulWidget {
   final String id;
@@ -72,7 +73,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
                 }
                 if (widget.trash) {
                   navStack.removeLast();
-                  debugPrint(navStack.toString());
+                  logger.d(navStack.toString());
                   Navigator.pop(context);
                 }
               },

@@ -12,6 +12,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:purchases_flutter/object_wrappers.dart';
 import 'package:Prism/payments/components.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 PurchaserInfo? _purchaserInfo;
 
@@ -29,12 +30,12 @@ Future<void> checkPremium() async {
       appData.isPro = false;
     }
   } on PlatformException catch (e) {
-    debugPrint(e.toString());
+    logger.d(e.toString());
   }
 
   globals.prismUser.premium = appData.isPro!;
   main.prefs.put("prismUserV2", globals.prismUser);
-  debugPrint('#### is user pro? ${appData.isPro}');
+  logger.d('#### is user pro? ${appData.isPro}');
 }
 
 class UpgradeScreen extends StatefulWidget {
@@ -61,7 +62,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     PurchaserInfo purchaserInfo;
     try {
       purchaserInfo = await Purchases.getPurchaserInfo();
-      debugPrint(purchaserInfo.toString());
+      logger.d(purchaserInfo.toString());
       if (purchaserInfo.entitlements.all['prism_premium'] != null) {
         appData.isPro =
             purchaserInfo.entitlements.all['prism_premium']!.isActive;
@@ -69,10 +70,10 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
         appData.isPro = false;
       }
     } on PlatformException catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
 
-    debugPrint('#### is user pro? ${appData.isPro}');
+    logger.d('#### is user pro? ${appData.isPro}');
     setState(() {});
   }
 
@@ -81,14 +82,14 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     try {
       purchaserInfo = await Purchases.getPurchaserInfo();
     } on PlatformException catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
 
     Offerings? offerings;
     try {
       offerings = await Purchases.getOfferings();
     } on PlatformException catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
     if (!mounted) return;
 
@@ -140,7 +141,7 @@ class UpsellScreen extends StatefulWidget {
 
 Future<bool> onWillPop() async {
   if (navStack.length > 1) navStack.removeLast();
-  debugPrint(navStack.toString());
+  logger.d(navStack.toString());
   return true;
 }
 
@@ -374,20 +375,20 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                     // ignore: void_checks
                                     onTap: () async {
                                       try {
-                                        debugPrint('now trying to restore');
+                                        logger.d('now trying to restore');
                                         final PurchaserInfo restoredInfo =
                                             await Purchases
                                                 .restoreTransactions();
-                                        debugPrint('restore completed');
-                                        debugPrint(restoredInfo.toString());
+                                        logger.d('restore completed');
+                                        logger.d(restoredInfo.toString());
 
                                         appData.isPro = restoredInfo
                                             .entitlements
                                             .all["prism_premium"]!
                                             .isActive;
 
-                                        debugPrint(
-                                            'is user pro? ${appData.isPro}');
+                                        logger
+                                            .d('is user pro? ${appData.isPro}');
 
                                         if (appData.isPro!) {
                                           globals.prismUser.premium =
@@ -403,7 +404,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                               "There was an error. Please try again later.");
                                         }
                                       } on PlatformException catch (e) {
-                                        debugPrint('----xx-----');
+                                        logger.d('----xx-----');
                                         final errorCode =
                                             PurchasesErrorHelper.getErrorCode(
                                                 e);
@@ -518,15 +519,15 @@ class _PurchaseButtonState extends State<PurchaseButton> {
         // ignore: void_checks
         onTap: () async {
           try {
-            debugPrint('now trying to purchase');
+            logger.d('now trying to purchase');
             _purchaserInfo = await Purchases.purchasePackage(widget.package);
-            debugPrint('purchase completed');
+            logger.d('purchase completed');
 
             appData.isPro =
                 _purchaserInfo!.entitlements.all["prism_premium"]!.isActive;
             globals.prismUser.premium = appData.isPro!;
             main.prefs.put("prismUserV2", globals.prismUser);
-            debugPrint('is user pro? ${appData.isPro}');
+            logger.d('is user pro? ${appData.isPro}');
 
             if (appData.isPro!) {
               toasts.codeSend("You are now a premium member.");
@@ -535,7 +536,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
               toasts.error("There was an error, please try again later.");
             }
           } on PlatformException catch (e) {
-            debugPrint('----xx-----');
+            logger.d('----xx-----');
             final errorCode = PurchasesErrorHelper.getErrorCode(e);
             if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
               toasts.error("User cancelled purchase.");

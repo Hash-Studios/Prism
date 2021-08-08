@@ -22,6 +22,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class UserProfileWallViewScreen extends StatefulWidget {
   final List? arguments;
@@ -36,7 +37,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -158,7 +159,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                 panelCollapsed = false;
               });
               if (panelClosed) {
-                debugPrint('Screenshot Starting');
+                logger.d('Screenshot Starting');
                 if (colorChanged) {
                   screenshotController
                       .capture(
@@ -171,9 +172,9 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                       screenshotTaken = true;
                       panelClosed = false;
                     });
-                    debugPrint('Screenshot Taken');
+                    logger.d('Screenshot Taken');
                   }).catchError((onError) {
-                    debugPrint(onError.toString());
+                    logger.d(onError.toString());
                   });
                 } else {
                   main.prefs.get('optimisedWallpapers') as bool? ?? true
@@ -188,11 +189,11 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                             screenshotTaken = true;
                             panelClosed = false;
                           });
-                          debugPrint('Screenshot Taken');
+                          logger.d('Screenshot Taken');
                         }).catchError((onError) {
-                          debugPrint(onError.toString());
+                          logger.d(onError.toString());
                         })
-                      : debugPrint("Wallpaper Optimisation is disabled!");
+                      : logger.d("Wallpaper Optimisation is disabled!");
                 }
               }
             },
@@ -612,7 +613,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                     animation: offsetAnimation,
                     builder: (buildContext, child) {
                       if (offsetAnimation.value < 0.0) {
-                        debugPrint('${offsetAnimation.value + 8.0}');
+                        logger.d('${offsetAnimation.value + 8.0}');
                       }
                       return GestureDetector(
                         onPanUpdate: (details) {
@@ -629,7 +630,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                         },
                         onTap: () {
                           HapticFeedback.vibrate();
-                          !isLoading ? updateAccent() : debugPrint("");
+                          !isLoading ? updateAccent() : logger.d("");
                           shakeController.forward(from: 0.0);
                         },
                         child: CachedNetworkImage(
@@ -691,7 +692,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                     child: IconButton(
                       onPressed: () {
                         navStack.removeLast();
-                        debugPrint(navStack.toString());
+                        logger.d(navStack.toString());
                         Navigator.pop(context);
                       },
                       color: isLoading

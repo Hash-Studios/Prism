@@ -14,6 +14,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter/foundation.dart';
+import 'package:Prism/logger/logger.dart';
 
 const int maxFailedLoadAttempts = 3;
 
@@ -52,13 +53,13 @@ class _DownloadButtonState extends State<DownloadButton> {
               onDownload();
             } else {
               showDownloadPopup(context, () {
-                debugPrint("Download");
+                logger.d("Download");
                 onDownload();
               });
             }
           } else {
             showDownloadPopup(context, () {
-              debugPrint("Download");
+              logger.d("Download");
               onDownload();
             });
           }
@@ -115,11 +116,11 @@ class _DownloadButtonState extends State<DownloadButton> {
     setState(() {
       isLoading = true;
     });
-    debugPrint(widget.link);
+    logger.d(widget.link);
 
     final androidInfo = await DeviceInfoPlugin().androidInfo;
     final sdkInt = androidInfo.version.sdkInt;
-    debugPrint('(SDK $sdkInt)');
+    logger.d('(SDK $sdkInt)');
     // toasts.codeSend("Starting Download");
     // main.localNotification.createDownloadNotification();
     // if (sdkInt >= 30) {
@@ -138,7 +139,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     //     });
     //     main.localNotification.cancelDownloadNotification();
     //   }).catchError((e) {
-    //     debugPrint(e.toString());
+    //     logger.d(e.toString());
     //     setState(() {
     //       isLoading = false;
     //     });
@@ -158,7 +159,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     //     });
     //     main.localNotification.cancelDownloadNotification();
     //   }).catchError((e) {
-    //     debugPrint(e.toString());
+    //     logger.d(e.toString());
     //     setState(() {
     //       isLoading = false;
     //     });
@@ -201,7 +202,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     // }
     // main.localNotification.cancelDownloadNotification();
     // }).catchError((e) {
-    //   debugPrint(e.toString());
+    //   logger.d(e.toString());
     //   setState(() {
     //     isLoading = false;
     //   });
@@ -245,7 +246,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
 
   void rewardFn(num rewardAmount) {
     downloadCoins += rewardAmount;
-    debugPrint("Coins : ${downloadCoins.toString()}");
+    logger.d("Coins : ${downloadCoins.toString()}");
   }
 
   @override
@@ -267,7 +268,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
         request: request,
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (RewardedAd ad) {
-            debugPrint('$ad loaded.');
+            logger.d('$ad loaded.');
             globals.adHelper.rewardedAd = ad;
             _numRewardedLoadAttempts = 0;
             setState(() {
@@ -276,7 +277,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
             });
           },
           onAdFailedToLoad: (LoadAdError error) {
-            debugPrint('RewardedAd failed to load: $error');
+            logger.d('RewardedAd failed to load: $error');
             setState(() {
               globals.adHelper.loadingAd = false;
             });
@@ -301,20 +302,20 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
       globals.adHelper.adLoaded = false;
     });
     if (globals.adHelper.rewardedAd == null) {
-      debugPrint('Warning: attempt to show rewarded before loaded.');
+      logger.d('Warning: attempt to show rewarded before loaded.');
       return;
     }
     globals.adHelper.rewardedAd!.fullScreenContentCallback =
         FullScreenContentCallback(
       onAdShowedFullScreenContent: (RewardedAd ad) =>
-          debugPrint('ad onAdShowedFullScreenContent.'),
+          logger.d('ad onAdShowedFullScreenContent.'),
       onAdDismissedFullScreenContent: (RewardedAd ad) {
-        debugPrint('$ad onAdDismissedFullScreenContent.');
+        logger.d('$ad onAdDismissedFullScreenContent.');
         ad.dispose();
         _createRewardedAd();
       },
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
-        debugPrint('$ad onAdFailedToShowFullScreenContent: $error');
+        logger.d('$ad onAdFailedToShowFullScreenContent: $error');
         ad.dispose();
         _createRewardedAd();
       },
@@ -322,8 +323,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
 
     globals.adHelper.rewardedAd!.show(
         onUserEarnedReward: (RewardedAd ad, RewardItem reward) {
-      debugPrint(
-          '$ad with reward $RewardItem(${reward.amount}, ${reward.type}');
+      logger.d('$ad with reward $RewardItem(${reward.amount}, ${reward.type}');
       rewardFn(reward.amount);
       if (downloadCoins >= 10) widget.rewardFunc();
     });

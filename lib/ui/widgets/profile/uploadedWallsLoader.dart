@@ -1,6 +1,7 @@
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/profile/uploadedWallsGrid.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/logger/logger.dart';
 
 class ProfileLoader extends StatefulWidget {
   final Future future;
@@ -26,14 +27,14 @@ class _ProfileLoaderState extends State<ProfileLoader> {
         future: _future,
         builder: (ctx, snapshot) {
           if (snapshot == null) {
-            debugPrint("snapshot null");
+            logger.d("snapshot null");
             return Center(
               child: Loader(),
             );
           }
           if (snapshot.connectionState == ConnectionState.waiting ||
               snapshot.connectionState == ConnectionState.none) {
-            debugPrint("snapshot none, waiting");
+            logger.d("snapshot none, waiting");
             return Center(
               child: Loader(),
             );

@@ -24,6 +24,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:quick_actions/quick_actions.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 TabController? tabController;
 
@@ -60,11 +61,11 @@ class _PageManagerChildState extends State<PageManagerChild>
   Future<void> checkConnection() async {
     result = await DataConnectionChecker().hasConnection;
     if (result) {
-      debugPrint("Internet working as expected!");
+      logger.d("Internet working as expected!");
       setState(() {});
       // return true;
     } else {
-      debugPrint("Not connected to Internet!");
+      logger.d("Not connected to Internet!");
       setState(() {});
       // return false;
     }
@@ -96,26 +97,26 @@ class _PageManagerChildState extends State<PageManagerChild>
         if (shortcutType != null) shortcut = shortcutType;
       });
       if (shortcutType == 'Follow_Feed') {
-        debugPrint('Follow_Feed');
+        logger.d('Follow_Feed');
         if (globals.followersTab) {
           tabController!.animateTo(1);
         }
       } else if (shortcutType == 'Collections') {
-        debugPrint('Collections');
+        logger.d('Collections');
         if (globals.followersTab) {
           tabController!.animateTo(2);
         } else {
           tabController!.animateTo(1);
         }
       } else if (shortcutType == 'Setups') {
-        debugPrint('Setups');
+        logger.d('Setups');
         navStack.last == "Setups"
-            ? debugPrint("Currently on Setups")
+            ? logger.d("Currently on Setups")
             : navStack.last == "Home"
                 ? Navigator.of(context).pushNamed(setupRoute)
                 : Navigator.of(context).pushNamed(setupRoute);
       } else if (shortcutType == 'Downloads') {
-        debugPrint('Downloads');
+        logger.d('Downloads');
         Navigator.pushNamed(context, downloadRoute);
       }
     });
@@ -164,7 +165,7 @@ class _PageManagerChildState extends State<PageManagerChild>
     final Uri? deepLink = data?.link;
 
     if (deepLink != null && linkOpened == 0) {
-      debugPrint("opened while closed altogether via deep link");
+      logger.d("opened while closed altogether via deep link");
       if (deepLink.pathSegments[0] == "share") {
         Future.delayed(const Duration()).then(
             (value) => Navigator.pushNamed(context, shareRoute, arguments: [
@@ -191,7 +192,7 @@ class _PageManagerChildState extends State<PageManagerChild>
         //TODO write code to add coins in friend/user account
         linkOpened = 1;
       } else {}
-      debugPrint("opened while closed altogether via deep link2345");
+      logger.d("opened while closed altogether via deep link2345");
     }
 
     FirebaseDynamicLinks.instance.onLink(
@@ -199,7 +200,7 @@ class _PageManagerChildState extends State<PageManagerChild>
       final Uri deepLink = dynamicLink.link;
 
       if (deepLink != null) {
-        debugPrint("opened while bg via deep link1");
+        logger.d("opened while bg via deep link1");
         if (deepLink.pathSegments[0] == "share") {
           Future.delayed(const Duration()).then(
               (value) => Navigator.pushNamed(context, shareRoute, arguments: [
@@ -221,11 +222,11 @@ class _PageManagerChildState extends State<PageManagerChild>
               ]));
         } else {}
 
-        debugPrint("opened while bg via deep link2345");
+        logger.d("opened while bg via deep link2345");
       }
     }, onError: (OnLinkErrorException e) async {
-      debugPrint('onLinkError');
-      debugPrint(e.message);
+      logger.d('onLinkError');
+      logger.d(e.message);
     });
     return true;
   }
@@ -430,7 +431,7 @@ class _RatePopUpState extends State<RatePopUp> {
           color: Theme.of(context).errorColor,
           onPressed: () async {
             Navigator.of(context).pop();
-            debugPrint(
+            logger.d(
                 'Thanks for the ${rating == null ? '0' : rating.round().toString()} star(s) !');
             if (rating <= 3) {
               if (Platform.isAndroid) {
@@ -439,8 +440,8 @@ class _RatePopUpState extends State<RatePopUp> {
                 final sdkInt = androidInfo.version.sdkInt;
                 final manufacturer = androidInfo.manufacturer;
                 final model = androidInfo.model;
-                debugPrint(
-                    'Android $release (SDK $sdkInt), $manufacturer $model');
+                logger
+                    .d('Android $release (SDK $sdkInt), $manufacturer $model');
                 launch(
                     "mailto:hash.studios.inc@gmail.com?subject=%5BCUSTOMER%20FEEDBACK%5D&body=----x-x-x----%0D%0ADevice%20Info%20-%0D%0A%0D%0AAndroid%20Version%3A%20Android%20$release%0D%0ASDK%20Number%3A%20SDK%20$sdkInt%0D%0ADevice%20Manufacturer%3A%20$manufacturer%0D%0ADevice%20Model%3A%20$model%0D%0A----x-x-x----%0D%0A%0D%0AEnter%20your%20feedback%20below%20---");
               }

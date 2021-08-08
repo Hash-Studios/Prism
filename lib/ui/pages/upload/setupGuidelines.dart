@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/logger/logger.dart';
 
 class SetupGuidelinesScreen extends StatefulWidget {
   const SetupGuidelinesScreen();
@@ -24,7 +25,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -36,7 +37,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
       });
       Navigator.pop(context);
       if (navStack.length > 1) navStack.removeLast();
-      debugPrint(navStack.toString());
+      logger.d(navStack.toString());
       Future.delayed(const Duration()).then((value) =>
           Navigator.pushNamed(context, uploadSetupRoute, arguments: [_setup]));
     }

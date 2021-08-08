@@ -1,6 +1,10 @@
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/data/links/model/linksModel.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
@@ -10,7 +14,7 @@ class UserProfileProvider extends ChangeNotifier {
   List<QueryDocumentSnapshot>? userProfileSetups;
 
   Future<void> getuserProfileWalls(String? email) async {
-    debugPrint("Fetching first 12 profile walls");
+    logger.d("Fetching first 12 profile walls");
     userProfileWalls = [];
     await databaseReference
         .collection("walls")
@@ -22,14 +26,14 @@ class UserProfileProvider extends ChangeNotifier {
         .then((value) {
       userProfileWalls = value.docs;
     }).catchError((e) {
-      debugPrint(e.toString());
-      debugPrint("data done with error");
+      logger.d(e.toString());
+      logger.d("data done with error");
     });
     notifyListeners();
   }
 
   Future<void> seeMoreUserProfileWalls(String? email) async {
-    debugPrint("Fetching more profile walls");
+    logger.d("Fetching more profile walls");
     await databaseReference
         .collection("walls")
         .where('review', isEqualTo: true)
@@ -47,7 +51,7 @@ class UserProfileProvider extends ChangeNotifier {
   }
 
   Future<void> getUserProfileSetups(String? email) async {
-    debugPrint("Fetching first 8 profile setups");
+    logger.d("Fetching first 8 profile setups");
     userProfileSetups = [];
     await databaseReference
         .collection("setups")
@@ -59,14 +63,14 @@ class UserProfileProvider extends ChangeNotifier {
         .then((value) {
       userProfileSetups = value.docs;
     }).catchError((e) {
-      debugPrint(e.toString());
-      debugPrint("data done with error");
+      logger.d(e.toString());
+      logger.d("data done with error");
     });
     notifyListeners();
   }
 
   Future<void> seeMoreUserProfileSetups(String? email) async {
-    debugPrint("Fetching more profile walls");
+    logger.d("Fetching more profile walls");
     await databaseReference
         .collection("setups")
         .where('review', isEqualTo: true)
@@ -125,6 +129,20 @@ Future<void> unfollow(String email, String id) async {
     'followers': FieldValue.arrayRemove([globals.prismUser.email]),
   });
 }
+
+// Future<void> copyUser() async {
+//   await databaseReference
+//       .collection(USER_OLD_COLLECTION)
+//       .doc("3KVCKlBiY7m6dDfyhRCj")
+//       .get()
+//       .then((value) async {
+//     final user = PrismUsersV2.fromDocumentSnapshotWithoutUser(value);
+//     await FirebaseFirestore.instance
+//         .collection(USER_NEW_COLLECTION)
+//         .doc("3KVCKlBiY7m6dDfyhRCj")
+//         .set(user.toJson());
+//   });
+// }
 
 Future setUserLinks(List<LinksModel> linklist, String id) async {
   final Map updateLink = {};

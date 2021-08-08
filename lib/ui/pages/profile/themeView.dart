@@ -1,4 +1,5 @@
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -84,7 +85,7 @@ class _ThemeViewState extends State<ThemeView> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -117,7 +118,7 @@ class _ThemeViewState extends State<ThemeView> {
                   analytics.logEvent(
                       name: "accent_changed", parameters: {'color': hexString});
                   navStack.removeLast();
-                  debugPrint(navStack.toString());
+                  logger.d(navStack.toString());
                   Navigator.pop(context);
                 })
           ],
@@ -331,7 +332,7 @@ class _ThemeViewState extends State<ThemeView> {
                           onPressed: () {
                             Provider.of<ThemeModel>(context, listen: false)
                                 .changeThemeByID(themes.keys.toList()[index]);
-                            debugPrint(selectedAccentColor.toString());
+                            logger.d(selectedAccentColor.toString());
                             setState(() {
                               changingLight = true;
                               selectedTheme = index;
@@ -346,7 +347,7 @@ class _ThemeViewState extends State<ThemeView> {
                                   .replaceAll("Color(", "")
                                   .replaceAll(")", "")));
                             });
-                            debugPrint(selectedAccentColor.toString());
+                            logger.d(selectedAccentColor.toString());
                           },
                           child: Stack(
                             children: [
@@ -448,7 +449,7 @@ class _ThemeViewState extends State<ThemeView> {
                             Provider.of<DarkThemeModel>(context, listen: false)
                                 .changeThemeByID(
                                     darkThemes.keys.toList()[index]);
-                            debugPrint(selectedDarkAccentColor.toString());
+                            logger.d(selectedDarkAccentColor.toString());
                             setState(() {
                               changingLight = false;
                               selectedDarkTheme = index;
@@ -464,7 +465,7 @@ class _ThemeViewState extends State<ThemeView> {
                                   .replaceAll("Color(", "")
                                   .replaceAll(")", "")));
                             });
-                            debugPrint(selectedDarkAccentColor.toString());
+                            logger.d(selectedDarkAccentColor.toString());
                           },
                           child: Stack(
                             children: [

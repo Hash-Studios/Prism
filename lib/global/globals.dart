@@ -24,11 +24,12 @@ PrismUsersV2 prismUser = main.prefs.get(
     coins: 0,
     subPrisms: [],
     transactions: [],
+    coverPhoto: "",
   ),
 ) as PrismUsersV2;
-String currentAppVersion = '2.6.7';
+String currentAppVersion = '2.6.8';
 String obsoleteAppVersion = '2.6.0';
-String currentAppVersionCode = '69';
+String currentAppVersionCode = '70';
 bool updateChecked = false;
 bool updateAvailable = false;
 Map versionInfo = {};
@@ -76,4 +77,14 @@ bool isPremiumWall(List premiumCollections, List wallCollections) {
     } else {}
   });
   return result;
+}
+
+extension CapExtension on String {
+  String get inCaps =>
+      isNotEmpty ? '${this[0].toUpperCase()}${substring(1)}' : '';
+  String get allInCaps => toUpperCase();
+  String get capitalizeFirstofEach => replaceAll(RegExp(' +'), ' ')
+      .split(" ")
+      .map((str) => str.inCaps)
+      .join(" ");
 }

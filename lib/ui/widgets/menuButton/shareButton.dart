@@ -4,6 +4,7 @@ import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share/share.dart';
+import 'package:Prism/logger/logger.dart';
 
 class ShareButton extends StatefulWidget {
   final String? id;
@@ -34,7 +35,7 @@ class _ShareButtonState extends State<ShareButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        debugPrint("Share");
+        logger.d("Share");
         onShare();
       },
       child: Stack(
@@ -97,7 +98,7 @@ class _ShareButtonState extends State<ShareButton> {
     final Uri shortUrl = shortDynamicLink.shortUrl;
     Clipboard.setData(ClipboardData(text: shortUrl.toString()));
     Share.share("🔥Check this out ➜ $shortUrl");
-    debugPrint(shortUrl.toString());
+    logger.d(shortUrl.toString());
     analytics.logShare(
         contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
     setState(() {

@@ -1,5 +1,6 @@
 import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +48,8 @@ class PrismUsersV2 {
   List<PrismTransaction> transactions;
   @HiveField(16)
   String name;
+  @HiveField(17)
+  String? coverPhoto;
 
   PrismUsersV2({
     required this.username,
@@ -66,8 +69,9 @@ class PrismUsersV2 {
     required this.coins,
     required this.transactions,
     required this.name,
+    this.coverPhoto,
   }) {
-    debugPrint("Default constructor !!!!");
+    logger.d("Default constructor !!!!");
   }
 
   factory PrismUsersV2.fromJson(Map<String, dynamic> json) =>
@@ -98,6 +102,39 @@ class PrismUsersV2 {
         transactions: (doc.data()!['transactions'] as List<dynamic> ?? [])
             .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
             .toList(),
+        coverPhoto: doc.data()!["coverPhoto"]?.toString(),
       );
+
+  // factory PrismUsersV2.fromDocumentSnapshotWithoutUser(DocumentSnapshot doc) =>
+  //     PrismUsersV2(
+  //       name: (doc.data()!["name"] ?? "").toString(),
+  //       username: (doc.data()!["username"] ?? "")
+  //           .toString()
+  //           .replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
+  //       email: (doc.data()!["email"] ?? "").toString(),
+  //       id: doc.data()!["id"].toString(),
+  //       createdAt: DateTime.fromMillisecondsSinceEpoch(
+  //               (doc.data()!["createdAt"] as Timestamp).millisecondsSinceEpoch)
+  //           .toUtc()
+  //           .toIso8601String(),
+  //       premium: doc.data()!["premium"] as bool,
+  //       lastLoginAt: doc.data()!["lastLoginAt"]?.toString() ??
+  //           DateTime.now().toUtc().toIso8601String(),
+  //       links: doc.data()!["links"] as Map<String, dynamic> ?? {},
+  //       followers: doc.data()!["followers"] as List ?? [],
+  //       following: doc.data()!["following"] as List ?? [],
+  //       profilePhoto: (doc.data()!["profilePhoto"] ?? "").toString(),
+  //       bio: (doc.data()!["bio"] ?? "").toString(),
+  //       loggedIn: true,
+  //       badges: (doc.data()!['badges'] as List<dynamic> ?? [])
+  //           .map((e) => Badge.fromJson(e as Map<String, dynamic>))
+  //           .toList(),
+  //       subPrisms: doc.data()!['subPrisms'] as List<dynamic> ?? [],
+  //       coins: doc.data()!['coins'] as int ?? 0,
+  //       transactions: (doc.data()!['transactions'] as List<dynamic> ?? [])
+  //           .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
+  //           .toList(),
+  //       coverPhoto: doc.data()!["coverPhoto"]?.toString(),
+  //     );
   Map<String, dynamic> toJson() => _$PrismUsersV2ToJson(this);
 }

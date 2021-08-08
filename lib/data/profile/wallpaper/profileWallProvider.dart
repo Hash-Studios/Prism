@@ -1,3 +1,4 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -7,7 +8,7 @@ class ProfileWallProvider extends ChangeNotifier {
   List<QueryDocumentSnapshot>? profileWalls;
 
   Future<void> getProfileWalls() async {
-    debugPrint("Fetching first 12 profile walls");
+    logger.d("Fetching first 12 profile walls");
     profileWalls = [];
     await databaseReference
         .collection("walls")
@@ -23,7 +24,7 @@ class ProfileWallProvider extends ChangeNotifier {
   }
 
   Future<void> seeMoreProfileWalls() async {
-    debugPrint("Fetching more profile walls");
+    logger.d("Fetching more profile walls");
     await databaseReference
         .collection("walls")
         .where('review', isEqualTo: true)

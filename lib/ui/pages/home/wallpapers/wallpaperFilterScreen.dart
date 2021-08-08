@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/darkThemeModel.dart';
@@ -16,7 +17,9 @@ import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image/image.dart' as imagelib;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photofilters/filters/filters.dart';
 import 'package:path_provider/path_provider.dart';
@@ -24,6 +27,7 @@ import 'package:photofilters/filters/preset_filters.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/main.dart' as main;
 
 class WallpaperFilterScreen extends StatefulWidget {
   final imagelib.Image image;
@@ -51,35 +55,58 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   imagelib.Image? image;
   imagelib.Image? finalImage;
   late bool loading;
+  late bool isLoading;
   List<Filter> selectedFilters = [
     NoFilter(),
+    AddictiveBlueFilter(),
+    AddictiveRedFilter(),
     AdenFilter(),
     AmaroFilter(),
+    AshbyFilter(),
     BlurFilter(),
+    BlurMaxFilter(),
     BrannanFilter(),
     BrooklynFilter(),
+    CharmesFilter(),
     ClarendonFilter(),
+    CremaFilter(),
     DogpatchFilter(),
+    EarlybirdFilter(),
     EdgeDetectionFilter(),
+    EmbossFilter(),
+    F1977Filter(),
     GinghamFilter(),
     GinzaFilter(),
     HefeFilter(),
     HelenaFilter(),
+    HighPassFilter(),
     HudsonFilter(),
     InkwellFilter(),
     InvertFilter(),
     JunoFilter(),
     KelvinFilter(),
     LarkFilter(),
+    LoFiFilter(),
+    LowPassFilter(),
     LudwigFilter(),
     MavenFilter(),
     MayfairFilter(),
+    MeanFilter(),
     MoonFilter(),
+    NashvilleFilter(),
+    PerpetuaFilter(),
     ReyesFilter(),
+    RiseFilter(),
     SharpenFilter(),
+    SierraFilter(),
     SkylineFilter(),
+    SlumberFilter(),
+    StinsonFilter(),
     SutroFilter(),
+    ToasterFilter(),
+    ValenciaFilter(),
     VesperFilter(),
+    WaldenFilter(),
     WillowFilter(),
     XProIIFilter(),
   ];
@@ -88,6 +115,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   void initState() {
     super.initState();
     loading = false;
+    isLoading = false;
     _filter = selectedFilters[0];
     filename = widget.filename;
     finalFilename = widget.finalFilename;
@@ -102,7 +130,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -128,19 +156,19 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         });
       }
       if (result!) {
-        debugPrint("Success");
+        logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Both', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        debugPrint("Failed");
+        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
     } catch (e) {
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
     Navigator.of(context).pop();
   }
@@ -165,17 +193,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         });
       }
       if (result!) {
-        debugPrint("Success");
+        logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Lock', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        debugPrint("Failed");
+        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
     }
@@ -202,17 +230,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         });
       }
       if (result!) {
-        debugPrint("Success");
+        logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Home', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        debugPrint("Failed");
+        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
     }
@@ -245,40 +273,61 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: AppBar(
-          title: Row(
-            children: [
-              Text(
-                "Edit Wallpaper",
-                style: Theme.of(context).textTheme.headline3,
-              ),
-              Container(
-                margin: const EdgeInsets.only(left: 3, bottom: 5),
-                decoration: BoxDecoration(
-                    color: Theme.of(context).errorColor,
-                    borderRadius: BorderRadius.circular(500)),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
-                  child: Text(
-                    "BETA",
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: Theme.of(context).accentColor,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          title: Text(
+            "Edit Wallpaper",
+            style: Theme.of(context).textTheme.headline3,
           ),
           leading: IconButton(
               icon: const Icon(JamIcons.close),
               onPressed: () {
                 navStack.removeLast();
-                debugPrint(navStack.toString());
+                logger.d(navStack.toString());
                 Navigator.pop(context);
               }),
           backgroundColor: Theme.of(context).primaryColor,
           actions: <Widget>[
+            if (loading)
+              Container()
+            else if (isLoading)
+              Center(
+                child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        color: Theme.of(context).errorColor)),
+              )
+            else
+              IconButton(
+                icon: const Icon(JamIcons.download),
+                onPressed: () async {
+                  toasts.codeSend("Processing Wallpaper");
+                  final imageFile = await saveFilteredImage();
+                  final status = await Permission.storage.status;
+                  if (!status.isGranted) {
+                    await Permission.storage.request();
+                  }
+                  setState(() {
+                    isLoading = true;
+                  });
+                  GallerySaver.saveImage(imageFile.path, albumName: "Prism")
+                      .then((value) {
+                    analytics.logEvent(
+                        name: 'download_wallpaper',
+                        parameters: {'link': imageFile.path});
+                    toasts.codeSend("Wall Saved in Pictures!");
+                    setState(() {
+                      isLoading = false;
+                    });
+                    // main.localNotification.cancelDownloadNotification();
+                  }).catchError((e) {
+                    setState(() {
+                      isLoading = false;
+                    });
+                    // TODO Cancel all
+                    // main.localNotification.cancelDownloadNotification();
+                  });
+                },
+              ),
             if (loading)
               Container()
             else

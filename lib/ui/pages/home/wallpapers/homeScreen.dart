@@ -1,5 +1,6 @@
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/pexelsGrid.dart';
@@ -36,8 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return false;
     }
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
-    debugPrint("Bye! Have a good day!");
+    logger.d(navStack.toString());
+    logger.d("Bye! Have a good day!");
     return true;
   }
 

@@ -3,6 +3,7 @@ import 'package:Prism/ui/widgets/profile/userProfileSetupGrid.dart';
 import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/logger/logger.dart';
 
 class UserProfileSetupLoader extends StatefulWidget {
   final String? email;
@@ -29,12 +30,12 @@ class _UserProfileSetupLoaderState extends State<UserProfileSetupLoader> {
         future: _future,
         builder: (ctx, snapshot) {
           if (snapshot == null) {
-            debugPrint("snapshot null");
+            logger.d("snapshot null");
             return const LoadingSetupCards();
           }
           if (snapshot.connectionState == ConnectionState.waiting ||
               snapshot.connectionState == ConnectionState.none) {
-            debugPrint("snapshot none, waiting");
+            logger.d("snapshot none, waiting");
             return const LoadingSetupCards();
           } else {
             return UserProfileSetupGrid(

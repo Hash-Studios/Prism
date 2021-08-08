@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/logger/logger.dart';
 
 Map<String, ThemeData?> darkThemes = {
   "kDMaterial Dark": kDarkTheme,
@@ -49,7 +50,7 @@ class DarkThemeModel extends ChangeNotifier {
   }
 
   void changeThemeByID(String themeID) {
-    debugPrint(themeID);
+    logger.d(themeID);
     currentTheme = darkThemes[themeID];
     main.prefs.put("darkThemeID", themeID);
     main.prefs.put(
