@@ -300,8 +300,10 @@ class ProfileDrawer extends StatelessWidget {
                 context: context,
                 onTap: () {
                   createUserDynamicLink(
+                    globals.prismUser.name.toString(),
                     globals.prismUser.username.toString(),
                     globals.prismUser.email.toString(),
+                    globals.prismUser.bio.toString(),
                     globals.prismUser.profilePhoto.toString(),
                   );
                 }),
