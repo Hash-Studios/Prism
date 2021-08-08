@@ -1,6 +1,9 @@
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
@@ -125,6 +128,20 @@ Future<void> unfollow(String email, String id) async {
     'followers': FieldValue.arrayRemove([globals.prismUser.email]),
   });
 }
+
+// Future<void> copyUser() async {
+//   await databaseReference
+//       .collection(USER_OLD_COLLECTION)
+//       .doc("3KVCKlBiY7m6dDfyhRCj")
+//       .get()
+//       .then((value) async {
+//     final user = PrismUsersV2.fromDocumentSnapshotWithoutUser(value);
+//     await FirebaseFirestore.instance
+//         .collection(USER_NEW_COLLECTION)
+//         .doc("3KVCKlBiY7m6dDfyhRCj")
+//         .set(user.toJson());
+//   });
+// }
 
 Future setUserLinks(List<LinksModel> linklist, String id) async {
   final Map updateLink = {};
