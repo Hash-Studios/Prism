@@ -187,20 +187,19 @@ class _ProfileChildState extends State<ProfileChild> {
                                           }),
                                     )
                                   ],
-                            backgroundColor: Theme.of(context).errorColor,
+                            backgroundColor: Theme.of(context).primaryColor,
                             automaticallyImplyLeading: false,
                             expandedHeight:
                                 MediaQuery.of(context).size.height * 0.4,
                             flexibleSpace: Stack(
                               children: [
                                 FlexibleSpaceBar(
-                                  collapseMode: CollapseMode.pin,
                                   background: Stack(
                                     children: [
                                       Column(children: [
                                         CachedNetworkImage(
                                           imageUrl:
-                                              "https://picsum.photos/1000/500",
+                                              "https://picsum.photos/1100/500",
                                           fit: BoxFit.cover,
                                           width:
                                               MediaQuery.of(context).size.width,
@@ -210,38 +209,216 @@ class _ProfileChildState extends State<ProfileChild> {
                                               0.19,
                                         ),
                                         Container(
+                                          padding: const EdgeInsets.all(8.0),
+                                          // color: Theme.of(context).primaryColor,
+                                          width: double.maxFinite,
+                                          height: 37,
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              12, 4, 12, 0),
                                           // color: Theme.of(context).primaryColor,
                                           width: double.maxFinite,
                                           height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.21,
+                                                      .size
+                                                      .height *
+                                                  0.21 -
+                                              37,
+                                          child: Column(
+                                            children: [
+                                              SizedBox(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.7,
+                                                child: Text(
+                                                  globals.prismUser.name,
+                                                  textAlign: TextAlign.center,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontFamily: "Proxima Nova",
+                                                    color: Theme.of(context)
+                                                        .accentColor,
+                                                    fontSize: 22,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(
+                                                height: 2,
+                                              ),
+                                              SizedBox(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.7,
+                                                child: Text(
+                                                  "@${globals.prismUser.username}",
+                                                  textAlign: TextAlign.center,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontFamily: "Proxima Nova",
+                                                    color: Theme.of(context)
+                                                        .accentColor
+                                                        .withOpacity(0.6),
+                                                    fontSize: 16,
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(
+                                                height: 17,
+                                              ),
+                                              SizedBox(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.7,
+                                                child: Text(
+                                                  globals.prismUser.bio,
+                                                  textAlign: TextAlign.center,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontFamily: "Proxima Nova",
+                                                    color: Theme.of(context)
+                                                        .accentColor
+                                                        .withOpacity(0.6),
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(
+                                                height: 17,
+                                              ),
+                                              SizedBox(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.7,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    RichText(
+                                                      text: TextSpan(
+                                                        text:
+                                                            "${globals.prismUser.following.length}",
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .accentColor
+                                                              .withOpacity(1),
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                        children: [
+                                                          TextSpan(
+                                                            text: " Following",
+                                                            style: TextStyle(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor
+                                                                  .withOpacity(
+                                                                      0.6),
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .normal,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    const SizedBox(width: 24),
+                                                    RichText(
+                                                      text: TextSpan(
+                                                        text:
+                                                            "${globals.prismUser.followers.length}",
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .accentColor
+                                                              .withOpacity(1),
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                        children: [
+                                                          TextSpan(
+                                                            text: " Followers",
+                                                            style: TextStyle(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor
+                                                                  .withOpacity(
+                                                                      0.6),
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .normal,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         )
                                       ]),
                                       Positioned(
-                                        left: 10,
                                         top:
                                             MediaQuery.of(context).size.height *
                                                     0.19 -
-                                                36,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color:
-                                                  Theme.of(context).errorColor,
-                                              width: 4,
-                                            ),
-                                            color: Colors.red,
-                                          ),
-                                          child: ClipOval(
-                                            child: CachedNetworkImage(
-                                              imageUrl: globals
-                                                  .prismUser.profilePhoto
-                                                  .toString(),
-                                              width: 78,
-                                              height: 78,
-                                              fit: BoxFit.cover,
+                                                56,
+                                        child: SizedBox(
+                                          width:
+                                              MediaQuery.of(context).size.width,
+                                          child: Center(
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: Theme.of(context)
+                                                      .errorColor,
+                                                  width: 4,
+                                                ),
+                                                color: Colors.red,
+                                              ),
+                                              child: ClipOval(
+                                                child: CachedNetworkImage(
+                                                  imageUrl: globals
+                                                      .prismUser.profilePhoto
+                                                      .toString(),
+                                                  width: 78,
+                                                  height: 78,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -685,7 +862,7 @@ class _ProfileChildState extends State<ProfileChild> {
                             ),
                           ),
                           SliverAppBar(
-                            backgroundColor: Theme.of(context).errorColor,
+                            backgroundColor: Theme.of(context).primaryColor,
                             automaticallyImplyLeading: false,
                             pinned: true,
                             titleSpacing: 0,
@@ -694,7 +871,7 @@ class _ProfileChildState extends State<ProfileChild> {
                               width: MediaQuery.of(context).size.width,
                               height: 57,
                               child: Container(
-                                color: Theme.of(context).errorColor,
+                                color: Theme.of(context).primaryColor,
                                 child: SizedBox.expand(
                                   child: TabBar(
                                       indicatorColor:
