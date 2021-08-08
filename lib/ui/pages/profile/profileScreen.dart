@@ -67,7 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ownProfile: true,
                 id: globals.prismUser.id,
                 bio: globals.prismUser.bio,
-                coverPhoto: null,
+                coverPhoto: globals.prismUser.coverPhoto,
                 email: globals.prismUser.email,
                 links: globals.prismUser.links,
                 name: globals.prismUser.name,
@@ -416,17 +416,39 @@ class _ProfileChildState extends State<ProfileChild> {
                                   background: Stack(
                                     children: [
                                       Column(children: [
-                                        CachedNetworkImage(
-                                          imageUrl: widget.coverPhoto ??
-                                              "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Headers%2FheaderDefault.png?alt=media&token=1a10b128-c355-45d8-af96-678c13c05b3c",
-                                          fit: BoxFit.cover,
-                                          width:
-                                              MediaQuery.of(context).size.width,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.19,
-                                        ),
+                                        if (widget.coverPhoto == null)
+                                          SvgPicture.string(
+                                            defaultHeader
+                                                .replaceAll(
+                                                  "#181818",
+                                                  "#${Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2)}",
+                                                )
+                                                .replaceAll(
+                                                  "#E77597",
+                                                  "#${Theme.of(context).errorColor.value.toRadixString(16).toString().substring(2)}",
+                                                ),
+                                            fit: BoxFit.cover,
+                                            width: MediaQuery.of(context)
+                                                .size
+                                                .width,
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
+                                                0.19,
+                                          )
+                                        else
+                                          CachedNetworkImage(
+                                            imageUrl: widget.coverPhoto ??
+                                                "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Headers%2FheaderDefault.png?alt=media&token=1a10b128-c355-45d8-af96-678c13c05b3c",
+                                            fit: BoxFit.cover,
+                                            width: MediaQuery.of(context)
+                                                .size
+                                                .width,
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
+                                                0.19,
+                                          ),
                                         const SizedBox(
                                           width: double.maxFinite,
                                           height: 37,
