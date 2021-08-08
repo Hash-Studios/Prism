@@ -16,7 +16,9 @@ import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image/image.dart' as imagelib;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photofilters/filters/filters.dart';
 import 'package:path_provider/path_provider.dart';
@@ -24,6 +26,7 @@ import 'package:photofilters/filters/preset_filters.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/main.dart' as main;
 
 class WallpaperFilterScreen extends StatefulWidget {
   final imagelib.Image image;
@@ -51,6 +54,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   imagelib.Image? image;
   imagelib.Image? finalImage;
   late bool loading;
+  late bool isLoading;
   List<Filter> selectedFilters = [
     NoFilter(),
     AdenFilter(),
@@ -88,6 +92,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   void initState() {
     super.initState();
     loading = false;
+    isLoading = false;
     _filter = selectedFilters[0];
     filename = widget.filename;
     finalFilename = widget.finalFilename;
@@ -279,6 +284,48 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               }),
           backgroundColor: Theme.of(context).primaryColor,
           actions: <Widget>[
+            if (loading)
+              Container()
+            else if (isLoading)
+              Center(
+                child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        color: Theme.of(context).errorColor)),
+              )
+            else
+              IconButton(
+                icon: const Icon(JamIcons.download),
+                onPressed: () async {
+                  toasts.codeSend("Processing Wallpaper");
+                  final imageFile = await saveFilteredImage();
+                  final status = await Permission.storage.status;
+                  if (!status.isGranted) {
+                    await Permission.storage.request();
+                  }
+                  setState(() {
+                    isLoading = true;
+                  });
+                  GallerySaver.saveImage(imageFile.path, albumName: "Prism")
+                      .then((value) {
+                    analytics.logEvent(
+                        name: 'download_wallpaper',
+                        parameters: {'link': imageFile.path});
+                    toasts.codeSend("Wall Saved in Pictures!");
+                    setState(() {
+                      isLoading = false;
+                    });
+                    // main.localNotification.cancelDownloadNotification();
+                  }).catchError((e) {
+                    setState(() {
+                      isLoading = false;
+                    });
+                    // TODO Cancel all
+                    // main.localNotification.cancelDownloadNotification();
+                  });
+                },
+              ),
             if (loading)
               Container()
             else
