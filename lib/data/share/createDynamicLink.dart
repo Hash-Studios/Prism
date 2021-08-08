@@ -3,6 +3,7 @@ import 'package:Prism/ui/widgets/popup/copyrightPopUp.dart';
 import 'package:animations/animations.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -35,7 +36,7 @@ Future<String> createDynamicLink(
       ClipboardData(text: "Hey check this out ➜ ${shortUrl.toString()}"));
   analytics.logShare(contentType: 'focussedMenu', itemId: id, method: 'link');
   toasts.codeSend("Sharing link copied!");
-  debugPrint(shortUrl.toString());
+  logger.d(shortUrl.toString());
   return shortUrl.toString();
 }
 
@@ -67,7 +68,7 @@ Future<void> createUserDynamicLink(String name, String username, String email,
   Share.share("Hey check out my profile on Prism ➜ $shortUrl");
   analytics.logShare(
       contentType: 'userShare', itemId: username, method: 'link');
-  debugPrint(shortUrl.toString());
+  logger.d(shortUrl.toString());
 }
 
 Future<void> createSetupDynamicLink(
@@ -96,7 +97,7 @@ Future<void> createSetupDynamicLink(
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
   Share.share("Hey check this out ➜ $shortUrl");
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
-  debugPrint(shortUrl.toString());
+  logger.d(shortUrl.toString());
 }
 
 Future<String> createSharingPrismLink(String userID) async {
@@ -123,7 +124,7 @@ Future<String> createSharingPrismLink(String userID) async {
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   analytics.logShare(contentType: 'prismShare', itemId: userID, method: 'link');
-  debugPrint(shortUrl.toString());
+  logger.d(shortUrl.toString());
   return shortUrl.toString();
 }
 
@@ -158,7 +159,7 @@ Future<String> createCopyrightLink(bool setup, BuildContext context,
     final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
     shortUrl = shortDynamicLink.shortUrl;
     analytics.logEvent(name: 'reportSetup');
-    debugPrint(shortUrl.toString());
+    logger.d(shortUrl.toString());
   } else {
     final DynamicLinkParameters parameters = DynamicLinkParameters(
         socialMetaTagParameters: SocialMetaTagParameters(
@@ -182,7 +183,7 @@ Future<String> createCopyrightLink(bool setup, BuildContext context,
     final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
     shortUrl = shortDynamicLink.shortUrl;
     analytics.logEvent(name: 'reportWall');
-    debugPrint(shortUrl.toString());
+    logger.d(shortUrl.toString());
   }
   showModal(
       context: context,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/logger/logger.dart';
 
 void googleSignInPopUp(BuildContext context, Function func) {
   final Dialog loaderDialog = Dialog(
@@ -244,7 +245,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
             Navigator.pop(context);
             func();
           }).catchError((e) {
-            debugPrint(e.toString());
+            logger.d(e.toString());
             Navigator.pop(context);
             globals.prismUser.loggedIn = false;
             main.prefs.put("prismUserV2", globals.prismUser);

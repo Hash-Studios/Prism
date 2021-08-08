@@ -1,4 +1,5 @@
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -47,7 +48,7 @@ class PrismUsers {
     required this.bio,
     required this.loggedIn,
   }) {
-    debugPrint("Default constructor !!!!");
+    logger.d("Default constructor !!!!");
   }
 
   PrismUsers.withSave({
@@ -64,7 +65,7 @@ class PrismUsers {
     required this.bio,
     required this.loggedIn,
   }) {
-    debugPrint("With Save constructor !!!!");
+    logger.d("With Save constructor !!!!");
     FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(id).update({
       'bio': bio,
       'username': username,
@@ -93,7 +94,7 @@ class PrismUsers {
     this.profilePhoto = "",
     this.loggedIn = false,
   }) {
-    debugPrint("initial constructor !!!!");
+    logger.d("initial constructor !!!!");
   }
 
   PrismUsers.withoutSave({
@@ -110,7 +111,7 @@ class PrismUsers {
     required this.bio,
     required this.loggedIn,
   }) {
-    debugPrint("Without save constructor !!!!");
+    logger.d("Without save constructor !!!!");
     FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(id).update({
       'bio': bio,
       'username': username,

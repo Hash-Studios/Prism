@@ -1,6 +1,7 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -34,7 +35,7 @@ class FavouriteProvider extends ChangeNotifier {
       liked = liked!.reversed.toList();
       // });
       // .catchError((e) {
-      //   debugPrint("data done with error");
+      //   logger.d("data done with error");
     });
 
     return liked;
@@ -50,7 +51,7 @@ class FavouriteProvider extends ChangeNotifier {
           .doc(id)
           .delete();
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
     await getDataBase();
     return true;
@@ -131,7 +132,7 @@ class FavouriteProvider extends ChangeNotifier {
           }
         }
         if (index == null) {
-          debugPrint("Fav");
+          logger.d("Fav");
           createDataByWall(provider, wallhaven, pexels, prism);
           localFavSave(provider, wallhaven, pexels, prism);
         } else {
@@ -169,9 +170,9 @@ class FavouriteProvider extends ChangeNotifier {
 
   Future<int> countFav() async {
     int favs = 0;
-    debugPrint("in countfav");
+    logger.d("in countfav");
     await getDataBase().then((value) {
-      debugPrint(value!.length.toString());
+      logger.d(value!.length.toString());
       favs = value.length;
     });
     return favs;
@@ -191,7 +192,7 @@ class FavouriteProvider extends ChangeNotifier {
         }
       });
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
     await getDataBase();
     return true;

@@ -19,6 +19,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class FocusedMenuDetails extends StatefulWidget {
   final String? provider;
@@ -125,7 +126,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(widget.provider);
+    logger.d(widget.provider);
     try {
       return Scaffold(
         backgroundColor: Colors.transparent,
@@ -2294,7 +2295,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
         ),
       );
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       Navigator.pop(context);
       return Container();
     }

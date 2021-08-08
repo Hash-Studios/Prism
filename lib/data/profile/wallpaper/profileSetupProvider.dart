@@ -1,3 +1,4 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -7,7 +8,7 @@ class ProfileSetupProvider extends ChangeNotifier {
   List<QueryDocumentSnapshot>? profileSetups;
 
   Future<void> getProfileSetups() async {
-    debugPrint("Fetching first 8 profile setups");
+    logger.d("Fetching first 8 profile setups");
     profileSetups = [];
     await databaseReference
         .collection("setups")
@@ -23,7 +24,7 @@ class ProfileSetupProvider extends ChangeNotifier {
   }
 
   Future<void> seeMoreProfileSetups() async {
-    debugPrint("Fetching more profile setups");
+    logger.d("Fetching more profile setups");
     await databaseReference
         .collection("setups")
         .where('review', isEqualTo: true)

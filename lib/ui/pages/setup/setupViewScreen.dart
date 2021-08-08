@@ -26,6 +26,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
 
 class SetupViewScreen extends StatefulWidget {
   final List? arguments;
@@ -39,7 +40,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -569,7 +570,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           .setups![index!]
                                                       ["wall_id"] ==
                                                   "") {
-                                            debugPrint("Id Not Found!");
+                                            logger.d("Id Not Found!");
                                             launch(Provider.of<SetupProvider>(
                                                     context,
                                                     listen: false)
@@ -745,7 +746,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               .setups![index!]
                                                           ["wall_id"] ==
                                                       "") {
-                                                debugPrint("Id Not Found!");
+                                                logger.d("Id Not Found!");
                                                 launch(
                                                     Provider.of<SetupProvider>(
                                                             context,
@@ -996,7 +997,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 .setups![index!]
                                                             ["wall_id"] ==
                                                         "") {
-                                                  debugPrint("Id Not Found!");
+                                                  logger.d("Id Not Found!");
                                                   launch(Provider.of<
                                                               SetupProvider>(
                                                           context,
@@ -1408,7 +1409,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                   animation: offsetAnimation,
                   builder: (buildContext, child) {
                     if (offsetAnimation.value < 0.0) {
-                      debugPrint('${offsetAnimation.value + 8.0}');
+                      logger.d('${offsetAnimation.value + 8.0}');
                     }
                     return GestureDetector(
                       onPanUpdate: (details) {
@@ -1476,7 +1477,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
-                      debugPrint(navStack.toString());
+                      logger.d(navStack.toString());
                       Navigator.pop(context);
                     },
                     color: Theme.of(context).accentColor,

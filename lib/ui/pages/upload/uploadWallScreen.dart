@@ -17,6 +17,7 @@ import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class UploadWallScreen extends StatefulWidget {
   final List? arguments;
@@ -78,7 +79,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     setState(() {
       id = tempid;
     });
-    debugPrint(id);
+    logger.d(id);
   }
 
   Future<Uint8List> compressFile(File file) async {
@@ -87,8 +88,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       minWidth: 400,
       quality: 85,
     );
-    debugPrint(file.lengthSync().toString());
-    debugPrint(result!.length.toString());
+    logger.d(file.lengthSync().toString());
+    logger.d(result!.length.toString());
     return result;
   }
 
@@ -96,8 +97,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     final imgList = image.readAsBytesSync();
     final decodedImage = await decodeImageFromList(imgList);
 
-    debugPrint(decodedImage.width.toString());
-    debugPrint(decodedImage.height.toString());
+    logger.d(decodedImage.width.toString());
+    logger.d(decodedImage.height.toString());
 
     final res = "${decodedImage.width}x${decodedImage.height}";
 
@@ -120,7 +121,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         wallpaperPath, wallpaperPath, wallpaperSha, "master");
     await github.repositories.deleteFile(RepositorySlug(gitUserName, repoName),
         thumbPath, thumbPath, thumbSha, "master");
-    debugPrint("Files deleted");
+    logger.d("Files deleted");
   }
 
   Future uploadFile() async {
@@ -156,22 +157,22 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 thumbPath = value.content!.path!;
                 thumbSha = value.content!.sha!;
               }));
-      debugPrint('File Uploaded');
+      logger.d('File Uploaded');
       setState(() {
         isUploading = false;
       });
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       Navigator.pop(context);
       navStack.removeLast();
-      debugPrint(navStack.toString());
+      logger.d(navStack.toString());
       toasts.error("Some uploading issue, please try again.");
     }
   }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     deleteFile();
     return true;
   }
@@ -302,7 +303,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           onPressed: !isProcessing && !isUploading
               ? () async {
                   navStack.removeLast();
-                  debugPrint(navStack.toString());
+                  logger.d(navStack.toString());
                   Navigator.pop(context, [wallpaperUrl, id]);
                   analytics.logEvent(
                       name: 'upload_wallpaper',

@@ -4,6 +4,7 @@ import 'package:animations/animations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/logger/logger.dart';
 
 final databaseReference = FirebaseFirestore.instance;
 List<Color> colors = [
@@ -105,7 +106,7 @@ Color showColors(BuildContext context) {
                 GestureDetector(
                   onTap: () {
                     currentColor = color;
-                    debugPrint(navStack.toString());
+                    logger.d(navStack.toString());
                     Navigator.pop(context);
                     Navigator.pushNamed(
                       context,

@@ -1,3 +1,4 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -27,7 +28,7 @@ class AboutScreen extends StatelessWidget {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -41,7 +42,7 @@ class AboutScreen extends StatelessWidget {
               icon: const Icon(JamIcons.close),
               onPressed: () {
                 navStack.removeLast();
-                debugPrint(navStack.toString());
+                logger.d(navStack.toString());
                 Navigator.pop(context);
               }),
           title: Text(
@@ -142,13 +143,13 @@ class AboutScreen extends StatelessWidget {
                   future: printStream(),
                   builder: (context, snapshot) {
                     if (snapshot == null) {
-                      debugPrint("snapshot null");
+                      logger.d("snapshot null");
                       return SizedBox(
                           height: 250, child: Center(child: Loader()));
                     }
                     if (snapshot.connectionState == ConnectionState.waiting ||
                         snapshot.connectionState == ConnectionState.none) {
-                      debugPrint("snapshot none, waiting");
+                      logger.d("snapshot none, waiting");
                       return SizedBox(
                           height: 250, child: Center(child: Loader()));
                     } else {

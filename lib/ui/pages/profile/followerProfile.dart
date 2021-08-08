@@ -51,7 +51,7 @@
 //           (navStack.last == "SharedWallpaper") ||
 //           (navStack.last == "SetupView")) {}
 //     }
-//     debugPrint(navStack.toString());
+//     logger.d(navStack.toString());
 //     return true;
 //   }
 
@@ -68,7 +68,7 @@
 //             tooltip.deactivate();
 //           });
 //         } catch (e) {
-//           debugPrint(e.toString());
+//           logger.d(e.toString());
 //         }
 //       });
 //     }
@@ -93,7 +93,7 @@
 //                       ),
 //                     );
 //                   }
-//                   print("SNAP ERROR ${email}");
+//                   logger.d("SNAP ERROR ${email}");
 //                   name = snap.data!.docs[0].data()["username"].toString() ??
 //                       snap.data!.docs[0].data()["name"].toString();
 //                   userPhoto =
@@ -102,11 +102,11 @@
 //                   premium = snap.data!.docs[0].data()["premium"] as bool;
 //                   links = snap.data!.docs[0].data()["links"] as Map;
 //                   bio = snap.data!.docs[0].data()["bio"] as String;
-//                   debugPrint("Name : $name");
-//                   debugPrint("Email : $email");
-//                   debugPrint("Profile Photo : $userPhoto");
-//                   debugPrint("Premium : $premium");
-//                   debugPrint("Links : $links");
+//                   logger.d("Name : $name");
+//                   logger.d("Email : $email");
+//                   logger.d("Profile Photo : $userPhoto");
+//                   logger.d("Premium : $premium");
+//                   logger.d("Links : $links");
 //                   return NestedScrollView(
 //                     headerSliverBuilder: (context, innerBoxIsScrolled) =>
 //                         <Widget>[
@@ -484,7 +484,7 @@
 //                                   (navStack.last == "SharedWallpaper") ||
 //                                   (navStack.last == "SetupView")) {}
 //                             }
-//                             debugPrint(navStack.toString());
+//                             logger.d(navStack.toString());
 //                           },
 //                         ),
 //                         actions: [

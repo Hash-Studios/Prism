@@ -14,6 +14,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 import 'package:intl/intl.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -31,7 +32,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -48,7 +49,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             icon: const Icon(JamIcons.close),
             onPressed: () {
               if (navStack.length > 1) navStack.removeLast();
-              debugPrint(navStack.toString());
+              logger.d(navStack.toString());
               Navigator.pop(context);
             },
           ),

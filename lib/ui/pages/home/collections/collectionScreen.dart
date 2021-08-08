@@ -4,6 +4,7 @@ import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/logger/logger.dart';
 
 class CollectionScreen extends StatefulWidget {
   const CollectionScreen({
@@ -17,7 +18,7 @@ class CollectionScreen extends StatefulWidget {
 class _CollectionScreenState extends State<CollectionScreen> {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 

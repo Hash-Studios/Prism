@@ -13,6 +13,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart'
     as CData;
+import 'package:Prism/logger/logger.dart';
 
 class CollectionsGrid extends StatefulWidget {
   @override
@@ -103,7 +104,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
   }
 
   void showGooglePopUp(Function func) {
-    debugPrint(globals.prismUser.loggedIn.toString());
+    logger.d(globals.prismUser.loggedIn.toString());
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {

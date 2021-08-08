@@ -50,9 +50,9 @@ class LogOutputPrinter extends PrettyPrinter {
         .then((value) => _logFile!.writeStringSync('$str\n'));
     final timeStr = getTime().substring(0, 12);
     if (prefix == "[E]") {
-      print(color!('$timeStr $prefix - $logMsg \n$logStrace'));
+      logger.d(color!('$timeStr $prefix - $logMsg \n$logStrace'));
     } else {
-      print(color!('$timeStr $prefix - $logMsg'));
+      logger.d(color!('$timeStr $prefix - $logMsg'));
     }
     return [];
   }

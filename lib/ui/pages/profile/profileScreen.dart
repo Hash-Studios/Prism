@@ -7,6 +7,7 @@ import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -67,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           (navStack.last == "SharedWallpaper") ||
           (navStack.last == "SetupView")) {}
     }
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -252,7 +253,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 "SharedWallpaper") ||
                                             (navStack.last == "SetupView")) {}
                                       }
-                                      debugPrint(navStack.toString());
+                                      logger.d(navStack.toString());
                                     }),
                               )
                             : Padding(

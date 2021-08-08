@@ -210,8 +210,8 @@ class PrismList extends StatelessWidget {
                 final sdkInt = androidInfo.version.sdkInt;
                 final manufacturer = androidInfo.manufacturer;
                 final model = androidInfo.model;
-                debugPrint(
-                    'Android $release (SDK $sdkInt), $manufacturer $model');
+                logger
+                    .d('Android $release (SDK $sdkInt), $manufacturer $model');
                 final String zipPath = await zipLogs();
                 final MailOptions mailOptions = MailOptions(
                   body:

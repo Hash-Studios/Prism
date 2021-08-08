@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({
@@ -28,7 +29,7 @@ class SetupScreen extends StatefulWidget {
 class _SetupScreenState extends State<SetupScreen> {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -155,12 +156,12 @@ class _SetupPageState extends State<SetupPage> {
               future: widget.future,
               builder: (context, snapshot) {
                 if (snapshot == null) {
-                  debugPrint("snapshot null");
+                  logger.d("snapshot null");
                   return Center(child: Loader());
                 }
                 if (snapshot.connectionState == ConnectionState.waiting ||
                     snapshot.connectionState == ConnectionState.none) {
-                  debugPrint("snapshot none, waiting");
+                  logger.d("snapshot none, waiting");
                   return Center(child: Loader());
                 } else {
                   Future.delayed(const Duration())

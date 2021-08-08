@@ -15,6 +15,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/ui/widgets/premiumBanners/followingFeed.dart';
+import 'package:Prism/logger/logger.dart';
 
 class FollowingScreen extends StatefulWidget {
   const FollowingScreen({
@@ -34,8 +35,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
   CollectionReference? walls;
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
-    debugPrint("Bye! Have a good day!");
+    logger.d(navStack.toString());
+    logger.d("Bye! Have a good day!");
     return true;
   }
 
@@ -146,7 +147,7 @@ class _FollowingTileState extends State<FollowingTile> {
   }
 
   void showGooglePopUp(BuildContext context, Function func) {
-    debugPrint(globals.prismUser.loggedIn.toString());
+    logger.d(globals.prismUser.loggedIn.toString());
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {

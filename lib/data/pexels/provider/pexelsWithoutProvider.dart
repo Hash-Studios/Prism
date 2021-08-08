@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -30,7 +31,7 @@ Future<List<WallPaperP>> categoryDataFetcherP(
     pageNumbersP[index] = {categoryName: origPageNumber + 1};
   }
   if (navStack.last == "Home") {
-    debugPrint(
+    logger.d(
         "https://api.pexels.com/v1/search?query=$categoryName&per_page=80&page=${pageNumbersP[index][categoryName]}");
     http.get(
         Uri.parse(
@@ -51,12 +52,12 @@ Future<List<WallPaperP>> categoryDataFetcherP(
           );
         }
         pageNumbersP[index][categoryName] = (resp["page"] as int) + 1;
-        debugPrint("data done");
+        logger.d("data done");
         return wallsP;
       },
     );
   } else {
-    debugPrint("Refresh Blocked");
+    logger.d("Refresh Blocked");
   }
   return wallsP;
 }
@@ -89,18 +90,18 @@ Future<List<WallPaperP>> getDataP(String mode) async {
           );
         }
         pageGetDataP = (resp["page"] as int) + 1;
-        debugPrint("data done");
+        logger.d("data done");
         return wallsP;
       },
     );
   } else {
-    debugPrint("Refresh Blocked");
+    logger.d("Refresh Blocked");
   }
   return wallsP;
 }
 
 Future<WallPaperP> getWallbyIDP(String? id) async {
-  debugPrint("https://api.pexels.com/v1/photos/$id");
+  logger.d("https://api.pexels.com/v1/photos/$id");
   wall = null;
   http.get(Uri.parse("https://api.pexels.com/v1/photos/$id"),
       headers: {"Authorization": pexelApiKey}).then(
@@ -138,7 +139,7 @@ Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
         );
       }
       pageGetQueryP = (resp["page"] as int) + 1;
-      debugPrint("data done");
+      logger.d("data done");
       return wallsPS;
     },
   );
@@ -165,7 +166,7 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
         );
       }
       pageGetQueryP = (resp["page"] as int) + 1;
-      debugPrint("data done");
+      logger.d("data done");
       return wallsPS;
     },
   );
@@ -173,8 +174,7 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
 }
 
 Future<List<WallPaperP>> getWallsPbyColor(String query) async {
-  debugPrint(
-      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=1");
+  logger.d("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1");
   http.get(
       Uri.parse(
           "https://api.pexels.com/v1/search?query=$query&per_page=24&page=1"),
@@ -194,7 +194,7 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
         );
       }
       pageColorsP = (resp["page"] as int) + 1;
-      debugPrint("data done");
+      logger.d("data done");
       return wallsC;
     },
   );
@@ -202,7 +202,7 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
 }
 
 Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
-  debugPrint(
+  logger.d(
       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP");
   http.get(
       Uri.parse(
@@ -223,7 +223,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
         );
       }
       pageColorsP = (resp["page"] as int) + 1;
-      debugPrint("data done");
+      logger.d("data done");
       return wallsC;
     },
   );

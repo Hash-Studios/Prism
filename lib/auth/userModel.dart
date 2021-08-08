@@ -1,5 +1,6 @@
 import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -70,7 +71,7 @@ class PrismUsersV2 {
     required this.name,
     this.coverPhoto,
   }) {
-    debugPrint("Default constructor !!!!");
+    logger.d("Default constructor !!!!");
   }
 
   factory PrismUsersV2.fromJson(Map<String, dynamic> json) =>

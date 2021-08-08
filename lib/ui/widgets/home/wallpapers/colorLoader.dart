@@ -2,6 +2,7 @@ import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/ui/widgets/home/wallpapers/colorGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/logger/logger.dart';
 
 class ColorLoader extends StatefulWidget {
   final Future future;
@@ -27,12 +28,12 @@ class _ColorLoaderState extends State<ColorLoader> {
       future: _future,
       builder: (ctx, snapshot) {
         if (snapshot == null) {
-          debugPrint("snapshot null");
+          logger.d("snapshot null");
           return const LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
-          debugPrint("snapshot none, waiting");
+          logger.d("snapshot none, waiting");
           return const LoadingCards();
         } else {
           return ColorGrid(

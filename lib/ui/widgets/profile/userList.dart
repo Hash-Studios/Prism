@@ -7,6 +7,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:provider/provider.dart';
+import 'package:Prism/logger/logger.dart';
 
 class UserList extends StatelessWidget {
   final bool expanded;
@@ -42,7 +43,7 @@ class UserList extends StatelessWidget {
               Navigator.pop(context);
               main.RestartWidget.restartApp(context);
             }).catchError((e) {
-              debugPrint(e.toString());
+              logger.d(e.toString());
               Navigator.pop(context);
               globals.prismUser.loggedIn = false;
               main.prefs.put("prismUserV2", globals.prismUser);

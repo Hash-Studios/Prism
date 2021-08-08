@@ -22,6 +22,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class FavWallpaperViewScreen extends StatefulWidget {
   final List? arguments;
@@ -35,7 +36,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -166,7 +167,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     panelCollapsed = false;
                   });
                   if (panelClosed) {
-                    debugPrint('Screenshot Starting');
+                    logger.d('Screenshot Starting');
                     if (colorChanged) {
                       screenshotController
                           .capture(
@@ -179,9 +180,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           screenshotTaken = true;
                           panelClosed = false;
                         });
-                        debugPrint('Screenshot Taken');
+                        logger.d('Screenshot Taken');
                       }).catchError((onError) {
-                        debugPrint(onError.toString());
+                        logger.d(onError.toString());
                       });
                     } else {
                       (main.prefs.get('optimisedWallpapers') ?? true) == true
@@ -196,11 +197,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                 screenshotTaken = true;
                                 panelClosed = false;
                               });
-                              debugPrint('Screenshot Taken');
+                              logger.d('Screenshot Taken');
                             }).catchError((onError) {
-                              debugPrint(onError.toString());
+                              logger.d(onError.toString());
                             })
-                          : debugPrint("Wallpaper Optimisation is disabled!");
+                          : logger.d("Wallpaper Optimisation is disabled!");
                     }
                   }
                 },
@@ -1006,7 +1007,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0) {
-                            debugPrint('${offsetAnimation.value + 8.0}');
+                            logger.d('${offsetAnimation.value + 8.0}');
                           }
                           return GestureDetector(
                             onPanUpdate: (details) {
@@ -1024,7 +1025,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : debugPrint("");
+                              !isLoading ? updateAccent() : logger.d("");
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
@@ -1087,7 +1088,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            debugPrint(navStack.toString());
+                            logger.d(navStack.toString());
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -1157,7 +1158,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     panelCollapsed = false;
                   });
                   if (panelClosed) {
-                    debugPrint('Screenshot Starting');
+                    logger.d('Screenshot Starting');
                     if (colorChanged) {
                       screenshotController
                           .capture(
@@ -1170,9 +1171,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           screenshotTaken = true;
                           panelClosed = false;
                         });
-                        debugPrint('Screenshot Taken');
+                        logger.d('Screenshot Taken');
                       }).catchError((onError) {
-                        debugPrint(onError.toString());
+                        logger.d(onError.toString());
                       });
                     } else {
                       (main.prefs.get('optimisedWallpapers') ?? true) == true
@@ -1187,11 +1188,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                 screenshotTaken = true;
                                 panelClosed = false;
                               });
-                              debugPrint('Screenshot Taken');
+                              logger.d('Screenshot Taken');
                             }).catchError((onError) {
-                              debugPrint(onError.toString());
+                              logger.d(onError.toString());
                             })
-                          : debugPrint("Wallpaper Optimisation is disabled!");
+                          : logger.d("Wallpaper Optimisation is disabled!");
                     }
                   }
                 },
@@ -1612,7 +1613,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0) {
-                            debugPrint('${offsetAnimation.value + 8.0}');
+                            logger.d('${offsetAnimation.value + 8.0}');
                           }
                           return GestureDetector(
                             onPanUpdate: (details) {
@@ -1630,7 +1631,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : debugPrint("");
+                              !isLoading ? updateAccent() : logger.d("");
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
@@ -1733,7 +1734,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            debugPrint(navStack.toString());
+                            logger.d(navStack.toString());
                             Navigator.pop(context);
                           },
                           color: isLoading
