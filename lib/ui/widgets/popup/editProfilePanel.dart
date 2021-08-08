@@ -27,8 +27,8 @@ class EditProfilePanel extends StatefulWidget {
 
 class _EditProfilePanelState extends State<EditProfilePanel> {
   final TextEditingController linkController = TextEditingController();
-  final TextEditingController bioController = TextEditingController();
-  final TextEditingController usernameController = TextEditingController();
+  late TextEditingController bioController;
+  late TextEditingController usernameController;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   bool isLoading = false;
   bool pfpEdit = false;
@@ -45,36 +45,190 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   late String pfpUrl;
   final picker2 = ImagePicker();
   List<Map<String, dynamic>> linkIcons = [
-    {
-      'name': 'Edit links...',
-      'link': 'Select your link first',
-      'icon': JamIcons.link,
-    },
+    // {
+    //   'name': 'Edit links...',
+    //   'link': 'Select your link first',
+    //   'icon': JamIcons.link,
+    //   'value': '',
+    //   'validator': '',
+    // },
     {
       'name': 'github',
       'link': 'https://github.com/username',
       'icon': JamIcons.github,
+      'value': '',
+      'validator': 'github',
     },
     {
       'name': 'twitter',
       'link': 'https://twitter.com/username',
       'icon': JamIcons.twitter,
+      'value': '',
+      'validator': 'twitter',
     },
     {
       'name': 'instagram',
       'link': 'https://instagram.com/username',
       'icon': JamIcons.instagram,
+      'value': '',
+      'validator': 'instagram',
     },
     {
       'name': 'email',
       'link': 'your@email.com',
-      'icon': JamIcons.message,
+      'icon': JamIcons.inbox,
+      'value': '',
+      'validator': '@',
+    },
+    {
+      'name': 'telegram',
+      'link': 'https://t.me/username',
+      'icon': JamIcons.paper_plane,
+      'value': '',
+      'validator': 't.me',
+    },
+    {
+      'name': 'dribbble',
+      'link': 'https://dribbble.com/username',
+      'icon': JamIcons.basketball,
+      'value': '',
+      'validator': 'dribbble',
+    },
+    {
+      'name': 'linkedin',
+      'link': 'https://linkedin.com/in/username',
+      'icon': JamIcons.linkedin,
+      'value': '',
+      'validator': 'linkedin',
+    },
+    {
+      'name': 'bio.link',
+      'link': 'https://bio.link/username',
+      'icon': JamIcons.world,
+      'value': '',
+      'validator': 'bio.link',
+    },
+    {
+      'name': 'patreon',
+      'link': 'https://patreon.com/username',
+      'icon': JamIcons.patreon,
+      'value': '',
+      'validator': 'patreon',
+    },
+    {
+      'name': 'trello',
+      'link': 'https://trello.com/username',
+      'icon': JamIcons.trello,
+      'value': '',
+      'validator': 'trello',
+    },
+    {
+      'name': 'reddit',
+      'link': 'https://reddit.com/user/username',
+      'icon': JamIcons.reddit,
+      'value': '',
+      'validator': 'reddit',
+    },
+    {
+      'name': 'behance',
+      'link': 'https://behance.net/username',
+      'icon': JamIcons.behance,
+      'value': '',
+      'validator': 'behance.net',
+    },
+    {
+      'name': 'deviantart',
+      'link': 'https://deviantart.com/username',
+      'icon': JamIcons.deviantart,
+      'value': '',
+      'validator': 'deviantart',
+    },
+    {
+      'name': 'gitlab',
+      'link': 'https://gitlab.com/username',
+      'icon': JamIcons.gitlab,
+      'value': '',
+      'validator': 'gitlab',
+    },
+    {
+      'name': 'medium',
+      'link': 'https://username.medium.com/',
+      'icon': JamIcons.medium,
+      'value': '',
+      'validator': 'medium',
+    },
+    {
+      'name': 'paypal',
+      'link': 'https://paypal.me/username',
+      'icon': JamIcons.paypal,
+      'value': '',
+      'validator': 'paypal',
+    },
+    {
+      'name': 'spotify',
+      'link': 'https://open.spotify.com/user/username',
+      'icon': JamIcons.spotify,
+      'value': '',
+      'validator': 'open.spotify',
+    },
+    {
+      'name': 'twitch',
+      'link': 'https://twitch.tv/username',
+      'icon': JamIcons.twitch,
+      'value': '',
+      'validator': 'twitch.tv',
+    },
+    {
+      'name': 'unsplash',
+      'link': 'https://unsplash.com/username',
+      'icon': JamIcons.unsplash,
+      'value': '',
+      'validator': 'unsplash',
+    },
+    {
+      'name': 'youtube',
+      'link': 'https://youtube.com/channel/username',
+      'icon': JamIcons.youtube,
+      'value': '',
+      'validator': 'youtube',
+    },
+    {
+      'name': 'linktree',
+      'link': 'https://linktr.ee/username',
+      'icon': JamIcons.tree_alt,
+      'value': '',
+      'validator': 'linktr.ee',
+    },
+    {
+      'name': 'buymeacoffee',
+      'link': 'https://buymeacoff.ee/username',
+      'icon': JamIcons.coffee,
+      'value': '',
+      'validator': 'buymeacoff.ee',
+    },
+    {
+      'name': 'custom link',
+      'link': '',
+      'icon': JamIcons.link,
+      'value': '',
+      'validator': '',
     },
   ];
   Map<String, dynamic>? _link;
   @override
   void initState() {
-    _link = linkIcons[0];
+    linkIcons
+        .sort((a, b) => a['name'].toString().compareTo(b['name'].toString()));
+    final links = globals.prismUser.links;
+    linkIcons.forEach((element) {
+      if (links[element['name']] != "" && links[element['name']] != null) {
+        element['value'] = links[element['name']];
+      }
+    });
+    _link = linkIcons[3];
+    bioController = TextEditingController(text: globals.prismUser.bio);
+    usernameController =
+        TextEditingController(text: globals.prismUser.username);
     super.initState();
   }
 
@@ -420,90 +574,188 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                       ),
                     ),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        height: 80,
-                        width: 48,
-                        child: Center(
-                          child: DropdownButton<Map<String, dynamic>>(
-                            items: linkIcons.map((Map<String, dynamic> link) {
-                              return DropdownMenuItem(
-                                value: link,
-                                child: Icon(link!["icon"] as IconData),
-                              );
-                            }).toList(),
-                            underline: Container(),
-                            onChanged: (value) {
-                              setState(() => _link = value);
-                            },
-                            value: _link,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 80,
-                        width: width - 72,
-                        child: Center(
-                          child: TextField(
-                            cursorColor: const Color(0xFFE57697),
-                            style: Theme.of(context)
-                                .textTheme
-                                .headline5!
-                                .copyWith(color: Colors.white),
-                            controller: linkController,
-                            decoration: InputDecoration(
-                              enabled: _link?["name"] != "Edit links...",
-                              contentPadding:
-                                  const EdgeInsets.only(left: 30, top: 15),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(
-                                      color: Colors.white, width: 2)),
-                              disabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(
-                                      color: Colors.white, width: 2)),
-                              enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(
-                                      color: Colors.white, width: 2)),
-                              focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(
-                                      color: Colors.white, width: 2)),
-                              labelText: _link?["name"].toString().inCaps ?? "",
-                              labelStyle: Theme.of(context)
-                                  .textTheme
-                                  .headline5!
-                                  .copyWith(fontSize: 14, color: Colors.white),
-                              hintText: _link?["link"].toString() ?? "",
-                              hintStyle: Theme.of(context)
-                                  .textTheme
-                                  .headline5!
-                                  .copyWith(fontSize: 14, color: Colors.white),
+                  SizedBox(
+                    height: 80,
+                    width: width - 24,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Positioned(
+                          left: 0,
+                          child: SizedBox(
+                            height: 80,
+                            width: 130,
+                            child: Center(
+                              child: DropdownButton<Map<String, dynamic>>(
+                                isExpanded: true,
+                                items:
+                                    linkIcons.map((Map<String, dynamic> link) {
+                                  return DropdownMenuItem(
+                                    value: link,
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Icon(link["icon"] as IconData),
+                                        const SizedBox(
+                                          width: 16,
+                                        ),
+                                        Text(
+                                          link["name"].toString().inCaps,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headline5!
+                                              .copyWith(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                              ),
+                                        )
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                                underline: Container(),
+                                onChanged: (value) {
+                                  setState(() => _link = value);
+                                  linkController.text =
+                                      _link!["value"].toString();
+                                },
+                                icon: Container(),
+                                value: _link,
+                                dropdownColor: Theme.of(context).primaryColor,
+                                selectedItemBuilder: (BuildContext context) {
+                                  return linkIcons.map<Widget>((Map link) {
+                                    return Padding(
+                                      padding:
+                                          const EdgeInsets.only(left: 12.0),
+                                      child: Row(
+                                        children: [
+                                          Icon(link["icon"] as IconData),
+                                          Icon(
+                                            JamIcons.chevron_down,
+                                            size: 14,
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList();
+                                },
+                              ),
                             ),
-                            onChanged: (value) {
-                              if (value == "") {
-                                setState(() {
-                                  linkEdit = false;
-                                });
-                              } else {
-                                setState(() {
-                                  linkEdit = true;
-                                });
-                              }
-                            },
                           ),
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          right: 0,
+                          child: SizedBox(
+                            height: 80,
+                            width: width - 80,
+                            child: Center(
+                              child: TextField(
+                                cursorColor: const Color(0xFFE57697),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline5!
+                                    .copyWith(color: Colors.white),
+                                controller: linkController,
+                                decoration: InputDecoration(
+                                  enabled: _link?["name"] != "Edit links...",
+                                  contentPadding:
+                                      const EdgeInsets.only(left: 30, top: 15),
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(
+                                          color: Colors.white, width: 2)),
+                                  disabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(
+                                          color: Colors.white, width: 2)),
+                                  enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(
+                                          color: Colors.white, width: 2)),
+                                  focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(
+                                          color: Colors.white, width: 2)),
+                                  labelText:
+                                      _link?["name"].toString().inCaps ?? "",
+                                  labelStyle: Theme.of(context)
+                                      .textTheme
+                                      .headline5!
+                                      .copyWith(
+                                          fontSize: 14, color: Colors.white),
+                                  hintText: _link?["link"].toString() ?? "",
+                                  hintStyle: Theme.of(context)
+                                      .textTheme
+                                      .headline5!
+                                      .copyWith(
+                                          fontSize: 14, color: Colors.white),
+                                ),
+                                onChanged: (value) {
+                                  // print("VALUE TEXT ${value.toLowerCase()}");
+                                  // print(
+                                  //     "VALUE LINK NAME ${_link?["name"].toString().toLowerCase()}");
+                                  // print(
+                                  //     "VALUE LINK VALUE ${_link?["value"].toString().toLowerCase()}");
+                                  // print("VALUE LINK EDIT ${linkEdit}");
+                                  // print(
+                                  //     "VALUE LINK CONTAINS ${(value.toLowerCase().contains('${_link?["name"].toString().toLowerCase()}'))}");
+
+                                  if (value.toLowerCase().contains(
+                                      '${_link?["validator"].toString().toLowerCase()}')) {
+                                    setState(() {
+                                      _link?["value"] = value;
+                                      // if (_link?["name"].toString() == 'github') {
+                                      //   githubUrl = value;
+                                      // } else if (_link?["name"].toString() ==
+                                      //     'twitter') {
+                                      //   twitterUrl = value;
+                                      // } else if (_link?["name"].toString() ==
+                                      //     'instagram') {
+                                      //   instagramUrl = value;
+                                      // } else if (_link?["name"].toString() ==
+                                      //     'email') {
+                                      //   emailUrl = value;
+                                      // }
+                                    });
+                                    bool changed = false;
+                                    for (int i = 0; i < linkIcons.length; i++) {
+                                      if (linkIcons[i]["value"] != "") {
+                                        changed = true;
+                                        break;
+                                      }
+                                    }
+                                    setState(() {
+                                      linkEdit = changed;
+                                    });
+                                  } else if (value == "") {
+                                    bool changed = false;
+                                    for (int i = 0; i < linkIcons.length; i++) {
+                                      if (linkIcons[i]["value"] != "") {
+                                        changed = true;
+                                        break;
+                                      }
+                                    }
+                                    setState(() {
+                                      linkEdit = changed;
+                                    });
+                                  } else {
+                                    setState(() {
+                                      linkEdit = false;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
-                      onTap: (!usernameEdit && (pfpEdit || bioEdit))
+                      onTap: (!usernameEdit && (pfpEdit || bioEdit || linkEdit))
                           ? () async {
                               setState(() {
                                 isLoading = true;
@@ -520,6 +772,24 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                     .doc(globals.prismUser.id)
                                     .update({
                                   "bio": bioController.text,
+                                });
+                              }
+                              if (linkEdit) {
+                                Map links = globals.prismUser.links;
+                                for (int p = 0; p < linkIcons.length; p++) {
+                                  if (linkIcons[p]["value"] != "") {
+                                    links[linkIcons[p]["name"]] =
+                                        linkIcons[p]["value"];
+                                  }
+                                }
+                                globals.prismUser.links = links;
+                                main.prefs
+                                    .put("prismUserV2", globals.prismUser);
+                                await firestore
+                                    .collection(USER_NEW_COLLECTION)
+                                    .doc(globals.prismUser.id)
+                                    .update({
+                                  "links": links,
                                 });
                               }
                               setState(() {
@@ -561,6 +831,24 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                       "bio": bioController.text,
                                     });
                                   }
+                                  if (linkEdit) {
+                                    Map links = globals.prismUser.links;
+                                    for (int p = 0; p < linkIcons.length; p++) {
+                                      if (linkIcons[p]["value"] != "") {
+                                        links[linkIcons[p]["name"]] =
+                                            linkIcons[p]["value"];
+                                      }
+                                    }
+                                    globals.prismUser.links = links;
+                                    main.prefs
+                                        .put("prismUserV2", globals.prismUser);
+                                    await firestore
+                                        .collection(USER_NEW_COLLECTION)
+                                        .doc(globals.prismUser.id)
+                                        .update({
+                                      "links": links,
+                                    });
+                                  }
                                   setState(() {
                                     isLoading = false;
                                   });
@@ -575,18 +863,19 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           width: width - 14,
                           height: 60,
                           decoration: BoxDecoration(
-                            color: !((!usernameEdit && (pfpEdit || bioEdit)) ||
+                            color: !((!usernameEdit &&
+                                        (pfpEdit || bioEdit || linkEdit)) ||
                                     (usernameEdit && enabled))
                                 ? Theme.of(context).primaryColor
                                 : Theme.of(context).errorColor.withOpacity(0.2),
                             border: Border.all(
-                                color:
-                                    !((!usernameEdit && (pfpEdit || bioEdit)) ||
-                                            (usernameEdit && enabled))
-                                        ? Theme.of(context)
-                                            .accentColor
-                                            .withOpacity(0.5)
-                                        : Theme.of(context).errorColor,
+                                color: !((!usernameEdit &&
+                                            (pfpEdit || bioEdit || linkEdit)) ||
+                                        (usernameEdit && enabled))
+                                    ? Theme.of(context)
+                                        .accentColor
+                                        .withOpacity(0.5)
+                                    : Theme.of(context).errorColor,
                                 width: 3),
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -599,7 +888,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                     style: TextStyle(
                                         fontSize: 16,
                                         color: !((!usernameEdit &&
-                                                    (pfpEdit || bioEdit)) ||
+                                                    (pfpEdit ||
+                                                        bioEdit ||
+                                                        linkEdit)) ||
                                                 (usernameEdit && enabled))
                                             ? Theme.of(context)
                                                 .accentColor
