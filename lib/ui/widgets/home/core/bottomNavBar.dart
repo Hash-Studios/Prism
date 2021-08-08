@@ -490,7 +490,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                     debugPrint("Currently on Profile");
                   } else {
                     if (navStack.last == "Home") {
-                      Navigator.of(context).pushNamed(profileRoute);
+                      Navigator.of(context).pushNamed(profileRoute,
+                          arguments: [globals.prismUser.email]);
                     } else {
                       Navigator.of(context).popUntil((route) {
                         if (navStack.last != "Home" &&
@@ -504,7 +505,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                         }
                       });
                       if ((navStack.last == "Home") == true) {
-                        Navigator.of(context).pushNamed(profileRoute);
+                        Navigator.of(context).pushNamed(profileRoute,
+                            arguments: [globals.prismUser.email]);
                       }
                     }
                   }
