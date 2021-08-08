@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -14,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:github/github.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as Path;
@@ -402,11 +404,23 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               ),
                             ),
                             child: (_cover == null)
-                                ? CachedNetworkImage(
-                                    imageUrl:
-                                        globals.prismUser.coverPhoto ?? "",
-                                    fit: BoxFit.cover,
-                                  )
+                                ? (globals.prismUser.coverPhoto != null)
+                                    ? CachedNetworkImage(
+                                        imageUrl: globals.prismUser.coverPhoto!,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : SvgPicture.string(
+                                        defaultHeader
+                                            .replaceAll(
+                                              "#181818",
+                                              "#${Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2)}",
+                                            )
+                                            .replaceAll(
+                                              "#E77597",
+                                              "#${Theme.of(context).errorColor.value.toRadixString(16).toString().substring(2)}",
+                                            ),
+                                        fit: BoxFit.cover,
+                                      )
                                 : Image.file(
                                     _cover!,
                                     fit: BoxFit.cover,
@@ -482,6 +496,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                     ),
                   ),
                 ),
+                const Spacer(),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
@@ -1006,7 +1021,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               ? CircularProgressIndicator(
                                   color: Theme.of(context).primaryColor)
                               : Text(
-                                  "Continue",
+                                  "Update",
                                   style: TextStyle(
                                       fontSize: 16,
                                       color: !((!usernameEdit &&
