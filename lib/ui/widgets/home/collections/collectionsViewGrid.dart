@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/logger/logger.dart';
 
 class CollectionViewGrid extends StatefulWidget {
   const CollectionViewGrid();
@@ -136,7 +137,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
             animation: offsetAnimation,
             builder: (buildContext, child) {
               if (offsetAnimation.value < 0.0) {
-                debugPrint('${offsetAnimation.value + 8.0}');
+                logger.d('${offsetAnimation.value + 8.0}');
               }
               return Padding(
                 padding: index == longTapIndex

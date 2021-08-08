@@ -1,3 +1,4 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -5,7 +6,7 @@ class SetupProvider extends ChangeNotifier {
   final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
   List<QueryDocumentSnapshot>? setups;
   Future<void> getSetups() async {
-    debugPrint("Fetching first 10 setups");
+    logger.d("Fetching first 10 setups");
     setups = [];
     await databaseReference
         .collection("setups")
@@ -20,7 +21,7 @@ class SetupProvider extends ChangeNotifier {
   }
 
   Future<void> seeMoreSetups() async {
-    debugPrint("Fetching more setups");
+    logger.d("Fetching more setups");
     await databaseReference
         .collection("setups")
         .where("review", isEqualTo: true)
@@ -47,9 +48,9 @@ Future<Map?> getSetupFromName(String? name) async {
       .get()
       .then((value) {
     value.docs.forEach((f) => setup = f.data());
-    debugPrint(setup.toString());
+    logger.d(setup.toString());
   }).catchError((e) {
-    debugPrint("data done with error");
+    logger.d("data done with error");
   });
   return setup;
 }

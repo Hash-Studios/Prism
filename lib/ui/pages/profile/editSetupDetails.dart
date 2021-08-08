@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -199,22 +200,22 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
           .then((value) => setState(() {
                 imageURL = value.content!.downloadUrl;
               }));
-      debugPrint('File Uploaded');
+      logger.d('File Uploaded');
       setState(() {
         isUploading = false;
       });
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       Navigator.pop(context);
       navStack.removeLast();
-      debugPrint(navStack.toString());
+      logger.d(navStack.toString());
       toasts.error("Some uploading issue, please try again.");
     }
   }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -251,7 +252,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         toasts.error("Please fill all required fields!");
                       } else {
                         navStack.removeLast();
-                        debugPrint(navStack.toString());
+                        logger.d(navStack.toString());
                         Navigator.pop(context);
                         analytics.logEvent(
                             name: 'edit_setup',

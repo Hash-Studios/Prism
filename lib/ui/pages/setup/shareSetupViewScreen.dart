@@ -29,6 +29,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/logger/logger.dart';
 
 class ShareSetupViewScreen extends StatefulWidget {
   final List? arguments;
@@ -42,7 +43,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -112,7 +113,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
         body: FutureBuilder(
           future: _future,
           builder: (BuildContext context, AsyncSnapshot<Map?> snapshot) {
-            debugPrint(snapshot.connectionState.toString());
+            logger.d(snapshot.connectionState.toString());
             switch (snapshot.connectionState) {
               case ConnectionState.waiting:
                 return Center(child: Loader());
@@ -583,8 +584,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                           sdata.setup![
                                                                   "wall_id"] ==
                                                               "") {
-                                                        debugPrint(
-                                                            "Id Not Found!");
+                                                        logger
+                                                            .d("Id Not Found!");
                                                         launch(sdata.setup![
                                                                 "wallpaper_url"]
                                                             .toString());
@@ -712,7 +713,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                               sdata.setup![
                                                                       "wall_id"] ==
                                                                   "") {
-                                                            debugPrint(
+                                                            logger.d(
                                                                 "Id Not Found!");
                                                             launch(sdata.setup![
                                                                     "wallpaper_url"]
@@ -898,7 +899,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                 sdata.setup![
                                                                         "wall_id"] ==
                                                                     "") {
-                                                              debugPrint(
+                                                              logger.d(
                                                                   "Id Not Found!");
                                                               launch(sdata
                                                                   .setup![
@@ -1265,7 +1266,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                             animation: offsetAnimation,
                             builder: (buildContext, child) {
                               if (offsetAnimation.value < 0.0) {
-                                debugPrint('${offsetAnimation.value + 8.0}');
+                                logger.d('${offsetAnimation.value + 8.0}');
                               }
                               return GestureDetector(
                                 onPanUpdate: (details) {
@@ -1331,7 +1332,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                             child: IconButton(
                               onPressed: () {
                                 navStack.removeLast();
-                                debugPrint(navStack.toString());
+                                logger.d(navStack.toString());
                                 Navigator.pop(context);
                               },
                               color: Theme.of(context).accentColor,

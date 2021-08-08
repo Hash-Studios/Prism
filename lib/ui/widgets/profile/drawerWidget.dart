@@ -210,13 +210,13 @@ class ProfileDrawer extends StatelessWidget {
                             dir.deleteSync(recursive: true);
                             deletedDir = true;
                           } catch (e) {
-                            debugPrint(e.toString());
+                            logger.d(e.toString());
                           }
                           try {
                             dir2.deleteSync(recursive: true);
                             deletedDir2 = true;
                           } catch (e) {
-                            debugPrint(e.toString());
+                            logger.d(e.toString());
                           }
                           if (deletedDir || deletedDir2) {
                             Fluttertoast.showToast(
@@ -300,8 +300,10 @@ class ProfileDrawer extends StatelessWidget {
                 context: context,
                 onTap: () {
                   createUserDynamicLink(
+                    globals.prismUser.name.toString(),
                     globals.prismUser.username.toString(),
                     globals.prismUser.email.toString(),
+                    globals.prismUser.bio.toString(),
                     globals.prismUser.profilePhoto.toString(),
                   );
                 }),
@@ -365,7 +367,7 @@ class ProfileDrawer extends StatelessWidget {
                     final sdkInt = androidInfo.version.sdkInt;
                     final manufacturer = androidInfo.manufacturer;
                     final model = androidInfo.model;
-                    debugPrint(
+                    logger.d(
                         'Android $release (SDK $sdkInt), $manufacturer $model');
                     final String zipPath = await zipLogs();
                     final MailOptions mailOptions = MailOptions(

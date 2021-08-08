@@ -5,6 +5,7 @@ import 'package:Prism/ui/widgets/home/wallpapers/colorLoader.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:Prism/logger/logger.dart';
 
 class ColorScreen extends StatelessWidget {
   final List? arguments;
@@ -22,8 +23,8 @@ class ColorScreen extends StatelessWidget {
           navStack.removeLast();
           count++;
         }
-        debugPrint(navStack.toString());
-        debugPrint(count.toString());
+        logger.d(navStack.toString());
+        logger.d(count.toString());
         for (int i = 0; i < count; i++) {
           Navigator.pop(context);
         }

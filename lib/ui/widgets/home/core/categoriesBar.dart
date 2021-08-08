@@ -12,6 +12,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/logger/logger.dart';
 
 class CategoriesBar extends StatefulWidget {
   const CategoriesBar({
@@ -72,7 +73,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
   }
 
   void _showError(dynamic exception) {
-    debugPrint(exception.toString());
+    logger.d(exception.toString());
   }
 
   @override
@@ -91,7 +92,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
             });
           }
         } catch (e) {
-          debugPrint(e.toString());
+          logger.d(e.toString());
         }
       });
     }

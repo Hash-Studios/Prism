@@ -20,6 +20,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:animations/animations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class ReviewScreen extends StatefulWidget {
   @override
@@ -31,7 +32,7 @@ class _ReviewScreenState extends State<ReviewScreen>
   TabController? tabController;
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -78,7 +79,7 @@ class _ReviewScreenState extends State<ReviewScreen>
                 icon: const Icon(JamIcons.chevron_left),
                 onPressed: () {
                   navStack.removeLast();
-                  debugPrint(navStack.toString());
+                  logger.d(navStack.toString());
                   Navigator.pop(context);
                 }),
             backgroundColor: Theme.of(context).primaryColor,
@@ -369,12 +370,12 @@ class WallTile extends StatelessWidget {
                                       final link = wallpaper
                                           .data()!["wallpaper_url"]
                                           .toString();
-                                      debugPrint(link);
+                                      logger.d(link);
 
                                       final androidInfo =
                                           await DeviceInfoPlugin().androidInfo;
                                       final sdkInt = androidInfo.version.sdkInt;
-                                      debugPrint('(SDK $sdkInt)');
+                                      logger.d('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
                                       main.localNotification
                                           .createDownloadNotification();
@@ -396,7 +397,7 @@ class WallTile extends StatelessWidget {
                                                 "Couldn't download! Please Retry!");
                                           }
                                         }).catchError((e) {
-                                          debugPrint(e.toString());
+                                          logger.d(e.toString());
                                         });
                                       } else {
                                         GallerySaver.saveImage(link,
@@ -708,12 +709,12 @@ class RejectedWallTile extends StatelessWidget {
                                       final link = wallpaper
                                           .data()!["wallpaper_url"]
                                           .toString();
-                                      debugPrint(link);
+                                      logger.d(link);
 
                                       final androidInfo =
                                           await DeviceInfoPlugin().androidInfo;
                                       final sdkInt = androidInfo.version.sdkInt;
-                                      debugPrint('(SDK $sdkInt)');
+                                      logger.d('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
                                       main.localNotification
                                           .createDownloadNotification();
@@ -735,7 +736,7 @@ class RejectedWallTile extends StatelessWidget {
                                                 "Couldn't download! Please Retry!");
                                           }
                                         }).catchError((e) {
-                                          debugPrint(e.toString());
+                                          logger.d(e.toString());
                                         });
                                       } else {
                                         GallerySaver.saveImage(link,
@@ -1359,12 +1360,12 @@ class SetupTile extends StatelessWidget {
                                       }
                                       final link =
                                           wallpaper.data()!["image"].toString();
-                                      debugPrint(link);
+                                      logger.d(link);
 
                                       final androidInfo =
                                           await DeviceInfoPlugin().androidInfo;
                                       final sdkInt = androidInfo.version.sdkInt;
-                                      debugPrint('(SDK $sdkInt)');
+                                      logger.d('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
 
                                       if (sdkInt >= 30) {
@@ -1382,7 +1383,7 @@ class SetupTile extends StatelessWidget {
                                                 "Couldn't download! Please Retry!");
                                           }
                                         }).catchError((e) {
-                                          debugPrint(e.toString());
+                                          logger.d(e.toString());
                                         });
                                       } else {
                                         GallerySaver.saveImage(link,
@@ -1897,12 +1898,12 @@ class RejectedSetupTile extends StatelessWidget {
                                       }
                                       final link =
                                           wallpaper.data()!["image"].toString();
-                                      debugPrint(link);
+                                      logger.d(link);
 
                                       final androidInfo =
                                           await DeviceInfoPlugin().androidInfo;
                                       final sdkInt = androidInfo.version.sdkInt;
-                                      debugPrint('(SDK $sdkInt)');
+                                      logger.d('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
 
                                       if (sdkInt >= 30) {
@@ -1920,7 +1921,7 @@ class RejectedSetupTile extends StatelessWidget {
                                                 "Couldn't download! Please Retry!");
                                           }
                                         }).catchError((e) {
-                                          debugPrint(e.toString());
+                                          logger.d(e.toString());
                                         });
                                       } else {
                                         GallerySaver.saveImage(link,

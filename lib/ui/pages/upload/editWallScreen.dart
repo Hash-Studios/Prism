@@ -7,6 +7,7 @@ import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:image_editor/image_editor.dart' hide ImageSource;
+import 'package:Prism/logger/logger.dart';
 
 class EditWallScreen extends StatefulWidget {
   final List? arguments;
@@ -82,7 +83,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -121,7 +122,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                     Icon(JamIcons.close, color: Theme.of(context).accentColor),
                 onPressed: () {
                   navStack.removeLast();
-                  debugPrint(navStack.toString());
+                  logger.d(navStack.toString());
                   Navigator.pop(context);
                 }),
             actions: <Widget>[
@@ -412,7 +413,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
     option.outputFormat = const OutputFormat.jpeg(100);
 
-    debugPrint(const JsonEncoder.withIndent('  ').convert(option.toJson()));
+    logger.d(const JsonEncoder.withIndent('  ').convert(option.toJson()));
 
     final DateTime start = DateTime.now();
     final Uint8List result = await ImageEditor.editImage(
@@ -420,13 +421,13 @@ class _EditWallScreenState extends State<EditWallScreen> {
       imageEditorOption: option,
     );
 
-    debugPrint('result.length = ${result.length}');
+    logger.d('result.length = ${result.length}');
 
     final Duration diff = DateTime.now().difference(start);
     image!.writeAsBytesSync(result);
-    debugPrint('image_editor time : $diff');
+    logger.d('image_editor time : $diff');
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     Future.delayed(const Duration()).then((value) =>
         Navigator.pushReplacementNamed(context, uploadWallRoute,
             arguments: [image, false]));

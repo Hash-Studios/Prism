@@ -3,6 +3,7 @@ import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dar
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/logger/logger.dart';
 
 class LoadingSetupCards extends StatefulWidget {
   const LoadingSetupCards({
@@ -85,7 +86,7 @@ class _LoadingSetupCardsState extends State<LoadingSetupCards>
         controller = InheritedDataProvider.of(context)!.scrollController;
       }
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
     }
 
     return controller != null

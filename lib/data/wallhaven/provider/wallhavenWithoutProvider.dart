@@ -5,6 +5,7 @@ import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:Prism/logger/logger.dart';
 
 List<WallPaper> walls = [];
 List<WallPaper> wallsS = [];
@@ -39,7 +40,7 @@ Future<List<WallPaper>> categoryDataFetcher(
         .then(
       (http.Response response) {
         final resp = json.decode(response.body);
-        debugPrint(resp.toString());
+        logger.d(resp.toString());
         for (int i = 0; i < (resp["data"].length as int); i++) {
           walls.add(
             WallPaper(
@@ -61,12 +62,12 @@ Future<List<WallPaper>> categoryDataFetcher(
         }
         pageNumbers[index][categoryName] =
             (resp["meta"]["current_page"] as int) + 1;
-        debugPrint("data done");
+        logger.d("data done");
         return walls;
       },
     );
   } else {
-    debugPrint("Refresh Blocked");
+    logger.d("Refresh Blocked");
   }
   return walls;
 }
@@ -108,22 +109,22 @@ Future<List<WallPaper>> getData(
           );
         }
         pageGetData = (resp["meta"]["current_page"] as int) + 1;
-        debugPrint("data done");
+        logger.d("data done");
         return walls;
       },
     ).catchError((e) {
-      debugPrint("data done with error");
+      logger.d("data done with error");
       return walls;
     });
   } else {
-    debugPrint("Refresh Blocked");
+    logger.d("Refresh Blocked");
   }
   return walls;
 }
 
 Future<WallPaper> getWallbyID(String idU) async {
   final String id = idU.toLowerCase();
-  debugPrint("https://wallhaven.cc/api/v1/w/$id");
+  logger.d("https://wallhaven.cc/api/v1/w/$id");
   wall = WallPaper();
   http
       .get(
@@ -157,7 +158,7 @@ Future<WallPaper> getWallbyID(String idU) async {
           ),
         ),
       );
-      debugPrint("id data done");
+      logger.d("id data done");
       return wall;
     },
   );
@@ -166,7 +167,7 @@ Future<WallPaper> getWallbyID(String idU) async {
 
 Future<List<WallPaper>> getWallsbyQuery(
     String query, int? categories, int? purity) async {
-  debugPrint(
+  logger.d(
       "https://wallhaven.cc/api/v1/search?q=$query&page=1&categories=$categories&purity=$purity");
   http
       .get(
@@ -176,8 +177,8 @@ Future<List<WallPaper>> getWallsbyQuery(
       .then(
     (http.Response response) {
       final resp = json.decode(response.body);
-      debugPrint(resp["data"].length.toString());
-      debugPrint(wallsS.length.toString());
+      logger.d(resp["data"].length.toString());
+      logger.d(wallsS.length.toString());
       for (int i = 0; i < (resp["data"].length as int); i++) {
         wallsS.add(
           WallPaper(
@@ -206,7 +207,7 @@ Future<List<WallPaper>> getWallsbyQuery(
 
 Future<List<WallPaper>> getWallsbyQueryPage(
     String query, int? categories, int? purity) async {
-  debugPrint(
+  logger.d(
       "https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery&categories=$categories&purity=$purity");
   http
       .get(

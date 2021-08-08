@@ -1,3 +1,4 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -9,7 +10,7 @@ String? currentCollectionName;
 
 Future<List?> getCollections() async {
   if (navStack.last == "Home") {
-    debugPrint("Fetching collections!");
+    logger.d("Fetching collections!");
     collections = [];
     await databaseReference
         .collection("collections")
@@ -20,17 +21,17 @@ Future<List?> getCollections() async {
         collections!.add(doc.data());
       }
     }).catchError((e) {
-      debugPrint(e.toString());
-      debugPrint("data done with error");
+      logger.d(e.toString());
+      logger.d("data done with error");
     });
   } else {
-    debugPrint("Refresh blocked");
+    logger.d("Refresh blocked");
   }
   return collections;
 }
 
 Future<bool> getCollectionWithName(String name) async {
-  debugPrint("Fetching $name collection's first 24 walls");
+  logger.d("Fetching $name collection's first 24 walls");
   currentCollectionName = name;
   anyCollectionWalls = [];
   await databaseReference
@@ -47,7 +48,7 @@ Future<bool> getCollectionWithName(String name) async {
 }
 
 Future<bool> seeMoreCollectionWithName() async {
-  debugPrint("Fetching $currentCollectionName collection's more walls");
+  logger.d("Fetching $currentCollectionName collection's more walls");
   await databaseReference
       .collection("walls")
       .where('review', isEqualTo: true)

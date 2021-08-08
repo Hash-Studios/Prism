@@ -26,6 +26,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:hive/hive.dart';
+import 'package:Prism/logger/logger.dart';
 
 class UserProfileSetupViewScreen extends StatefulWidget {
   final List? arguments;
@@ -40,7 +41,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -600,7 +601,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                           index!]
                                                       .data()["wall_id"] ==
                                                   "") {
-                                            debugPrint("Id Not Found!");
+                                            logger.d("Id Not Found!");
                                             launch(Provider.of<
                                                         user_data
                                                             .UserProfileProvider>(
@@ -808,7 +809,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                               index!]
                                                           .data()["wall_id"] ==
                                                       "") {
-                                                debugPrint("Id Not Found!");
+                                                logger.d("Id Not Found!");
                                                 launch(Provider.of<
                                                             user_data
                                                                 .UserProfileProvider>(
@@ -1118,7 +1119,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                                 index!]
                                                             .data()["wall_id"] ==
                                                         "") {
-                                                  debugPrint("Id Not Found!");
+                                                  logger.d("Id Not Found!");
                                                   launch(Provider.of<
                                                               user_data
                                                                   .UserProfileProvider>(
@@ -1606,7 +1607,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                   animation: offsetAnimation,
                   builder: (buildContext, child) {
                     if (offsetAnimation.value < 0.0) {
-                      debugPrint('${offsetAnimation.value + 8.0}');
+                      logger.d('${offsetAnimation.value + 8.0}');
                     }
                     return GestureDetector(
                       onPanUpdate: (details) {
@@ -1675,7 +1676,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
-                      debugPrint(navStack.toString());
+                      logger.d(navStack.toString());
                       Navigator.pop(context);
                     },
                     color: Theme.of(context).accentColor,

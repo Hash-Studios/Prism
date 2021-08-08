@@ -25,6 +25,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:hive/hive.dart';
+import 'package:Prism/logger/logger.dart';
 
 class FavSetupViewScreen extends StatefulWidget {
   final List? arguments;
@@ -38,7 +39,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -82,7 +83,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
       isLoading = true;
     });
     navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     Navigator.pop(context);
     Provider.of<FavouriteSetupProvider>(context, listen: false)
         .favCheck(id, setupMap)
@@ -597,7 +598,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           .liked![index!]
                                                       ["wall_id"] ==
                                                   "") {
-                                            debugPrint("Id Not Found!");
+                                            logger.d("Id Not Found!");
                                             launch(Provider.of<
                                                         FavouriteSetupProvider>(
                                                     context,
@@ -643,15 +644,15 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<
-                                                          FavouriteSetupProvider>(
+                                      tileText: Provider.of<FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
                                                   .liked![index!]
                                                       ["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
-                                          ? (Provider.of<FavouriteSetupProvider>(context,
+                                          ? (Provider.of<FavouriteSetupProvider>(
+                                                                  context,
                                                                   listen: false)
                                                               .liked![index!]
                                                           ["wall_id"] ==
@@ -776,7 +777,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               .liked![index!]
                                                           ["wall_id"] ==
                                                       "") {
-                                                debugPrint("Id Not Found!");
+                                                logger.d("Id Not Found!");
                                                 launch(Provider.of<
                                                             FavouriteSetupProvider>(
                                                         context,
@@ -824,28 +825,28 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                   .toString());
                                             }
                                           },
-                                          tileText:
-                                              Provider.of<FavouriteSetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .liked![index!]
-                                                              ["wallpaper_url"]
-                                                          .toString()[0] !=
-                                                      "["
-                                                  ? (Provider.of<FavouriteSetupProvider>(context,
-                                                                  listen: false)
-                                                              .liked![index!]
-                                                          ["wall_id"] ==
-                                                      null ||
-                                                  Provider.of<FavouriteSetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .liked![index!]
-                                                          ["wall_id"] ==
-                                                      "")
-                                              ? "Wall Link"
-                                              : "Prism (${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"]})"
-                                                  : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
+                                          tileText: Provider.of<FavouriteSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .liked![index!]
+                                                          ["wallpaper_url"]
+                                                      .toString()[0] !=
+                                                  "["
+                                              ? (Provider.of<FavouriteSetupProvider>(
+                                                                      context,
+                                                                      listen: false)
+                                                                  .liked![index!]
+                                                              ["wall_id"] ==
+                                                          null ||
+                                                      Provider.of<FavouriteSetupProvider>(
+                                                                      context,
+                                                                      listen: false)
+                                                                  .liked![index!]
+                                                              ["wall_id"] ==
+                                                          "")
+                                                  ? "Wall Link"
+                                                  : "Prism (${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"]})"
+                                              : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay:
@@ -1028,7 +1029,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                 .liked![index!]
                                                             ["wall_id"] ==
                                                         "") {
-                                                  debugPrint("Id Not Found!");
+                                                  logger.d("Id Not Found!");
                                                   launch(Provider.of<
                                                               FavouriteSetupProvider>(
                                                           context,
@@ -1076,27 +1077,27 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<
-                                                                FavouriteSetupProvider>(
+                                            tileText: Provider.of<FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
                                                         .liked![index!]
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
-                                                ? (Provider.of<FavouriteSetupProvider>(context,
-                                                                  listen: false)
-                                                              .liked![index!]
-                                                          ["wall_id"] ==
-                                                      null ||
-                                                  Provider.of<FavouriteSetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .liked![index!]
-                                                          ["wall_id"] ==
-                                                      "")
-                                              ? "Wall Link"
-                                              : "Prism (${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"]})"
+                                                ? (Provider.of<FavouriteSetupProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .liked![index!]
+                                                                ["wall_id"] ==
+                                                            null ||
+                                                        Provider.of<FavouriteSetupProvider>(
+                                                                    context,
+                                                                    listen: false)
+                                                                .liked![index!]["wall_id"] ==
+                                                            "")
+                                                    ? "Wall Link"
+                                                    : "Prism (${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"]})"
                                                 : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
@@ -1364,24 +1365,28 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                           Provider.of<FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked![index!].data()["id"]
+                                              .liked![index!]
+                                              .data()["id"]
                                               .toString(),
                                           Provider.of<FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked![index!].data() as Map);
+                                              .liked![index!]
+                                              .data() as Map);
                                     });
                                   } else {
                                     onFavSetup(
                                         Provider.of<FavouriteSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked![index!].data()["id"]
+                                            .liked![index!]
+                                            .data()["id"]
                                             .toString(),
                                         Provider.of<FavouriteSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked![index!].data() as Map);
+                                            .liked![index!]
+                                            .data() as Map);
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,
@@ -1441,7 +1446,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                   animation: offsetAnimation,
                   builder: (buildContext, child) {
                     if (offsetAnimation.value < 0.0) {
-                      debugPrint('${offsetAnimation.value + 8.0}');
+                      logger.d('${offsetAnimation.value + 8.0}');
                     }
                     return GestureDetector(
                       onPanUpdate: (details) {
@@ -1509,7 +1514,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
-                      debugPrint(navStack.toString());
+                      logger.d(navStack.toString());
                       Navigator.pop(context);
                     },
                     color: Theme.of(context).accentColor,

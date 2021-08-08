@@ -6,6 +6,7 @@ import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class DownloadWallpaperScreen extends StatefulWidget {
   final List? arguments;
@@ -19,7 +20,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack.toString());
+    logger.d(navStack.toString());
     return true;
   }
 
@@ -64,7 +65,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                 animation: offsetAnimation,
                 builder: (buildContext, child) {
                   if (offsetAnimation.value < 0.0) {
-                    debugPrint('${offsetAnimation.value + 8.0}');
+                    logger.d('${offsetAnimation.value + 8.0}');
                   }
                   return GestureDetector(
                     onLongPress: () {
@@ -106,7 +107,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                 child: IconButton(
                   onPressed: () {
                     navStack.removeLast();
-                    debugPrint(navStack.toString());
+                    logger.d(navStack.toString());
                     Navigator.pop(context);
                   },
                   color: Theme.of(context).accentColor,

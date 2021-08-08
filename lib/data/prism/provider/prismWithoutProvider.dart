@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -14,7 +15,7 @@ late List wallsDataL;
 Map wall = {};
 Future<List?> getPrismWalls() async {
   if (navStack.last == "Home") {
-    debugPrint("Fetching first 24 walls!");
+    logger.d("Fetching first 24 walls!");
     prismWalls = [];
     subPrismWalls = [];
     await databaseReference
@@ -33,24 +34,24 @@ Future<List?> getPrismWalls() async {
         prismWalls!.add(map);
       }
       if (prismWalls != []) {
-        debugPrint("${prismWalls!.length} walls fetched!");
+        logger.d("${prismWalls!.length} walls fetched!");
         subPrismWalls = prismWalls;
       } else {
-        debugPrint("Not connected to Internet");
+        logger.d("Not connected to Internet");
         subPrismWalls = [];
       }
     }).catchError((e) {
-      debugPrint(e.toString());
-      debugPrint("data done with error");
+      logger.d(e.toString());
+      logger.d("data done with error");
     });
   } else {
-    debugPrint("Refresh blocked");
+    logger.d("Refresh blocked");
   }
   return subPrismWalls;
 }
 
 Future<List?> seeMorePrism() async {
-  debugPrint("Fetching more walls!");
+  logger.d("Fetching more walls!");
   await databaseReference
       .collection("walls")
       .where('review', isEqualTo: true)
@@ -71,12 +72,12 @@ Future<List?> seeMorePrism() async {
     if (prismWalls != []) {
       final int len = prismWalls!.length;
       final double pageNumber = len / 24;
-      debugPrint("${value.docs.length} walls fetched!");
-      debugPrint("$len total walls fetched!");
-      debugPrint("PageNumber: $pageNumber");
+      logger.d("${value.docs.length} walls fetched!");
+      logger.d("$len total walls fetched!");
+      logger.d("PageNumber: $pageNumber");
       subPrismWalls!.addAll(prismWalls!.sublist(subPrismWalls!.length));
     } else {
-      debugPrint("Not connected to Internet");
+      logger.d("Not connected to Internet");
     }
   });
   return subPrismWalls;

@@ -13,6 +13,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 
 class UserProfileGrid extends StatefulWidget {
   final String? email;
@@ -311,7 +312,7 @@ class PhotographerWallTile extends StatelessWidget {
   final int index;
 
   void showGooglePopUp(BuildContext context, Function func) {
-    debugPrint(globals.prismUser.loggedIn.toString());
+    logger.d(globals.prismUser.loggedIn.toString());
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {
