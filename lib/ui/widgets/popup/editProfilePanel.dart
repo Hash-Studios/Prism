@@ -1005,6 +1005,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               isLoading = false;
                             });
                             Navigator.pop(context);
+                            navStack.removeLast();
+                            debugPrint(navStack.toString());
                             toasts.codeSend("Details updated!");
                           }
                         : (usernameEdit && enabled)
@@ -1076,6 +1078,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   isLoading = false;
                                 });
                                 Navigator.pop(context);
+                                navStack.removeLast();
+                                debugPrint(navStack.toString());
                                 toasts.codeSend("Details updated!");
                               }
                             : null,
