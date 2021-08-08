@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/gitkey.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/ui/widgets/popup/linkPopUp.dart';
 import 'package:Prism/ui/widgets/profile/aboutList.dart';
@@ -19,6 +23,8 @@ import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dar
 import 'package:Prism/ui/widgets/profile/uploadedWallsLoader.dart';
 import 'package:Prism/ui/widgets/profile/uploadedSetupsLoader.dart';
 import 'package:Prism/ui/widgets/profile/userList.dart';
+import 'package:Prism/ui/widgets/profile/userProfileLoader.dart';
+import 'package:Prism/ui/widgets/profile/userProfileSetupLoader.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
@@ -30,90 +36,172 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:http/http.dart' as http;
 
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
 
 class ProfileScreen extends StatefulWidget {
+  final List? arguments;
+  const ProfileScreen(this.arguments);
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  String? email;
+
+  @override
+  void initState() {
+    email = widget.arguments![0].toString();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: scaffoldKey,
-      body: BottomBar(
-        child: ProfileChild(),
-      ),
-      endDrawer: globals.prismUser.loggedIn
-          ? SizedBox(
-              width: MediaQuery.of(context).size.width * 0.68,
-              child: ProfileDrawer())
-          : null,
-    );
+    return (email == globals.prismUser.email)
+        ? Scaffold(
+            key: scaffoldKey,
+            body: BottomBar(
+              child: ProfileChild(
+                ownProfile: true,
+                id: globals.prismUser.id,
+                bio: globals.prismUser.bio,
+                coverPhoto: globals.prismUser.profilePhoto,
+                email: globals.prismUser.email,
+                links: globals.prismUser.links,
+                name: globals.prismUser.name,
+                premium: globals.prismUser.premium,
+                userPhoto: globals.prismUser.profilePhoto,
+                username: globals.prismUser.username,
+                followers: globals.prismUser.followers,
+                following: globals.prismUser.following,
+              ),
+            ),
+            endDrawer: globals.prismUser.loggedIn
+                ? SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.68,
+                    child: ProfileDrawer())
+                : null,
+          )
+        : Scaffold(
+            key: scaffoldKey,
+            body: StreamBuilder<QuerySnapshot>(
+              stream: getUserProfile(email!),
+              builder: (BuildContext context,
+                  AsyncSnapshot<QuerySnapshot> snapshot) {
+                if (snapshot.hasData && snapshot.data != null) {
+                  if (snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        child: const Text(
+                          "Sorry! This user is inactive on the latest version, and hence they are not currently viewable.",
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
+                  return ProfileChild(
+                    ownProfile: false,
+                    id: snapshot.data!.docs[0].id,
+                    bio: snapshot.data!.docs[0].data()["bio"].toString(),
+                    coverPhoto: snapshot.data!.docs[0]
+                        .data()["profilePhoto"]
+                        .toString(),
+                    email: snapshot.data!.docs[0].data()["email"].toString(),
+                    links: snapshot.data!.docs[0].data()["links"] as Map,
+                    name: snapshot.data!.docs[0].data()["name"].toString(),
+                    premium: snapshot.data!.docs[0].data()["premium"] as bool,
+                    userPhoto: snapshot.data!.docs[0]
+                        .data()["profilePhoto"]
+                        .toString(),
+                    username:
+                        snapshot.data!.docs[0].data()["username"].toString(),
+                    followers:
+                        snapshot.data!.docs[0].data()["followers"] as List,
+                    following:
+                        snapshot.data!.docs[0].data()["following"] as List,
+                  );
+                }
+                return Container(
+                  color: Theme.of(context).primaryColor,
+                  child: Center(
+                    child: Loader(),
+                  ),
+                );
+              },
+            ),
+          );
   }
 }
 
 class ProfileChild extends StatefulWidget {
+  final String? name;
+  final String? username;
+  final String? id;
+  final String? email;
+  final String? userPhoto;
+  final String? coverPhoto;
+  final bool? premium;
+  final bool? ownProfile;
+  final Map? links;
+  final String? bio;
+  final List? followers;
+  final List? following;
+  const ProfileChild({
+    required this.name,
+    required this.username,
+    required this.id,
+    required this.email,
+    required this.userPhoto,
+    required this.coverPhoto,
+    required this.premium,
+    required this.ownProfile,
+    required this.links,
+    required this.bio,
+    required this.followers,
+    required this.following,
+  });
   @override
   _ProfileChildState createState() => _ProfileChildState();
 }
 
 class _ProfileChildState extends State<ProfileChild> {
-  int favCount = main.prefs.get('userFavs') as int? ?? 0;
-  int profileCount = ((main.prefs.get('userPosts') as int?) ?? 0) +
-      ((main.prefs.get('userSetups') as int?) ?? 0);
+  // int favCount = main.prefs.get('userFavs') as int? ?? 0;
+  // int profileCount = ((main.prefs.get('userPosts') as int?) ?? 0) +
+  //     ((main.prefs.get('userSetups') as int?) ?? 0);
   final ScrollController scrollController = ScrollController();
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
-  int count = 0;
+  // final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  // int count = 0;
   @override
   void initState() {
-    count = main.prefs.get('easterCount', defaultValue: 0) as int;
-    checkFav();
+    // count = main.prefs.get('easterCount', defaultValue: 0) as int;
+    // checkFav();
     super.initState();
   }
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
+    if (navStack.length > 1) {
+      navStack.removeLast();
+      if ((navStack.last == "Wallpaper") ||
+          (navStack.last == "Search Wallpaper") ||
+          (navStack.last == "SharedWallpaper") ||
+          (navStack.last == "SetupView")) {}
+    }
     debugPrint(navStack.toString());
     return true;
   }
 
-  Future checkFav() async {
-    if (globals.prismUser.loggedIn) {
-      await Provider.of<FavouriteProvider>(context, listen: false)
-          .countFav()
-          .then(
-        (value) async {
-          await Provider.of<FavouriteSetupProvider>(context, listen: false)
-              .countFavSetups()
-              .then((value2) {
-            debugPrint(value.toString());
-            debugPrint(value2.toString());
-            if (mounted) {
-              setState(
-                () {
-                  favCount = value + value2;
-                  main.prefs.put('userFavs', favCount);
-                },
-              );
-            }
-          });
-        },
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller =
-        InheritedDataProvider.of(context)!.scrollController;
-    final CollectionReference users = firestore.collection(USER_NEW_COLLECTION);
+    final ScrollController? controller = widget.ownProfile!
+        ? InheritedDataProvider.of(context)!.scrollController
+        : ScrollController();
 
     return WillPopScope(
         onWillPop: onWillPop,
-        child: globals.prismUser.loggedIn
+        child: !widget.ownProfile! || globals.prismUser.loggedIn
             ? DefaultTabController(
                 length: 2,
                 child: Stack(
@@ -131,8 +219,40 @@ class _ProfileChildState extends State<ProfileChild> {
                             primary: false,
                             floating: true,
                             elevation: 0,
-                            leading: globals.prismUser.loggedIn == false
-                                ? Container()
+                            leading: !widget.ownProfile! ||
+                                    globals.prismUser.loggedIn == false
+                                ? Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: IconButton(
+                                        padding: const EdgeInsets.all(2),
+                                        icon: Container(
+                                          padding: const EdgeInsets.all(6.0),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Theme.of(context)
+                                                .primaryColor
+                                                .withOpacity(0.5),
+                                          ),
+                                          child: Icon(JamIcons.chevron_left,
+                                              color: Theme.of(context)
+                                                  .accentColor),
+                                        ),
+                                        onPressed: () async {
+                                          Navigator.pop(context);
+                                          if (navStack.length > 1) {
+                                            navStack.removeLast();
+                                            if ((navStack.last ==
+                                                    "Wallpaper") ||
+                                                (navStack.last ==
+                                                    "Search Wallpaper") ||
+                                                (navStack.last ==
+                                                    "SharedWallpaper") ||
+                                                (navStack.last ==
+                                                    "SetupView")) {}
+                                          }
+                                          debugPrint(navStack.toString());
+                                        }),
+                                  )
                                 : Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: IconButton(
@@ -158,8 +278,111 @@ class _ProfileChildState extends State<ProfileChild> {
                                           );
                                         }),
                                   ),
-                            actions: globals.prismUser.loggedIn == false
-                                ? []
+                            actions: !widget.ownProfile! ||
+                                    globals.prismUser.loggedIn == false
+                                ? [
+                                    if (globals.prismUser.loggedIn == false)
+                                      Container()
+                                    else
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: ((widget.followers ?? [])
+                                                .contains(
+                                                    globals.prismUser.email))
+                                            ? IconButton(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                padding:
+                                                    const EdgeInsets.all(2),
+                                                icon: Container(
+                                                  padding:
+                                                      const EdgeInsets.all(6.0),
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: Theme.of(context)
+                                                        .primaryColor
+                                                        .withOpacity(0.5),
+                                                  ),
+                                                  child: Icon(
+                                                      JamIcons.user_remove,
+                                                      color: Theme.of(context)
+                                                          .accentColor),
+                                                ),
+                                                onPressed: () {
+                                                  unfollow(widget.email!,
+                                                      widget.id!);
+                                                  toasts.error(
+                                                      "Unfollowed ${widget.name}!");
+                                                })
+                                            : IconButton(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                padding:
+                                                    const EdgeInsets.all(2),
+                                                icon: Container(
+                                                  padding:
+                                                      const EdgeInsets.all(6.0),
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: Theme.of(context)
+                                                        .primaryColor
+                                                        .withOpacity(0.5),
+                                                  ),
+                                                  child: Icon(
+                                                      JamIcons.user_plus,
+                                                      color: Theme.of(context)
+                                                          .accentColor),
+                                                ),
+                                                onPressed: () {
+                                                  follow(widget.email!,
+                                                      widget.id!);
+                                                  http.post(
+                                                    Uri.parse(
+                                                      'https://fcm.googleapis.com/fcm/send',
+                                                    ),
+                                                    headers: <String, String>{
+                                                      'Content-Type':
+                                                          'application/json',
+                                                      'Authorization':
+                                                          'key=$fcmServerToken',
+                                                    },
+                                                    body: jsonEncode(
+                                                      <String, dynamic>{
+                                                        'notification':
+                                                            <String, dynamic>{
+                                                          'title':
+                                                              '🎉 New Follower!',
+                                                          'body':
+                                                              '${globals.prismUser.username} is now following you.',
+                                                          'color': "#e57697",
+                                                          'tag':
+                                                              '${globals.prismUser.username} Follow',
+                                                          'image': globals
+                                                              .prismUser
+                                                              .profilePhoto,
+                                                          'android_channel_id':
+                                                              "followers",
+                                                          'icon':
+                                                              '@drawable/ic_follow'
+                                                        },
+                                                        'priority': 'high',
+                                                        'data':
+                                                            <String, dynamic>{
+                                                          'click_action':
+                                                              'FLUTTER_NOTIFICATION_CLICK',
+                                                          'id': '1',
+                                                          'status': 'done'
+                                                        },
+                                                        'to':
+                                                            "/topics/${widget.email!.split("@")[0]}"
+                                                      },
+                                                    ),
+                                                  );
+                                                  toasts.codeSend(
+                                                      "Followed ${widget.name}!");
+                                                }),
+                                      )
+                                  ]
                                 : [
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
@@ -195,8 +418,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                     children: [
                                       Column(children: [
                                         CachedNetworkImage(
-                                          imageUrl:
-                                              "https://picsum.photos/1100/500",
+                                          imageUrl: widget.coverPhoto ?? "",
                                           fit: BoxFit.cover,
                                           width:
                                               MediaQuery.of(context).size.width,
@@ -205,16 +427,13 @@ class _ProfileChildState extends State<ProfileChild> {
                                                   .height *
                                               0.19,
                                         ),
-                                        Container(
-                                          padding: const EdgeInsets.all(8.0),
-                                          // color: Theme.of(context).primaryColor,
+                                        const SizedBox(
                                           width: double.maxFinite,
                                           height: 37,
                                         ),
                                         Container(
                                           padding: const EdgeInsets.fromLTRB(
                                               12, 4, 12, 0),
-                                          // color: Theme.of(context).primaryColor,
                                           width: double.maxFinite,
                                           height: MediaQuery.of(context)
                                                       .size
@@ -229,7 +448,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                         .width *
                                                     0.7,
                                                 child: Text(
-                                                  globals.prismUser.name,
+                                                  widget.name!,
                                                   textAlign: TextAlign.center,
                                                   maxLines: 1,
                                                   overflow:
@@ -252,7 +471,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                         .width *
                                                     0.7,
                                                 child: Text(
-                                                  "@${globals.prismUser.username}",
+                                                  "@${widget.username}",
                                                   textAlign: TextAlign.center,
                                                   maxLines: 1,
                                                   overflow:
@@ -277,7 +496,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                         .width *
                                                     0.7,
                                                 child: Text(
-                                                  globals.prismUser.bio,
+                                                  widget.bio ?? "",
                                                   textAlign: TextAlign.center,
                                                   maxLines: 2,
                                                   overflow:
@@ -308,7 +527,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                     RichText(
                                                       text: TextSpan(
                                                         text:
-                                                            "${globals.prismUser.following.length}",
+                                                            "${widget.following!.length}",
                                                         style: TextStyle(
                                                           fontFamily:
                                                               "Proxima Nova",
@@ -346,7 +565,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                     RichText(
                                                       text: TextSpan(
                                                         text:
-                                                            "${globals.prismUser.followers.length}",
+                                                            "${widget.followers!.length}",
                                                         style: TextStyle(
                                                           fontFamily:
                                                               "Proxima Nova",
@@ -409,9 +628,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                               ),
                                               child: ClipOval(
                                                 child: CachedNetworkImage(
-                                                  imageUrl: globals
-                                                      .prismUser.profilePhoto
-                                                      .toString(),
+                                                  imageUrl: widget.userPhoto ??
+                                                      "".toString(),
                                                   width: 78,
                                                   height: 78,
                                                   fit: BoxFit.cover,
@@ -864,7 +1082,10 @@ class _ProfileChildState extends State<ProfileChild> {
                             automaticallyImplyLeading: false,
                             pinned: true,
                             titleSpacing: 0,
-                            expandedHeight: globals.prismUser.loggedIn ? 50 : 0,
+                            expandedHeight: !widget.ownProfile! ||
+                                    globals.prismUser.loggedIn
+                                ? 50
+                                : 0,
                             title: SizedBox(
                               width: MediaQuery.of(context).size.width,
                               height: 57,
@@ -907,18 +1128,14 @@ class _ProfileChildState extends State<ProfileChild> {
                         body: TabBarView(children: [
                           Padding(
                             padding: const EdgeInsets.only(top: 5),
-                            child: ProfileLoader(
-                              future: Provider.of<ProfileWallProvider>(context,
-                                      listen: false)
-                                  .getProfileWalls(),
+                            child: UserProfileLoader(
+                              email: widget.email,
                             ),
                           ),
                           Padding(
                             padding: const EdgeInsets.only(top: 5),
-                            child: UploadedSetupsLoader(
-                              future: Provider.of<ProfileSetupProvider>(context,
-                                      listen: false)
-                                  .getProfileSetups(),
+                            child: UserProfileSetupLoader(
+                              email: widget.email,
                             ),
                           ),
                         ]),
