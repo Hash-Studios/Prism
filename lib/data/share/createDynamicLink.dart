@@ -50,7 +50,7 @@ Future<void> createUserDynamicLink(String name, String username, String email,
       dynamicLinkParametersOptions: DynamicLinkParametersOptions(
           shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
       uriPrefix: 'https://prismwallpapers.page.link',
-      link: Uri.parse('http://prism.hash.com/user?name=$username'),
+      link: Uri.parse('http://prism.hash.com/user?email=$email'),
       androidParameters: AndroidParameters(
         packageName: 'com.hash.prism',
         minimumVersion: 1,
