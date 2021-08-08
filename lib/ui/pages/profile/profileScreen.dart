@@ -407,7 +407,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       .errorColor,
                                                   width: 4,
                                                 ),
-                                                color: Colors.red,
+                                                color: Theme.of(context)
+                                                    .accentColor,
                                               ),
                                               child: ClipOval(
                                                 child: CachedNetworkImage(
