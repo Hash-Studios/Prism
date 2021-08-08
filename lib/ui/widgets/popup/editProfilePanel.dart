@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -272,13 +273,13 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   Future processImage() async {
     final imgList = _pfp!.readAsBytesSync();
     _compressedPFP = await compressFile(_pfp!);
-    uploadFile();
+    await uploadFile();
   }
 
   Future processImageCover() async {
     final imgList = _cover!.readAsBytesSync();
     _compressedCover = await compressFile(_cover!);
-    uploadFileCover();
+    await uploadFileCover();
   }
 
   Future uploadFile() async {
@@ -338,7 +339,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         "coverPhoto": coverUrl,
       });
     } catch (e) {
-      debugPrint(e.toString());
+      logger.d(e.toString());
       toasts.error("Some uploading issue, please try again.");
     }
   }
@@ -382,6 +383,53 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                 style: Theme.of(context).textTheme.headline2,
               ),
               const Spacer(),
+              ClipRRect(
+                child: Material(
+                  child: InkWell(
+                    onTap: () async {
+                      await getCover();
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          height: 240 * 508 / 1234,
+                          width: 240,
+                          decoration: const BoxDecoration(
+                            border: Border.fromBorderSide(
+                              BorderSide(color: Colors.white, width: 2),
+                            ),
+                          ),
+                          child: (_cover == null)
+                              ? CachedNetworkImage(
+                                  imageUrl: globals.prismUser.coverPhoto ?? "",
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.file(
+                                  _cover!,
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
+                        Container(
+                          height: 240 * 508 / 1234,
+                          width: 240,
+                          decoration: BoxDecoration(
+                            border: const Border.fromBorderSide(
+                              BorderSide(color: Colors.white, width: 2),
+                            ),
+                            color:
+                                Theme.of(context).errorColor.withOpacity(0.5),
+                          ),
+                          child: const Icon(
+                            JamIcons.pencil,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const Spacer(),
               ClipOval(
                 child: Material(
                   child: InkWell(
@@ -391,8 +439,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                     child: Stack(
                       children: [
                         Container(
-                          height: 120,
-                          width: 120,
+                          height: 100,
+                          width: 100,
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.fromBorderSide(
@@ -410,8 +458,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 ),
                         ),
                         Container(
-                          height: 120,
-                          width: 120,
+                          height: 100,
+                          width: 100,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: const Border.fromBorderSide(
