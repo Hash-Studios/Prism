@@ -24,6 +24,7 @@ PrismUsersV2 prismUser = main.prefs.get(
     coins: 0,
     subPrisms: [],
     transactions: [],
+    coverPhoto: "",
   ),
 ) as PrismUsersV2;
 String currentAppVersion = '2.6.7';

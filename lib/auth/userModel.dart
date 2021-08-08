@@ -47,6 +47,8 @@ class PrismUsersV2 {
   List<PrismTransaction> transactions;
   @HiveField(16)
   String name;
+  @HiveField(17)
+  String? coverPhoto;
 
   PrismUsersV2({
     required this.username,
@@ -66,6 +68,7 @@ class PrismUsersV2 {
     required this.coins,
     required this.transactions,
     required this.name,
+    this.coverPhoto,
   }) {
     debugPrint("Default constructor !!!!");
   }
@@ -98,6 +101,7 @@ class PrismUsersV2 {
         transactions: (doc.data()!['transactions'] as List<dynamic> ?? [])
             .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
             .toList(),
+        coverPhoto: doc.data()!["coverPhoto"]?.toString(),
       );
   Map<String, dynamic> toJson() => _$PrismUsersV2ToJson(this);
 }

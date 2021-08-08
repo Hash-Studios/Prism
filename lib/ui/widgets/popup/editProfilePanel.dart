@@ -32,6 +32,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   bool isLoading = false;
   bool pfpEdit = false;
+  bool coverEdit = false;
   bool usernameEdit = false;
   bool bioEdit = false;
   bool linkEdit = false;
@@ -39,10 +40,15 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   bool? available;
   bool isCheckingUsername = false;
   File? _pfp;
+  File? _cover;
   late List<int> _compressedPFP;
+  late List<int> _compressedCover;
   late String pfpSha;
   late String pfpPath;
   late String pfpUrl;
+  late String coverSha;
+  late String coverPath;
+  late String coverUrl;
   final picker2 = ImagePicker();
   List<Map<String, dynamic>> linkIcons = [
     // {
@@ -242,6 +248,16 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     }
   }
 
+  Future getCover() async {
+    final pickedFile = await picker2.getImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _cover = File(pickedFile.path);
+        coverEdit = true;
+      });
+    }
+  }
+
   Future<Uint8List> compressFile(File file) async {
     final result = await FlutterImageCompress.compressWithFile(
       file.absolute.path,
@@ -257,6 +273,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     final imgList = _pfp!.readAsBytesSync();
     _compressedPFP = await compressFile(_pfp!);
     uploadFile();
+  }
+
+  Future processImageCover() async {
+    final imgList = _cover!.readAsBytesSync();
+    _compressedCover = await compressFile(_cover!);
+    uploadFileCover();
   }
 
   Future uploadFile() async {
@@ -283,6 +305,37 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           .doc(globals.prismUser.id)
           .update({
         "profilePhoto": pfpUrl,
+      });
+    } catch (e) {
+      debugPrint(e.toString());
+      toasts.error("Some uploading issue, please try again.");
+    }
+  }
+
+  Future uploadFileCover() async {
+    try {
+      final String base64Image = base64Encode(_compressedCover);
+      final github = GitHub(auth: Authentication.withToken(token));
+      await github.repositories
+          .createFile(
+              RepositorySlug(gitUserName, repoName),
+              CreateFile(
+                  message: Path.basename(_cover!.path),
+                  content: base64Image,
+                  path: Path.basename(_cover!.path)))
+          .then((value) => setState(() {
+                coverUrl = value.content!.downloadUrl!;
+                coverPath = value.content!.path!;
+                coverSha = value.content!.sha!;
+              }));
+      debugPrint('Cover File Uploaded');
+      globals.prismUser.coverPhoto = coverUrl;
+      main.prefs.put("prismUserV2", globals.prismUser);
+      await firestore
+          .collection(USER_NEW_COLLECTION)
+          .doc(globals.prismUser.id)
+          .update({
+        "coverPhoto": coverUrl,
       });
     } catch (e) {
       debugPrint(e.toString());
@@ -631,7 +684,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                       child: Row(
                                         children: [
                                           Icon(link["icon"] as IconData),
-                                          Icon(
+                                          const Icon(
                                             JamIcons.chevron_down,
                                             size: 14,
                                           ),
@@ -755,13 +808,17 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
-                      onTap: (!usernameEdit && (pfpEdit || bioEdit || linkEdit))
+                      onTap: (!usernameEdit &&
+                              (pfpEdit || bioEdit || linkEdit || coverEdit))
                           ? () async {
                               setState(() {
                                 isLoading = true;
                               });
                               if (_pfp != null && pfpEdit) {
                                 await processImage();
+                              }
+                              if (_cover != null && coverEdit) {
+                                await processImageCover();
                               }
                               if (bioEdit && bioController.text != "") {
                                 globals.prismUser.bio = bioController.text;
@@ -820,6 +877,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   if (_pfp != null && pfpEdit) {
                                     await processImage();
                                   }
+                                  if (_cover != null && coverEdit) {
+                                    await processImageCover();
+                                  }
                                   if (bioEdit && bioController.text != "") {
                                     globals.prismUser.bio = bioController.text;
                                     main.prefs
@@ -864,13 +924,19 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           height: 60,
                           decoration: BoxDecoration(
                             color: !((!usernameEdit &&
-                                        (pfpEdit || bioEdit || linkEdit)) ||
+                                        (pfpEdit ||
+                                            bioEdit ||
+                                            linkEdit ||
+                                            coverEdit)) ||
                                     (usernameEdit && enabled))
                                 ? Theme.of(context).primaryColor
                                 : Theme.of(context).errorColor.withOpacity(0.2),
                             border: Border.all(
                                 color: !((!usernameEdit &&
-                                            (pfpEdit || bioEdit || linkEdit)) ||
+                                            (pfpEdit ||
+                                                bioEdit ||
+                                                linkEdit ||
+                                                coverEdit)) ||
                                         (usernameEdit && enabled))
                                     ? Theme.of(context)
                                         .accentColor
@@ -890,7 +956,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                         color: !((!usernameEdit &&
                                                     (pfpEdit ||
                                                         bioEdit ||
-                                                        linkEdit)) ||
+                                                        linkEdit ||
+                                                        coverEdit)) ||
                                                 (usernameEdit && enabled))
                                             ? Theme.of(context)
                                                 .accentColor
