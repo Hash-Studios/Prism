@@ -13,6 +13,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/ui/widgets/popup/linkPopUp.dart';
+import 'package:Prism/ui/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/ui/widgets/profile/aboutList.dart';
 import 'package:Prism/ui/widgets/profile/drawerWidget.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
@@ -38,6 +39,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
 
@@ -401,7 +403,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         backgroundColor: Theme.of(context).primaryColor,
                         automaticallyImplyLeading: false,
                         expandedHeight:
-                            MediaQuery.of(context).size.height * 0.4,
+                            MediaQuery.of(context).size.height * 0.46,
                         flexibleSpace: Stack(
                           children: [
                             FlexibleSpaceBar(
@@ -447,9 +449,11 @@ class _ProfileChildState extends State<ProfileChild> {
                                       width: double.maxFinite,
                                       height:
                                           MediaQuery.of(context).size.height *
-                                                  0.21 -
+                                                  0.27 -
                                               37,
                                       child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
                                         children: [
                                           SizedBox(
                                             width: MediaQuery.of(context)
@@ -494,7 +498,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                             ),
                                           ),
                                           const SizedBox(
-                                            height: 17,
+                                            height: 15,
                                           ),
                                           SizedBox(
                                             width: MediaQuery.of(context)
@@ -517,7 +521,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                             ),
                                           ),
                                           const SizedBox(
-                                            height: 17,
+                                            height: 15,
                                           ),
                                           SizedBox(
                                             width: MediaQuery.of(context)
@@ -598,6 +602,121 @@ class _ProfileChildState extends State<ProfileChild> {
                                               ],
                                             ),
                                           ),
+                                          const SizedBox(
+                                            height: 8,
+                                          ),
+                                          SizedBox(
+                                            width: MediaQuery.of(context)
+                                                .size
+                                                .width,
+                                            height: 48,
+                                            child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  ...(widget.links ?? {})
+                                                      .keys
+                                                      .toList()
+                                                      .map((e) => IconButton(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(2),
+                                                          icon: Container(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(6.0),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor
+                                                                  .withOpacity(
+                                                                      0.1),
+                                                            ),
+                                                            child: Icon(
+                                                              linksData[e]![
+                                                                      "icon"]
+                                                                  as IconData,
+                                                              size: 20,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor
+                                                                  .withOpacity(
+                                                                      0.8),
+                                                            ),
+                                                          ),
+                                                          onPressed: () {
+                                                            if (widget.links![e]
+                                                                .toString()
+                                                                .contains(
+                                                                    "@gmail.com")) {
+                                                              launch(
+                                                                  "mailto:${widget.links![e].toString()}");
+                                                            } else {
+                                                              launch(widget
+                                                                  .links![e]
+                                                                  .toString());
+                                                            }
+                                                          }))
+                                                      .toList()
+                                                      .sublist(
+                                                        0,
+                                                        (widget.links ?? {})
+                                                                    .keys
+                                                                    .toList()
+                                                                    .length >
+                                                                3
+                                                            ? 3
+                                                            : (widget.links ??
+                                                                    {})
+                                                                .keys
+                                                                .toList()
+                                                                .length,
+                                                      ),
+                                                  if ((widget.links ?? {})
+                                                          .keys
+                                                          .toList()
+                                                          .length >
+                                                      3)
+                                                    IconButton(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(2),
+                                                        icon: Container(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(6.0),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            shape:
+                                                                BoxShape.circle,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor
+                                                                .withOpacity(
+                                                                    0.1),
+                                                          ),
+                                                          child: Icon(
+                                                            JamIcons
+                                                                .more_horizontal,
+                                                            size: 20,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor
+                                                                .withOpacity(
+                                                                    0.8),
+                                                          ),
+                                                        ),
+                                                        onPressed: () {
+                                                          showNoLoadLinksPopUp(
+                                                              context,
+                                                              widget.links ??
+                                                                  {});
+                                                        }),
+                                                ]),
+                                          )
                                         ],
                                       ),
                                     )
@@ -1191,3 +1310,167 @@ class _ProfileChildState extends State<ProfileChild> {
           );
   }
 }
+
+Map<String, Map<String, dynamic>> linksData = {
+  'github': {
+    'name': 'github',
+    'link': 'https://github.com/username',
+    'icon': JamIcons.github,
+    'value': '',
+    'validator': 'github',
+  },
+  'twitter': {
+    'name': 'twitter',
+    'link': 'https://twitter.com/username',
+    'icon': JamIcons.twitter,
+    'value': '',
+    'validator': 'twitter',
+  },
+  'instagram': {
+    'name': 'instagram',
+    'link': 'https://instagram.com/username',
+    'icon': JamIcons.instagram,
+    'value': '',
+    'validator': 'instagram',
+  },
+  'email': {
+    'name': 'email',
+    'link': 'your@email.com',
+    'icon': JamIcons.inbox,
+    'value': '',
+    'validator': '@',
+  },
+  'telegram': {
+    'name': 'telegram',
+    'link': 'https://t.me/username',
+    'icon': JamIcons.paper_plane,
+    'value': '',
+    'validator': 't.me',
+  },
+  'dribbble': {
+    'name': 'dribbble',
+    'link': 'https://dribbble.com/username',
+    'icon': JamIcons.basketball,
+    'value': '',
+    'validator': 'dribbble',
+  },
+  'linkedin': {
+    'name': 'linkedin',
+    'link': 'https://linkedin.com/in/username',
+    'icon': JamIcons.linkedin,
+    'value': '',
+    'validator': 'linkedin',
+  },
+  'bio.link': {
+    'name': 'bio.link',
+    'link': 'https://bio.link/username',
+    'icon': JamIcons.world,
+    'value': '',
+    'validator': 'bio.link',
+  },
+  'patreon': {
+    'name': 'patreon',
+    'link': 'https://patreon.com/username',
+    'icon': JamIcons.patreon,
+    'value': '',
+    'validator': 'patreon',
+  },
+  'trello': {
+    'name': 'trello',
+    'link': 'https://trello.com/username',
+    'icon': JamIcons.trello,
+    'value': '',
+    'validator': 'trello',
+  },
+  'reddit': {
+    'name': 'reddit',
+    'link': 'https://reddit.com/user/username',
+    'icon': JamIcons.reddit,
+    'value': '',
+    'validator': 'reddit',
+  },
+  'behance': {
+    'name': 'behance',
+    'link': 'https://behance.net/username',
+    'icon': JamIcons.behance,
+    'value': '',
+    'validator': 'behance.net',
+  },
+  'deviantart': {
+    'name': 'deviantart',
+    'link': 'https://deviantart.com/username',
+    'icon': JamIcons.deviantart,
+    'value': '',
+    'validator': 'deviantart',
+  },
+  'gitlab': {
+    'name': 'gitlab',
+    'link': 'https://gitlab.com/username',
+    'icon': JamIcons.gitlab,
+    'value': '',
+    'validator': 'gitlab',
+  },
+  'medium': {
+    'name': 'medium',
+    'link': 'https://username.medium.com/',
+    'icon': JamIcons.medium,
+    'value': '',
+    'validator': 'medium',
+  },
+  'paypal': {
+    'name': 'paypal',
+    'link': 'https://paypal.me/username',
+    'icon': JamIcons.paypal,
+    'value': '',
+    'validator': 'paypal',
+  },
+  'spotify': {
+    'name': 'spotify',
+    'link': 'https://open.spotify.com/user/username',
+    'icon': JamIcons.spotify,
+    'value': '',
+    'validator': 'open.spotify',
+  },
+  'twitch': {
+    'name': 'twitch',
+    'link': 'https://twitch.tv/username',
+    'icon': JamIcons.twitch,
+    'value': '',
+    'validator': 'twitch.tv',
+  },
+  'unsplash': {
+    'name': 'unsplash',
+    'link': 'https://unsplash.com/username',
+    'icon': JamIcons.unsplash,
+    'value': '',
+    'validator': 'unsplash',
+  },
+  'youtube': {
+    'name': 'youtube',
+    'link': 'https://youtube.com/channel/username',
+    'icon': JamIcons.youtube,
+    'value': '',
+    'validator': 'youtube',
+  },
+  'linktree': {
+    'name': 'linktree',
+    'link': 'https://linktr.ee/username',
+    'icon': JamIcons.tree_alt,
+    'value': '',
+    'validator': 'linktr.ee',
+  },
+  'buymeacoffee': {
+    'name': 'buymeacoffee',
+    'link': 'https://buymeacoff.ee/username',
+    'icon': JamIcons.coffee,
+    'value': '',
+    'validator': 'buymeacoff.ee',
+  },
+  'custom link': {
+    'name': 'custom link',
+    'link': '',
+    'icon': JamIcons.link,
+    'value': '',
+    'validator': '',
+  },
+};
