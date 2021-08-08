@@ -403,7 +403,9 @@ class _ProfileChildState extends State<ProfileChild> {
                         backgroundColor: Theme.of(context).primaryColor,
                         automaticallyImplyLeading: false,
                         expandedHeight:
-                            MediaQuery.of(context).size.height * 0.46,
+                            (widget.links ?? {}).keys.toList().isEmpty
+                                ? MediaQuery.of(context).size.height * 0.4
+                                : MediaQuery.of(context).size.height * 0.46,
                         flexibleSpace: Stack(
                           children: [
                             FlexibleSpaceBar(
@@ -447,8 +449,14 @@ class _ProfileChildState extends State<ProfileChild> {
                                       padding: const EdgeInsets.fromLTRB(
                                           12, 4, 12, 0),
                                       width: double.maxFinite,
-                                      height:
-                                          MediaQuery.of(context).size.height *
+                                      height: (widget.links ?? {})
+                                              .keys
+                                              .toList()
+                                              .isEmpty
+                                          ? MediaQuery.of(context).size.height *
+                                                  0.21 -
+                                              37
+                                          : MediaQuery.of(context).size.height *
                                                   0.27 -
                                               37,
                                       child: Column(
@@ -602,22 +610,94 @@ class _ProfileChildState extends State<ProfileChild> {
                                               ],
                                             ),
                                           ),
-                                          const SizedBox(
-                                            height: 8,
-                                          ),
-                                          SizedBox(
-                                            width: MediaQuery.of(context)
-                                                .size
-                                                .width,
-                                            height: 48,
-                                            child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  ...(widget.links ?? {})
-                                                      .keys
-                                                      .toList()
-                                                      .map((e) => IconButton(
+                                          if ((widget.links ?? {})
+                                              .keys
+                                              .toList()
+                                              .isNotEmpty)
+                                            const SizedBox(
+                                              height: 8,
+                                            ),
+                                          if ((widget.links ?? {})
+                                              .keys
+                                              .toList()
+                                              .isNotEmpty)
+                                            SizedBox(
+                                              width: MediaQuery.of(context)
+                                                  .size
+                                                  .width,
+                                              height: 48,
+                                              child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    ...(widget.links ?? {})
+                                                        .keys
+                                                        .toList()
+                                                        .map((e) => IconButton(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(2),
+                                                            icon: Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(6.0),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .accentColor
+                                                                    .withOpacity(
+                                                                        0.1),
+                                                              ),
+                                                              child: Icon(
+                                                                linksData[e]![
+                                                                        "icon"]
+                                                                    as IconData,
+                                                                size: 20,
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .accentColor
+                                                                    .withOpacity(
+                                                                        0.8),
+                                                              ),
+                                                            ),
+                                                            onPressed: () {
+                                                              if (widget
+                                                                  .links![e]
+                                                                  .toString()
+                                                                  .contains(
+                                                                      "@gmail.com")) {
+                                                                launch(
+                                                                    "mailto:${widget.links![e].toString()}");
+                                                              } else {
+                                                                launch(widget
+                                                                    .links![e]
+                                                                    .toString());
+                                                              }
+                                                            }))
+                                                        .toList()
+                                                        .sublist(
+                                                          0,
+                                                          (widget.links ?? {})
+                                                                      .keys
+                                                                      .toList()
+                                                                      .length >
+                                                                  3
+                                                              ? 3
+                                                              : (widget.links ??
+                                                                      {})
+                                                                  .keys
+                                                                  .toList()
+                                                                  .length,
+                                                        ),
+                                                    if ((widget.links ?? {})
+                                                            .keys
+                                                            .toList()
+                                                            .length >
+                                                        3)
+                                                      IconButton(
                                                           padding:
                                                               const EdgeInsets
                                                                   .all(2),
@@ -636,9 +716,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                       0.1),
                                                             ),
                                                             child: Icon(
-                                                              linksData[e]![
-                                                                      "icon"]
-                                                                  as IconData,
+                                                              JamIcons
+                                                                  .more_horizontal,
                                                               size: 20,
                                                               color: Theme.of(
                                                                       context)
@@ -648,75 +727,13 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             ),
                                                           ),
                                                           onPressed: () {
-                                                            if (widget.links![e]
-                                                                .toString()
-                                                                .contains(
-                                                                    "@gmail.com")) {
-                                                              launch(
-                                                                  "mailto:${widget.links![e].toString()}");
-                                                            } else {
-                                                              launch(widget
-                                                                  .links![e]
-                                                                  .toString());
-                                                            }
-                                                          }))
-                                                      .toList()
-                                                      .sublist(
-                                                        0,
-                                                        (widget.links ?? {})
-                                                                    .keys
-                                                                    .toList()
-                                                                    .length >
-                                                                3
-                                                            ? 3
-                                                            : (widget.links ??
-                                                                    {})
-                                                                .keys
-                                                                .toList()
-                                                                .length,
-                                                      ),
-                                                  if ((widget.links ?? {})
-                                                          .keys
-                                                          .toList()
-                                                          .length >
-                                                      3)
-                                                    IconButton(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(2),
-                                                        icon: Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(6.0),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            shape:
-                                                                BoxShape.circle,
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor
-                                                                .withOpacity(
-                                                                    0.1),
-                                                          ),
-                                                          child: Icon(
-                                                            JamIcons
-                                                                .more_horizontal,
-                                                            size: 20,
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor
-                                                                .withOpacity(
-                                                                    0.8),
-                                                          ),
-                                                        ),
-                                                        onPressed: () {
-                                                          showNoLoadLinksPopUp(
-                                                              context,
-                                                              widget.links ??
-                                                                  {});
-                                                        }),
-                                                ]),
-                                          )
+                                                            showNoLoadLinksPopUp(
+                                                                context,
+                                                                widget.links ??
+                                                                    {});
+                                                          }),
+                                                  ]),
+                                            )
                                         ],
                                       ),
                                     )
