@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/routes/router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -344,699 +345,707 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     }
   }
 
+  Future<bool> onWillPop() async {
+    if (navStack.length > 1) navStack.removeLast();
+    debugPrint(navStack.toString());
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width * 0.85;
-    return Padding(
-      padding: MediaQuery.of(context).viewInsets,
-      child: SingleChildScrollView(
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.8,
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
+    return WillPopScope(
+      onWillPop: onWillPop,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+              icon: const Icon(JamIcons.close),
+              onPressed: () {
+                navStack.removeLast();
+                debugPrint(navStack.toString());
+                Navigator.pop(context);
+              }),
+          title: Text(
+            "Edit Profile",
+            style: Theme.of(context).textTheme.headline3,
           ),
-          child: Column(
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Container(
-                      height: 5,
-                      width: 30,
-                      decoration: BoxDecoration(
-                          color: Theme.of(context).hintColor,
-                          borderRadius: BorderRadius.circular(500)),
-                    ),
-                  )
-                ],
+        ),
+        backgroundColor: Theme.of(context).primaryColor,
+        body: SingleChildScrollView(
+          child: Container(
+            height: MediaQuery.of(context).size.height,
+            width: MediaQuery.of(context).size.width,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
-              const Spacer(),
-              Text(
-                "Edit Profile",
-                style: Theme.of(context).textTheme.headline2,
-              ),
-              const Spacer(),
-              ClipRRect(
-                child: Material(
-                  child: InkWell(
-                    onTap: () async {
-                      await getCover();
-                    },
-                    child: Stack(
-                      children: [
-                        Container(
-                          height: 240 * 508 / 1234,
-                          width: 240,
-                          decoration: const BoxDecoration(
-                            border: Border.fromBorderSide(
-                              BorderSide(color: Colors.white, width: 2),
-                            ),
-                          ),
-                          child: (_cover == null)
-                              ? CachedNetworkImage(
-                                  imageUrl: globals.prismUser.coverPhoto ?? "",
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.file(
-                                  _cover!,
-                                  fit: BoxFit.cover,
-                                ),
-                        ),
-                        Container(
-                          height: 240 * 508 / 1234,
-                          width: 240,
-                          decoration: BoxDecoration(
-                            border: const Border.fromBorderSide(
-                              BorderSide(color: Colors.white, width: 2),
-                            ),
-                            color:
-                                Theme.of(context).errorColor.withOpacity(0.5),
-                          ),
-                          child: const Icon(
-                            JamIcons.pencil,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const Spacer(),
-              ClipOval(
-                child: Material(
-                  child: InkWell(
-                    onTap: () async {
-                      await getPFP();
-                    },
-                    child: Stack(
-                      children: [
-                        Container(
-                          height: 100,
-                          width: 100,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.fromBorderSide(
-                              BorderSide(color: Colors.white, width: 2),
-                            ),
-                          ),
-                          child: (_pfp == null)
-                              ? CachedNetworkImage(
-                                  imageUrl: globals.prismUser.profilePhoto,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.file(
-                                  _pfp!,
-                                  fit: BoxFit.cover,
-                                ),
-                        ),
-                        Container(
-                          height: 100,
-                          width: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: const Border.fromBorderSide(
-                              BorderSide(color: Colors.white, width: 2),
-                            ),
-                            color:
-                                Theme.of(context).errorColor.withOpacity(0.5),
-                          ),
-                          child: const Icon(
-                            JamIcons.pencil,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  SizedBox(
-                    height: 80,
-                    width: width - 24,
-                    child: Center(
-                      child: TextField(
-                        cursorColor: const Color(0xFFE57697),
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline5!
-                            .copyWith(color: Colors.white),
-                        controller: usernameController,
-                        decoration: InputDecoration(
-                          contentPadding:
-                              const EdgeInsets.only(left: 30, top: 15),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Colors.white, width: 2)),
-                          disabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Colors.white, width: 2)),
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Colors.white, width: 2)),
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Colors.white, width: 2)),
-                          labelText: "username",
-                          labelStyle: Theme.of(context)
-                              .textTheme
-                              .headline5!
-                              .copyWith(fontSize: 14, color: Colors.white),
-                          prefixIcon: const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text(
-                              "@",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+            ),
+            child: Column(
+              children: <Widget>[
+                ClipRRect(
+                  child: Material(
+                    child: InkWell(
+                      onTap: () async {
+                        await getCover();
+                      },
+                      child: Stack(
+                        children: [
+                          Container(
+                            height:
+                                MediaQuery.of(context).size.width * 508 / 1234,
+                            width: MediaQuery.of(context).size.width,
+                            decoration: const BoxDecoration(
+                              border: Border.fromBorderSide(
+                                BorderSide(color: Colors.white, width: 2),
                               ),
                             ),
-                          ),
-                          suffixIcon: isCheckingUsername
-                              ? Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      color: Theme.of(context).errorColor,
-                                    ),
+                            child: (_cover == null)
+                                ? CachedNetworkImage(
+                                    imageUrl:
+                                        globals.prismUser.coverPhoto ?? "",
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    _cover!,
+                                    fit: BoxFit.cover,
                                   ),
-                                )
-                              : Padding(
-                                  padding: EdgeInsets.all(
-                                      available == null ? 16.0 : 8),
-                                  child: available == null
-                                      ? const Text(
-                                          "",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        )
-                                      : Icon(
-                                          available!
-                                              ? JamIcons.check
-                                              : JamIcons.close,
-                                          color: available!
-                                              ? Colors.green
-                                              : Colors.red,
-                                          size: 24,
-                                        ),
-                                ),
-                        ),
-                        onChanged: (value) async {
-                          if (value == "") {
-                            setState(() {
-                              usernameEdit = false;
-                            });
-                          } else {
-                            setState(() {
-                              usernameEdit = true;
-                            });
-                          }
-                          if (value != "" &&
-                              value.length >= 8 &&
-                              !value.contains(RegExp(r"(?: |[^\w\s])+"))) {
-                            setState(() {
-                              enabled = true;
-                            });
-                          } else {
-                            setState(() {
-                              enabled = false;
-                            });
-                          }
-                          if (enabled) {
-                            setState(() {
-                              isCheckingUsername = true;
-                            });
-                            await FirebaseFirestore.instance
-                                .collection(USER_NEW_COLLECTION)
-                                .where("username", isEqualTo: value)
-                                .get()
-                                .then((snapshot) {
-                              if (snapshot.size == 0) {
-                                setState(() {
-                                  available = true;
-                                });
-                              } else {
-                                setState(() {
-                                  available = false;
-                                });
-                              }
-                            });
-                            setState(() {
-                              isCheckingUsername = false;
-                            });
-                          } else {
-                            setState(() {
-                              available = null;
-                            });
-                          }
-                        },
+                          ),
+                          Container(
+                            height:
+                                MediaQuery.of(context).size.width * 508 / 1234,
+                            width: MediaQuery.of(context).size.width,
+                            decoration: BoxDecoration(
+                              border: const Border.fromBorderSide(
+                                BorderSide(color: Colors.white, width: 2),
+                              ),
+                              color:
+                                  Theme.of(context).errorColor.withOpacity(0.5),
+                            ),
+                            child: const Icon(
+                              JamIcons.pencil,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  SizedBox(
-                    height: 80,
-                    width: width - 24,
-                    child: Center(
-                      child: TextField(
-                        cursorColor: const Color(0xFFE57697),
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline5!
-                            .copyWith(color: Colors.white),
-                        controller: bioController,
-                        decoration: InputDecoration(
-                          contentPadding:
-                              const EdgeInsets.only(left: 30, top: 15),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Colors.white, width: 2)),
-                          disabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Colors.white, width: 2)),
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Colors.white, width: 2)),
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Colors.white, width: 2)),
-                          labelText: "Bio",
-                          labelStyle: Theme.of(context)
+                ),
+                const Spacer(),
+                ClipOval(
+                  child: Material(
+                    child: InkWell(
+                      onTap: () async {
+                        await getPFP();
+                      },
+                      child: Stack(
+                        children: [
+                          Container(
+                            height: 100,
+                            width: 100,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.fromBorderSide(
+                                BorderSide(color: Colors.white, width: 2),
+                              ),
+                            ),
+                            child: (_pfp == null)
+                                ? CachedNetworkImage(
+                                    imageUrl: globals.prismUser.profilePhoto,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    _pfp!,
+                                    fit: BoxFit.cover,
+                                  ),
+                          ),
+                          Container(
+                            height: 100,
+                            width: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: const Border.fromBorderSide(
+                                BorderSide(color: Colors.white, width: 2),
+                              ),
+                              color:
+                                  Theme.of(context).errorColor.withOpacity(0.5),
+                            ),
+                            child: const Icon(
+                              JamIcons.pencil,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    SizedBox(
+                      height: 80,
+                      width: width - 24,
+                      child: Center(
+                        child: TextField(
+                          cursorColor: const Color(0xFFE57697),
+                          style: Theme.of(context)
                               .textTheme
                               .headline5!
-                              .copyWith(fontSize: 14, color: Colors.white),
-                          prefixIcon: const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text(
-                              "bio",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                              .copyWith(color: Colors.white),
+                          controller: usernameController,
+                          decoration: InputDecoration(
+                            contentPadding:
+                                const EdgeInsets.only(left: 30, top: 15),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            disabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            labelText: "username",
+                            labelStyle: Theme.of(context)
+                                .textTheme
+                                .headline5!
+                                .copyWith(fontSize: 14, color: Colors.white),
+                            prefixIcon: const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                "@",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            suffixIcon: isCheckingUsername
+                                ? Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        color: Theme.of(context).errorColor,
+                                      ),
+                                    ),
+                                  )
+                                : Padding(
+                                    padding: EdgeInsets.all(
+                                        available == null ? 16.0 : 8),
+                                    child: available == null
+                                        ? const Text(
+                                            "",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        : Icon(
+                                            available!
+                                                ? JamIcons.check
+                                                : JamIcons.close,
+                                            color: available!
+                                                ? Colors.green
+                                                : Colors.red,
+                                            size: 24,
+                                          ),
+                                  ),
+                          ),
+                          onChanged: (value) async {
+                            if (value == "") {
+                              setState(() {
+                                usernameEdit = false;
+                              });
+                            } else {
+                              setState(() {
+                                usernameEdit = true;
+                              });
+                            }
+                            if (value != "" &&
+                                value.length >= 8 &&
+                                !value.contains(RegExp(r"(?: |[^\w\s])+"))) {
+                              setState(() {
+                                enabled = true;
+                              });
+                            } else {
+                              setState(() {
+                                enabled = false;
+                              });
+                            }
+                            if (enabled) {
+                              setState(() {
+                                isCheckingUsername = true;
+                              });
+                              await FirebaseFirestore.instance
+                                  .collection(USER_NEW_COLLECTION)
+                                  .where("username", isEqualTo: value)
+                                  .get()
+                                  .then((snapshot) {
+                                if (snapshot.size == 0) {
+                                  setState(() {
+                                    available = true;
+                                  });
+                                } else {
+                                  setState(() {
+                                    available = false;
+                                  });
+                                }
+                              });
+                              setState(() {
+                                isCheckingUsername = false;
+                              });
+                            } else {
+                              setState(() {
+                                available = null;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 80,
+                      width: width - 24,
+                      child: Center(
+                        child: TextField(
+                          cursorColor: const Color(0xFFE57697),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline5!
+                              .copyWith(color: Colors.white),
+                          controller: bioController,
+                          decoration: InputDecoration(
+                            contentPadding:
+                                const EdgeInsets.only(left: 30, top: 15),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            disabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            labelText: "Bio",
+                            labelStyle: Theme.of(context)
+                                .textTheme
+                                .headline5!
+                                .copyWith(fontSize: 14, color: Colors.white),
+                            prefixIcon: const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                "bio",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
+                          onChanged: (value) {
+                            if (value == "") {
+                              setState(() {
+                                bioEdit = false;
+                              });
+                            } else {
+                              setState(() {
+                                bioEdit = true;
+                              });
+                            }
+                          },
                         ),
-                        onChanged: (value) {
-                          if (value == "") {
-                            setState(() {
-                              bioEdit = false;
-                            });
-                          } else {
-                            setState(() {
-                              bioEdit = true;
-                            });
-                          }
-                        },
                       ),
                     ),
-                  ),
-                  SizedBox(
-                    height: 80,
-                    width: width - 24,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Positioned(
-                          left: 0,
-                          child: SizedBox(
-                            height: 80,
-                            width: 130,
-                            child: Center(
-                              child: DropdownButton<Map<String, dynamic>>(
-                                isExpanded: true,
-                                items:
-                                    linkIcons.map((Map<String, dynamic> link) {
-                                  return DropdownMenuItem(
-                                    value: link,
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        Icon(link["icon"] as IconData),
-                                        const SizedBox(
-                                          width: 16,
-                                        ),
-                                        Text(
-                                          link["name"].toString().inCaps,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline5!
-                                              .copyWith(
-                                                color: Colors.white,
-                                                fontSize: 14,
-                                              ),
-                                        )
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                                underline: Container(),
-                                onChanged: (value) {
-                                  setState(() => _link = value);
-                                  linkController.text =
-                                      _link!["value"].toString();
-                                },
-                                icon: Container(),
-                                value: _link,
-                                dropdownColor: Theme.of(context).primaryColor,
-                                selectedItemBuilder: (BuildContext context) {
-                                  return linkIcons.map<Widget>((Map link) {
-                                    return Padding(
-                                      padding:
-                                          const EdgeInsets.only(left: 12.0),
+                    SizedBox(
+                      height: 80,
+                      width: width - 24,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Positioned(
+                            left: 0,
+                            child: SizedBox(
+                              height: 80,
+                              width: 130,
+                              child: Center(
+                                child: DropdownButton<Map<String, dynamic>>(
+                                  isExpanded: true,
+                                  items: linkIcons
+                                      .map((Map<String, dynamic> link) {
+                                    return DropdownMenuItem(
+                                      value: link,
                                       child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
                                         children: [
                                           Icon(link["icon"] as IconData),
-                                          const Icon(
-                                            JamIcons.chevron_down,
-                                            size: 14,
+                                          const SizedBox(
+                                            width: 16,
                                           ),
+                                          Text(
+                                            link["name"].toString().inCaps,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline5!
+                                                .copyWith(
+                                                  color: Colors.white,
+                                                  fontSize: 14,
+                                                ),
+                                          )
                                         ],
                                       ),
                                     );
-                                  }).toList();
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 0,
-                          child: SizedBox(
-                            height: 80,
-                            width: width - 80,
-                            child: Center(
-                              child: TextField(
-                                cursorColor: const Color(0xFFE57697),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline5!
-                                    .copyWith(color: Colors.white),
-                                controller: linkController,
-                                decoration: InputDecoration(
-                                  enabled: _link?["name"] != "Edit links...",
-                                  contentPadding:
-                                      const EdgeInsets.only(left: 30, top: 15),
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(
-                                          color: Colors.white, width: 2)),
-                                  disabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(
-                                          color: Colors.white, width: 2)),
-                                  enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(
-                                          color: Colors.white, width: 2)),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(
-                                          color: Colors.white, width: 2)),
-                                  labelText:
-                                      _link?["name"].toString().inCaps ?? "",
-                                  labelStyle: Theme.of(context)
-                                      .textTheme
-                                      .headline5!
-                                      .copyWith(
-                                          fontSize: 14, color: Colors.white),
-                                  hintText: _link?["link"].toString() ?? "",
-                                  hintStyle: Theme.of(context)
-                                      .textTheme
-                                      .headline5!
-                                      .copyWith(
-                                          fontSize: 14, color: Colors.white),
+                                  }).toList(),
+                                  underline: Container(),
+                                  onChanged: (value) {
+                                    setState(() => _link = value);
+                                    linkController.text =
+                                        _link!["value"].toString();
+                                  },
+                                  icon: Container(),
+                                  value: _link,
+                                  dropdownColor: Theme.of(context).primaryColor,
+                                  selectedItemBuilder: (BuildContext context) {
+                                    return linkIcons.map<Widget>((Map link) {
+                                      return Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 12.0),
+                                        child: Row(
+                                          children: [
+                                            Icon(link["icon"] as IconData),
+                                            const Icon(
+                                              JamIcons.chevron_down,
+                                              size: 14,
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList();
+                                  },
                                 ),
-                                onChanged: (value) {
-                                  // print("VALUE TEXT ${value.toLowerCase()}");
-                                  // print(
-                                  //     "VALUE LINK NAME ${_link?["name"].toString().toLowerCase()}");
-                                  // print(
-                                  //     "VALUE LINK VALUE ${_link?["value"].toString().toLowerCase()}");
-                                  // print("VALUE LINK EDIT ${linkEdit}");
-                                  // print(
-                                  //     "VALUE LINK CONTAINS ${(value.toLowerCase().contains('${_link?["name"].toString().toLowerCase()}'))}");
-
-                                  if (value.toLowerCase().contains(
-                                      '${_link?["validator"].toString().toLowerCase()}')) {
-                                    setState(() {
-                                      _link?["value"] = value;
-                                      // if (_link?["name"].toString() == 'github') {
-                                      //   githubUrl = value;
-                                      // } else if (_link?["name"].toString() ==
-                                      //     'twitter') {
-                                      //   twitterUrl = value;
-                                      // } else if (_link?["name"].toString() ==
-                                      //     'instagram') {
-                                      //   instagramUrl = value;
-                                      // } else if (_link?["name"].toString() ==
-                                      //     'email') {
-                                      //   emailUrl = value;
-                                      // }
-                                    });
-                                    bool changed = false;
-                                    for (int i = 0; i < linkIcons.length; i++) {
-                                      if (linkIcons[i]["value"] != "") {
-                                        changed = true;
-                                        break;
-                                      }
-                                    }
-                                    setState(() {
-                                      linkEdit = changed;
-                                    });
-                                  } else if (value == "") {
-                                    bool changed = false;
-                                    for (int i = 0; i < linkIcons.length; i++) {
-                                      if (linkIcons[i]["value"] != "") {
-                                        changed = true;
-                                        break;
-                                      }
-                                    }
-                                    setState(() {
-                                      linkEdit = changed;
-                                    });
-                                  } else {
-                                    setState(() {
-                                      linkEdit = false;
-                                    });
-                                  }
-                                },
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: GestureDetector(
-                      onTap: (!usernameEdit &&
-                              (pfpEdit || bioEdit || linkEdit || coverEdit))
-                          ? () async {
-                              setState(() {
-                                isLoading = true;
-                              });
-                              if (_pfp != null && pfpEdit) {
-                                await processImage();
-                              }
-                              if (_cover != null && coverEdit) {
-                                await processImageCover();
-                              }
-                              if (bioEdit && bioController.text != "") {
-                                globals.prismUser.bio = bioController.text;
-                                main.prefs
-                                    .put("prismUserV2", globals.prismUser);
-                                await firestore
-                                    .collection(USER_NEW_COLLECTION)
-                                    .doc(globals.prismUser.id)
-                                    .update({
-                                  "bio": bioController.text,
-                                });
-                              }
-                              if (linkEdit) {
-                                Map links = globals.prismUser.links;
-                                for (int p = 0; p < linkIcons.length; p++) {
-                                  if (linkIcons[p]["value"] != "") {
-                                    links[linkIcons[p]["name"]] =
-                                        linkIcons[p]["value"];
-                                  }
-                                }
-                                globals.prismUser.links = links;
-                                main.prefs
-                                    .put("prismUserV2", globals.prismUser);
-                                await firestore
-                                    .collection(USER_NEW_COLLECTION)
-                                    .doc(globals.prismUser.id)
-                                    .update({
-                                  "links": links,
-                                });
-                              }
-                              setState(() {
-                                isLoading = false;
-                              });
-                              Navigator.pop(context);
-                              toasts.codeSend("Details updated!");
-                            }
-                          : (usernameEdit && enabled)
-                              ? () async {
-                                  setState(() {
-                                    isLoading = true;
-                                  });
-                                  if (usernameEdit &&
-                                      usernameController.text != "" &&
-                                      usernameController.text.length >= 8) {
-                                    globals.prismUser.username =
-                                        usernameController.text;
-                                    main.prefs
-                                        .put("prismUserV2", globals.prismUser);
-                                    await firestore
-                                        .collection(USER_NEW_COLLECTION)
-                                        .doc(globals.prismUser.id)
-                                        .update({
-                                      "username": usernameController.text,
-                                    });
-                                  }
-                                  if (_pfp != null && pfpEdit) {
-                                    await processImage();
-                                  }
-                                  if (_cover != null && coverEdit) {
-                                    await processImageCover();
-                                  }
-                                  if (bioEdit && bioController.text != "") {
-                                    globals.prismUser.bio = bioController.text;
-                                    main.prefs
-                                        .put("prismUserV2", globals.prismUser);
-                                    await firestore
-                                        .collection(USER_NEW_COLLECTION)
-                                        .doc(globals.prismUser.id)
-                                        .update({
-                                      "bio": bioController.text,
-                                    });
-                                  }
-                                  if (linkEdit) {
-                                    Map links = globals.prismUser.links;
-                                    for (int p = 0; p < linkIcons.length; p++) {
-                                      if (linkIcons[p]["value"] != "") {
-                                        links[linkIcons[p]["name"]] =
-                                            linkIcons[p]["value"];
-                                      }
-                                    }
-                                    globals.prismUser.links = links;
-                                    main.prefs
-                                        .put("prismUserV2", globals.prismUser);
-                                    await firestore
-                                        .collection(USER_NEW_COLLECTION)
-                                        .doc(globals.prismUser.id)
-                                        .update({
-                                      "links": links,
-                                    });
-                                  }
-                                  setState(() {
-                                    isLoading = false;
-                                  });
-                                  Navigator.pop(context);
-                                  toasts.codeSend("Details updated!");
-                                }
-                              : null,
-                      child: SizedBox(
-                        width: width - 20,
-                        height: 60,
-                        child: Container(
-                          width: width - 14,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: !((!usernameEdit &&
-                                        (pfpEdit ||
-                                            bioEdit ||
-                                            linkEdit ||
-                                            coverEdit)) ||
-                                    (usernameEdit && enabled))
-                                ? Theme.of(context).primaryColor
-                                : Theme.of(context).errorColor.withOpacity(0.2),
-                            border: Border.all(
-                                color: !((!usernameEdit &&
-                                            (pfpEdit ||
-                                                bioEdit ||
-                                                linkEdit ||
-                                                coverEdit)) ||
-                                        (usernameEdit && enabled))
-                                    ? Theme.of(context)
-                                        .accentColor
-                                        .withOpacity(0.5)
-                                    : Theme.of(context).errorColor,
-                                width: 3),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Center(
-                            child: isLoading
-                                ? CircularProgressIndicator(
-                                    color: Theme.of(context).primaryColor)
-                                : Text(
-                                    "Continue",
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        color: !((!usernameEdit &&
-                                                    (pfpEdit ||
-                                                        bioEdit ||
-                                                        linkEdit ||
-                                                        coverEdit)) ||
-                                                (usernameEdit && enabled))
-                                            ? Theme.of(context)
-                                                .accentColor
-                                                .withOpacity(0.5)
-                                            : Theme.of(context).accentColor,
-                                        fontWeight: FontWeight.bold),
+                          Positioned(
+                            right: 0,
+                            child: SizedBox(
+                              height: 80,
+                              width: width - 80,
+                              child: Center(
+                                child: TextField(
+                                  cursorColor: const Color(0xFFE57697),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline5!
+                                      .copyWith(color: Colors.white),
+                                  controller: linkController,
+                                  decoration: InputDecoration(
+                                    enabled: _link?["name"] != "Edit links...",
+                                    contentPadding: const EdgeInsets.only(
+                                        left: 30, top: 15),
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                            color: Colors.white, width: 2)),
+                                    disabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                            color: Colors.white, width: 2)),
+                                    enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                            color: Colors.white, width: 2)),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                            color: Colors.white, width: 2)),
+                                    labelText:
+                                        _link?["name"].toString().inCaps ?? "",
+                                    labelStyle: Theme.of(context)
+                                        .textTheme
+                                        .headline5!
+                                        .copyWith(
+                                            fontSize: 14, color: Colors.white),
+                                    hintText: _link?["link"].toString() ?? "",
+                                    hintStyle: Theme.of(context)
+                                        .textTheme
+                                        .headline5!
+                                        .copyWith(
+                                            fontSize: 14, color: Colors.white),
                                   ),
+                                  onChanged: (value) {
+                                    // print("VALUE TEXT ${value.toLowerCase()}");
+                                    // print(
+                                    //     "VALUE LINK NAME ${_link?["name"].toString().toLowerCase()}");
+                                    // print(
+                                    //     "VALUE LINK VALUE ${_link?["value"].toString().toLowerCase()}");
+                                    // print("VALUE LINK EDIT ${linkEdit}");
+                                    // print(
+                                    //     "VALUE LINK CONTAINS ${(value.toLowerCase().contains('${_link?["name"].toString().toLowerCase()}'))}");
+
+                                    if (value.toLowerCase().contains(
+                                        '${_link?["validator"].toString().toLowerCase()}')) {
+                                      setState(() {
+                                        _link?["value"] = value;
+                                        // if (_link?["name"].toString() == 'github') {
+                                        //   githubUrl = value;
+                                        // } else if (_link?["name"].toString() ==
+                                        //     'twitter') {
+                                        //   twitterUrl = value;
+                                        // } else if (_link?["name"].toString() ==
+                                        //     'instagram') {
+                                        //   instagramUrl = value;
+                                        // } else if (_link?["name"].toString() ==
+                                        //     'email') {
+                                        //   emailUrl = value;
+                                        // }
+                                      });
+                                      bool changed = false;
+                                      for (int i = 0;
+                                          i < linkIcons.length;
+                                          i++) {
+                                        if (linkIcons[i]["value"] != "") {
+                                          changed = true;
+                                          break;
+                                        }
+                                      }
+                                      setState(() {
+                                        linkEdit = changed;
+                                      });
+                                    } else if (value == "") {
+                                      bool changed = false;
+                                      for (int i = 0;
+                                          i < linkIcons.length;
+                                          i++) {
+                                        if (linkIcons[i]["value"] != "") {
+                                          changed = true;
+                                          break;
+                                        }
+                                      }
+                                      setState(() {
+                                        linkEdit = changed;
+                                      });
+                                    } else {
+                                      setState(() {
+                                        linkEdit = false;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
                           ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GestureDetector(
+                    onTap: (!usernameEdit &&
+                            (pfpEdit || bioEdit || linkEdit || coverEdit))
+                        ? () async {
+                            setState(() {
+                              isLoading = true;
+                            });
+                            if (_pfp != null && pfpEdit) {
+                              await processImage();
+                            }
+                            if (_cover != null && coverEdit) {
+                              await processImageCover();
+                            }
+                            if (bioEdit && bioController.text != "") {
+                              globals.prismUser.bio = bioController.text;
+                              main.prefs.put("prismUserV2", globals.prismUser);
+                              await firestore
+                                  .collection(USER_NEW_COLLECTION)
+                                  .doc(globals.prismUser.id)
+                                  .update({
+                                "bio": bioController.text,
+                              });
+                            }
+                            if (linkEdit) {
+                              Map links = globals.prismUser.links;
+                              for (int p = 0; p < linkIcons.length; p++) {
+                                if (linkIcons[p]["value"] != "") {
+                                  links[linkIcons[p]["name"]] =
+                                      linkIcons[p]["value"];
+                                }
+                              }
+                              globals.prismUser.links = links;
+                              main.prefs.put("prismUserV2", globals.prismUser);
+                              await firestore
+                                  .collection(USER_NEW_COLLECTION)
+                                  .doc(globals.prismUser.id)
+                                  .update({
+                                "links": links,
+                              });
+                            }
+                            setState(() {
+                              isLoading = false;
+                            });
+                            Navigator.pop(context);
+                            toasts.codeSend("Details updated!");
+                          }
+                        : (usernameEdit && enabled)
+                            ? () async {
+                                setState(() {
+                                  isLoading = true;
+                                });
+                                if (usernameEdit &&
+                                    usernameController.text != "" &&
+                                    usernameController.text.length >= 8) {
+                                  globals.prismUser.username =
+                                      usernameController.text;
+                                  main.prefs
+                                      .put("prismUserV2", globals.prismUser);
+                                  await firestore
+                                      .collection(USER_NEW_COLLECTION)
+                                      .doc(globals.prismUser.id)
+                                      .update({
+                                    "username": usernameController.text,
+                                  });
+                                }
+                                if (_pfp != null && pfpEdit) {
+                                  await processImage();
+                                }
+                                if (_cover != null && coverEdit) {
+                                  await processImageCover();
+                                }
+                                if (bioEdit && bioController.text != "") {
+                                  globals.prismUser.bio = bioController.text;
+                                  main.prefs
+                                      .put("prismUserV2", globals.prismUser);
+                                  await firestore
+                                      .collection(USER_NEW_COLLECTION)
+                                      .doc(globals.prismUser.id)
+                                      .update({
+                                    "bio": bioController.text,
+                                  });
+                                }
+                                if (linkEdit) {
+                                  Map links = globals.prismUser.links;
+                                  for (int p = 0; p < linkIcons.length; p++) {
+                                    if (linkIcons[p]["value"] != "") {
+                                      links[linkIcons[p]["name"]] =
+                                          linkIcons[p]["value"];
+                                    }
+                                  }
+                                  globals.prismUser.links = links;
+                                  main.prefs
+                                      .put("prismUserV2", globals.prismUser);
+                                  await firestore
+                                      .collection(USER_NEW_COLLECTION)
+                                      .doc(globals.prismUser.id)
+                                      .update({
+                                    "links": links,
+                                  });
+                                }
+                                setState(() {
+                                  isLoading = false;
+                                });
+                                Navigator.pop(context);
+                                toasts.codeSend("Details updated!");
+                              }
+                            : null,
+                    child: SizedBox(
+                      width: width - 20,
+                      height: 60,
+                      child: Container(
+                        width: width - 14,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: !((!usernameEdit &&
+                                      (pfpEdit ||
+                                          bioEdit ||
+                                          linkEdit ||
+                                          coverEdit)) ||
+                                  (usernameEdit && enabled))
+                              ? Theme.of(context).primaryColor
+                              : Theme.of(context).errorColor.withOpacity(0.2),
+                          border: Border.all(
+                              color: !((!usernameEdit &&
+                                          (pfpEdit ||
+                                              bioEdit ||
+                                              linkEdit ||
+                                              coverEdit)) ||
+                                      (usernameEdit && enabled))
+                                  ? Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.5)
+                                  : Theme.of(context).errorColor,
+                              width: 3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: isLoading
+                              ? CircularProgressIndicator(
+                                  color: Theme.of(context).primaryColor)
+                              : Text(
+                                  "Continue",
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      color: !((!usernameEdit &&
+                                                  (pfpEdit ||
+                                                      bioEdit ||
+                                                      linkEdit ||
+                                                      coverEdit)) ||
+                                              (usernameEdit && enabled))
+                                          ? Theme.of(context)
+                                              .accentColor
+                                              .withOpacity(0.5)
+                                          : Theme.of(context).accentColor,
+                                      fontWeight: FontWeight.bold),
+                                ),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-              const Spacer(flex: 2),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  child: Text(
-                    "Usernames are unique names through which fans can view your profile/search for you. They should be greater than 8 characters, and cannot contain any symbol except for underscore (_).",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).accentColor,
+                ),
+                const Spacer(flex: 2),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    child: Text(
+                      "Usernames are unique names through which fans can view your profile/search for you. They should be greater than 8 characters, and cannot contain any symbol except for underscore (_).",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).accentColor,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const Spacer(),
-            ],
+                const Spacer(
+                  flex: 3,
+                ),
+              ],
+            ),
           ),
         ),
       ),

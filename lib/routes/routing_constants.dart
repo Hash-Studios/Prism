@@ -37,3 +37,4 @@ const String onboardingRoute = '/onboarding';
 const String followersRoute = '/followers';
 const String reviewRoute = '/review';
 const String editSetupDetailsRoute = '/editSetupDetails';
+const String editProfileRoute = '/editProfile';
