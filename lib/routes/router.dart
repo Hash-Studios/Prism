@@ -58,25 +58,29 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: searchRoute);
       return PageRouteBuilder(
+          transitionDuration: const Duration(),
           pageBuilder: (context, animation1, animation2) => SearchScreen());
     case homeRoute:
       navStack.add("Home");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: homeRoute);
       return PageRouteBuilder(
+          transitionDuration: const Duration(),
           pageBuilder: (context, animation1, animation2) => PageManager());
     case profileRoute:
       navStack.add("Profile");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: profileRoute);
       return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => ProfileScreen());
+          transitionDuration: const Duration(),
+          pageBuilder: (context, animation1, animation2) =>
+              ProfileScreen(settings.arguments as List?));
     case followerProfileRoute:
       navStack.add("Follower Profile");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: followerProfileRoute);
       return CupertinoPageRoute(
-          builder: (context) => FollowerProfile(settings.arguments as List?));
+          builder: (context) => ProfileScreen(settings.arguments as List?));
     case downloadRoute:
       navStack.add("Downloads");
       debugPrint(navStack.toString());
@@ -187,6 +191,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: setupRoute);
       return PageRouteBuilder(
+          transitionDuration: const Duration(),
           pageBuilder: (context, animation1, animation2) =>
               const SetupScreen());
     case setupViewRoute:
