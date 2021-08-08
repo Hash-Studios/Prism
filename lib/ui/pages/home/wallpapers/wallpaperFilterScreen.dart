@@ -272,30 +272,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: AppBar(
-          title: Row(
-            children: [
-              Text(
-                "Edit Wallpaper",
-                style: Theme.of(context).textTheme.headline3,
-              ),
-              Container(
-                margin: const EdgeInsets.only(left: 3, bottom: 5),
-                decoration: BoxDecoration(
-                    color: Theme.of(context).errorColor,
-                    borderRadius: BorderRadius.circular(500)),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
-                  child: Text(
-                    "BETA",
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: Theme.of(context).accentColor,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          title: Text(
+            "Edit Wallpaper",
+            style: Theme.of(context).textTheme.headline3,
           ),
           leading: IconButton(
               icon: const Icon(JamIcons.close),
