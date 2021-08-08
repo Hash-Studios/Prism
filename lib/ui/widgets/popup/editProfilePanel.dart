@@ -33,11 +33,13 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   final TextEditingController linkController = TextEditingController();
   late TextEditingController bioController;
   late TextEditingController usernameController;
+  late TextEditingController nameController;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   bool isLoading = false;
   bool pfpEdit = false;
   bool coverEdit = false;
   bool usernameEdit = false;
+  bool nameEdit = false;
   bool bioEdit = false;
   bool linkEdit = false;
   bool enabled = false;
@@ -239,6 +241,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     bioController = TextEditingController(text: globals.prismUser.bio);
     usernameController =
         TextEditingController(text: globals.prismUser.username);
+    nameController = TextEditingController(text: globals.prismUser.name);
     super.initState();
   }
 
@@ -510,6 +513,68 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               .textTheme
                               .headline5!
                               .copyWith(color: Colors.white),
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            contentPadding:
+                                const EdgeInsets.only(left: 30, top: 15),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            disabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2)),
+                            labelText: "Name",
+                            labelStyle: Theme.of(context)
+                                .textTheme
+                                .headline5!
+                                .copyWith(fontSize: 14, color: Colors.white),
+                            prefixIcon: const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                "Name",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          onChanged: (value) async {
+                            if (value == globals.prismUser.name ||
+                                value == "") {
+                              setState(() {
+                                nameEdit = false;
+                              });
+                            } else {
+                              setState(() {
+                                nameEdit = true;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 80,
+                      width: width - 24,
+                      child: Center(
+                        child: TextField(
+                          cursorColor: const Color(0xFFE57697),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline5!
+                              .copyWith(color: Colors.white),
                           controller: usernameController,
                           decoration: InputDecoration(
                             contentPadding:
@@ -581,15 +646,6 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   ),
                           ),
                           onChanged: (value) async {
-                            if (value == "") {
-                              setState(() {
-                                usernameEdit = false;
-                              });
-                            } else {
-                              setState(() {
-                                usernameEdit = true;
-                              });
-                            }
                             if (value != "" &&
                                 value.length >= 8 &&
                                 !value.contains(RegExp(r"(?: |[^\w\s])+"))) {
@@ -626,6 +682,17 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             } else {
                               setState(() {
                                 available = null;
+                              });
+                            }
+                            if (value == globals.prismUser.username ||
+                                value == "") {
+                              setState(() {
+                                usernameEdit = false;
+                                available = null;
+                              });
+                            } else {
+                              setState(() {
+                                usernameEdit = true;
                               });
                             }
                           },
@@ -680,7 +747,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             ),
                           ),
                           onChanged: (value) {
-                            if (value == "") {
+                            if (value == globals.prismUser.bio || value == "") {
                               setState(() {
                                 bioEdit = false;
                               });
@@ -882,7 +949,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                   padding: const EdgeInsets.all(8.0),
                   child: GestureDetector(
                     onTap: (!usernameEdit &&
-                            (pfpEdit || bioEdit || linkEdit || coverEdit))
+                            (pfpEdit ||
+                                bioEdit ||
+                                linkEdit ||
+                                coverEdit ||
+                                nameEdit))
                         ? () async {
                             setState(() {
                               isLoading = true;
@@ -918,6 +989,16 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   .doc(globals.prismUser.id)
                                   .update({
                                 "links": links,
+                              });
+                            }
+                            if (nameEdit && nameController.text != "") {
+                              globals.prismUser.name = nameController.text;
+                              main.prefs.put("prismUserV2", globals.prismUser);
+                              await firestore
+                                  .collection(USER_NEW_COLLECTION)
+                                  .doc(globals.prismUser.id)
+                                  .update({
+                                "name": nameController.text,
                               });
                             }
                             setState(() {
@@ -962,6 +1043,17 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                     "bio": bioController.text,
                                   });
                                 }
+                                if (nameEdit && nameController.text != "") {
+                                  globals.prismUser.name = nameController.text;
+                                  main.prefs
+                                      .put("prismUserV2", globals.prismUser);
+                                  await firestore
+                                      .collection(USER_NEW_COLLECTION)
+                                      .doc(globals.prismUser.id)
+                                      .update({
+                                    "name": nameController.text,
+                                  });
+                                }
                                 if (linkEdit) {
                                   Map links = globals.prismUser.links;
                                   for (int p = 0; p < linkIcons.length; p++) {
@@ -998,7 +1090,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                       (pfpEdit ||
                                           bioEdit ||
                                           linkEdit ||
-                                          coverEdit)) ||
+                                          coverEdit ||
+                                          nameEdit)) ||
                                   (usernameEdit && enabled))
                               ? Theme.of(context).primaryColor
                               : Theme.of(context).errorColor.withOpacity(0.2),
@@ -1007,7 +1100,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                           (pfpEdit ||
                                               bioEdit ||
                                               linkEdit ||
-                                              coverEdit)) ||
+                                              coverEdit ||
+                                              nameEdit)) ||
                                       (usernameEdit && enabled))
                                   ? Theme.of(context)
                                       .accentColor
@@ -1028,7 +1122,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                                   (pfpEdit ||
                                                       bioEdit ||
                                                       linkEdit ||
-                                                      coverEdit)) ||
+                                                      coverEdit ||
+                                                      nameEdit)) ||
                                               (usernameEdit && enabled))
                                           ? Theme.of(context)
                                               .accentColor
