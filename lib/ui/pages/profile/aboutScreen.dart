@@ -338,7 +338,11 @@ class ActionButton extends StatelessWidget {
                 fontWeight: FontWeight.bold),
           ),
           onPressed: () {
-            launch(link);
+            if (link.contains("@gmail.com")) {
+              launch("mailto:$link");
+            } else {
+              launch(link);
+            }
           }),
     );
   }
