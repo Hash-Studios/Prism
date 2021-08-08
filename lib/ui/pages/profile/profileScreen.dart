@@ -269,12 +269,14 @@ class _ProfileChildState extends State<ProfileChild> {
                                                   .accentColor),
                                         ),
                                         onPressed: () async {
-                                          await showModalBottomSheet(
-                                            isScrollControlled: true,
-                                            context: context,
-                                            builder: (context) =>
-                                                const EditProfilePanel(),
-                                          );
+                                          Navigator.pushNamed(
+                                              context, editProfileRoute);
+                                          // await showModalBottomSheet(
+                                          //   isScrollControlled: true,
+                                          //   context: context,
+                                          //   builder: (context) =>
+                                          //       const EditProfilePanel(),
+                                          // );
                                         }),
                                   ),
                             actions: !widget.ownProfile! ||

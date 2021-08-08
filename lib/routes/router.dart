@@ -40,6 +40,7 @@ import 'package:Prism/ui/pages/upload/setupGuidelines.dart';
 import 'package:Prism/ui/pages/upload/uploadSetupScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
 import 'package:Prism/ui/pages/profile/reviewScreen.dart';
+import 'package:Prism/ui/widgets/popup/editProfilePanel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as imagelib;
@@ -108,6 +109,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: premiumRoute);
       return CupertinoPageRoute(builder: (context) => UpgradeScreen());
+    case editProfileRoute:
+      navStack.add("Edit Profile");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: editProfileRoute);
+      return CupertinoPageRoute(builder: (context) => const EditProfilePanel());
     case notificationsRoute:
       navStack.add("Notifications");
       debugPrint(navStack.toString());
