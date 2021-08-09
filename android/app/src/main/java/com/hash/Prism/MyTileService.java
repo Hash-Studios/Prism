@@ -121,9 +121,9 @@ public class MyTileService extends TileService {
         super.onTileAdded();
         Tile qsTile = getQsTile();
         String permission = Manifest.permission.READ_EXTERNAL_STORAGE;
-        if (ContextCompat.checkSelfPermission(context, permission)
+        if (ContextCompat.checkSelfPermission(this, permission)
                 == PackageManager.PERMISSION_DENIED) {
-            Toast.makeText(context,
+            Toast.makeText(this,
                     "Storage permission denied!",
                     Toast.LENGTH_SHORT)
                     .show();
