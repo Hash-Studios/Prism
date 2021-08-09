@@ -932,7 +932,8 @@ class _SetupReviewState extends State<SetupReview> {
                   return Column(
                     children: List.generate(
                       snapshot.data!.docs.length,
-                      (int index) => SetupTile(snapshot.data!.docs[index]),
+                      (int index) =>
+                          SetupTile(snapshot.data!.docs[index], false),
                     ),
                   );
                 }
@@ -945,7 +946,8 @@ class _SetupReviewState extends State<SetupReview> {
 
 class SetupTile extends StatelessWidget {
   final DocumentSnapshot wallpaper;
-  SetupTile(this.wallpaper);
+  final bool draft;
+  SetupTile(this.wallpaper, this.draft);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static const platform = MethodChannel('flutter.prism.set_wallpaper');
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -1044,7 +1046,9 @@ class SetupTile extends StatelessWidget {
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 child: RichText(
                                   text: TextSpan(
-                                      text: "${wallpaper.data()!["name"]}",
+                                      text: "${wallpaper.data()!["name"]}" == ""
+                                          ? "No name"
+                                          : "${wallpaper.data()!["name"]}",
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyText2!
@@ -1056,8 +1060,10 @@ class SetupTile extends StatelessWidget {
                                                   .accentColor),
                                       children: [
                                         TextSpan(
-                                          text:
-                                              " - ${wallpaper.data()!["desc"]}",
+                                          text: "${wallpaper.data()!["desc"]}" ==
+                                                  ""
+                                              ? " - No desc"
+                                              : " - ${wallpaper.data()!["desc"]}",
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
@@ -1110,39 +1116,45 @@ class SetupTile extends StatelessWidget {
                             ),
                             GestureDetector(
                               onTap: () {
-                                if ("${wallpaper.data()!["wallpaper_url"]}"[
-                                        0] !=
-                                    "[") {
-                                  if ("${wallpaper.data()!["wall_id"]}" != "" &&
-                                      "${wallpaper.data()!["wall_id"]}" !=
-                                          null) {
-                                    Navigator.push(
-                                        context,
-                                        CupertinoPageRoute(
-                                            builder: (context) => PhotoView(
-                                                  onTapUp: (context, details,
-                                                      controller) {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  imageProvider:
-                                                      CachedNetworkImageProvider(
-                                                    wallpaper.data()![
-                                                            "wallpaper_url"]
-                                                        as String,
+                                if ("${wallpaper.data()!["wallpaper_url"]}" !=
+                                    "") {
+                                  if ("${wallpaper.data()!["wallpaper_url"]}"[
+                                          0] !=
+                                      "[") {
+                                    if ("${wallpaper.data()!["wall_id"]}" !=
+                                            "" &&
+                                        "${wallpaper.data()!["wall_id"]}" !=
+                                            null) {
+                                      Navigator.push(
+                                          context,
+                                          CupertinoPageRoute(
+                                              builder: (context) => PhotoView(
+                                                    onTapUp: (context, details,
+                                                        controller) {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    imageProvider:
+                                                        CachedNetworkImageProvider(
+                                                      wallpaper.data()![
+                                                              "wallpaper_url"]
+                                                          as String,
+                                                    ),
                                                   ),
-                                                ),
-                                            fullscreenDialog: true));
+                                              fullscreenDialog: true));
+                                    } else {
+                                      launch("${wallpaper.data()!["wallpaper_url"]}")
+                                          .catchError((e) {
+                                        toasts.error("Error in link!");
+                                      });
+                                    }
                                   } else {
-                                    launch("${wallpaper.data()!["wallpaper_url"]}")
+                                    launch("${wallpaper.data()!["wallpaper_url"][1]}")
                                         .catchError((e) {
                                       toasts.error("Error in link!");
                                     });
                                   }
                                 } else {
-                                  launch("${wallpaper.data()!["wallpaper_url"][1]}")
-                                      .catchError((e) {
-                                    toasts.error("Error in link!");
-                                  });
+                                  toasts.error("Wallpaper not added!");
                                 }
                               },
                               child: Row(
@@ -1158,11 +1170,14 @@ class SetupTile extends StatelessWidget {
                                     width:
                                         MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.data()!["wallpaper_url"]}"[
-                                                  0] !=
-                                              "["
-                                          ? "Wallpaper"
-                                          : "${wallpaper.data()!["wallpaper_url"][0]} - ${wallpaper.data()!["wallpaper_url"][2]}",
+                                      "${wallpaper.data()!["wallpaper_url"]}" !=
+                                              ""
+                                          ? "${wallpaper.data()!["wallpaper_url"]}"[
+                                                      0] !=
+                                                  "["
+                                              ? "Wallpaper"
+                                              : "${wallpaper.data()!["wallpaper_url"][0]} - ${wallpaper.data()!["wallpaper_url"][2]}"
+                                          : "Wallpaper",
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyText2!
@@ -1181,10 +1196,14 @@ class SetupTile extends StatelessWidget {
                             ),
                             GestureDetector(
                               onTap: () {
-                                launch("${wallpaper.data()!["icon_url"]}")
-                                    .catchError((e) {
-                                  toasts.error("Error in link!");
-                                });
+                                if ("${wallpaper.data()!["icon_url"]}" != "") {
+                                  launch("${wallpaper.data()!["icon_url"]}")
+                                      .catchError((e) {
+                                    toasts.error("Error in link!");
+                                  });
+                                } else {
+                                  toasts.error("No icons added!");
+                                }
                               },
                               child: Row(
                                 children: [
@@ -1199,7 +1218,9 @@ class SetupTile extends StatelessWidget {
                                     width:
                                         MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.data()!["icon"]}",
+                                      "${wallpaper.data()!["icon"]}" == ""
+                                          ? "No icon"
+                                          : "${wallpaper.data()!["icon"]}",
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyText2!
@@ -1306,21 +1327,24 @@ class SetupTile extends StatelessWidget {
                             const SizedBox(
                               height: 16,
                             ),
-                            ActionChip(
-                              backgroundColor: Colors.amber,
-                              avatar: const Icon(
-                                JamIcons.clock,
-                                color: Colors.black,
+                            if (draft)
+                              Container()
+                            else
+                              ActionChip(
+                                backgroundColor: Colors.amber,
+                                avatar: const Icon(
+                                  JamIcons.clock,
+                                  color: Colors.black,
+                                ),
+                                onPressed: () {},
+                                label: Text(
+                                  "IN REVIEW",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyText2!
+                                      .copyWith(color: Colors.black),
+                                ),
                               ),
-                              onPressed: () {},
-                              label: Text(
-                                "IN REVIEW",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyText2!
-                                    .copyWith(color: Colors.black),
-                              ),
-                            ),
                             const SizedBox(
                               height: 16,
                             ),
@@ -1422,7 +1446,9 @@ class SetupTile extends StatelessWidget {
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10)),
                                   title: Text(
-                                    'Delete this setup?',
+                                    draft
+                                        ? 'Delete this draft?'
+                                        : 'Delete this setup?',
                                     style: TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 16,
@@ -1444,12 +1470,21 @@ class SetupTile extends StatelessWidget {
                                       color: Theme.of(context).hintColor,
                                       onPressed: () async {
                                         Navigator.pop(context);
-                                        await firestore
-                                            .collection("setups")
-                                            .doc(wallpaper.id)
-                                            .delete();
-                                        toasts.codeSend(
-                                            "Setup successfully deleted from server!");
+                                        if (draft) {
+                                          await firestore
+                                              .collection("draftSetups")
+                                              .doc(wallpaper.id)
+                                              .delete();
+                                          toasts.codeSend(
+                                              "Draft successfully deleted from server!");
+                                        } else {
+                                          await firestore
+                                              .collection("setups")
+                                              .doc(wallpaper.id)
+                                              .delete();
+                                          toasts.codeSend(
+                                              "Setup successfully deleted from server!");
+                                        }
                                       },
                                       child: const Text(
                                         'DELETE',

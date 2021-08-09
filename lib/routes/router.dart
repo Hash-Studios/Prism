@@ -35,6 +35,7 @@ import 'package:Prism/ui/pages/setup/shareSetupViewScreen.dart';
 import 'package:Prism/ui/pages/share/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/pages/home/core/notificationScreen.dart';
+import 'package:Prism/ui/pages/upload/draftSetupScreen.dart';
 import 'package:Prism/ui/pages/upload/editWallScreen.dart';
 import 'package:Prism/ui/pages/upload/setupGuidelines.dart';
 import 'package:Prism/ui/pages/upload/uploadSetupScreen.dart';
@@ -270,6 +271,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               EditSetupReviewScreen(arguments: settings.arguments as List?),
+          fullscreenDialog: true);
+    case draftSetupRoute:
+      navStack.add("Draft Setup");
+      logger.d(navStack.toString());
+      analytics.setCurrentScreen(screenName: draftSetupRoute);
+      return CupertinoPageRoute(
+          builder: (context) => const DraftSetupScreen(),
           fullscreenDialog: true);
     case setupGuidelinesRoute:
       navStack.add("Setup Guidelines");

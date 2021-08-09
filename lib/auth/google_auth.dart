@@ -10,6 +10,7 @@ import 'package:hive/hive.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/main.dart' as main;
 
 const String USER_OLD_COLLECTION = 'users';
 const String USER_NEW_COLLECTION = 'usersv2';
@@ -63,7 +64,7 @@ class GoogleAuth {
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         });
-        logger.d("USERDATA CASE1 ${globals.prismUser.toJson()}");
+        logger.d("USERDATA CASE1");
       }
       // User exists in old database. Copy/create him in the new db.
       else if (usersData[0] != null && usersData[1] == null) {
@@ -73,7 +74,7 @@ class GoogleAuth {
             .collection(USER_NEW_COLLECTION)
             .doc(globals.prismUser.id)
             .set(globals.prismUser.toJson());
-        logger.d("USERDATA CASE2 ${globals.prismUser.toJson()}");
+        logger.d("USERDATA CASE2");
       }
       // User exists in new database. Simply sign him in.
       else if (usersData[0] == null && usersData[1] != null) {
@@ -86,7 +87,7 @@ class GoogleAuth {
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         });
-        logger.d("USERDATA CASE3 ${globals.prismUser.toJson()}");
+        logger.d("USERDATA CASE3");
       }
       // User exists in none. Create new data in new db and sign him in.
       else {
@@ -114,10 +115,10 @@ class GoogleAuth {
             .collection(USER_NEW_COLLECTION)
             .doc(globals.prismUser.id)
             .set(globals.prismUser.toJson());
-        logger.d("USERDATA CASE4 ${globals.prismUser.toJson()}");
+        logger.d("USERDATA CASE4");
       }
 
-      await prefs.put('prismUserV2', globals.prismUser);
+      await prefs.put(main.userHiveKey, globals.prismUser);
       isLoading = false;
     }
     home.f.subscribeToTopic(user.email!.split("@")[0]);
@@ -132,12 +133,6 @@ class GoogleAuth {
 
   Future<bool> signOutGoogle() async {
     await googleSignIn.signOut();
-    FirebaseFirestore.instance
-        .collection(USER_NEW_COLLECTION)
-        .doc(globals.prismUser.id)
-        .update({
-      'loggedIn': false,
-    });
     globals.prismUser = PrismUsersV2(
       name: "",
       bio: "",
@@ -159,9 +154,19 @@ class GoogleAuth {
       coverPhoto: "",
     );
     Hive.openBox('prefs').then((value) {
-      value.put('prismUserV2', globals.prismUser);
+      value.put(main.userHiveKey, globals.prismUser);
     });
     await Purchases.reset();
+    try {
+      FirebaseFirestore.instance
+          .collection(USER_NEW_COLLECTION)
+          .doc(globals.prismUser.id)
+          .update({
+        'loggedIn': false,
+      });
+    } catch (e, st) {
+      logger.e(e, e, st);
+    }
     logger.d("User Sign Out");
     return true;
   }

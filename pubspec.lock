@@ -267,6 +267,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "6.1.0"
+  file_encrypter:
+    dependency: "direct main"
+    description:
+      name: file_encrypter
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.1"
   firebase:
     dependency: transitive
     description:
@@ -496,13 +503,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.1"
-  flutter_rating_bar:
-    dependency: transitive
-    description:
-      name: flutter_rating_bar
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "4.0.0"
   flutter_staggered_grid_view:
     dependency: "direct main"
     description:
@@ -970,13 +970,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.0.1"
-  rate_my_app:
-    dependency: "direct main"
-    description:
-      name: rate_my_app
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.1.0+1"
   rxdart:
     dependency: transitive
     description:
@@ -998,48 +991,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.1"
-  shared_preferences:
-    dependency: transitive
-    description:
-      name: shared_preferences
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.5"
-  shared_preferences_linux:
-    dependency: transitive
-    description:
-      name: shared_preferences_linux
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.0"
-  shared_preferences_macos:
-    dependency: transitive
-    description:
-      name: shared_preferences_macos
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.0"
-  shared_preferences_platform_interface:
-    dependency: transitive
-    description:
-      name: shared_preferences_platform_interface
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.0"
-  shared_preferences_web:
-    dependency: transitive
-    description:
-      name: shared_preferences_web
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.0"
-  shared_preferences_windows:
-    dependency: transitive
-    description:
-      name: shared_preferences_windows
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.0"
   shelf:
     dependency: transitive
     description:
@@ -1066,13 +1017,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.0+1"
-  smooth_star_rating:
-    dependency: "direct main"
-    description:
-      name: smooth_star_rating
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.1.1"
   source_gen:
     dependency: transitive
     description:
