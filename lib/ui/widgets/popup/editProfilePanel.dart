@@ -7,6 +7,7 @@ import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -356,6 +357,66 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     return true;
   }
 
+  Future<void> showRemoveAlertDialog(
+      BuildContext context, Function() remove, String removeWhat) async {
+    final AlertDialog deletePopUp = AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      title: Text(
+        'Delete the $removeWhat?',
+        style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            color: Theme.of(context).accentColor),
+      ),
+      content: Text(
+        "This is permanent, and this action can't be undone!",
+        style: TextStyle(
+            fontFamily: "Proxima Nova",
+            fontWeight: FontWeight.normal,
+            fontSize: 14,
+            color: Theme.of(context).accentColor),
+      ),
+      actions: [
+        FlatButton(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+          color: Theme.of(context).hintColor,
+          onPressed: () async {
+            Navigator.pop(context);
+            await remove();
+          },
+          child: const Text(
+            'DELETE',
+            style: TextStyle(
+              fontSize: 16.0,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        FlatButton(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+          color: Theme.of(context).errorColor,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text(
+            'CANCEL',
+            style: TextStyle(
+              fontSize: 16.0,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+      backgroundColor: Theme.of(context).primaryColor,
+      actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+    );
+
+    showModal(
+        context: context,
+        configuration: const FadeScaleTransitionConfiguration(),
+        builder: (BuildContext context) => deletePopUp);
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width * 0.85;
@@ -389,66 +450,84 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             ),
             child: Column(
               children: <Widget>[
-                ClipRRect(
-                  child: Material(
-                    child: InkWell(
-                      onTap: () async {
-                        await getCover();
-                      },
-                      child: Stack(
-                        children: [
-                          Container(
-                            height:
-                                MediaQuery.of(context).size.width * 508 / 1234,
-                            width: MediaQuery.of(context).size.width,
-                            decoration: const BoxDecoration(
-                              border: Border.fromBorderSide(
-                                BorderSide(color: Colors.white, width: 2),
-                              ),
-                            ),
-                            child: (_cover == null)
-                                ? (globals.prismUser.coverPhoto != null)
-                                    ? CachedNetworkImage(
-                                        imageUrl: globals.prismUser.coverPhoto!,
-                                        fit: BoxFit.cover,
+                Stack(
+                  children: [
+                    Container(
+                      height: MediaQuery.of(context).size.width * 508 / 1234,
+                      width: MediaQuery.of(context).size.width,
+                      decoration: const BoxDecoration(
+                        border: Border.fromBorderSide(
+                          BorderSide(color: Colors.white, width: 2),
+                        ),
+                      ),
+                      child: (_cover == null)
+                          ? (globals.prismUser.coverPhoto != null)
+                              ? CachedNetworkImage(
+                                  imageUrl: globals.prismUser.coverPhoto!,
+                                  fit: BoxFit.cover,
+                                )
+                              : SvgPicture.string(
+                                  defaultHeader
+                                      .replaceAll(
+                                        "#181818",
+                                        "#${Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2)}",
                                       )
-                                    : SvgPicture.string(
-                                        defaultHeader
-                                            .replaceAll(
-                                              "#181818",
-                                              "#${Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2)}",
-                                            )
-                                            .replaceAll(
-                                              "#E77597",
-                                              "#${Theme.of(context).errorColor.value.toRadixString(16).toString().substring(2)}",
-                                            ),
-                                        fit: BoxFit.cover,
-                                      )
-                                : Image.file(
-                                    _cover!,
-                                    fit: BoxFit.cover,
-                                  ),
-                          ),
-                          Container(
-                            height:
-                                MediaQuery.of(context).size.width * 508 / 1234,
-                            width: MediaQuery.of(context).size.width,
-                            decoration: BoxDecoration(
-                              border: const Border.fromBorderSide(
-                                BorderSide(color: Colors.white, width: 2),
-                              ),
-                              color:
-                                  Theme.of(context).errorColor.withOpacity(0.5),
+                                      .replaceAll(
+                                        "#E77597",
+                                        "#${Theme.of(context).errorColor.value.toRadixString(16).toString().substring(2)}",
+                                      ),
+                                  fit: BoxFit.cover,
+                                )
+                          : Image.file(
+                              _cover!,
+                              fit: BoxFit.cover,
                             ),
-                            child: const Icon(
-                              JamIcons.pencil,
-                              color: Colors.white,
+                    ),
+                    Material(
+                      child: InkWell(
+                        onTap: () async {
+                          await getCover();
+                        },
+                        child: Container(
+                          height:
+                              MediaQuery.of(context).size.width * 508 / 1234,
+                          width: MediaQuery.of(context).size.width,
+                          decoration: BoxDecoration(
+                            border: const Border.fromBorderSide(
+                              BorderSide(color: Colors.white, width: 2),
                             ),
+                            color:
+                                Theme.of(context).errorColor.withOpacity(0.5),
                           ),
-                        ],
+                          child: const Icon(
+                            JamIcons.pencil,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    Positioned(
+                      right: 0,
+                      child: IconButton(
+                        onPressed: () async {
+                          showRemoveAlertDialog(context, () async {
+                            _cover = null;
+                            globals.prismUser.coverPhoto = null;
+                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                            await firestore
+                                .collection(USER_NEW_COLLECTION)
+                                .doc(globals.prismUser.id)
+                                .update({
+                              "coverPhoto": null,
+                            });
+                          }, "Cover photo");
+                        },
+                        icon: const Icon(
+                          JamIcons.close,
+                        ),
+                      ),
+                    )
+                  ],
                 ),
                 const Spacer(),
                 ClipOval(
@@ -745,6 +824,27 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 ),
                               ),
                             ),
+                            suffixIcon: IconButton(
+                              onPressed: () async {
+                                showRemoveAlertDialog(context, () async {
+                                  bioController.text = "";
+                                  globals.prismUser.bio = "";
+                                  main.prefs
+                                      .put(main.userHiveKey, globals.prismUser);
+                                  await firestore
+                                      .collection(USER_NEW_COLLECTION)
+                                      .doc(globals.prismUser.id)
+                                      .update({
+                                    "bio": "",
+                                  });
+                                }, "bio");
+                              },
+                              icon: const Icon(
+                                JamIcons.close,
+                                color: Colors.red,
+                                size: 24,
+                              ),
+                            ),
                           ),
                           onChanged: (value) {
                             if (value == globals.prismUser.bio || value == "") {
@@ -876,6 +976,31 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                         .headline5!
                                         .copyWith(
                                             fontSize: 14, color: Colors.white),
+                                    suffixIcon: IconButton(
+                                      onPressed: () async {
+                                        showRemoveAlertDialog(context,
+                                            () async {
+                                          linkController.text = "";
+                                          var links = globals.prismUser.links;
+                                          links.remove(
+                                              _link?["name"].toString());
+                                          globals.prismUser.links = links;
+                                          main.prefs.put(main.userHiveKey,
+                                              globals.prismUser);
+                                          await firestore
+                                              .collection(USER_NEW_COLLECTION)
+                                              .doc(globals.prismUser.id)
+                                              .update({
+                                            "links": globals.prismUser.links,
+                                          });
+                                        }, "${_link?["name"].toString().inCaps}");
+                                      },
+                                      icon: const Icon(
+                                        JamIcons.close,
+                                        color: Colors.red,
+                                        size: 24,
+                                      ),
+                                    ),
                                   ),
                                   onChanged: (value) {
                                     // logger.d("VALUE TEXT ${value.toLowerCase()}");
