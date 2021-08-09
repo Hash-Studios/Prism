@@ -38,7 +38,7 @@ Future<void> createRecord(
     toasts.codeSend("Please try to upload less than 5 walls a day.");
   }
   await firestore.collection("walls").add({
-    'by': globals.prismUser.username,
+    'by': globals.prismUser.name,
     'email': globals.prismUser.email,
     'userPhoto': globals.prismUser.profilePhoto,
     'id': id,
@@ -130,7 +130,7 @@ Future<void> createSetup(
     String wallId,
     bool? review) async {
   await firestore.collection("setups").add({
-    'by': globals.prismUser.username,
+    'by': globals.prismUser.name,
     'email': globals.prismUser.email,
     'userPhoto': globals.prismUser.profilePhoto,
     'id': id,
@@ -225,7 +225,7 @@ Future<void> updateSetup(
     String wallId,
     bool? review) async {
   await firestore.collection("setups").doc(setupDocId).update({
-    'by': globals.prismUser.username,
+    'by': globals.prismUser.name,
     'email': globals.prismUser.email,
     'userPhoto': globals.prismUser.profilePhoto,
     'id': id,
@@ -246,4 +246,44 @@ Future<void> updateSetup(
     'wall_id': wallId
   });
   toasts.codeSend("Your setup is edited, and is under review.");
+}
+
+Future<void> createDraftSetup(
+  String? id,
+  String? imageURL,
+  String? wallpaperProvider,
+  String? wallpaperThumb,
+  dynamic wallpaperUrl,
+  String? iconName,
+  String? iconURL,
+  String? widgetName,
+  String? widgetURL,
+  String? widgetName2,
+  String? widgetURL2,
+  String? setupName,
+  String? setupDesc,
+  String? wallId,
+) async {
+  await firestore.collection("draftSetups").doc(id).set({
+    'by': globals.prismUser.name,
+    'email': globals.prismUser.email,
+    'userPhoto': globals.prismUser.profilePhoto,
+    'id': id,
+    'image': imageURL,
+    'wallpaper_provider': wallpaperProvider,
+    'wallpaper_thumb': wallpaperThumb,
+    'wallpaper_url': wallpaperUrl,
+    'icon': iconName,
+    'icon_url': iconURL,
+    'widget': widgetName,
+    'widget_url': widgetURL,
+    'widget2': widgetName2,
+    'widget_url2': widgetURL2,
+    'name': setupName,
+    'desc': setupDesc,
+    'review': false,
+    'created_at': DateTime.now().toUtc(),
+    'wall_id': wallId,
+  });
+  toasts.codeSend("Draft saved!");
 }
