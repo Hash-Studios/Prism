@@ -233,7 +233,7 @@ class _PageManagerChildState extends State<PageManagerChild>
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(const Duration(seconds: 1), () => initDynamicLinks(context));
+    Future.delayed(const Duration(seconds: 2), () => initDynamicLinks(context));
     return WillPopScope(
       onWillPop: () async {
         if (tabController!.index != 0) {

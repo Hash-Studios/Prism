@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/notifications/notifications.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/pages/home/core/oldVersionScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
-import 'package:flare_splash_screen/flare_splash_screen.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
@@ -15,9 +13,26 @@ import 'package:Prism/logger/logger.dart';
 
 late RemoteConfig remoteConfig;
 
-class SplashWidget extends StatelessWidget {
+class SplashWidget extends StatefulWidget {
+  const SplashWidget({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _SplashWidgetState createState() => _SplashWidgetState();
+}
+
+class _SplashWidgetState extends State<SplashWidget> {
   bool notchChecked = false;
-  Future<void> loading() async {
+  late Future<bool> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = loading();
+  }
+
+  Future<bool> loading() async {
     try {
       remoteConfig = await RemoteConfig.instance;
       await remoteConfig.setConfigSettings(RemoteConfigSettings());
@@ -85,9 +100,11 @@ class SplashWidget extends StatelessWidget {
           "Current App Version: ${globals.currentAppVersion.replaceAll(".", "")}");
       logger.d(
           "Obsolete App Version: ${globals.obsoleteAppVersion.replaceAll(".", "")}");
+      return true;
     } catch (e) {
       logger.d(e.toString());
     }
+    return false;
   }
 
   void checkNotch(BuildContext context) {
@@ -98,39 +115,53 @@ class SplashWidget extends StatelessWidget {
     logger.d('Notch Height = $height');
   }
 
-  SplashWidget({
-    Key? key,
-  }) : super(key: key);
   @override
   Widget build(BuildContext context) {
     if (!notchChecked) {
       checkNotch(context);
     }
-    return SplashScreen(
-      'assets/animations/Prism Splash.flr',
-      (context) {
-        if ((int.parse(globals.currentAppVersion.replaceAll(".", "")) <
-                int.parse(globals.obsoleteAppVersion.replaceAll(".", ""))) ==
-            true) {
-          return OldVersion();
+    return FutureBuilder(
+      future: _future,
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        if (snapshot.hasData) {
+          if ((int.parse(globals.currentAppVersion.replaceAll(".", "")) <
+                  int.parse(globals.obsoleteAppVersion.replaceAll(".", ""))) ==
+              true) {
+            return OldVersion();
+          }
+          return PageManager();
         }
-        return PageManager();
+        return const SecondarySplash();
       },
-      fit: BoxFit.cover,
-      startAnimation: 'Start',
-      loopAnimation: 'Loading',
-      endAnimation: Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
-                  MediaQuery.of(context).platformBrightness) ==
-              "Light"
-          ? 'EndMain'
-          : 'EndDark',
-      backgroundColor: Provider.of<ThemeModeExtended>(context)
-                  .getCurrentModeStyle(
-                      MediaQuery.of(context).platformBrightness) ==
-              "Light"
-          ? config.Colors().mainColor(1)
-          : config.Colors().mainDarkColor(1),
-      until: loading,
+    );
+  }
+}
+
+class SecondarySplash extends StatelessWidget {
+  const SecondarySplash({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = SchedulerBinding.instance!.window.platformBrightness;
+    final bool darkModeOn = brightness == Brightness.dark;
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height,
+      color: darkModeOn
+          ? config.Colors().mainDarkColor(1)
+          : config.Colors().mainColor(1),
+      child: Center(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.29074074074,
+          height: MediaQuery.of(context).size.width * 0.29074074074,
+          decoration: const BoxDecoration(
+              image: DecorationImage(
+                  image: AssetImage("assets/images/ic_launcher.png"),
+                  fit: BoxFit.cover)),
+        ),
+      ),
     );
   }
 }
