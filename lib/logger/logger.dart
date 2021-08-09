@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_archive/flutter_archive.dart';
+import 'package:file_encrypter/file_encrypter.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -26,14 +27,26 @@ class LogOutputPrinter extends PrettyPrinter {
   RandomAccessFile? _logFile;
 
   LogOutputPrinter() {
-    getApplicationDocumentsDirectory().then((cacheDir) async {
-      _logFolderPath = join(cacheDir.path, "logs");
-      try {
-        await Directory(_logFolderPath).create();
-      } catch (e) {
-        // Ignore if it already exists
+    getExternalStorageDirectory().then((cacheDir) async {
+      if (cacheDir == null) {
+        getApplicationDocumentsDirectory().then((cDir) async {
+          _logFolderPath = join(cDir.path, "logs");
+          try {
+            await Directory(_logFolderPath).create();
+          } catch (e) {
+            // Ignore if it already exists
+          }
+          await setLogCapture(true);
+        });
+      } else {
+        _logFolderPath = join(cacheDir.path, "logs");
+        try {
+          await Directory(_logFolderPath).create();
+        } catch (e) {
+          // Ignore if it already exists
+        }
+        await setLogCapture(true);
       }
-      await setLogCapture(true);
     });
   }
 
@@ -143,5 +156,26 @@ Future<String> zipLogs() async {
   } catch (e, strace) {
     logger.e(e, e, strace);
   }
-  return zipFile.path;
+  final String encryptedString = await encryptLogsZip(zipFile.path);
+  return encryptedString;
+}
+
+Future<String> encryptLogsZip(String zipPath) async {
+  final List<String> pathList = zipPath.split('/');
+  pathList.removeLast();
+  final String outFilename = "${pathList.join("/")}/logs_zip.dat";
+  logger.v("Encryption Started");
+  String secretKey = await FileEncrypter.encrypt(
+    inFilename: zipPath,
+    outFileName: outFilename,
+  );
+  logger.v("Encryption Done");
+  logger.d(outFilename);
+  // logger.d(secretKey);
+  // logger.v("Renaming File");
+  // final String secretOutFilename = "${pathList.join("/")}/$secretKey";
+  // final File zipOut = File(outFilename);
+  // await zipOut.rename(secretOutFilename);
+  // logger.v("Renaming Done");
+  return "$secretKey::::$outFilename";
 }
