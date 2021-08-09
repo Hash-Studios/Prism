@@ -63,9 +63,12 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
                         SetupTile(snapshot.data!.docs[index], true),
                   );
                 } else {
-                  return const Center(
-                    child: Text(
-                        "Your saved setup drafts show up here. Simply click the Save button when uploading a setup to save the draft."),
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(
+                      child: Text(
+                          "Your saved setup drafts show up here. Simply click the Save button when uploading a setup to save the draft."),
+                    ),
                   );
                 }
               }

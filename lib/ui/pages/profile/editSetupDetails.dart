@@ -76,26 +76,32 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
         TextEditingController(text: setupDoc.data()!["widget"].toString());
     widgetURL1 =
         TextEditingController(text: setupDoc.data()!["widget_url"].toString());
-    if ("${setupDoc.data()!["wallpaper_url"]}"[0] != "[") {
-      if ("${setupDoc.data()!["wall_id"]}" != "" &&
-          "${setupDoc.data()!["wall_id"]}" != null) {
-        wallpaperUploaded = true;
-        wallpaperUploadLink = setupDoc.data()!["wallpaper_url"].toString();
-        wallpaperId = setupDoc.data()!["wall_id"].toString();
-        groupValue = 1;
+    if ("${setupDoc.data()!["wallpaper_url"]}" != "") {
+      if ("${setupDoc.data()!["wallpaper_url"]}"[0] != "[") {
+        if ("${setupDoc.data()!["wall_id"]}" != "" &&
+            "${setupDoc.data()!["wall_id"]}" != null) {
+          wallpaperUploaded = true;
+          wallpaperUploadLink = setupDoc.data()!["wallpaper_url"].toString();
+          wallpaperId = setupDoc.data()!["wall_id"].toString();
+          groupValue = 1;
+        } else {
+          wallpaperUrl = TextEditingController(
+              text: setupDoc.data()!["wallpaper_url"].toString());
+          groupValue = 0;
+        }
       } else {
-        wallpaperUrl = TextEditingController(
-            text: setupDoc.data()!["wallpaper_url"].toString());
-        groupValue = 0;
+        wallpaperAppName = TextEditingController(
+            text: setupDoc.data()!["wallpaper_url"][0].toString());
+        wallpaperAppWallName = TextEditingController(
+            text: setupDoc.data()!["wallpaper_url"][2].toString());
+        wallpaperAppLink = TextEditingController(
+            text: setupDoc.data()!["wallpaper_url"][1].toString());
+        groupValue = 2;
       }
     } else {
-      wallpaperAppName = TextEditingController(
-          text: setupDoc.data()!["wallpaper_url"][0].toString());
-      wallpaperAppWallName = TextEditingController(
-          text: setupDoc.data()!["wallpaper_url"][2].toString());
-      wallpaperAppLink = TextEditingController(
-          text: setupDoc.data()!["wallpaper_url"][1].toString());
-      groupValue = 2;
+      wallpaperUrl = TextEditingController(
+          text: setupDoc.data()!["wallpaper_url"].toString());
+      groupValue = 0;
     }
     widgetName2 =
         TextEditingController(text: setupDoc.data()!["widget2"].toString());

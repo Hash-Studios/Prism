@@ -224,27 +224,31 @@ Future<void> updateSetup(
     String setupDesc,
     String wallId,
     bool? review) async {
-  await firestore.collection("setups").doc(setupDocId).update({
-    'by': globals.prismUser.name,
-    'email': globals.prismUser.email,
-    'userPhoto': globals.prismUser.profilePhoto,
-    'id': id,
-    'image': imageURL,
-    'wallpaper_provider': wallpaperProvider,
-    'wallpaper_thumb': wallpaperThumb,
-    'wallpaper_url': wallpaperUrl,
-    'icon': iconName,
-    'icon_url': iconURL,
-    'widget': widgetName,
-    'widget_url': widgetURL,
-    'widget2': widgetName2,
-    'widget_url2': widgetURL2,
-    'name': setupName,
-    'desc': setupDesc,
-    'review': review,
-    'created_at': DateTime.now().toUtc(),
-    'wall_id': wallId
-  });
+  await firestore.collection("setups").doc(setupDocId).set(
+      {
+        'by': globals.prismUser.name,
+        'email': globals.prismUser.email,
+        'userPhoto': globals.prismUser.profilePhoto,
+        'id': id,
+        'image': imageURL,
+        'wallpaper_provider': wallpaperProvider,
+        'wallpaper_thumb': wallpaperThumb,
+        'wallpaper_url': wallpaperUrl,
+        'icon': iconName,
+        'icon_url': iconURL,
+        'widget': widgetName,
+        'widget_url': widgetURL,
+        'widget2': widgetName2,
+        'widget_url2': widgetURL2,
+        'name': setupName,
+        'desc': setupDesc,
+        'review': review,
+        'created_at': DateTime.now().toUtc(),
+        'wall_id': wallId
+      },
+      SetOptions(
+        merge: true,
+      ));
   toasts.codeSend("Your setup is edited, and is under review.");
 }
 
