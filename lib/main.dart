@@ -37,6 +37,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
+String userHiveKey = "prismUserV2-1";
 late Box prefs;
 Directory? dir;
 String? currentThemeID;
@@ -68,16 +69,15 @@ void main() {
     getApplicationDocumentsDirectory().then(
       (dir) async {
         Hive.init(dir.path);
+        // await Hive.deleteBoxFromDisk('prefs');
+        Hive.ignoreTypeId<PrismUsers>(33);
+        Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
+        Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
+        Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
+        Hive.registerAdapter<Badge>(BadgeAdapter());
+        await Hive.openBox<InAppNotif>('inAppNotifs');
         await Hive.openBox('setups');
         await Hive.openBox('localFav');
-        // await Hive.deleteFromDisk();
-        Hive.ignoreTypeId(33);
-        Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
-        await Hive.openBox<InAppNotif>('inAppNotifs');
-        // Hive.registerAdapter<PrismUsers>(PrismUsersAdapter());
-        Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
-        Hive.registerAdapter<Badge>(BadgeAdapter());
-        Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
         prefs = await Hive.openBox('prefs');
         logger.d("Box Opened");
         if (prefs.get("systemOverlayColor") == null) {
@@ -210,7 +210,7 @@ class _MyAppState extends State<MyApp> {
       }
       if (value) checkPremium();
       globals.prismUser.loggedIn = value;
-      prefs.put("prismUserV2", globals.prismUser);
+      prefs.put(userHiveKey, globals.prismUser);
       return value;
     });
     return false;

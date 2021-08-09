@@ -28,6 +28,7 @@ class UploadSetupScreen extends StatefulWidget {
 class _UploadSetupScreenState extends State<UploadSetupScreen> {
   late bool isUploading;
   late bool isProcessing;
+  late bool isSaved;
   late File image;
   String? imageURL;
   TextEditingController setupName = TextEditingController();
@@ -122,6 +123,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
     image = widget.arguments![0] as File;
     isUploading = false;
     isProcessing = true;
+    isSaved = false;
     randomId();
     wallpaperProvider = "Prism";
     wallpaperThumb = "";
@@ -151,7 +153,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
 
   Future processImage() async {
     imageBytes = await image.readAsBytes();
-    uploadFile();
+    await uploadFile();
   }
 
   Future uploadFile() async {
@@ -203,6 +205,53 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
             style: TextStyle(color: Theme.of(context).accentColor),
           ),
           actions: [
+            TextButton(
+              onPressed: !isProcessing && !isUploading
+                  ? () async {
+                      setState(() {
+                        isSaved = true;
+                      });
+                      WallStore.createDraftSetup(
+                        id,
+                        imageURL,
+                        wallpaperProvider,
+                        wallpaperThumb,
+                        wallpaperUploaded == true
+                            ? wallpaperUploadLink
+                            : wallpaperAppName.text != "" &&
+                                    wallpaperAppName.text != null &&
+                                    wallpaperAppLink.text != "" &&
+                                    wallpaperAppLink.text != null
+                                ? [
+                                    wallpaperAppName.text,
+                                    wallpaperAppLink.text,
+                                    wallpaperAppWallName.text
+                                  ]
+                                : wallpaperUrl.text,
+                        iconName.text,
+                        iconURL.text,
+                        widgetName1.text,
+                        widgetURL1.text,
+                        widgetName2.text,
+                        widgetURL2.text,
+                        setupName.text,
+                        setupDesc.text,
+                        wallpaperId,
+                      );
+                    }
+                  : null,
+              child: Text(
+                "Save",
+                style: TextStyle(
+                  color: !isProcessing && !isUploading
+                      ? Theme.of(context).errorColor == Colors.black
+                          ? Colors.white
+                          : Theme.of(context).errorColor
+                      : Theme.of(context).hintColor,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ),
             TextButton(
               onPressed: !isProcessing && !isUploading
                   ? () async {
