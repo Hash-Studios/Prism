@@ -248,7 +248,7 @@ class _MyAppState extends State<MyApp> {
       darkTheme: Provider.of<DarkThemeModel>(context).currentTheme,
       themeMode: Provider.of<ThemeModeExtended>(context).currentMode,
       home: ((prefs.get('onboarded_new') as bool?) ?? false)
-          ? SplashWidget()
+          ? const SplashWidget()
           : OnboardingScreen(),
     );
   }
