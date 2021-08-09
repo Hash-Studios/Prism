@@ -18,8 +18,6 @@ environment:
   sdk: '>=2.12.0 <3.0.0'
 
 dependencies:
-  flutter:
-    sdk: flutter
   animations: ^2.0.0
   cached_network_image: ^3.0.0
   carousel_slider: ^3.0.0
@@ -28,6 +26,7 @@ dependencies:
   device_apps: ^2.1.1
   device_info: ^2.0.0
   extended_image: ^4.1.0
+  file_encrypter: ^1.0.1
   firebase_analytics: ^8.0.2
   firebase_auth: ^1.1.2
   firebase_dynamic_links: ^0.5.1
@@ -36,6 +35,8 @@ dependencies:
   firebase_remote_config: ^0.6.0
   flare_flutter: ^2.0.5
   flare_splash_screen: 3.0.2
+  flutter:
+    sdk: flutter
   flutter_archive: ^4.0.1
   flutter_displaymode: ^0.3.1-nullsafety.0
   flutter_image_compress: ^1.0.0

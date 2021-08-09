@@ -213,14 +213,16 @@ class PrismList extends StatelessWidget {
                 logger
                     .d('Android $release (SDK $sdkInt), $manufacturer $model');
                 final String zipPath = await zipLogs();
+                final String encryptedZipPath = zipPath.split("::::").last;
+                final String encryptedZipKey = zipPath.split("::::").first;
                 final MailOptions mailOptions = MailOptions(
                   body:
                       '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
-                  subject: '[BUG REPORT::PRISM]',
+                  subject: '[BUG REPORT::PRISM] - $encryptedZipKey',
                   recipients: ['hash.studios.inc@gmail.com'],
                   isHTML: true,
                   attachments: [
-                    zipPath,
+                    encryptedZipPath,
                   ],
                   appSchema: 'com.google.android.gm',
                 );
