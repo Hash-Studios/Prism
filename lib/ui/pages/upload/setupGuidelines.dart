@@ -55,6 +55,23 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
               style: TextStyle(color: Theme.of(context).accentColor),
             ),
             actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    draftSetupRoute,
+                  );
+                },
+                child: Text(
+                  "Drafts",
+                  style: TextStyle(
+                    color: Theme.of(context).errorColor == Colors.black
+                        ? Colors.white
+                        : Theme.of(context).errorColor,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ),
               if (MediaQuery.of(context).size.height > 650)
                 Container()
               else
