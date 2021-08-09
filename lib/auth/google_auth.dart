@@ -64,7 +64,7 @@ class GoogleAuth {
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         });
-        logger.d("USERDATA CASE1 ${globals.prismUser.toJson()}");
+        logger.d("USERDATA CASE1");
       }
       // User exists in old database. Copy/create him in the new db.
       else if (usersData[0] != null && usersData[1] == null) {
@@ -74,7 +74,7 @@ class GoogleAuth {
             .collection(USER_NEW_COLLECTION)
             .doc(globals.prismUser.id)
             .set(globals.prismUser.toJson());
-        logger.d("USERDATA CASE2 ${globals.prismUser.toJson()}");
+        logger.d("USERDATA CASE2");
       }
       // User exists in new database. Simply sign him in.
       else if (usersData[0] == null && usersData[1] != null) {
@@ -87,7 +87,7 @@ class GoogleAuth {
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         });
-        logger.d("USERDATA CASE3 ${globals.prismUser.toJson()}");
+        logger.d("USERDATA CASE3");
       }
       // User exists in none. Create new data in new db and sign him in.
       else {
@@ -115,7 +115,7 @@ class GoogleAuth {
             .collection(USER_NEW_COLLECTION)
             .doc(globals.prismUser.id)
             .set(globals.prismUser.toJson());
-        logger.d("USERDATA CASE4 ${globals.prismUser.toJson()}");
+        logger.d("USERDATA CASE4");
       }
 
       await prefs.put(main.userHiveKey, globals.prismUser);
