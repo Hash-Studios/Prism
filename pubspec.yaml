@@ -88,9 +88,9 @@ dev_dependencies:
 
 flutter_native_splash:
   color: "#fafafa"
-  image: assets/icon/ic_launcher.png
+  image: assets/ic_launcher.png
   color_dark: "#181818"
-  image_dark: assets/icon/ic_launcher.png
+  image_dark: assets/ic_launcher.png
   android: true
   ios: false
   web: false
