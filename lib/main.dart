@@ -68,17 +68,17 @@ void main() {
     getApplicationDocumentsDirectory().then(
       (dir) async {
         Hive.init(dir.path);
-        await Hive.openBox('setups');
-        await Hive.openBox('localFav');
-        // await Hive.deleteFromDisk();
-        Hive.ignoreTypeId(33);
+        Hive.ignoreTypeId<PrismUsers>(33);
         Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
-        await Hive.openBox<InAppNotif>('inAppNotifs');
         // Hive.registerAdapter<PrismUsers>(PrismUsersAdapter());
         Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
-        Hive.registerAdapter<Badge>(BadgeAdapter());
         Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
+        Hive.registerAdapter<Badge>(BadgeAdapter());
+        await Hive.openBox<InAppNotif>('inAppNotifs');
+        await Hive.openBox('setups');
+        await Hive.openBox('localFav');
         prefs = await Hive.openBox('prefs');
+        // await Hive.deleteFromDisk();
         logger.d("Box Opened");
         if (prefs.get("systemOverlayColor") == null) {
           prefs.put("systemOverlayColor", 0xFFE57697);
