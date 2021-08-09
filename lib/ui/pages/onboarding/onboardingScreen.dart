@@ -606,8 +606,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             .then((value) {
                                           toasts.codeSend("Login Successful!");
                                           globals.prismUser.loggedIn = true;
-                                          main.prefs.put(
-                                              "prismUserV2", globals.prismUser);
+                                          main.prefs.put(main.userHiveKey,
+                                              globals.prismUser);
                                           Future.delayed(const Duration(
                                                   milliseconds: 500))
                                               .then((value) {
@@ -632,8 +632,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         }).catchError((e) {
                                           logger.d(e.toString());
                                           globals.prismUser.loggedIn = false;
-                                          main.prefs.put(
-                                              "prismUserV2", globals.prismUser);
+                                          main.prefs.put(main.userHiveKey,
+                                              globals.prismUser);
                                           toasts.error(
                                               "Something went wrong, please try again!");
                                         });

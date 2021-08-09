@@ -306,7 +306,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
               }));
       logger.d('File Uploaded');
       globals.prismUser.profilePhoto = pfpUrl;
-      main.prefs.put("prismUserV2", globals.prismUser);
+      main.prefs.put(main.userHiveKey, globals.prismUser);
       await firestore
           .collection(USER_NEW_COLLECTION)
           .doc(globals.prismUser.id)
@@ -337,7 +337,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
               }));
       logger.d('Cover File Uploaded');
       globals.prismUser.coverPhoto = coverUrl;
-      main.prefs.put("prismUserV2", globals.prismUser);
+      main.prefs.put(main.userHiveKey, globals.prismUser);
       await firestore
           .collection(USER_NEW_COLLECTION)
           .doc(globals.prismUser.id)
@@ -966,7 +966,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             }
                             if (bioEdit && bioController.text != "") {
                               globals.prismUser.bio = bioController.text;
-                              main.prefs.put("prismUserV2", globals.prismUser);
+                              main.prefs
+                                  .put(main.userHiveKey, globals.prismUser);
                               await firestore
                                   .collection(USER_NEW_COLLECTION)
                                   .doc(globals.prismUser.id)
@@ -983,7 +984,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 }
                               }
                               globals.prismUser.links = links;
-                              main.prefs.put("prismUserV2", globals.prismUser);
+                              main.prefs
+                                  .put(main.userHiveKey, globals.prismUser);
                               await firestore
                                   .collection(USER_NEW_COLLECTION)
                                   .doc(globals.prismUser.id)
@@ -993,7 +995,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             }
                             if (nameEdit && nameController.text != "") {
                               globals.prismUser.name = nameController.text;
-                              main.prefs.put("prismUserV2", globals.prismUser);
+                              main.prefs
+                                  .put(main.userHiveKey, globals.prismUser);
                               await firestore
                                   .collection(USER_NEW_COLLECTION)
                                   .doc(globals.prismUser.id)
@@ -1020,7 +1023,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   globals.prismUser.username =
                                       usernameController.text;
                                   main.prefs
-                                      .put("prismUserV2", globals.prismUser);
+                                      .put(main.userHiveKey, globals.prismUser);
                                   await firestore
                                       .collection(USER_NEW_COLLECTION)
                                       .doc(globals.prismUser.id)
@@ -1037,7 +1040,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 if (bioEdit && bioController.text != "") {
                                   globals.prismUser.bio = bioController.text;
                                   main.prefs
-                                      .put("prismUserV2", globals.prismUser);
+                                      .put(main.userHiveKey, globals.prismUser);
                                   await firestore
                                       .collection(USER_NEW_COLLECTION)
                                       .doc(globals.prismUser.id)
@@ -1048,7 +1051,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 if (nameEdit && nameController.text != "") {
                                   globals.prismUser.name = nameController.text;
                                   main.prefs
-                                      .put("prismUserV2", globals.prismUser);
+                                      .put(main.userHiveKey, globals.prismUser);
                                   await firestore
                                       .collection(USER_NEW_COLLECTION)
                                       .doc(globals.prismUser.id)
@@ -1066,7 +1069,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   }
                                   globals.prismUser.links = links;
                                   main.prefs
-                                      .put("prismUserV2", globals.prismUser);
+                                      .put(main.userHiveKey, globals.prismUser);
                                   await firestore
                                       .collection(USER_NEW_COLLECTION)
                                       .doc(globals.prismUser.id)

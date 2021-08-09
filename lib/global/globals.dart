@@ -5,7 +5,7 @@ import 'package:Prism/main.dart' as main;
 
 GoogleAuth gAuth = GoogleAuth();
 PrismUsersV2 prismUser = main.prefs.get(
-  'prismUserV2',
+  main.userHiveKey,
   defaultValue: PrismUsersV2(
     name: "",
     bio: "",
