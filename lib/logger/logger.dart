@@ -1,10 +1,11 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 
 final printer = LogOutputPrinter();
 final logger = Logger(
@@ -49,10 +50,20 @@ class LogOutputPrinter extends PrettyPrinter {
     Future.delayed(const Duration(seconds: 1))
         .then((value) => _logFile!.writeStringSync('$str\n'));
     final timeStr = getTime().substring(0, 12);
-    if (prefix == "[E]") {
-      print(color!('$timeStr $prefix - $logMsg \n$logStrace'));
+    if (logStrace != null) {
+      // print(color!('$timeStr $prefix - $logMsg \n$logStrace'));
+      developer.log(
+        color!('$logMsg \n$logStrace'),
+        name: "$timeStr :: ${prefix!.replaceAll("[", "").replaceAll("]", "")}",
+        stackTrace: logStrace,
+        level: 2000,
+      );
     } else {
-      print(color!('$timeStr $prefix - $logMsg'));
+      // print(color!('$timeStr $prefix - $logMsg'));
+      developer.log(
+        color!('$logMsg'),
+        name: "$timeStr :: ${prefix!.replaceAll("[", "").replaceAll("]", "")}",
+      );
     }
     return [];
   }
