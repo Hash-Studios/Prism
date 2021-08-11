@@ -666,15 +666,17 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                                         Hive.box('appsCache');
                                                     setState(() {
                                                       fetched = true;
-                                                      icons = (box.get('icons')
+                                                      icons = (box.get('icons',
+                                                                  defaultValue: {})
                                                               as Map)
                                                           .values
                                                           .toList();
-                                                      allIcons =
-                                                          (box.get('icons')
-                                                                  as Map)
-                                                              .values
-                                                              .toList();
+                                                      allIcons = (box.get(
+                                                                  'icons',
+                                                                  defaultValue: {})
+                                                              as Map)
+                                                          .values
+                                                          .toList();
                                                       if (icons.isNotEmpty) {
                                                         loading = false;
                                                       }
