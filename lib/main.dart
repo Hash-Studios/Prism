@@ -78,6 +78,7 @@ void main() {
         await Hive.openBox<InAppNotif>('inAppNotifs');
         await Hive.openBox('setups');
         await Hive.openBox('localFav');
+        await Hive.openBox('appsCache');
         prefs = await Hive.openBox('prefs');
         logger.d("Box Opened");
         if (prefs.get("systemOverlayColor") == null) {
