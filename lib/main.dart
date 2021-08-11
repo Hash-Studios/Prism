@@ -70,7 +70,8 @@ void main() {
       (dir) async {
         Hive.init(dir.path);
         // await Hive.deleteBoxFromDisk('prefs');
-        Hive.ignoreTypeId<PrismUsers>(33);
+        // Hive.ignoreTypeId<PrismUsers>(33);
+        Hive.registerAdapter(PrismUsersAdapter());
         Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
         Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
         Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
