@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/payments/upgrade.dart';
+import 'package:Prism/ui/pages/adsNotLoading.dart';
 import 'package:Prism/ui/pages/favourite/favouriteSetupScreen.dart';
 import 'package:Prism/ui/pages/favourite/favouriteSetupViewScreen.dart';
 import 'package:Prism/ui/pages/favourite/favouriteWallScreen.dart';
@@ -279,6 +280,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) => const DraftSetupScreen(),
           fullscreenDialog: true);
+    case adsNotLoadingRoute:
+      navStack.add("Ads Not Loading");
+      logger.d(navStack.toString());
+      analytics.setCurrentScreen(screenName: adsNotLoadingRoute);
+      return CupertinoPageRoute(
+          builder: (context) => const AdsNotLoading(), fullscreenDialog: true);
     case setupGuidelinesRoute:
       navStack.add("Setup Guidelines");
       logger.d(navStack.toString());

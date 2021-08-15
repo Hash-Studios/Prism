@@ -287,7 +287,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
               _createRewardedAd();
             } else {
               if (mounted) {
-                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, adsNotLoadingRoute);
                 widget.rewardFunc();
               }
             }
