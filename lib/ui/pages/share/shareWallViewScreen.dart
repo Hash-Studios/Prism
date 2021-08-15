@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:Prism/data/informatics/dataManager.dart';
+import 'package:Prism/data/palette/paletteNotifier.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
@@ -28,6 +29,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
+import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
@@ -52,10 +54,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   String? provider;
   String? url;
   late String thumb;
-  bool isLoading = true;
-  late PaletteGenerator paletteGenerator;
   List<Color?>? colors;
-  Color? accent;
+  Color? accent = Colors.white;
   bool colorChanged = false;
   late File _imageFile;
   bool screenshotTaken = false;
@@ -71,21 +71,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   Future<String>? _futureView;
 
   Future<void> _updatePaletteGenerator() async {
-    setState(() {
-      isLoading = true;
-    });
-    try {
-      image = CachedNetworkImageProvider(thumb);
-    } catch (e) {
-      e.toString();
-    }
-    await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
-      paletteGenerator = await PaletteGenerator.fromImageProvider(image,
-          maximumColorCount: 20, timeout: const Duration(seconds: 120));
-    });
-    setState(() {
-      isLoading = false;
-    });
+    final PaletteNotifier _paletteNotifier =
+        Provider.of<PaletteNotifier>(context, listen: false);
+    final paletteGenerator =
+        await _paletteNotifier.updatePaletteGenerator(thumb);
     colors = paletteGenerator.colors.toList();
     logger.d(colors.toString());
     if (paletteGenerator.colors.length > 5) {
@@ -94,13 +83,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
     setState(() {
       accent = colors![0];
     });
-    if (accent!.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.dark));
-    } else {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.light));
-    }
+    Future.delayed(const Duration(milliseconds: 500)).then((value) {
+      if (accent!.computeLuminance() > 0.5) {
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+            .copyWith(statusBarIconBrightness: Brightness.dark));
+      } else {
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+            .copyWith(statusBarIconBrightness: Brightness.light));
+      }
+    });
   }
 
   void updateAccent() {
@@ -130,7 +121,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
     provider = widget.arguments![1].toString();
     url = widget.arguments![2].toString();
     thumb = widget.arguments![3].toString();
-    isLoading = true;
     if (provider == "WallHaven") {
       futureW = WData.getWallbyID(id!);
     } else if (provider == "Pexels") {
@@ -140,7 +130,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
       updateViews(id.toString().toUpperCase());
       _futureView = getViews(id.toString().toUpperCase());
     }
-    _updatePaletteGenerator();
+    Future.delayed(const Duration()).then((value) => _updatePaletteGenerator());
     super.initState();
   }
 
@@ -158,6 +148,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
 
   @override
   Widget build(BuildContext context) {
+    final PaletteNotifier paletteNotifier =
+        Provider.of<PaletteNotifier>(context);
     final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
         .chain(CurveTween(curve: Curves.easeOutCubic))
         .animate(shakeController)
@@ -171,8 +163,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
       child: provider == "WallHaven"
           ? Scaffold(
               key: _scaffoldKey,
-              backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : accent,
+              backgroundColor: paletteNotifier.isLoading
+                  ? Theme.of(context).primaryColor
+                  : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   setState(() {
@@ -572,7 +565,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : logger.d("");
+                              !paletteNotifier.isLoading
+                                  ? updateAccent()
+                                  : logger.d("");
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
@@ -614,7 +609,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               errorWidget: (context, url, error) => Center(
                                 child: Icon(
                                   JamIcons.close_circle_f,
-                                  color: isLoading
+                                  color: paletteNotifier.isLoading
                                       ? Theme.of(context).accentColor
                                       : accent!.computeLuminance() > 0.5
                                           ? Colors.black
@@ -635,7 +630,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             logger.d(navStack.toString());
                             Navigator.pop(context);
                           },
-                          color: isLoading
+                          color: paletteNotifier.isLoading
                               ? Theme.of(context).accentColor
                               : accent!.computeLuminance() > 0.5
                                   ? Colors.black
@@ -675,7 +670,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                     fullscreenDialog: true,
                                     opaque: false));
                           },
-                          color: isLoading
+                          color: paletteNotifier.isLoading
                               ? Theme.of(context).accentColor
                               : accent!.computeLuminance() > 0.5
                                   ? Colors.black
@@ -693,8 +688,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
           : provider == "Prism"
               ? Scaffold(
                   key: _scaffoldKey,
-                  backgroundColor:
-                      isLoading ? Theme.of(context).primaryColor : accent,
+                  backgroundColor: paletteNotifier.isLoading
+                      ? Theme.of(context).primaryColor
+                      : accent,
                   body: SlidingUpPanel(
                     onPanelOpened: () {
                       setState(() {
@@ -1342,7 +1338,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 },
                                 onTap: () {
                                   HapticFeedback.vibrate();
-                                  !isLoading ? updateAccent() : logger.d("");
+                                  !paletteNotifier.isLoading
+                                      ? updateAccent()
+                                      : logger.d("");
                                   shakeController.forward(from: 0.0);
                                 },
                                 child: CachedNetworkImage(
@@ -1386,7 +1384,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   errorWidget: (context, url, error) => Center(
                                     child: Icon(
                                       JamIcons.close_circle_f,
-                                      color: isLoading
+                                      color: paletteNotifier.isLoading
                                           ? Theme.of(context).accentColor
                                           : accent!.computeLuminance() > 0.5
                                               ? Colors.black
@@ -1407,7 +1405,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 logger.d(navStack.toString());
                                 Navigator.pop(context);
                               },
-                              color: isLoading
+                              color: paletteNotifier.isLoading
                                   ? Theme.of(context).accentColor
                                   : accent!.computeLuminance() > 0.5
                                       ? Colors.black
@@ -1448,7 +1446,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                         fullscreenDialog: true,
                                         opaque: false));
                               },
-                              color: isLoading
+                              color: paletteNotifier.isLoading
                                   ? Theme.of(context).accentColor
                                   : accent!.computeLuminance() > 0.5
                                       ? Colors.black
@@ -1466,8 +1464,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
               : provider == "Pexels"
                   ? Scaffold(
                       key: _scaffoldKey,
-                      backgroundColor:
-                          isLoading ? Theme.of(context).primaryColor : accent,
+                      backgroundColor: paletteNotifier.isLoading
+                          ? Theme.of(context).primaryColor
+                          : accent,
                       body: SlidingUpPanel(
                         onPanelOpened: () {
                           setState(() {
@@ -1900,7 +1899,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                     },
                                     onTap: () {
                                       HapticFeedback.vibrate();
-                                      !isLoading
+                                      !paletteNotifier.isLoading
                                           ? updateAccent()
                                           : logger.d("");
                                       shakeController.forward(from: 0.0);
@@ -1951,7 +1950,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           Center(
                                         child: Icon(
                                           JamIcons.close_circle_f,
-                                          color: isLoading
+                                          color: paletteNotifier.isLoading
                                               ? Theme.of(context).accentColor
                                               : accent!.computeLuminance() > 0.5
                                                   ? Colors.black
@@ -1972,7 +1971,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                     logger.d(navStack.toString());
                                     Navigator.pop(context);
                                   },
-                                  color: isLoading
+                                  color: paletteNotifier.isLoading
                                       ? Theme.of(context).accentColor
                                       : colors![0]!.computeLuminance() > 0.5
                                           ? Colors.black
@@ -2013,7 +2012,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             fullscreenDialog: true,
                                             opaque: false));
                                   },
-                                  color: isLoading
+                                  color: paletteNotifier.isLoading
                                       ? Theme.of(context).accentColor
                                       : colors![0]!.computeLuminance() > 0.5
                                           ? Colors.black

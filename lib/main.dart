@@ -8,6 +8,7 @@ import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/data/ads/adsNotifier.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/data/palette/paletteNotifier.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
@@ -147,6 +148,9 @@ Future<void> main() async {
                 RestartWidget(
                   child: MultiProvider(
                     providers: [
+                      ChangeNotifierProvider<PaletteNotifier>(
+                        create: (context) => PaletteNotifier(),
+                      ),
                       ChangeNotifierProvider<AdsNotifier>(
                         create: (context) => AdsNotifier(),
                       ),
