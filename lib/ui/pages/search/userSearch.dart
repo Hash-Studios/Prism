@@ -5,6 +5,7 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/locator/locator.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/popup/noLoadLinkPopUp.dart';
@@ -161,7 +162,7 @@ class _UsersResultListState extends State<UsersResultList> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: ExpansionPanelList(
-        animationDuration: Duration.zero,
+        animationDuration: const Duration(milliseconds: 300),
         elevation: 0,
         dividerColor: Theme.of(context).errorColor,
         expansionCallback: (int index, bool isExpanded) {
@@ -177,11 +178,25 @@ class _UsersResultListState extends State<UsersResultList> {
                 : Theme.of(context).primaryColor,
             headerBuilder: (BuildContext context, bool isExpanded) {
               return ListTile(
-                title: Text(
-                  user.name,
-                  style: Theme.of(context).textTheme.headline5!.copyWith(
-                        color: Theme.of(context).accentColor,
+                title: Row(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.all(
+                          _data[widget.users.indexOf(user)] ? 2 : 8.0),
+                      child: CircleAvatar(
+                        foregroundImage: CachedNetworkImageProvider(
+                          user.profilePhoto ?? "".toString(),
+                        ),
+                        radius: _data[widget.users.indexOf(user)] ? 0 : 16,
                       ),
+                    ),
+                    Text(
+                      user.name,
+                      style: Theme.of(context).textTheme.headline5!.copyWith(
+                            color: Theme.of(context).accentColor,
+                          ),
+                    ),
+                  ],
                 ),
                 tileColor: _data[widget.users.indexOf(user)]
                     ? Theme.of(context).errorColor
@@ -501,6 +516,19 @@ class _UsersResultListState extends State<UsersResultList> {
                           ),
                         ),
                       ),
+                      Positioned(
+                        child: IconButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, followerProfileRoute,
+                                arguments: [
+                                  user.email,
+                                ]);
+                          },
+                          icon: const Icon(
+                            JamIcons.user_circle,
+                          ),
+                        ),
+                      )
                     ],
                   ),
                 ),
