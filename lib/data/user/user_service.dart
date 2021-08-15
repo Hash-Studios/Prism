@@ -21,6 +21,7 @@ class UserService {
     final res = await collection
         .where('name', isGreaterThanOrEqualTo: text)
         .where('name', isLessThanOrEqualTo: text + '\uf8ff')
+        .limit(20)
         .get();
     final resUsers = res.docs
         .map((e) => PrismUsersV2.fromDocumentSnapshotWithoutUser(e))
