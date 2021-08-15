@@ -10,7 +10,9 @@ import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/data/user/user_notifier.dart';
 import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/locator/locator.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/payments/upgrade.dart';
@@ -50,7 +52,7 @@ late bool optimisedWallpapers;
 int? categories;
 int? purity;
 LocalNotification localNotification = LocalNotification();
-void main() {
+Future<void> main() async {
   debugPrint = (String? message, {int? wrapWidth}) {
     if (message!.contains("[Home")) {
       logger.i(message);
@@ -64,6 +66,7 @@ void main() {
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.dumpErrorToConsole(details, forceReport: true);
   };
+  await setupLocator();
   localNotification = LocalNotification();
   Firebase.initializeApp().then((_) {
     getApplicationDocumentsDirectory().then(
@@ -152,6 +155,8 @@ void main() {
                       ChangeNotifierProvider<FavouriteSetupProvider>(
                         create: (context) => FavouriteSetupProvider(),
                       ),
+                      ChangeNotifierProvider<UserNotifier>(
+                          create: (context) => locator<UserNotifier>()),
                       ChangeNotifierProvider<CategorySupplier>(
                         create: (context) => CategorySupplier(),
                       ),

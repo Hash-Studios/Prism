@@ -4,6 +4,7 @@ import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
@@ -222,55 +223,68 @@ class _SearchScreenState extends State<SearchScreen> {
                 height: 53,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: tags.length,
+                  itemCount: tags.length + 1,
                   itemBuilder: (context, index) {
-                    return Align(
-                      child: Stack(
-                        children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
-                            child: ActionChip(
-                                pressElevation: 5,
-                                padding:
-                                    const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                backgroundColor:
-                                    searchController.text.toLowerCase() ==
-                                            tags[index].toLowerCase()
-                                        ? Theme.of(context).accentColor
-                                        : Theme.of(context).hintColor,
-                                label: Text(tags[index],
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headline4!
-                                        .copyWith(
-                                            color: searchController.text
-                                                        .toLowerCase() ==
-                                                    tags[index].toLowerCase()
-                                                ? Theme.of(context).primaryColor
-                                                : Theme.of(context)
-                                                    .accentColor)),
-                                onPressed: () {
-                                  setState(() {
-                                    searchController.text = tags[index];
-                                    isSubmitted = true;
-                                    if (selectedProvider == "WallHaven") {
-                                      wdata.wallsS = [];
-                                      _future = wdata.getWallsbyQuery(
-                                          tags[index],
-                                          main.prefs.get('WHcategories')
-                                              as int?,
-                                          main.prefs.get('WHpurity') as int?);
-                                    } else if (selectedProvider == "Pexels") {
-                                      pdata.wallsPS = [];
-                                      _future =
-                                          pdata.getWallsPbyQuery(tags[index]);
-                                    }
-                                  });
-                                }),
-                          ),
-                        ],
-                      ),
-                    );
+                    if (index == 0) {
+                      return IconButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, userSearchRoute);
+                        },
+                        icon: const Icon(
+                          JamIcons.users,
+                        ),
+                      );
+                    } else {
+                      index = index - 1;
+                      return Align(
+                        child: Stack(
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
+                              child: ActionChip(
+                                  pressElevation: 5,
+                                  padding:
+                                      const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                  backgroundColor:
+                                      searchController.text.toLowerCase() ==
+                                              tags[index].toLowerCase()
+                                          ? Theme.of(context).accentColor
+                                          : Theme.of(context).hintColor,
+                                  label: Text(tags[index],
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headline4!
+                                          .copyWith(
+                                              color: searchController.text
+                                                          .toLowerCase() ==
+                                                      tags[index].toLowerCase()
+                                                  ? Theme.of(context)
+                                                      .primaryColor
+                                                  : Theme.of(context)
+                                                      .accentColor)),
+                                  onPressed: () {
+                                    setState(() {
+                                      searchController.text = tags[index];
+                                      isSubmitted = true;
+                                      if (selectedProvider == "WallHaven") {
+                                        wdata.wallsS = [];
+                                        _future = wdata.getWallsbyQuery(
+                                            tags[index],
+                                            main.prefs.get('WHcategories')
+                                                as int?,
+                                            main.prefs.get('WHpurity') as int?);
+                                      } else if (selectedProvider == "Pexels") {
+                                        pdata.wallsPS = [];
+                                        _future =
+                                            pdata.getWallsPbyQuery(tags[index]);
+                                      }
+                                    });
+                                  }),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
                   },
                 ),
               ),
