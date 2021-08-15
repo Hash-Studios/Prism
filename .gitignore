@@ -51,3 +51,6 @@ android/.project
 android/.settings/org.eclipse.buildship.core.prefs
 android/gradle/wrapper/gradle-wrapper.properties
 android/app/build.gradle
+android/google-play-console.json
+android/key.jks
+android/android_keys.zip

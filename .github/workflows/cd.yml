@@ -1,0 +1,82 @@
+# cd.yml
+name: CD
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  # CI
+  build_android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 12.x
+      - name: Decrypt Android keys
+        run: sh ./.github/scripts/decrypt_android_keys.sh
+        env:
+          ANDROID_KEYS_SECRET_PASSPHRASE: ${{ secrets.ANDROID_KEYS_SECRET_PASSPHRASE }}
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v1
+        with:
+          flutter-version: 2.2.0
+      - name: Install Flutter dependencies
+        run: flutter pub get
+      - run: 'echo "$FIREBASE_SECRET" > android/app/google-services.json'
+      - run: 'echo "$GITKEY_DART" > lib/gitkey.dart'
+        env:
+          FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
+          GITKEY_DART: ${{ secrets.GITKEY_DART }}
+      - name: Build Runner code generator
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+      - name: Format files
+        run: flutter format --set-exit-if-changed .
+      - name: Analyze files
+        run: flutter analyze .
+      - name: Run the tests
+        run: flutter test
+      - name: Build the APK
+        run: flutter build apk --release
+      - name: Upload artifact to Github
+        uses: actions/upload-artifact@v1
+        with:
+          name: release-apk
+          path: build/app/outputs/apk/release/app-release.apk
+  # CD
+  deploy_android:
+    runs-on: ubuntu-latest
+    needs: [build_android]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 12.x
+      - name: Decrypt Android keys
+        run: sh ./.github/scripts/decrypt_android_keys.sh
+        env:
+          ANDROID_KEYS_SECRET_PASSPHRASE: ${{ secrets.ANDROID_KEYS_SECRET_PASSPHRASE }}
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v1
+        with:
+          flutter-version: 1.17.5
+      - name: Install Flutter dependencies
+        run: flutter pub get
+      - run: 'echo "$FIREBASE_SECRET" > android/app/google-services.json'
+      - run: 'echo "$GITKEY_DART" > lib/gitkey.dart'
+        env:
+          FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
+          GITKEY_DART: ${{ secrets.GITKEY_DART }}
+      - name: Build appbundle
+        run: flutter build appbundle --release --shrink --tree-shake-icons --obfuscate --no-sound-null-safety
+      - name: Run Fastlane
+        uses: maierj/fastlane-action@v1.4.0
+        with:
+          lane: beta
+          subdirectory: android
