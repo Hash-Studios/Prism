@@ -30,6 +30,7 @@ import 'package:Prism/ui/pages/profile/userProfileSetupViewScreen.dart';
 import 'package:Prism/ui/pages/profile/userProfileWallViewScreen.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
 import 'package:Prism/ui/pages/search/searchWallpaperScreen.dart';
+import 'package:Prism/ui/pages/search/userSearch.dart';
 import 'package:Prism/ui/pages/setup/setupScreen.dart';
 import 'package:Prism/ui/pages/setup/setupViewScreen.dart';
 import 'package:Prism/ui/pages/setup/shareSetupViewScreen.dart';
@@ -286,6 +287,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: adsNotLoadingRoute);
       return CupertinoPageRoute(
           builder: (context) => const AdsNotLoading(), fullscreenDialog: true);
+    case userSearchRoute:
+      navStack.add("Search Users");
+      logger.d(navStack.toString());
+      analytics.setCurrentScreen(screenName: userSearchRoute);
+      return CupertinoPageRoute(
+        builder: (context) => const UserSearch(),
+      );
     case setupGuidelinesRoute:
       navStack.add("Setup Guidelines");
       logger.d(navStack.toString());
