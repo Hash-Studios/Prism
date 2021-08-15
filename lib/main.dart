@@ -5,6 +5,7 @@ import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
+import 'package:Prism/data/ads/adsNotifier.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
@@ -146,6 +147,9 @@ Future<void> main() async {
                 RestartWidget(
                   child: MultiProvider(
                     providers: [
+                      ChangeNotifierProvider<AdsNotifier>(
+                        create: (context) => AdsNotifier(),
+                      ),
                       ChangeNotifierProvider<UserProfileProvider>(
                         create: (context) => UserProfileProvider(),
                       ),
