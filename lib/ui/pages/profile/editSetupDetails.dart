@@ -298,7 +298,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                     }
                   : null,
               child: Text(
-                "Save",
+                "Post",
                 style: TextStyle(
                   color: !isProcessing && !isUploading
                       ? Theme.of(context).errorColor == Colors.black
