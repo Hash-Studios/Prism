@@ -237,12 +237,6 @@ class DownloadDialogContent extends StatefulWidget {
 
 class _DownloadDialogContentState extends State<DownloadDialogContent> {
   @override
-  void initState() {
-    Provider.of<AdsNotifier>(context, listen: false).createRewardedAd();
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final AdsNotifier adsNotifier = Provider.of<AdsNotifier>(context);
     if (adsNotifier.adFailed) {
