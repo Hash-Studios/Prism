@@ -36,8 +36,8 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
       - name: Format files
         run: flutter format --line-length 80 lib
-      - name: Analyze files
-        run: flutter analyze .
+      # - name: Analyze files
+      #   run: flutter analyze .
       - name: Run the tests
         run: flutter test
       - name: Build the APK
