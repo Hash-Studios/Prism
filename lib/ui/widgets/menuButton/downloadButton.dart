@@ -166,22 +166,46 @@ class _DownloadButtonState extends State<DownloadButton> {
     // }
     // } else {
     if (widget.link!.contains("com.hash.prism")) {
-      GallerySaver.saveImage(widget.link!, albumName: "Prism").then((value) {
-        analytics.logEvent(
-            name: 'download_wallpaper', parameters: {'link': widget.link});
-        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+      debugPrint("Downloading using Picasso");
+      await platform
+          .invokeMethod('save_image_file', {"link": widget.link}).then((value) {
+        if (value as bool) {
+          analytics.logEvent(
+              name: 'download_wallpaper', parameters: {'link': widget.link});
+          toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+        } else {
+          toasts.error("Couldn't download! Please Retry!");
+        }
         setState(() {
           isLoading = false;
         });
-        main.localNotification.cancelDownloadNotification();
-      }).catchError((e) {
-        setState(() {
-          isLoading = false;
-        });
-        // TODO Cancel all
         // main.localNotification.cancelDownloadNotification();
+      }).catchError((e) {
+        logger.d(e.toString());
+        setState(() {
+          isLoading = false;
+        });
       });
+      // GallerySaver.saveImage(widget.link!, albumName: "Prism").then((value) {
+      //   analytics.logEvent(
+      //       name: 'download_wallpaper', parameters: {'link': widget.link});
+      //   toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+      //   setState(() {
+      //     isLoading = false;
+      //   });
+      //   // main.localNotification.cancelDownloadNotification();
+      // }).catchError((e) {
+      //   setState(() {
+      //     isLoading = false;
+      //   });
+      //   // TODO Cancel all
+      //   // main.localNotification.cancelDownloadNotification();
+      // });
     } else {
+      debugPrint("Downloading using Platform Method");
+      Future.delayed(const Duration(seconds: 2)).then((value) => setState(() {
+            isLoading = false;
+          }));
       platform.invokeMethod('download_image_dm', {
         "link": widget.link,
         "filename": widget.link!
@@ -189,9 +213,11 @@ class _DownloadButtonState extends State<DownloadButton> {
             .last
             .replaceAll(".jpg", "")
             .replaceAll(".png", "")
+      }).then((value) {
+        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+        analytics.logEvent(
+            name: 'download_wallpaper', parameters: {'link': widget.link});
       });
-      analytics.logEvent(
-          name: 'download_wallpaper', parameters: {'link': widget.link});
     }
     // .then((value) {
     // if (value as bool) {
