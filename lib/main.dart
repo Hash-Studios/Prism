@@ -117,11 +117,11 @@ Future<void> main() async {
                 .replaceAll("Color(", "")
                 .replaceAll(")", "")));
         optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
-        if (optimisedWallpapers) {
-          prefs.put('optimisedWallpapers', true);
-        } else {
-          prefs.put('optimisedWallpapers', false);
-        }
+        // if (optimisedWallpapers) {
+        //   prefs.put('optimisedWallpapers', true);
+        // } else {
+        prefs.put('optimisedWallpapers', false);
+        // }
         categories = prefs.get('WHcategories') as int? ?? 100;
         if (categories == 100) {
           prefs.put('WHcategories', 100);
