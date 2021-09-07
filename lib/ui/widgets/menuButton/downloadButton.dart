@@ -263,6 +263,18 @@ class DownloadDialogContent extends StatefulWidget {
 
 class _DownloadDialogContentState extends State<DownloadDialogContent> {
   @override
+  void initState() {
+    final AdsNotifier adsNotifier =
+        Provider.of<AdsNotifier>(context, listen: false);
+    if (!adsNotifier.adLoaded) {
+      Future.delayed(const Duration()).then((value) {
+        adsNotifier.createRewardedAd();
+      });
+    }
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final AdsNotifier adsNotifier = Provider.of<AdsNotifier>(context);
     if (adsNotifier.adFailed) {
@@ -382,7 +394,10 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                                   .withOpacity(0.3),
                             ),
                           ),
-                          const CircularProgressIndicator(),
+                          const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator()),
                         ],
                       ),
               ),
