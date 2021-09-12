@@ -226,14 +226,15 @@ class _SearchScreenState extends State<SearchScreen> {
                   itemCount: tags.length + 1,
                   itemBuilder: (context, index) {
                     if (index == 0) {
-                      return IconButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, userSearchRoute);
-                        },
-                        icon: const Icon(
-                          JamIcons.users,
-                        ),
-                      );
+                      return Container();
+                      // return IconButton(
+                      //   onPressed: () {
+                      //     Navigator.pushNamed(context, userSearchRoute);
+                      //   },
+                      //   icon: const Icon(
+                      //     JamIcons.users,
+                      //   ),
+                      // );
                     } else {
                       index = index - 1;
                       return Align(
