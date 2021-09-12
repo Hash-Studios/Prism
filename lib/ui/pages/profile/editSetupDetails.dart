@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/data/apps/appsData.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -10,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:github/github.dart';
+import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as Path;
 import 'package:Prism/routes/router.dart';
@@ -296,7 +298,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                     }
                   : null,
               child: Text(
-                "Save",
+                "Post",
                 style: TextStyle(
                   color: !isProcessing && !isUploading
                       ? Theme.of(context).errorColor == Colors.black
@@ -628,9 +630,273 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                 .textTheme
                                 .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
-                            suffixIcon: Icon(
-                              JamIcons.android,
-                              color: Theme.of(context).accentColor,
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                bool fetched = false;
+                                bool loading = true;
+                                List icons = [];
+                                List allIcons = [];
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  enableDrag: true,
+                                  backgroundColor: Colors.transparent,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(24),
+                                      topRight: Radius.circular(24),
+                                    ),
+                                  ),
+                                  builder: (context) => GestureDetector(
+                                    onTap: () => Navigator.of(context).pop(),
+                                    child: Container(
+                                        color: const Color.fromRGBO(
+                                            0, 0, 0, 0.001),
+                                        child: GestureDetector(
+                                            onTap: () {},
+                                            child: DraggableScrollableSheet(
+                                              initialChildSize: 0.8,
+                                              minChildSize: 0.4,
+                                              builder: (context, controller) =>
+                                                  StatefulBuilder(
+                                                builder: (BuildContext context,
+                                                    StateSetter setState) {
+                                                  if (!fetched) {
+                                                    final Box box =
+                                                        Hive.box('appsCache');
+                                                    setState(() {
+                                                      fetched = true;
+                                                      icons = (box.get('icons',
+                                                                  defaultValue: {})
+                                                              as Map)
+                                                          .values
+                                                          .toList();
+                                                      allIcons = (box.get(
+                                                                  'icons',
+                                                                  defaultValue: {})
+                                                              as Map)
+                                                          .values
+                                                          .toList();
+                                                      if (icons.isNotEmpty) {
+                                                        loading = false;
+                                                      }
+                                                    });
+                                                    getIcons().then(
+                                                        (value) => setState(() {
+                                                              icons = value;
+                                                              allIcons = value;
+                                                              loading = false;
+                                                            }));
+                                                  }
+                                                  return Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                      borderRadius:
+                                                          const BorderRadius
+                                                              .only(
+                                                        topLeft:
+                                                            Radius.circular(24),
+                                                        topRight:
+                                                            Radius.circular(24),
+                                                      ),
+                                                    ),
+                                                    child: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Center(
+                                                            child: Container(
+                                                              margin:
+                                                                  const EdgeInsets
+                                                                          .all(
+                                                                      16.0),
+                                                              width: 32,
+                                                              height: 6,
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .bodyText1!
+                                                                    .color!
+                                                                    .withOpacity(
+                                                                        0.1),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            5000),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          if (loading)
+                                                            const Padding(
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(
+                                                                          16.0),
+                                                              child: Center(
+                                                                child:
+                                                                    CircularProgressIndicator(),
+                                                              ),
+                                                            )
+                                                          else
+                                                            Column(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              children: [
+                                                                Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                              .all(
+                                                                          16.0),
+                                                                  child:
+                                                                      TextField(
+                                                                    onSubmitted:
+                                                                        (query) {
+                                                                      query = query
+                                                                          .toLowerCase();
+                                                                      icons =
+                                                                          allIcons;
+                                                                      if (query !=
+                                                                          '') {
+                                                                        icons = icons
+                                                                            .where((e) =>
+                                                                                (e as Map)["name"].toString().trim().toLowerCase().contains(query))
+                                                                            .toList();
+                                                                      }
+                                                                      setState(
+                                                                          () =>
+                                                                              {});
+                                                                    },
+                                                                    onChanged:
+                                                                        (query) {
+                                                                      query = query
+                                                                          .toLowerCase();
+                                                                      icons =
+                                                                          allIcons;
+                                                                      if (query !=
+                                                                          '') {
+                                                                        icons = icons
+                                                                            .where((e) =>
+                                                                                (e as Map)["name"].toString().trim().toLowerCase().contains(query))
+                                                                            .toList();
+                                                                      }
+                                                                      setState(
+                                                                          () =>
+                                                                              {});
+                                                                    },
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyText1!
+                                                                        .copyWith(
+                                                                            fontSize:
+                                                                                16),
+                                                                    decoration:
+                                                                        InputDecoration(
+                                                                      prefixIcon:
+                                                                          const Icon(
+                                                                              Icons.search),
+                                                                      hintText:
+                                                                          "Search Icons",
+                                                                      hintStyle: Theme.of(
+                                                                              context)
+                                                                          .textTheme
+                                                                          .bodyText1!
+                                                                          .copyWith(
+                                                                            fontSize:
+                                                                                16,
+                                                                            color:
+                                                                                Theme.of(context).textTheme.bodyText1!.color!.withOpacity(0.6),
+                                                                          ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                SizedBox(
+                                                                  height: MediaQuery.of(context)
+                                                                              .size
+                                                                              .height *
+                                                                          1 -
+                                                                      119,
+                                                                  child: ListView
+                                                                      .separated(
+                                                                    separatorBuilder:
+                                                                        (context,
+                                                                                index) =>
+                                                                            const Divider(
+                                                                      height: 2,
+                                                                    ),
+                                                                    shrinkWrap:
+                                                                        true,
+                                                                    controller:
+                                                                        controller,
+                                                                    itemCount:
+                                                                        icons.length +
+                                                                            1,
+                                                                    itemBuilder: (context,
+                                                                            index) =>
+                                                                        (index ==
+                                                                                icons.length)
+                                                                            ? const ListTile(
+                                                                                title: SizedBox(
+                                                                                  height: 60,
+                                                                                ),
+                                                                              )
+                                                                            : ListTile(
+                                                                                onTap: () {
+                                                                                  iconName.text = (icons[index] as Map)["name"].toString().trim();
+                                                                                  iconURL.text = (icons[index] as Map)["link"].toString().trim();
+                                                                                  Navigator.pop(context);
+                                                                                },
+                                                                                leading: ClipRRect(
+                                                                                  borderRadius: BorderRadius.circular(8),
+                                                                                  child: CachedNetworkImage(
+                                                                                    imageUrl: (icons[index] as Map)["icon"].toString(),
+                                                                                    width: 38,
+                                                                                    height: 38,
+                                                                                    fit: BoxFit.cover,
+                                                                                  ),
+                                                                                ),
+                                                                                title: Text(
+                                                                                  (icons[index] as Map)["name"].toString().trim(),
+                                                                                  style: TextStyle(
+                                                                                    color: Theme.of(context).accentColor,
+                                                                                    fontSize: 16,
+                                                                                    fontFamily: "Proxima Nova",
+                                                                                    fontWeight: FontWeight.normal,
+                                                                                  ),
+                                                                                ),
+                                                                                subtitle: Text(
+                                                                                  (icons[index] as Map)["id"].toString().trim(),
+                                                                                  style: TextStyle(
+                                                                                    color: Theme.of(context).accentColor.withOpacity(0.5),
+                                                                                    fontSize: 12,
+                                                                                    fontFamily: "Proxima Nova",
+                                                                                    fontWeight: FontWeight.normal,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                  ),
+                                                                )
+                                                              ],
+                                                            ),
+                                                        ]),
+                                                  );
+                                                },
+                                              ),
+                                            ))),
+                                  ),
+                                );
+                              },
+                              icon: Icon(
+                                JamIcons.search,
+                                color: Theme.of(context).accentColor,
+                              ),
                             ),
                           ),
                         ),

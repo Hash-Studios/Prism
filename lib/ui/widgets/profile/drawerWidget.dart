@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+// import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
+// import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileDrawer extends StatelessWidget {
@@ -156,6 +158,27 @@ class ProfileDrawer extends StatelessWidget {
                   Navigator.pushNamed(context, favSetupRoute);
                 },
                 context: context),
+            // createDrawerBodyItem(
+            //     icon: JamIcons.ghost,
+            //     text: 'Get Icons from setups',
+            //     onTap: () async {
+            //       final List iconLinks =
+            //           await Provider.of<SetupProvider>(context, listen: false)
+            //               .getAllSetups();
+            //       logger.d(iconLinks);
+            //       showModalBottomSheet(
+            //         context: context,
+            //         builder: (context) => Container(
+            //           child: ListView.builder(
+            //             itemCount: iconLinks.length,
+            //             itemBuilder: (context, index) => Text(
+            //               iconLinks[index].toString(),
+            //             ),
+            //           ),
+            //         ),
+            //       );
+            //     },
+            //     context: context),
             const Divider(),
             createDrawerBodyHeader(text: "DOWNLOADS", context: context),
             createDrawerBodyItem(

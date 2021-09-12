@@ -1,6 +1,5 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/userModel.dart';
-import 'package:Prism/data/ads/adHelper.dart';
 import 'package:Prism/main.dart' as main;
 
 GoogleAuth gAuth = GoogleAuth();
@@ -27,13 +26,12 @@ PrismUsersV2 prismUser = main.prefs.get(
     coverPhoto: "",
   ),
 ) as PrismUsersV2;
-String currentAppVersion = '2.6.8';
+String currentAppVersion = '2.6.9';
 String obsoleteAppVersion = '2.6.0';
-String currentAppVersionCode = '71';
+String currentAppVersionCode = '75';
 bool updateChecked = false;
 bool updateAvailable = false;
 Map versionInfo = {};
-AdHelper adHelper = AdHelper();
 bool updateAlerted = false;
 bool hasNotch = false;
 double? notchSize;

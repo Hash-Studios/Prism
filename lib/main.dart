@@ -5,12 +5,16 @@ import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
+import 'package:Prism/data/ads/adsNotifier.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/data/palette/paletteNotifier.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/data/user/user_notifier.dart';
 import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/locator/locator.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/payments/upgrade.dart';
@@ -50,7 +54,7 @@ late bool optimisedWallpapers;
 int? categories;
 int? purity;
 LocalNotification localNotification = LocalNotification();
-void main() {
+Future<void> main() async {
   debugPrint = (String? message, {int? wrapWidth}) {
     if (message!.contains("[Home")) {
       logger.i(message);
@@ -64,13 +68,15 @@ void main() {
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.dumpErrorToConsole(details, forceReport: true);
   };
+  await setupLocator();
   localNotification = LocalNotification();
   Firebase.initializeApp().then((_) {
     getApplicationDocumentsDirectory().then(
       (dir) async {
         Hive.init(dir.path);
         // await Hive.deleteBoxFromDisk('prefs');
-        Hive.ignoreTypeId<PrismUsers>(33);
+        // Hive.ignoreTypeId<PrismUsers>(33);
+        Hive.registerAdapter(PrismUsersAdapter());
         Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
         Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
         Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
@@ -78,6 +84,7 @@ void main() {
         await Hive.openBox<InAppNotif>('inAppNotifs');
         await Hive.openBox('setups');
         await Hive.openBox('localFav');
+        await Hive.openBox('appsCache');
         prefs = await Hive.openBox('prefs');
         logger.d("Box Opened");
         if (prefs.get("systemOverlayColor") == null) {
@@ -110,11 +117,11 @@ void main() {
                 .replaceAll("Color(", "")
                 .replaceAll(")", "")));
         optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
-        if (optimisedWallpapers) {
-          prefs.put('optimisedWallpapers', true);
-        } else {
-          prefs.put('optimisedWallpapers', false);
-        }
+        // if (optimisedWallpapers) {
+        //   prefs.put('optimisedWallpapers', true);
+        // } else {
+        prefs.put('optimisedWallpapers', false);
+        // }
         categories = prefs.get('WHcategories') as int? ?? 100;
         if (categories == 100) {
           prefs.put('WHcategories', 100);
@@ -141,6 +148,12 @@ void main() {
                 RestartWidget(
                   child: MultiProvider(
                     providers: [
+                      ChangeNotifierProvider<PaletteNotifier>(
+                        create: (context) => PaletteNotifier(),
+                      ),
+                      ChangeNotifierProvider<AdsNotifier>(
+                        create: (context) => AdsNotifier(),
+                      ),
                       ChangeNotifierProvider<UserProfileProvider>(
                         create: (context) => UserProfileProvider(),
                       ),
@@ -150,6 +163,8 @@ void main() {
                       ChangeNotifierProvider<FavouriteSetupProvider>(
                         create: (context) => FavouriteSetupProvider(),
                       ),
+                      ChangeNotifierProvider<UserNotifier>(
+                          create: (context) => locator<UserNotifier>()),
                       ChangeNotifierProvider<CategorySupplier>(
                         create: (context) => CategorySupplier(),
                       ),
@@ -248,7 +263,7 @@ class _MyAppState extends State<MyApp> {
       darkTheme: Provider.of<DarkThemeModel>(context).currentTheme,
       themeMode: Provider.of<ThemeModeExtended>(context).currentMode,
       home: ((prefs.get('onboarded_new') as bool?) ?? false)
-          ? SplashWidget()
+          ? const SplashWidget()
           : OnboardingScreen(),
     );
   }

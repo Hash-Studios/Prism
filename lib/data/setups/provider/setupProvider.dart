@@ -5,6 +5,66 @@ import 'package:flutter/material.dart';
 class SetupProvider extends ChangeNotifier {
   final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
   List<QueryDocumentSnapshot>? setups;
+
+  // bool isNumeric(String s) {
+  //   if (s == null) {
+  //     return false;
+  //   }
+  //   return double.tryParse(s) != null;
+  // }
+
+  // Future<List> getAllSetups() async {
+  //   logger.d("Fetching all setups");
+  //   setups = [];
+  //   final Map iconLinks = {};
+  //   await databaseReference
+  //       .collection("setups")
+  //       .where("review", isEqualTo: true)
+  //       .orderBy("created_at", descending: true)
+  //       .get()
+  //       .then((value) {
+  //     setups = value.docs;
+  //     logger.d("Fetched all setups");
+  //     for (final setup in setups!) {
+  //       if (setup.data()["icon_url"].toString().contains('play.google.com')) {
+  //         if (!isNumeric(setup
+  //             .data()["icon_url"]
+  //             .toString()
+  //             .split('?id=')
+  //             .last
+  //             .split("&")
+  //             .first)) {
+  //           iconLinks[setup
+  //               .data()["icon_url"]
+  //               .toString()
+  //               .split('?id=')
+  //               .last
+  //               .split("&")
+  //               .first] = {
+  //             'name': '',
+  //             'icon': '',
+  //             'link':
+  //                 "https://play.google.com/store/apps/details?id=${setup.data()["icon_url"].toString().split('?id=').last.split("&").first}",
+  //             'id': setup
+  //                 .data()["icon_url"]
+  //                 .toString()
+  //                 .split('?id=')
+  //                 .last
+  //                 .split("&")
+  //                 .first
+  //           };
+  //         }
+  //       }
+  //     }
+  //   });
+  //   await databaseReference
+  //       .collection("apps")
+  //       .doc('icons')
+  //       .set({'data': iconLinks});
+  //   return iconLinks.values.toList();
+  //   // notifyListeners();
+  // }
+
   Future<void> getSetups() async {
     logger.d("Fetching first 10 setups");
     setups = [];

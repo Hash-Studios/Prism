@@ -51,6 +51,10 @@ void showChangelog(BuildContext context, Function func) {
                         icon: JamIcons.user,
                         text: "All-new beautiful profile."),
                     Change(
+                        icon: JamIcons.instant_picture,
+                        text:
+                            "Add icons with a single tap while submitting setups."),
+                    Change(
                         icon: JamIcons.link,
                         text: "Add upto 25 links in your profile."),
                     Change(
