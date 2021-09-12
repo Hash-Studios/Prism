@@ -1,5 +1,17 @@
 ## Changelog
 
+### v2.6.9
+- Laid support for Prism v3
+- New model for users
+- Removed banner ads
+- Show a information sheet when ads don't load
+- Fixed the downloads bug
+- Add option to save setups as drafts before uploading.
+- New improved profiles with username, bio, cover photo, links & more!
+- Added 20+ new filters
+- Added option to pick icons from a given list of apps
+- Minor bug fixes and improvements
+
 ### v2.6.6
 - Fix share profile not working
 - Remove Licenses from in-app
