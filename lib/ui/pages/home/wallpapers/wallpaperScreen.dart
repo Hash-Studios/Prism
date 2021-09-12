@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:Prism/data/informatics/dataManager.dart';
+import 'package:Prism/data/palette/paletteNotifier.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
 import 'package:Prism/data/share/createDynamicLink.dart';
@@ -23,6 +24,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
+import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:Prism/main.dart' as main;
@@ -52,10 +54,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   late int index;
   late String link;
   late AnimationController shakeController;
-  bool isLoading = true;
-  late PaletteGenerator paletteGenerator;
   List<Color?>? colors;
-  Color? accent;
+  Color? accent = Colors.white;
   bool colorChanged = false;
   late File _imageFile;
   bool screenshotTaken = false;
@@ -67,19 +67,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   int firstTime = 0;
 
   Future<void> _updatePaletteGenerator() async {
-    setState(() {
-      isLoading = true;
-    });
-    await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
-      paletteGenerator = await PaletteGenerator.fromImageProvider(
-        CachedNetworkImageProvider(link),
-        maximumColorCount: 20,
-      );
-    });
-
-    setState(() {
-      isLoading = false;
-    });
+    final PaletteNotifier _paletteNotifier =
+        Provider.of<PaletteNotifier>(context, listen: false);
+    final paletteGenerator =
+        await _paletteNotifier.updatePaletteGenerator(link);
     colors = paletteGenerator.colors.toList();
     if (paletteGenerator.colors.length > 5) {
       colors = colors!.sublist(0, 5);
@@ -87,13 +78,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     setState(() {
       accent = colors![0];
     });
-    if (accent!.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.dark));
-    } else {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.light));
-    }
+    Future.delayed(const Duration(milliseconds: 500)).then((value) {
+      if (accent!.computeLuminance() > 0.5) {
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+            .copyWith(statusBarIconBrightness: Brightness.dark));
+      } else {
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+            .copyWith(statusBarIconBrightness: Brightness.light));
+      }
+    });
   }
 
   void updateAccent() {
@@ -127,13 +120,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     provider = widget.arguments![0] as String;
     index = widget.arguments![1] as int;
     link = widget.arguments![2] as String;
-    isLoading = true;
     if (provider == "Prism") {
       updateViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
       _futureView =
           getViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
     }
-    _updatePaletteGenerator();
+    Future.delayed(const Duration()).then((value) => _updatePaletteGenerator());
   }
 
   @override
@@ -144,6 +136,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
 
   @override
   Widget build(BuildContext context) {
+    final PaletteNotifier paletteNotifier =
+        Provider.of<PaletteNotifier>(context);
     final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
         .chain(CurveTween(curve: Curves.easeOutCubic))
         .animate(shakeController)
@@ -157,8 +151,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
       child: provider == "WallHaven"
           ? Scaffold(
               key: _scaffoldKey,
-              backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : accent,
+              backgroundColor: paletteNotifier.isLoading
+                  ? Theme.of(context).primaryColor
+                  : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   setState(() {
@@ -519,7 +514,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : logger.d("");
+                              !paletteNotifier.isLoading
+                                  ? updateAccent()
+                                  : logger.d("");
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
@@ -561,7 +558,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               errorWidget: (context, url, error) => Center(
                                 child: Icon(
                                   JamIcons.close_circle_f,
-                                  color: isLoading
+                                  color: paletteNotifier.isLoading
                                       ? Theme.of(context).accentColor
                                       : accent!.computeLuminance() > 0.5
                                           ? Colors.black
@@ -582,7 +579,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             logger.d(navStack.toString());
                             Navigator.pop(context);
                           },
-                          color: isLoading
+                          color: paletteNotifier.isLoading
                               ? Theme.of(context).accentColor
                               : accent!.computeLuminance() > 0.5
                                   ? Colors.black
@@ -622,7 +619,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     fullscreenDialog: true,
                                     opaque: false));
                           },
-                          color: isLoading
+                          color: paletteNotifier.isLoading
                               ? Theme.of(context).accentColor
                               : accent!.computeLuminance() > 0.5
                                   ? Colors.black
@@ -640,8 +637,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
           : provider == "Prism"
               ? Scaffold(
                   key: _scaffoldKey,
-                  backgroundColor:
-                      isLoading ? Theme.of(context).primaryColor : accent,
+                  backgroundColor: paletteNotifier.isLoading
+                      ? Theme.of(context).primaryColor
+                      : accent,
                   body: SlidingUpPanel(
                     onPanelOpened: () {
                       setState(() {
@@ -1181,7 +1179,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 },
                                 onTap: () {
                                   HapticFeedback.vibrate();
-                                  !isLoading ? updateAccent() : logger.d("");
+                                  !paletteNotifier.isLoading
+                                      ? updateAccent()
+                                      : logger.d("");
                                   shakeController.forward(from: 0.0);
                                 },
                                 child: CachedNetworkImage(
@@ -1227,7 +1227,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   errorWidget: (context, url, error) => Center(
                                     child: Icon(
                                       JamIcons.close_circle_f,
-                                      color: isLoading
+                                      color: paletteNotifier.isLoading
                                           ? Theme.of(context).accentColor
                                           : accent!.computeLuminance() > 0.5
                                               ? Colors.black
@@ -1248,7 +1248,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 logger.d(navStack.toString());
                                 Navigator.pop(context);
                               },
-                              color: isLoading
+                              color: paletteNotifier.isLoading
                                   ? Theme.of(context).accentColor
                                   : accent!.computeLuminance() > 0.5
                                       ? Colors.black
@@ -1290,7 +1290,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         fullscreenDialog: true,
                                         opaque: false));
                               },
-                              color: isLoading
+                              color: paletteNotifier.isLoading
                                   ? Theme.of(context).accentColor
                                   : accent!.computeLuminance() > 0.5
                                       ? Colors.black
@@ -1308,8 +1308,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
               : provider == "Pexels"
                   ? Scaffold(
                       key: _scaffoldKey,
-                      backgroundColor:
-                          isLoading ? Theme.of(context).primaryColor : accent,
+                      backgroundColor: paletteNotifier.isLoading
+                          ? Theme.of(context).primaryColor
+                          : accent,
                       body: SlidingUpPanel(
                         onPanelOpened: () {
                           setState(() {
@@ -1715,7 +1716,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     },
                                     onTap: () {
                                       HapticFeedback.vibrate();
-                                      !isLoading
+                                      !paletteNotifier.isLoading
                                           ? updateAccent()
                                           : logger.d("");
                                       shakeController.forward(from: 0.0);
@@ -1768,7 +1769,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           Center(
                                         child: Icon(
                                           JamIcons.close_circle_f,
-                                          color: isLoading
+                                          color: paletteNotifier.isLoading
                                               ? Theme.of(context).accentColor
                                               : accent!.computeLuminance() > 0.5
                                                   ? Colors.black
@@ -1789,7 +1790,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     logger.d(navStack.toString());
                                     Navigator.pop(context);
                                   },
-                                  color: isLoading
+                                  color: paletteNotifier.isLoading
                                       ? Theme.of(context).accentColor
                                       : accent!.computeLuminance() > 0.5
                                           ? Colors.black
@@ -1831,7 +1832,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             fullscreenDialog: true,
                                             opaque: false));
                                   },
-                                  color: isLoading
+                                  color: paletteNotifier.isLoading
                                       ? Theme.of(context).accentColor
                                       : accent!.computeLuminance() > 0.5
                                           ? Colors.black
@@ -1850,7 +1851,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           provider!.substring(0, 6) == "Colors"
                       ? Scaffold(
                           key: _scaffoldKey,
-                          backgroundColor: isLoading
+                          backgroundColor: paletteNotifier.isLoading
                               ? Theme.of(context).primaryColor
                               : accent,
                           body: SlidingUpPanel(
@@ -2283,7 +2284,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           },
                                           onTap: () {
                                             HapticFeedback.vibrate();
-                                            !isLoading
+                                            !paletteNotifier.isLoading
                                                 ? updateAccent()
                                                 : logger.d("");
                                             shakeController.forward(from: 0.0);
@@ -2345,7 +2346,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 (context, url, error) => Center(
                                               child: Icon(
                                                 JamIcons.close_circle_f,
-                                                color: isLoading
+                                                color: paletteNotifier.isLoading
                                                     ? Theme.of(context)
                                                         .accentColor
                                                     : accent!.computeLuminance() >
@@ -2368,7 +2369,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         logger.d(navStack.toString());
                                         Navigator.pop(context);
                                       },
-                                      color: isLoading
+                                      color: paletteNotifier.isLoading
                                           ? Theme.of(context).accentColor
                                           : accent!.computeLuminance() > 0.5
                                               ? Colors.black
@@ -2413,7 +2414,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 fullscreenDialog: true,
                                                 opaque: false));
                                       },
-                                      color: isLoading
+                                      color: paletteNotifier.isLoading
                                           ? Theme.of(context).accentColor
                                           : accent!.computeLuminance() > 0.5
                                               ? Colors.black
@@ -2430,7 +2431,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         )
                       : Scaffold(
                           key: _scaffoldKey,
-                          backgroundColor: isLoading
+                          backgroundColor: paletteNotifier.isLoading
                               ? Theme.of(context).primaryColor
                               : accent,
                           body: SlidingUpPanel(
@@ -2855,7 +2856,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         },
                                         onTap: () {
                                           HapticFeedback.vibrate();
-                                          !isLoading
+                                          !paletteNotifier.isLoading
                                               ? updateAccent()
                                               : logger.d("");
                                           shakeController.forward(from: 0.0);
@@ -2913,7 +2914,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               Center(
                                             child: Icon(
                                               JamIcons.close_circle_f,
-                                              color: isLoading
+                                              color: paletteNotifier.isLoading
                                                   ? Theme.of(context)
                                                       .accentColor
                                                   : accent!.computeLuminance() >
@@ -2936,7 +2937,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         logger.d(navStack.toString());
                                         Navigator.pop(context);
                                       },
-                                      color: isLoading
+                                      color: paletteNotifier.isLoading
                                           ? Theme.of(context).accentColor
                                           : accent!.computeLuminance() > 0.5
                                               ? Colors.black
@@ -2980,7 +2981,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 fullscreenDialog: true,
                                                 opaque: false));
                                       },
-                                      color: isLoading
+                                      color: paletteNotifier.isLoading
                                           ? Theme.of(context).accentColor
                                           : accent!.computeLuminance() > 0.5
                                               ? Colors.black

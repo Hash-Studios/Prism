@@ -76,31 +76,45 @@ public class MyTileService extends TileService {
                 }
                 directory = new File(path);
                 files = directory.listFiles();
-                for (int fileIndex = 0; fileIndex < files.length; fileIndex++) {
+                int count = 0;
+                if(files!=null){
+                    count = files.length;
+                }
+                for (int fileIndex = 0; fileIndex < count; fileIndex++) {
                     long size = getFolderSize(files[fileIndex]) / 1048576;
                     if (size >= 5) {
-                        System.arraycopy(files, fileIndex + 1, files, fileIndex, files.length - fileIndex - 1);
+                        System.arraycopy(files, fileIndex + 1, files, fileIndex, count - fileIndex - 1);
                     }
                 }
             // }
-
-            int random = new Random().nextInt(files.length);
+            int random = 0;
+            if(count!=0){
+                random = new Random().nextInt(count);
+            }
 
             Bitmap bitmap;
             try {
-                File f = files[random];
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
-                WallpaperManager wallpaperManager = WallpaperManager.getInstance(context);
-                try {
-                    wallpaperManager.setBitmap(bitmap, null, false,
-                            WallpaperManager.FLAG_LOCK | WallpaperManager.FLAG_SYSTEM);
-                    Log.d("TAG", "onBitmapLoaded: " + (bitmap == null));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                try{
+                    File f = files[random];
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+                    bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
+                    WallpaperManager wallpaperManager = WallpaperManager.getInstance(context);
+                    try {
+                        wallpaperManager.setBitmap(bitmap, null, false,
+                                WallpaperManager.FLAG_LOCK | WallpaperManager.FLAG_SYSTEM);
+                        Log.d("TAG", "onBitmapLoaded: " + (bitmap == null));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 bitmap.recycle();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(this,
+                    "No wallpapers downloaded!",
+                    Toast.LENGTH_SHORT)
+                    .show();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

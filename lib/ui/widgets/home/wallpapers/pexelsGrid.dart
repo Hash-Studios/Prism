@@ -22,7 +22,6 @@ class PexelsGrid extends StatefulWidget {
 }
 
 class _PexelsGridState extends State<PexelsGrid> {
-
   int _current = 0;
   GlobalKey<RefreshIndicatorState> refreshHomeKey =
       GlobalKey<RefreshIndicatorState>();
@@ -265,7 +264,6 @@ class _PexelsGridState extends State<PexelsGrid> {
                 return FocusedMenuHolder(
                   provider: widget.provider,
                   index: index,
-
                   child: PexelsTile(widget: widget, index: index),
                 );
               },

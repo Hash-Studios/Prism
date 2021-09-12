@@ -39,3 +39,5 @@ const String reviewRoute = '/review';
 const String editSetupDetailsRoute = '/editSetupDetails';
 const String editProfileRoute = '/editProfile';
 const String draftSetupRoute = '/draftSetup';
+const String adsNotLoadingRoute = '/adsNotloading';
+const String userSearchRoute = '/userSearch';

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:Prism/data/ads/adsNotifier.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
@@ -91,6 +92,7 @@ class _PageManagerChildState extends State<PageManagerChild>
     super.initState();
     tabController =
         TabController(length: globals.followersTab ? 3 : 2, vsync: this);
+    Provider.of<AdsNotifier>(context, listen: false).createRewardedAd();
     final QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
       setState(() {
@@ -233,7 +235,7 @@ class _PageManagerChildState extends State<PageManagerChild>
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(const Duration(seconds: 1), () => initDynamicLinks(context));
+    Future.delayed(const Duration(seconds: 2), () => initDynamicLinks(context));
     return WillPopScope(
       onWillPop: () async {
         if (tabController!.index != 0) {
