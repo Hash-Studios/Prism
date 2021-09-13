@@ -145,9 +145,9 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 - Laid support for Prism v3
 - New model for users
 - Removed banner ads
-- Show a information sheet when ads don't load
+- Show an information sheet when ads don't load
 - Fixed the downloads bug
-- Add option to save setups as drafts before uploading.
+- Add an option to save setups as drafts before uploading.
 - New improved profiles with username, bio, cover photo, links & more!
 - Added 20+ new filters
 - Added option to pick icons from a given list of apps
