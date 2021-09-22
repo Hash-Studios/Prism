@@ -1,10 +1,9 @@
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
-import 'package:flutter/material.dart';
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 
@@ -36,30 +35,40 @@ Future<void> getNotifs() async {
     if (globals.prismUser.premium == false) {
       getLatestNotifs('free').then((snap) {
         for (final doc in snap.docs) {
-          box.add(InAppNotif.fromSnapshot(doc.data()));
+          if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
+            box.add(InAppNotif.fromSnapshot(doc.data()));
+          }
         }
       });
     }
     if (globals.prismUser.premium == true) {
       getLatestNotifs('premium').then((snap) {
         for (final doc in snap.docs) {
-          box.add(InAppNotif.fromSnapshot(doc.data()));
+          if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
+            box.add(InAppNotif.fromSnapshot(doc.data()));
+          }
         }
       });
     }
     getLatestNotifs('all').then((snap) {
       for (final doc in snap.docs) {
-        box.add(InAppNotif.fromSnapshot(doc.data()));
+        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(doc.data()));
+        }
       }
     });
     getLatestNotifs(globals.currentAppVersion).then((snap) {
       for (final doc in snap.docs) {
-        box.add(InAppNotif.fromSnapshot(doc.data()));
+        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(doc.data()));
+        }
       }
     });
     getLatestNotifs(globals.prismUser.email).then((snap) {
       for (final doc in snap.docs) {
-        box.add(InAppNotif.fromSnapshot(doc.data()));
+        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(doc.data()));
+        }
       }
     });
     main.prefs.put('lastFetchTime', DateTime.now());
@@ -69,30 +78,40 @@ Future<void> getNotifs() async {
     if (globals.prismUser.premium == false) {
       getLastMonthNotifs('free').then((snap) {
         for (final doc in snap.docs) {
-          box.add(InAppNotif.fromSnapshot(doc.data()));
+          if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
+            box.add(InAppNotif.fromSnapshot(doc.data()));
+          }
         }
       });
     }
     if (globals.prismUser.premium == true) {
       getLastMonthNotifs('premium').then((snap) {
         for (final doc in snap.docs) {
-          box.add(InAppNotif.fromSnapshot(doc.data()));
+          if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
+            box.add(InAppNotif.fromSnapshot(doc.data()));
+          }
         }
       });
     }
     getLastMonthNotifs('all').then((snap) {
       for (final doc in snap.docs) {
-        box.add(InAppNotif.fromSnapshot(doc.data()));
+        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(doc.data()));
+        }
       }
     });
     getLastMonthNotifs(globals.currentAppVersion).then((snap) {
       for (final doc in snap.docs) {
-        box.add(InAppNotif.fromSnapshot(doc.data()));
+        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(doc.data()));
+        }
       }
     });
     getLastMonthNotifs(globals.prismUser.email).then((snap) {
       for (final doc in snap.docs) {
-        box.add(InAppNotif.fromSnapshot(doc.data()));
+        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(doc.data()));
+        }
       }
     });
     main.prefs.put('lastFetchTime', DateTime.now());
