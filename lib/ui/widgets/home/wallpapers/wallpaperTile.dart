@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
@@ -68,13 +70,21 @@ class WallpaperTile extends StatelessWidget {
               onTap: () {
                 if (Data.subPrismWalls == []) {
                 } else {
+                  log((globals.isPremiumWall(
+                              globals.premiumCollections,
+                              Data.subPrismWalls![index]["collections"]
+                                      as List? ??
+                                  []) ==
+                          true)
+                      .toString());
+                  log(globals.prismUser.premium.toString());
                   globals.isPremiumWall(
                                   globals.premiumCollections,
                                   Data.subPrismWalls![index]["collections"]
                                           as List? ??
                                       []) ==
                               true &&
-                          globals.prismUser.premium == true
+                          globals.prismUser.premium != true
                       ? showGooglePopUp(context, () {
                           Navigator.pushNamed(
                             context,
