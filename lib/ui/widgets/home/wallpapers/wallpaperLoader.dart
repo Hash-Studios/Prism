@@ -1,7 +1,7 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/logger/logger.dart';
 
 class WallpaperLoader extends StatefulWidget {
   final Future future;

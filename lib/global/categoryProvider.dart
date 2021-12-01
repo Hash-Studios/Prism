@@ -1,11 +1,11 @@
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wdata;
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/global/categoryMenu.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:flutter/cupertino.dart';
 
 final List choices = categories
     .map(

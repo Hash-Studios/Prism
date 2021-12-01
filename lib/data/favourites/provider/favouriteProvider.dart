@@ -1,10 +1,10 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:hive/hive.dart';
 
 class FavouriteProvider extends ChangeNotifier {

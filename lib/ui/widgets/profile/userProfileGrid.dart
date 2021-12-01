@@ -1,19 +1,19 @@
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
-import 'package:Prism/ui/widgets/premiumBanners/walls.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:Prism/ui/widgets/premiumBanners/walls.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class UserProfileGrid extends StatefulWidget {
   final String? email;

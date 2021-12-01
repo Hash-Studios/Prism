@@ -1,12 +1,12 @@
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
 import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
-import 'package:Prism/logger/logger.dart';
 
 void showCategories(BuildContext context, CategoryMenu initialValue) {
   final controller = ScrollController();

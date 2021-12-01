@@ -1,9 +1,9 @@
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/ui/widgets/profile/userProfileSetupGrid.dart';
 import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/logger/logger.dart';
 
 class UserProfileSetupLoader extends StatefulWidget {
   final String? email;

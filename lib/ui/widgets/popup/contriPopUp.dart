@@ -1,3 +1,4 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
@@ -5,7 +6,6 @@ import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
-import 'package:Prism/logger/logger.dart';
 
 void showContributorDetails(BuildContext context, String username) {
   Future<User?> getUser(String username) async {

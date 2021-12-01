@@ -1,7 +1,7 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/profile/uploadedWallsGrid.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/logger/logger.dart';
 
 class ProfileLoader extends StatefulWidget {
   final Future future;

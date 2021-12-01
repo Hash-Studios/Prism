@@ -1,10 +1,10 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share/share.dart';
-import 'package:Prism/logger/logger.dart';
 
 class ShareButton extends StatefulWidget {
   final String? id;

@@ -69,11 +69,11 @@ String bannerTextOn = "true";
 
 bool isPremiumWall(List premiumCollections, List wallCollections) {
   bool result = false;
-  wallCollections.forEach((element) {
+  for (var element in wallCollections) {
     if (premiumCollections.contains(element)) {
       result = true;
     } else {}
-  });
+  }
   return result;
 }
 

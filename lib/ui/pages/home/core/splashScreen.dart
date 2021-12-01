@@ -1,15 +1,16 @@
 import 'dart:convert';
+
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/notifications/notifications.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/ui/pages/home/core/oldVersionScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/config.dart' as config;
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/logger/logger.dart';
 
 late RemoteConfig remoteConfig;
 

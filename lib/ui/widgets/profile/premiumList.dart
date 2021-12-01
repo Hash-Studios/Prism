@@ -1,9 +1,9 @@
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
-import 'package:Prism/routes/routing_constants.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 class PremiumList extends StatelessWidget {
   @override

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -10,6 +11,7 @@ import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/pages/home/wallpapers/customFilters.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -19,15 +21,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image/image.dart' as imagelib;
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photofilters/filters/filters.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:photofilters/filters/preset_filters.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:provider/provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
 
 class WallpaperFilterScreen extends StatefulWidget {
   final imagelib.Image image;

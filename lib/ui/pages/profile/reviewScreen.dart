@@ -1,26 +1,26 @@
 import 'dart:ui';
 
-import 'package:Prism/routes/routing_constants.dart';
-import 'package:flutter/material.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/ui/widgets/animated/loader.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:photo_view/photo_view.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:gallery_saver/gallery_saver.dart';
-import 'package:device_info/device_info.dart';
-import 'package:flutter/services.dart';
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:animations/animations.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:animations/animations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info/device_info.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ReviewScreen extends StatefulWidget {
   @override

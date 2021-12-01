@@ -1,11 +1,11 @@
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/logger/logger.dart';
 
 void googleSignInPopUp(BuildContext context, Function func) {
   final Dialog loaderDialog = Dialog(

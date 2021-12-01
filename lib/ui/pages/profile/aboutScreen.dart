@@ -1,3 +1,4 @@
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/darkThemeModel.dart';
@@ -9,7 +10,6 @@ import 'package:Prism/ui/widgets/popup/contriPopUp.dart';
 import 'package:Prism/ui/widgets/profile/prismList.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:github/github.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
