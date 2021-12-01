@@ -400,7 +400,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
     final ImageEditorOption option = ImageEditorOption();
 
-    option.addOption(ClipOption.fromRect(rect));
+    option.addOption(ClipOption.fromRect(rect!));
     option.addOption(
         FlipOption(horizontal: flipHorizontal, vertical: flipVertical));
     if (action.hasRotateAngle) {
@@ -416,15 +416,15 @@ class _EditWallScreenState extends State<EditWallScreen> {
     logger.d(const JsonEncoder.withIndent('  ').convert(option.toJson()));
 
     final DateTime start = DateTime.now();
-    final Uint8List result = await ImageEditor.editImage(
+    final Uint8List? result = await ImageEditor.editImage(
       image: img,
       imageEditorOption: option,
     );
 
-    logger.d('result.length = ${result.length}');
+    logger.d('result.length = ${result?.length}');
 
     final Duration diff = DateTime.now().difference(start);
-    image!.writeAsBytesSync(result);
+    image!.writeAsBytesSync(result!);
     logger.d('image_editor time : $diff');
     if (navStack.length > 1) navStack.removeLast();
     logger.d(navStack.toString());
