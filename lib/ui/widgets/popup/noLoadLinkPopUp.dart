@@ -1,9 +1,9 @@
+import 'package:Prism/global/globals.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 // import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart';
 
 void showNoLoadLinksPopUp(BuildContext context, Map link) {
   // List<LinksModel> links = [];

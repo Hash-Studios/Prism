@@ -1,7 +1,7 @@
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 class ColorBar extends StatelessWidget {
   const ColorBar({

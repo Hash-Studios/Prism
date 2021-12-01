@@ -1,6 +1,7 @@
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/pexelsGrid.dart';
@@ -9,7 +10,6 @@ import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
 
 final FirebaseMessaging f = FirebaseMessaging.instance;

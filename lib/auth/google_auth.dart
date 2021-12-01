@@ -1,16 +1,15 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/payments/upgrade.dart';
+import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
 
 const String USER_OLD_COLLECTION = 'users';
 const String USER_NEW_COLLECTION = 'usersv2';

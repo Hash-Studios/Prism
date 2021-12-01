@@ -5,6 +5,9 @@ import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -19,14 +22,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/logger/logger.dart';
 
 class SetupViewScreen extends StatefulWidget {
   final List? arguments;

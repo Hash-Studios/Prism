@@ -1,12 +1,11 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/popup/copyrightPopUp.dart';
 import 'package:animations/animations.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
-import 'package:flutter/foundation.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:share/share.dart';
 
 Future<String> createDynamicLink(

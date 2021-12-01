@@ -1,11 +1,11 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/data/links/model/linksModel.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:animations/animations.dart';
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:Prism/logger/logger.dart';
+import 'package:flutter/material.dart';
 
 void showLinksPopUp(BuildContext context, String id) {
   Future<List<LinksModel>> getLinks(String id) async {

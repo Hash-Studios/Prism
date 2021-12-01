@@ -1,6 +1,6 @@
 import 'package:Prism/auth/google_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:flutter/material.dart';
 
 final GoogleAuth gAuth = GoogleAuth();
 

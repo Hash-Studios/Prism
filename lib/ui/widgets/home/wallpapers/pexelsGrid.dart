@@ -1,5 +1,6 @@
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
@@ -8,11 +9,10 @@ import 'package:Prism/ui/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/pexelsTile.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:carousel_slider/carousel_slider.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 class PexelsGrid extends StatefulWidget {
   final String? provider;

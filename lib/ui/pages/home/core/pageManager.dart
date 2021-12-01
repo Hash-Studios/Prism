@@ -1,31 +1,25 @@
-import 'dart:io';
+
 import 'package:Prism/data/ads/adsNotifier.dart';
+import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
-import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/followingScreen.dart';
+import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
-import 'package:animations/animations.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
-import 'package:device_info/device_info.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
-// import 'package:rate_my_app/rate_my_app.dart';
-// import 'package:smooth_star_rating/smooth_star_rating.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:quick_actions/quick_actions.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 TabController? tabController;
 
@@ -164,7 +158,7 @@ class _PageManagerChildState extends State<PageManagerChild>
   Future<bool> initDynamicLinks(BuildContext context) async {
     final PendingDynamicLinkData data =
         await FirebaseDynamicLinks.instance.getInitialLink();
-    final Uri? deepLink = data?.link;
+    final Uri? deepLink = data.link;
 
     if (deepLink != null && linkOpened == 0) {
       logger.d("opened while closed altogether via deep link");

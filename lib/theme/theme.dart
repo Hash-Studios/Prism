@@ -1,17 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:flutter/material.dart';
 
 ThemeData kLightTheme = ThemeData(
-  colorScheme: const ColorScheme.light(primary: Color(0xFFE57697)),
   canvasColor: Colors.transparent,
   primaryColor: Colors.white,
   brightness: Brightness.light,
   errorColor: const Color(0xFFE57697),
-  accentColor: config.Colors().accentColor(1),
   focusColor: config.Colors().mainColor(1),
   hintColor: config.Colors().secondColor(1),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -74,20 +70,16 @@ ThemeData kLightTheme = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.light(primary: Color(0xFFE57697)).copyWith(secondary: config.Colors().accentColor(1)),
 );
 
 ThemeData kDarkTheme = ThemeData(
-  colorScheme: const ColorScheme.dark(primary: Color(0xFFE57697)),
   canvasColor: Colors.transparent,
   primaryColor: config.Colors().mainDarkColor(1),
   brightness: Brightness.dark,
   errorColor: const Color(0xFFE57697),
-  accentColor: config.Colors().accentDarkColor(1),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: config.Colors().secondDarkColor(1),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -150,20 +142,16 @@ ThemeData kDarkTheme = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.dark(primary: Color(0xFFE57697)).copyWith(secondary: config.Colors().accentDarkColor(1)),
 );
 
 ThemeData kLightTheme2 = ThemeData(
-  colorScheme: const ColorScheme.light(primary: Color(0xFFC19439)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFFF7F1E3),
   brightness: Brightness.light,
   errorColor: const Color(0xFFC19439),
-  accentColor: const Color(0xFF96732C),
   focusColor: config.Colors().mainColor(1),
   hintColor: const Color(0xFFF1E6D0),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -226,20 +214,16 @@ ThemeData kLightTheme2 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.light(primary: Color(0xFFC19439)).copyWith(secondary: const Color(0xFF96732C)),
 );
 
 ThemeData kDarkTheme2 = ThemeData(
-  colorScheme: const ColorScheme.dark(primary: Color(0xFFFFFFFF)),
   canvasColor: Colors.transparent,
   primaryColor: Colors.black,
   brightness: Brightness.dark,
-  accentColor: Colors.white,
   errorColor: Colors.black,
   focusColor: Colors.black,
   hintColor: Colors.black,
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -302,20 +286,16 @@ ThemeData kDarkTheme2 = ThemeData(
       fontWeight: FontWeight.w400,
       color: Colors.white,
     ),
-  ),
+  ), colorScheme: const ColorScheme.dark(primary: Color(0xFFFFFFFF)).copyWith(secondary: Colors.white),
 );
 
 ThemeData kLightTheme3 = ThemeData(
-  colorScheme: const ColorScheme.light(primary: Color(0xFFA7796D)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFFC5A79F),
   brightness: Brightness.light,
   errorColor: const Color(0xFFA7796D),
-  accentColor: const Color(0xFF7D564B),
   focusColor: config.Colors().mainColor(1),
   hintColor: const Color(0xFFBE9C93),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -378,20 +358,16 @@ ThemeData kLightTheme3 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.light(primary: Color(0xFFA7796D)).copyWith(secondary: const Color(0xFF7D564B)),
 );
 
 ThemeData kLightTheme4 = ThemeData(
-  colorScheme: const ColorScheme.light(primary: Color(0xFF596F95)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF8399BE),
   brightness: Brightness.light,
   errorColor: const Color(0xFF596F95),
-  accentColor: const Color(0xFF36435A),
   focusColor: config.Colors().mainColor(1),
   hintColor: const Color(0xFF788CAF),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -454,20 +430,16 @@ ThemeData kLightTheme4 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.light(primary: Color(0xFF596F95)).copyWith(secondary: const Color(0xFF36435A)),
 );
 
 ThemeData kDarkTheme3 = ThemeData(
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF767B45)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF202113),
   brightness: Brightness.dark,
   errorColor: const Color(0xFF767B45),
-  accentColor: const Color(0xFFE3E4D0),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF35371F),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -530,20 +502,16 @@ ThemeData kDarkTheme3 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF767B45)).copyWith(secondary: const Color(0xFFE3E4D0)),
 );
 
 ThemeData kDarkTheme4 = ThemeData(
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF427DA8)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF041B29),
   brightness: Brightness.dark,
   errorColor: const Color(0xFF427DA8),
-  accentColor: const Color(0xFFB0CCE0),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF152836),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -606,20 +574,16 @@ ThemeData kDarkTheme4 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF427DA8)).copyWith(secondary: const Color(0xFFB0CCE0)),
 );
 
 ThemeData kDarkTheme5 = ThemeData(
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF4C7044)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF12210E),
   brightness: Brightness.dark,
   errorColor: const Color(0xFF4C7044),
-  accentColor: const Color(0xFFD9E6D6),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF1D2B1A),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -682,20 +646,16 @@ ThemeData kDarkTheme5 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF4C7044)).copyWith(secondary: const Color(0xFFD9E6D6)),
 );
 
 ThemeData kDarkTheme6 = ThemeData(
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF703826)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF290D02),
   brightness: Brightness.dark,
   errorColor: const Color(0xFF703826),
-  accentColor: const Color(0xFFDFB0A0),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF361B12),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -758,20 +718,16 @@ ThemeData kDarkTheme6 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF703826)).copyWith(secondary: const Color(0xFFDFB0A0)),
 );
 
 ThemeData kDarkTheme7 = ThemeData(
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF2D6079)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF142431),
   brightness: Brightness.dark,
   errorColor: const Color(0xFF2D6079),
-  accentColor: const Color(0xFFA9CDDF),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF193543),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -834,20 +790,16 @@ ThemeData kDarkTheme7 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF2D6079)).copyWith(secondary: const Color(0xFFA9CDDF)),
 );
 
 ThemeData kDarkTheme8 = ThemeData(
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF686E80)),
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF393D46),
   brightness: Brightness.dark,
   errorColor: const Color(0xFF686E80),
-  accentColor: const Color(0xFFEEEFF2),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF33363F),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -910,5 +862,5 @@ ThemeData kDarkTheme8 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ),
+  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF686E80)).copyWith(secondary: const Color(0xFFEEEFF2)),
 );

@@ -1,10 +1,10 @@
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 
 class GeneralList extends StatefulWidget {

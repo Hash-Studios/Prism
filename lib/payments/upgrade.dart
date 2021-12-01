@@ -1,18 +1,19 @@
 import 'dart:async';
+
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/payments/components.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:purchases_flutter/object_wrappers.dart';
-import 'package:Prism/payments/components.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 PurchaserInfo? _purchaserInfo;
 

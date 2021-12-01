@@ -1,7 +1,7 @@
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 class ProfileWallProvider extends ChangeNotifier {
   final FirebaseFirestore databaseReference = FirebaseFirestore.instance;

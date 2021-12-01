@@ -1,20 +1,20 @@
 import 'dart:ui';
 
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:animations/animations.dart';
-import 'package:flutter/material.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/services.dart';
-import 'package:hive/hive.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/main.dart' as main;
-import 'package:intl/intl.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/routes/router.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
+import 'package:animations/animations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -122,7 +122,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   child: Text('No new notifications',
                       style: TextStyle(color: Theme.of(context).accentColor))),
         ),
-        floatingActionButton: notifications!.isNotEmpty
+        floatingActionButton: notifications.isNotEmpty
             ? FloatingActionButton(
                 mini: true,
                 tooltip: "Clear Notifications",

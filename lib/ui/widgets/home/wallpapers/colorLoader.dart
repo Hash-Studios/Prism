@@ -1,8 +1,8 @@
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/colorGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/logger/logger.dart';
 
 class ColorLoader extends StatefulWidget {
   final Future future;

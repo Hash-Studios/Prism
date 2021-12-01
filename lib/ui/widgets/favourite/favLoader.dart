@@ -1,8 +1,8 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/ui/widgets/favourite/favGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:Prism/logger/logger.dart';
+import 'package:flutter/material.dart';
 
 class FavLoader extends StatefulWidget {
   final Future<List?>? future;

@@ -1,17 +1,16 @@
 import 'package:Prism/auth/userModel.dart';
-import 'package:Prism/data/user/user_service.dart';
 import 'package:Prism/data/user/user_notifier.dart';
+import 'package:Prism/data/user/user_service.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/locator/locator.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/ui/pages/search/searchScreen.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -264,7 +263,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                   width:
                                       MediaQuery.of(context).size.width * 0.7,
                                   child: Text(
-                                    "${user.name}",
+                                    user.name,
                                     textAlign: TextAlign.center,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -427,7 +426,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                                   onPressed: () {
                                                     if (user.links != null) {
                                                       final links = user.links;
-                                                      if (links![e]
+                                                      if (links[e]
                                                           .toString()
                                                           .contains(
                                                               "@gmail.com")) {

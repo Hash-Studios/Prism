@@ -1,5 +1,10 @@
 import 'dart:math';
 
+import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart'
+    as CData;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
@@ -9,11 +14,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart'
-    as CData;
-import 'package:Prism/logger/logger.dart';
 
 class CollectionsGrid extends StatefulWidget {
   @override

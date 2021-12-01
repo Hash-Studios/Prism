@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
@@ -10,7 +11,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:Prism/global/globals.dart' as globals;
 
 // class OptionalInfo extends StatefulWidget {
 //   final Image img;

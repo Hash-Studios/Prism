@@ -1,11 +1,11 @@
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsViewGrid.dart';
+import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/logger/logger.dart';
 
 class CollectionViewScreen extends StatelessWidget {
   final List? arguments;

@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:flutter/material.dart';
 import 'package:extended_image/extended_image.dart';
+import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart' hide ImageSource;
-import 'package:Prism/logger/logger.dart';
 
 class EditWallScreen extends StatefulWidget {
   final List? arguments;
@@ -315,56 +316,36 @@ class _EditWallScreenState extends State<EditWallScreen> {
             Icons.flip,
             color: Theme.of(context).accentColor,
           ),
-          title: Text(
-            'Flip',
-            style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                  color: Theme.of(context).accentColor,
-                ),
-          ),
+          label: 'Flip',
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.rotate_left,
             color: Theme.of(context).accentColor,
           ),
-          title: Text(
-            'Rotate Left',
-            style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                  color: Theme.of(context).accentColor,
-                ),
-          ),
+          label: 'Rotate Left',
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.rotate_right,
             color: Theme.of(context).accentColor,
           ),
-          title: Text(
-            'Rotate Right',
-            style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                  color: Theme.of(context).accentColor,
-                ),
-          ),
+          label: 'Rotate Right',
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.crop,
             color: Theme.of(context).accentColor,
           ),
-          title: Text(
-            cropRatio == 1 / 2
-                ? "9:18"
-                : cropRatio == 9 / 16
-                    ? "9:16"
-                    : cropRatio == 9 / 21
-                        ? "9:21"
-                        : cropRatio == 9 / 19.5
-                            ? "9:19.5"
-                            : "9:18",
-            style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                  color: Theme.of(context).accentColor,
-                ),
-          ),
+          label: cropRatio == 1 / 2
+              ? "9:18"
+              : cropRatio == 9 / 16
+                  ? "9:16"
+                  : cropRatio == 9 / 21
+                      ? "9:21"
+                      : cropRatio == 9 / 19.5
+                          ? "9:19.5"
+                          : "9:18",
         ),
       ],
       onTap: (int index) {

@@ -1,12 +1,9 @@
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/auth/userModel.dart';
-import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/data/links/model/linksModel.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 class UserProfileProvider extends ChangeNotifier {
   final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
@@ -146,9 +143,9 @@ Future<void> unfollow(String email, String id) async {
 
 Future setUserLinks(List<LinksModel> linklist, String id) async {
   final Map updateLink = {};
-  linklist.forEach((element) {
+  for (var element in linklist) {
     updateLink[element.name] = element.link;
-  });
+  }
   await databaseReference
       .collection(USER_NEW_COLLECTION)
       .doc(id)

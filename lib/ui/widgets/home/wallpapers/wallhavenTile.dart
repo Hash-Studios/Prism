@@ -1,10 +1,10 @@
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
+    as wData;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallhavenGrid.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as wData;
 import 'package:provider/provider.dart';
 
 class WallhavenTile extends StatelessWidget {
