@@ -111,6 +111,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
+            backgroundColor: Theme.of(context).backgroundColor,
             title: Text(
               "Edit Wallpaper",
               style: Theme.of(context)
@@ -307,6 +308,14 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Widget _buildFunctions() {
     return BottomNavigationBar(
+      unselectedLabelStyle: TextStyle(
+        fontSize: 12,
+        color: Theme.of(context).accentColor.withOpacity(0.5),
+      ),
+      selectedLabelStyle: TextStyle(
+        fontSize: 12,
+        color: Theme.of(context).accentColor.withOpacity(0.5),
+      ),
       backgroundColor: Theme.of(context).primaryColor,
       showUnselectedLabels: true,
       type: BottomNavigationBarType.fixed,

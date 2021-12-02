@@ -137,7 +137,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                     width: childSize!.width,
                     height: childSize!.height * 6 / 8,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).hintColor,
+                      color: Theme.of(context).backgroundColor,
                       borderRadius:
                           const BorderRadius.all(Radius.circular(20.0)),
                     ),
@@ -266,7 +266,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Theme.of(context).hintColor,
+                                    color: Theme.of(context).backgroundColor,
                                     borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(20),
                                         bottomRight: Radius.circular(20))),
@@ -306,7 +306,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                     width: childSize!.width,
                     height: childSize!.height * 6 / 10,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).hintColor,
+                      color: Theme.of(context).backgroundColor,
                       borderRadius:
                           const BorderRadius.all(Radius.circular(20.0)),
                     ),
@@ -424,7 +424,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Theme.of(context).hintColor,
+                                    color: Theme.of(context).backgroundColor,
                                     borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(20),
                                         bottomRight: Radius.circular(20))),

@@ -50,6 +50,18 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: AppBar(
+            leading: IconButton(
+              icon: Icon(
+                JamIcons.close,
+                color: Theme.of(context).accentColor,
+              ),
+              onPressed: () {
+                if (navStack.length > 1) navStack.removeLast();
+                logger.d(navStack.toString());
+                Navigator.pop(context);
+              },
+            ),
+            backgroundColor: Theme.of(context).backgroundColor,
             title: Text(
               "Upload Setup",
               style: TextStyle(color: Theme.of(context).accentColor),

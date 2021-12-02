@@ -95,6 +95,7 @@ class _ThemeViewState extends State<ThemeView> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Theme.of(context).backgroundColor,
           automaticallyImplyLeading: false,
           actions: <Widget>[
             IconButton(

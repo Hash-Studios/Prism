@@ -1,7 +1,7 @@
-
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/pages/profile/reviewScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -30,6 +30,18 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(
+              JamIcons.close,
+              color: Theme.of(context).accentColor,
+            ),
+            onPressed: () {
+              if (navStack.length > 1) navStack.removeLast();
+              logger.d(navStack.toString());
+              Navigator.pop(context);
+            },
+          ),
+          backgroundColor: Theme.of(context).backgroundColor,
           title: Text(
             "Setup Drafts",
             style: TextStyle(color: Theme.of(context).accentColor),
