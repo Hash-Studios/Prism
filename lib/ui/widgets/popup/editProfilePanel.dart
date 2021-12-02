@@ -233,7 +233,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     linkIcons
         .sort((a, b) => a['name'].toString().compareTo(b['name'].toString()));
     final links = globals.prismUser.links;
-    for (var element in linkIcons) {
+    for (final element in linkIcons) {
       if (links[element['name']] != "" && links[element['name']] != null) {
         element['value'] = links[element['name']];
       }

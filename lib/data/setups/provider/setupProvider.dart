@@ -107,7 +107,7 @@ Future<Map?> getSetupFromName(String? name) async {
       .where("name", isEqualTo: name)
       .get()
       .then((value) {
-    for (var f in value.docs) {
+    for (final f in value.docs) {
       setup = f.data();
     }
     logger.d(setup.toString());

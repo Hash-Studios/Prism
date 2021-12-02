@@ -158,7 +158,7 @@ class _PageManagerChildState extends State<PageManagerChild>
     final PendingDynamicLinkData data =
         await FirebaseDynamicLinks.instance.getInitialLink();
     if (data != null) {
-      final Uri? deepLink = data?.link;
+      final Uri? deepLink = data.link;
 
       if (deepLink != null && linkOpened == 0) {
         logger.d("opened while closed altogether via deep link");

@@ -143,7 +143,7 @@ Future<void> unfollow(String email, String id) async {
 
 Future setUserLinks(List<LinksModel> linklist, String id) async {
   final Map updateLink = {};
-  for (var element in linklist) {
+  for (final element in linklist) {
     updateLink[element.name] = element.link;
   }
   await databaseReference

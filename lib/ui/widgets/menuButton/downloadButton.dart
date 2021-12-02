@@ -15,10 +15,10 @@ import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_downloader/flutter_downloader.dart';
 
 class DownloadButtonNew extends StatefulWidget {
   final String link;
@@ -135,7 +135,7 @@ class _DownloadButtonNewState extends State<DownloadButtonNew> {
         });
       } else {
         if (Platform.isAndroid) {
-          var androidInfo = await DeviceInfoPlugin().androidInfo;
+          final androidInfo = await DeviceInfoPlugin().androidInfo;
           logger.d(androidInfo.version.sdkInt);
           final taskId = await FlutterDownloader.enqueue(
             url: url,
