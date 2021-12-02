@@ -477,7 +477,6 @@ class SearchFocusedMenuDetails extends StatelessWidget {
               top: topOffset + fabWallTopOffset,
               left: leftOffset + fabWallLeftOffset,
               child: DownloadButton(
-                colorChanged: false,
                 link: selectedProvider == "WallHaven"
                     ? wdata.wallsS[index].path.toString()
                     : pdata.wallsPS[index].src!["original"].toString(),

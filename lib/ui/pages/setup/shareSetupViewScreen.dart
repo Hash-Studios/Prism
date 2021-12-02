@@ -100,11 +100,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
     final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
         .chain(CurveTween(curve: Curves.easeOutCubic))
         .animate(shakeController)
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              shakeController.reverse();
-            }
-          });
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          shakeController.reverse();
+        }
+      });
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
@@ -1517,7 +1517,6 @@ class ModifiedShareDownloadButton extends StatelessWidget {
         ? sdata.setup!["wall_id"] != null && sdata.setup!["wall_id"] != ""
             ? DownloadButton(
                 link: sdata.setup!["wallpaper_url"].toString(),
-                colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {

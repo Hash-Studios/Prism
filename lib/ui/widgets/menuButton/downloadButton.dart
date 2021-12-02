@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:gallery_saver/gallery_saver.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
@@ -164,11 +165,9 @@ class _DownloadButtonNewState extends State<DownloadButtonNew> {
 
 class DownloadButton extends StatefulWidget {
   final String? link;
-  final bool colorChanged;
 
   const DownloadButton({
     required this.link,
-    required this.colorChanged,
     Key? key,
   }) : super(key: key);
 
@@ -194,17 +193,17 @@ class _DownloadButtonState extends State<DownloadButton> {
         if (!isLoading) {
           if (globals.prismUser.loggedIn == true) {
             if (globals.prismUser.premium == true) {
-              onDownload();
+              onDownload(widget.link!);
             } else {
               showDownloadPopup(context, () {
                 logger.d("Download");
-                onDownload();
+                onDownload(widget.link!);
               });
             }
           } else {
             showDownloadPopup(context, () {
               logger.d("Download");
-              onDownload();
+              onDownload(widget.link!);
             });
           }
         } else {
@@ -252,7 +251,51 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
   }
 
-  Future<void> onDownload() async {
+  Future<void> onDownload(String link) async {
+    if (await Permission.storage.request().isGranted) {
+      final String url = link;
+      String? externalStorageDirPath;
+      if (Platform.isAndroid) {
+        try {
+          externalStorageDirPath = "/storage/emulated/0/Download";
+        } catch (e) {
+          final directory = await getExternalStorageDirectory();
+          externalStorageDirPath = directory?.path;
+        }
+      } else if (Platform.isIOS) {
+        externalStorageDirPath =
+            (await getApplicationDocumentsDirectory()).absolute.path;
+      }
+      logger.d('Already not downloaded, downloading $url');
+      final r = Random();
+      String rNum = "";
+      for (var i = 0; i < 6; i++) {
+        rNum = "$rNum${r.nextInt(9)}";
+      }
+      if (Platform.isAndroid) {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        logger.d(androidInfo.version.sdkInt);
+        final taskId = await FlutterDownloader.enqueue(
+          url: url,
+          savedDir: externalStorageDirPath ?? "",
+          fileName:
+              "${url.split('/').last.toString().split(".")[0]}$rNum.${url.split('/').last.toString().split(".")[1]}",
+          saveInPublicStorage:
+              (androidInfo.version.sdkInt >= 29) ? true : false,
+        );
+        logger.d('Downloaded wallpaper, saving taskID $taskId $url');
+      } else {
+        final taskId = await FlutterDownloader.enqueue(
+          url: url,
+          savedDir: externalStorageDirPath ?? "",
+          fileName:
+              "${url.split('/').last.toString().split(".")[0]}$rNum.${url.split('/').last.toString().split(".")[1]}",
+        );
+        logger.d('Downloaded wallpaper, saving taskID $taskId $url');
+      }
+    } else {
+      toasts.error("No storage permission");
+    }
     final status = await Permission.storage.status;
     if (!status.isGranted) {
       await Permission.storage.request();

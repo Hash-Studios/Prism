@@ -1874,7 +1874,6 @@ class ModifiedDownloadButton extends StatelessWidget {
                     .userProfileSetups![index!]
                     .data()["wallpaper_url"]
                     .toString(),
-                colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
