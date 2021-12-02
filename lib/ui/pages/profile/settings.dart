@@ -27,7 +27,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool optWall = (main.prefs.get('optimisedWallpapers') ?? true) as bool;
   bool followers = (main.prefs.get('followersTab') ?? true) as bool;
   int categories = (main.prefs.get('WHcategories') ?? 100) as int;
   int purity = (main.prefs.get('WHpurity') ?? 100) as int;
@@ -159,34 +158,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   await Hive.openBox('setups');
                   toasts.codeSend("Cleared cache!");
                 }),
-            // SwitchListTile(
-            //     activeColor: Theme.of(context).errorColor,
-            //     secondary: const Icon(
-            //       JamIcons.dashboard,
-            //     ),
-            //     value: optWall,
-            //     title: Text(
-            //       "Wallpaper Optimisation",
-            //       style: TextStyle(
-            //           color: Theme.of(context).accentColor,
-            //           fontWeight: FontWeight.w500,
-            //           fontFamily: "Proxima Nova"),
-            //     ),
-            //     subtitle: optWall
-            //         ? const Text(
-            //             "Disabling this might lead to High Internet Usage",
-            //             style: TextStyle(fontSize: 12),
-            //           )
-            //         : const Text(
-            //             "Enable this to optimise Wallpapers according to your device",
-            //             style: TextStyle(fontSize: 12),
-            //           ),
-            //     onChanged: (bool value) async {
-            //       setState(() {
-            //         optWall = value;
-            //       });
-            //       main.prefs.put('optimisedWallpapers', value);
-            //     }),
             SwitchListTile(
                 activeColor: Theme.of(context).errorColor,
                 secondary: const Icon(
