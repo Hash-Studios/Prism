@@ -73,7 +73,6 @@ dependencies:
   purchases_flutter: ^3.2.1
   quick_actions: ^0.6.0+1
   rxdart: ^0.27.1
-  screenshot: ^1.2.3
   share: ^2.0.1
   sliding_up_panel: ^2.0.0+1
   timeago: ^3.0.2
