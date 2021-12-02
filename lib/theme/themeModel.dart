@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 
 Map<String, ThemeData?> themes = {
   "kLFrost White": kLightTheme,
-  "kLCoffee": kLightTheme2,
-  "kLRose": kLightTheme3,
-  "kLCotton Blue": kLightTheme4,
+  // "kLCoffee": kLightTheme2,
+  // "kLRose": kLightTheme3,
+  // "kLCotton Blue": kLightTheme4,
 };
 
 class ThemeModel extends ChangeNotifier {

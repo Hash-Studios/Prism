@@ -1,11 +1,7 @@
-import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:animations/animations.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void showChangelog(BuildContext context, Function func) {
@@ -205,16 +201,18 @@ class Change extends StatelessWidget {
             Icon(
               icon,
               size: 22,
-              color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
-                          "Dark" &&
-                      Provider.of<DarkThemeModel>(context).currentTheme ==
-                          kDarkTheme2
-                  ? Theme.of(context).errorColor == Colors.black
-                      ? Theme.of(context).accentColor
-                      : Theme.of(context).errorColor
-                  : Theme.of(context).errorColor,
+              color:
+                  //  Provider.of<ThemeModeExtended>(context)
+                  //                 .getCurrentModeStyle(
+                  //                     MediaQuery.of(context).platformBrightness) ==
+                  //             "Dark" &&
+                  //         Provider.of<DarkThemeModel>(context).currentTheme ==
+                  //             kDarkTheme2
+                  //     ? Theme.of(context).errorColor == Colors.black
+                  //         ? Theme.of(context).accentColor
+                  //         : Theme.of(context).errorColor
+                  //     :
+                  Theme.of(context).errorColor,
             ),
             const SizedBox(
               width: 20,
