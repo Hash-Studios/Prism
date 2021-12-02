@@ -28,7 +28,6 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 
