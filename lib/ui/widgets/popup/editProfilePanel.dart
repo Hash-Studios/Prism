@@ -424,8 +424,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Theme.of(context).backgroundColor,
           leading: IconButton(
-              icon: const Icon(JamIcons.close),
+              icon: Icon(
+                JamIcons.close,
+                color: Theme.of(context).accentColor,
+              ),
               onPressed: () {
                 navStack.removeLast();
                 logger.d(navStack.toString());
