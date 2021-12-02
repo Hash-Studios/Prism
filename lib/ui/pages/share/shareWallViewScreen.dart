@@ -42,7 +42,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class ShareWallpaperViewScreen extends StatefulWidget {
