@@ -3,9 +3,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
@@ -314,26 +312,26 @@ class _SetupPageState extends State<SetupPage> {
                                       child: Center(
                                         child: CircularProgressIndicator(
                                             valueColor: AlwaysStoppedAnimation(
-                                              Provider.of<ThemeModeExtended>(
-                                                                  context)
-                                                              .getCurrentModeStyle(
-                                                                  MediaQuery.of(
-                                                                          context)
-                                                                      .platformBrightness) ==
-                                                          "Dark" &&
-                                                      Provider.of<DarkThemeModel>(
-                                                                  context)
-                                                              .currentTheme ==
-                                                          kDarkTheme2
-                                                  ? Theme.of(context)
-                                                              .errorColor ==
-                                                          Colors.black
-                                                      ? Theme.of(context)
-                                                          .accentColor
-                                                      : Theme.of(context)
-                                                          .errorColor
-                                                  : Theme.of(context)
-                                                      .errorColor,
+                                              // Provider.of<ThemeModeExtended>(
+                                              //                     context)
+                                              //                 .getCurrentModeStyle(
+                                              //                     MediaQuery.of(
+                                              //                             context)
+                                              //                         .platformBrightness) ==
+                                              //             "Dark" &&
+                                              //         Provider.of<DarkThemeModel>(
+                                              //                     context)
+                                              //                 .currentTheme ==
+                                              //             kDarkTheme2
+                                              //     ? Theme.of(context)
+                                              //                 .errorColor ==
+                                              //             Colors.black
+                                              //         ? Theme.of(context)
+                                              //             .accentColor
+                                              //         : Theme.of(context)
+                                              //             .errorColor
+                                              //     :
+                                              Theme.of(context).errorColor,
                                             ),
                                             value: downloadProgress.progress),
                                       ),
@@ -369,16 +367,18 @@ class _SetupPageState extends State<SetupPage> {
               },
               child: Icon(
                 JamIcons.chevron_left,
-                color: Provider.of<ThemeModeExtended>(context)
-                                .getCurrentModeStyle(MediaQuery.of(context)
-                                    .platformBrightness) ==
-                            "Dark" &&
-                        Provider.of<DarkThemeModel>(context).currentTheme ==
-                            kDarkTheme2
-                    ? Theme.of(context).errorColor == Colors.black
-                        ? Theme.of(context).accentColor
-                        : Theme.of(context).errorColor
-                    : Theme.of(context).errorColor,
+                color:
+                    //  Provider.of<ThemeModeExtended>(context)
+                    //                 .getCurrentModeStyle(MediaQuery.of(context)
+                    //                     .platformBrightness) ==
+                    //             "Dark" &&
+                    //         Provider.of<DarkThemeModel>(context).currentTheme ==
+                    //             kDarkTheme2
+                    //     ? Theme.of(context).errorColor == Colors.black
+                    //         ? Theme.of(context).accentColor
+                    //         : Theme.of(context).errorColor
+                    //     :
+                    Theme.of(context).errorColor,
               ),
             ),
           ),
@@ -399,16 +399,18 @@ class _SetupPageState extends State<SetupPage> {
               },
               child: Icon(
                 JamIcons.chevron_right,
-                color: Provider.of<ThemeModeExtended>(context)
-                                .getCurrentModeStyle(MediaQuery.of(context)
-                                    .platformBrightness) ==
-                            "Dark" &&
-                        Provider.of<DarkThemeModel>(context).currentTheme ==
-                            kDarkTheme2
-                    ? Theme.of(context).errorColor == Colors.black
-                        ? Theme.of(context).accentColor
-                        : Theme.of(context).errorColor
-                    : Theme.of(context).errorColor,
+                color:
+                    // Provider.of<ThemeModeExtended>(context)
+                    //                 .getCurrentModeStyle(MediaQuery.of(context)
+                    //                     .platformBrightness) ==
+                    //             "Dark" &&
+                    //         Provider.of<DarkThemeModel>(context).currentTheme ==
+                    //             kDarkTheme2
+                    //     ? Theme.of(context).errorColor == Colors.black
+                    //         ? Theme.of(context).accentColor
+                    //         : Theme.of(context).errorColor
+                    //     :
+                    Theme.of(context).errorColor,
               ),
             ),
           ),

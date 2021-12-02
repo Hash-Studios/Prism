@@ -1,17 +1,13 @@
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/contriPopUp.dart';
 import 'package:Prism/ui/widgets/profile/prismList.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -321,15 +317,17 @@ class ActionButton extends StatelessWidget {
       child: ActionChip(
           avatar: Icon(
             icon,
-            color: Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
-                            MediaQuery.of(context).platformBrightness) ==
-                        "Dark" &&
-                    Provider.of<DarkThemeModel>(context).currentTheme ==
-                        kDarkTheme2
-                ? Theme.of(context).errorColor == Colors.black
-                    ? Theme.of(context).accentColor
-                    : Theme.of(context).errorColor
-                : Theme.of(context).errorColor,
+            color:
+            //  Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
+            //                 MediaQuery.of(context).platformBrightness) ==
+            //             "Dark" &&
+            //         Provider.of<DarkThemeModel>(context).currentTheme ==
+            //             kDarkTheme2
+            //     ? Theme.of(context).errorColor == Colors.black
+            //         ? Theme.of(context).accentColor
+            //         : Theme.of(context).errorColor
+            //     : 
+                Theme.of(context).errorColor,
           ),
           label: Text(
             text,

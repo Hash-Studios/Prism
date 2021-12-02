@@ -7,10 +7,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/pages/home/wallpapers/customFilters.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
@@ -26,7 +23,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photofilters/filters/filters.dart';
 import 'package:photofilters/filters/preset_filters.dart';
-import 'package:provider/provider.dart';
 
 class WallpaperFilterScreen extends StatefulWidget {
   final imagelib.Image image;
@@ -572,19 +568,20 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                               width: 25,
                               child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation(
-                                  Provider.of<ThemeModeExtended>(context)
-                                                  .getCurrentModeStyle(
-                                                      MediaQuery.of(context)
-                                                          .platformBrightness) ==
-                                              "Dark" &&
-                                          Provider.of<DarkThemeModel>(context)
-                                                  .currentTheme ==
-                                              kDarkTheme2
-                                      ? Theme.of(context).errorColor ==
-                                              Colors.black
-                                          ? Theme.of(context).accentColor
-                                          : Theme.of(context).errorColor
-                                      : Theme.of(context).errorColor,
+                                  // Provider.of<ThemeModeExtended>(context)
+                                  //                 .getCurrentModeStyle(
+                                  //                     MediaQuery.of(context)
+                                  //                         .platformBrightness) ==
+                                  //             "Dark" &&
+                                  //         Provider.of<DarkThemeModel>(context)
+                                  //                 .currentTheme ==
+                                  //             kDarkTheme2
+                                  //     ? Theme.of(context).errorColor ==
+                                  //             Colors.black
+                                  //         ? Theme.of(context).accentColor
+                                  //         : Theme.of(context).errorColor
+                                  //     :
+                                  Theme.of(context).errorColor,
                                 ),
                               ),
                             ),
@@ -620,19 +617,20 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                               width: 25,
                               child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation(
-                                  Provider.of<ThemeModeExtended>(context)
-                                                  .getCurrentModeStyle(
-                                                      MediaQuery.of(context)
-                                                          .platformBrightness) ==
-                                              "Dark" &&
-                                          Provider.of<DarkThemeModel>(context)
-                                                  .currentTheme ==
-                                              kDarkTheme2
-                                      ? Theme.of(context).errorColor ==
-                                              Colors.black
-                                          ? Theme.of(context).accentColor
-                                          : Theme.of(context).errorColor
-                                      : Theme.of(context).errorColor,
+                                  // Provider.of<ThemeModeExtended>(context)
+                                  //                 .getCurrentModeStyle(
+                                  //                     MediaQuery.of(context)
+                                  //                         .platformBrightness) ==
+                                  //             "Dark" &&
+                                  //         Provider.of<DarkThemeModel>(context)
+                                  //                 .currentTheme ==
+                                  //             kDarkTheme2
+                                  //     ? Theme.of(context).errorColor ==
+                                  //             Colors.black
+                                  //         ? Theme.of(context).accentColor
+                                  //         : Theme.of(context).errorColor
+                                  //     :
+                                  Theme.of(context).errorColor,
                                 ),
                               ),
                             ),

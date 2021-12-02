@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 
 Map<String, ThemeData?> darkThemes = {
   "kDMaterial Dark": kDarkTheme,
-  "kDAMOLED": kDarkTheme2,
-  "kDOlive": kDarkTheme3,
-  "kDDeep Ocean": kDarkTheme4,
-  "kDJungle": kDarkTheme5,
-  "kDPepper": kDarkTheme6,
-  "kDSky": kDarkTheme7,
-  "kDSteel": kDarkTheme8,
+  // "kDAMOLED": kDarkTheme2,
+  // "kDOlive": kDarkTheme3,
+  // "kDDeep Ocean": kDarkTheme4,
+  // "kDJungle": kDarkTheme5,
+  // "kDPepper": kDarkTheme6,
+  // "kDSky": kDarkTheme7,
+  // "kDSteel": kDarkTheme8,
 };
 
 class DarkThemeModel extends ChangeNotifier {
