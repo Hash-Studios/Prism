@@ -35,7 +35,6 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -59,7 +58,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   String? provider;
   late int index;
   late String link;
-  late String path;
+  String? path;
   int progress = 0;
   bool downloading = false;
   bool applying = false;
@@ -69,9 +68,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   List<Color?>? colors;
   Color? accent = Colors.white;
   bool colorChanged = false;
-  late File _imageFile;
   bool screenshotTaken = false;
-  ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
   bool panelClosed = true;
   bool panelCollapsed = true;
@@ -143,18 +140,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     return imgFile;
   }
 
-  Future<File> moveFile(File sourceFile, String newPath) async {
-    try {
-      // prefer using rename as it is probably faster
-      return await sourceFile.rename(newPath);
-    } on FileSystemException catch (e) {
-      // if rename fails, copy the source file and then delete it
-      final newFile = await sourceFile.copy(newPath);
-      await sourceFile.delete();
-      return newFile;
-    }
-  }
-
   void setupDownloader() {
     initPlatformState();
     ui.IsolateNameServer.registerPortWithName(
@@ -183,7 +168,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
 
   void _setPath() async {
     path = (await _findLocalPath())!;
-    final savedDir = Directory(path);
+    final savedDir = Directory(path ?? "");
     final bool hasExisted = await savedDir.exists();
     if (!hasExisted) {
       savedDir.create();
@@ -535,7 +520,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       return file;
                                     },
                                     loading: downloading,
-                                    path: path,
+                                    path: path ?? "",
                                     progress: (progress / 100.0)
                                         .clamp(0, 100)
                                         .toInt(),
@@ -1168,7 +1153,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           return file;
                                         },
                                         loading: downloading,
-                                        path: path,
+                                        path: path ?? "",
                                         progress: (progress / 100.0)
                                             .clamp(0, 100)
                                             .toInt(),
@@ -1683,7 +1668,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               return file;
                                             },
                                             loading: downloading,
-                                            path: path,
+                                            path: path ?? "",
                                             progress: (progress / 100.0)
                                                 .clamp(0, 100)
                                                 .toInt(),
@@ -2221,7 +2206,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   return file;
                                                 },
                                                 loading: downloading,
-                                                path: path,
+                                                path: path ?? "",
                                                 progress: (progress / 100.0)
                                                     .clamp(0, 100)
                                                     .toInt(),
@@ -2776,7 +2761,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   return file;
                                                 },
                                                 loading: downloading,
-                                                path: path,
+                                                path: path ?? "",
                                                 progress: (progress / 100.0)
                                                     .clamp(0, 100)
                                                     .toInt(),
