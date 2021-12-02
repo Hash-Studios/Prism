@@ -13,6 +13,8 @@ import 'package:Prism/ui/pages/home/wallpapers/customFilters.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:async_wallpaper/async_wallpaper.dart';
+import 'package:device_info/device_info.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -129,28 +131,36 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     return true;
   }
 
-  static const platform = MethodChannel("flutter.prism.set_wallpaper");
+  Future<void> _setWallPaper(String link) async {
+    String? result;
+    try {
+      result = await AsyncWallpaper.setWallpaperFromFileNative(
+        link,
+      );
+      if (result == 'Wallpaper set') {
+        logger.d("Success");
+        analytics.logEvent(
+            name: 'set_wall',
+            parameters: {'type': 'Both', 'result': 'Success'});
+      } else {
+        logger.d("Failed");
+        toasts.error("Something went wrong!");
+      }
+    } catch (e) {
+      analytics.logEvent(
+          name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
+      logger.d(e.toString());
+    }
+  }
 
   Future<void> _setBothWallPaper(String url) async {
-    bool? result;
+    String? result;
     try {
-      if (url.contains("com.hash.prism")) {
-        result = await platform
-            .invokeMethod("set_both_wallpaper_file", <String, dynamic>{
-          'url': url,
-        });
-      } else if (url.contains("/0/")) {
-        result = await platform
-            .invokeMethod("set_both_wallpaper_file", <String, dynamic>{
-          'url': "/${url.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result =
-            await platform.invokeMethod("set_both_wallpaper", <String, dynamic>{
-          'url': url,
-        });
-      }
-      if (result!) {
+      result = await AsyncWallpaper.setWallpaperFromFile(
+        url,
+        AsyncWallpaper.BOTH_SCREENS,
+      );
+      if (result == 'Wallpaper set') {
         logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
@@ -169,25 +179,13 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _setLockWallPaper(String url) async {
-    bool? result;
+    String? result;
     try {
-      if (url.contains("com.hash.prism")) {
-        result = await platform
-            .invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
-          'url': url,
-        });
-      } else if (url.contains("/0/")) {
-        result = await platform
-            .invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
-          'url': "/${url.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result =
-            await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
-          'url': url,
-        });
-      }
-      if (result!) {
+      result = await AsyncWallpaper.setWallpaperFromFile(
+        url,
+        AsyncWallpaper.LOCK_SCREEN,
+      );
+      if (result == 'Wallpaper set') {
         logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
@@ -206,25 +204,13 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _setHomeWallPaper(String url) async {
-    bool? result;
+    String? result;
     try {
-      if (url.contains("com.hash.prism")) {
-        result = await platform
-            .invokeMethod("set_home_wallpaper_file", <String, dynamic>{
-          'url': url,
-        });
-      } else if (url.contains("/0/")) {
-        result = await platform
-            .invokeMethod("set_home_wallpaper_file", <String, dynamic>{
-          'url': "/${url.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result =
-            await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
-          'url': url,
-        });
-      }
-      if (result!) {
+      result = await AsyncWallpaper.setWallpaperFromFile(
+        url,
+        AsyncWallpaper.HOME_SCREEN,
+      );
+      if (result == 'Wallpaper set') {
         logger.d("Success");
         analytics.logEvent(
             name: 'set_wall',
@@ -240,6 +226,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
     }
     Navigator.of(context).pop();
+  }
+
+  Future<void> onPaint(String url) async {
+    HapticFeedback.vibrate();
+    Future.delayed(const Duration(seconds: 1))
+        .then((value) => _setWallPaper(url));
   }
 
   void showPremiumPopUp(Function func) {
@@ -335,20 +327,40 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                     isScrollControlled: true,
                     context: context,
                     builder: (context) => SetOptionsPanel(
-                      onTap1: () {
+                      onTap1: () async {
                         HapticFeedback.vibrate();
                         Navigator.of(context).pop();
-                        _setHomeWallPaper(imageFile.path);
+                        Future.delayed(const Duration(seconds: 1))
+                            .then((value) => _setHomeWallPaper(imageFile.path));
+                      },
+                      onTap4: () async {
+                        HapticFeedback.vibrate();
+                        Navigator.of(context).pop();
+                        if (Platform.isAndroid) {
+                          final androidInfo =
+                              await DeviceInfoPlugin().androidInfo;
+                          final sdkInt = androidInfo.version.sdkInt;
+                          logger.d('(SDK $sdkInt)');
+                          sdkInt >= 24
+                              ? onPaint(imageFile.path)
+                              : toasts.error(
+                                  "Crop is supported for Android 7.0 and above!");
+                        } else {
+                          toasts.error(
+                              "Sorry crop is supported for Android 7.0 and above!");
+                        }
                       },
                       onTap2: () {
                         HapticFeedback.vibrate();
                         Navigator.of(context).pop();
-                        _setLockWallPaper(imageFile.path);
+                        Future.delayed(const Duration(seconds: 1))
+                            .then((value) => _setLockWallPaper(imageFile.path));
                       },
                       onTap3: () {
                         HapticFeedback.vibrate();
                         Navigator.of(context).pop();
-                        _setBothWallPaper(imageFile.path);
+                        Future.delayed(const Duration(seconds: 1))
+                            .then((value) => _setBothWallPaper(imageFile.path));
                       },
                     ),
                   );
@@ -512,7 +524,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<String> get _localPath async {
-    final directory = await getApplicationDocumentsDirectory();
+    final directory = await getTemporaryDirectory();
 
     return directory.path;
   }
