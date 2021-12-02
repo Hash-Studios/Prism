@@ -37,6 +37,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
@@ -74,6 +75,9 @@ Future<void> main() async {
   Firebase.initializeApp().then((_) {
     getApplicationDocumentsDirectory().then(
       (dir) async {
+        await FlutterDownloader.initialize(
+          debug: false,
+        );
         Hive.init(dir.path);
         // await Hive.deleteBoxFromDisk('prefs');
         // Hive.ignoreTypeId<PrismUsers>(33);

@@ -1,4 +1,3 @@
-
 import 'package:Prism/data/ads/adsNotifier.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -158,45 +157,11 @@ class _PageManagerChildState extends State<PageManagerChild>
   Future<bool> initDynamicLinks(BuildContext context) async {
     final PendingDynamicLinkData data =
         await FirebaseDynamicLinks.instance.getInitialLink();
-    final Uri? deepLink = data.link;
+    if (data != null) {
+      final Uri? deepLink = data?.link;
 
-    if (deepLink != null && linkOpened == 0) {
-      logger.d("opened while closed altogether via deep link");
-      if (deepLink.pathSegments[0] == "share") {
-        Future.delayed(const Duration()).then(
-            (value) => Navigator.pushNamed(context, shareRoute, arguments: [
-                  deepLink.queryParameters["id"],
-                  deepLink.queryParameters["provider"],
-                  deepLink.queryParameters["url"],
-                  deepLink.queryParameters["thumb"],
-                ]));
-        linkOpened = 1;
-      } else if (deepLink.pathSegments[0] == "user") {
-        Future.delayed(const Duration()).then((value) =>
-            Navigator.pushNamed(context, followerProfileRoute, arguments: [
-              deepLink.queryParameters["email"],
-            ]));
-        linkOpened = 1;
-      } else if (deepLink.pathSegments[0] == "setup") {
-        Future.delayed(const Duration()).then((value) =>
-            Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
-              deepLink.queryParameters["name"],
-              deepLink.queryParameters["thumbUrl"],
-            ]));
-        linkOpened = 1;
-      } else if (deepLink.pathSegments[0] == "refer") {
-        //TODO write code to add coins in friend/user account
-        linkOpened = 1;
-      } else {}
-      logger.d("opened while closed altogether via deep link2345");
-    }
-
-    FirebaseDynamicLinks.instance.onLink(
-        onSuccess: (PendingDynamicLinkData dynamicLink) async {
-      final Uri deepLink = dynamicLink.link;
-
-      if (deepLink != null) {
-        logger.d("opened while bg via deep link1");
+      if (deepLink != null && linkOpened == 0) {
+        logger.d("opened while closed altogether via deep link");
         if (deepLink.pathSegments[0] == "share") {
           Future.delayed(const Duration()).then(
               (value) => Navigator.pushNamed(context, shareRoute, arguments: [
@@ -205,26 +170,63 @@ class _PageManagerChildState extends State<PageManagerChild>
                     deepLink.queryParameters["url"],
                     deepLink.queryParameters["thumb"],
                   ]));
+          linkOpened = 1;
         } else if (deepLink.pathSegments[0] == "user") {
           Future.delayed(const Duration()).then((value) =>
               Navigator.pushNamed(context, followerProfileRoute, arguments: [
                 deepLink.queryParameters["email"],
               ]));
+          linkOpened = 1;
         } else if (deepLink.pathSegments[0] == "setup") {
           Future.delayed(const Duration()).then((value) =>
               Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
                 deepLink.queryParameters["name"],
                 deepLink.queryParameters["thumbUrl"],
               ]));
+          linkOpened = 1;
+        } else if (deepLink.pathSegments[0] == "refer") {
+          //TODO write code to add coins in friend/user account
+          linkOpened = 1;
         } else {}
-
-        logger.d("opened while bg via deep link2345");
+        logger.d("opened while closed altogether via deep link2345");
       }
-    }, onError: (OnLinkErrorException e) async {
-      logger.d('onLinkError');
-      logger.d(e.message);
-    });
-    return true;
+
+      FirebaseDynamicLinks.instance.onLink(
+          onSuccess: (PendingDynamicLinkData dynamicLink) async {
+        final Uri deepLink = dynamicLink.link;
+
+        if (deepLink != null) {
+          logger.d("opened while bg via deep link1");
+          if (deepLink.pathSegments[0] == "share") {
+            Future.delayed(const Duration()).then(
+                (value) => Navigator.pushNamed(context, shareRoute, arguments: [
+                      deepLink.queryParameters["id"],
+                      deepLink.queryParameters["provider"],
+                      deepLink.queryParameters["url"],
+                      deepLink.queryParameters["thumb"],
+                    ]));
+          } else if (deepLink.pathSegments[0] == "user") {
+            Future.delayed(const Duration()).then((value) =>
+                Navigator.pushNamed(context, followerProfileRoute, arguments: [
+                  deepLink.queryParameters["email"],
+                ]));
+          } else if (deepLink.pathSegments[0] == "setup") {
+            Future.delayed(const Duration()).then((value) =>
+                Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
+                  deepLink.queryParameters["name"],
+                  deepLink.queryParameters["thumbUrl"],
+                ]));
+          } else {}
+
+          logger.d("opened while bg via deep link2345");
+        }
+      }, onError: (OnLinkErrorException e) async {
+        logger.d('onLinkError');
+        logger.d(e.message);
+      });
+      return true;
+    }
+    return false;
   }
 
   @override
