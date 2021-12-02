@@ -184,6 +184,18 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(
+              JamIcons.close,
+              color: Theme.of(context).accentColor,
+            ),
+            onPressed: () async {
+              if (await onWillPop() == true) {
+                Navigator.pop(context);
+              }
+            },
+          ),
+          backgroundColor: Theme.of(context).backgroundColor,
           title: Text(
             "Upload Wallpaper",
             style: TextStyle(color: Theme.of(context).accentColor),

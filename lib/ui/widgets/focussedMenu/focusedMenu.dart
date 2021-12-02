@@ -69,7 +69,7 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                    color: Theme.of(context).hintColor,
+                    color: Theme.of(context).backgroundColor,
                     borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(20),
                         bottomRight: Radius.circular(20))),

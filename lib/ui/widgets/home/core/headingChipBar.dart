@@ -15,6 +15,7 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      backgroundColor: Theme.of(context).backgroundColor,
       automaticallyImplyLeading: false,
       titleSpacing: 0,
       leading: IconButton(
