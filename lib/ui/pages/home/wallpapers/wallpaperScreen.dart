@@ -140,6 +140,60 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     return imgFile;
   }
 
+  Future<File> _captureAMOLEDPng() async {
+    const int blackThreshold = 18;
+    final RenderRepaintBoundary boundary =
+        genKey.currentContext?.findRenderObject() as RenderRepaintBoundary;
+    final ui.Image image = await boundary.toImage(pixelRatio: 3);
+    final directory = (await getTemporaryDirectory()).path;
+    final ByteData? byteData = await image.toByteData();
+    for (int i = 0; i < image.height; i++) {
+      for (int j = 0; j < image.width; j++) {
+        final pixelData = byteData?.getUint32((i * image.width + j) * 4);
+        if (pixelData != null) {
+          final int red = pixelData >> 24 & 0xFF;
+          final int green = pixelData >> 16 & 0xFF;
+          final int blue = pixelData >> 8 & 0xFF;
+          final int alpha = pixelData & 0xFF;
+          if ((red <= blackThreshold) &&
+              (green <= blackThreshold) &&
+              (blue <= blackThreshold) &&
+              alpha != 0) {
+            byteData?.setUint32((i * image.width + j) * 4, 0x000000FF);
+          }
+        }
+      }
+    }
+    ui.Image? imageEdit;
+    File? imgFileEdit;
+    ui.decodeImageFromPixels(
+      byteData?.buffer.asUint8List() as Uint8List,
+      image.width,
+      image.height,
+      ui.PixelFormat.rgba8888,
+      (ui.Image result) async {
+        imageEdit = result;
+        final ByteData? byteDataEdit =
+            await imageEdit?.toByteData(format: ui.ImageByteFormat.png);
+        final Uint8List pngBytes = byteDataEdit!.buffer.asUint8List();
+        final r = Random();
+        String rNum = "";
+        for (var i = 0; i < 6; i++) {
+          rNum = "$rNum${r.nextInt(9)}";
+        }
+        final File imgFile = File('$directory/photo_$rNum.png');
+        await imgFile.writeAsBytes(pngBytes);
+        logger.d(imgFile.path);
+        imgFileEdit = imgFile;
+      },
+    );
+    await Future.delayed(const Duration(seconds: 3));
+    if (imgFileEdit == null) {
+      await Future.delayed(const Duration(seconds: 3));
+    }
+    return imgFileEdit!;
+  }
+
   void setupDownloader() {
     initPlatformState();
     ui.IsolateNameServer.registerPortWithName(
@@ -1311,7 +1365,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             padding: EdgeInsets.fromLTRB(
                                 8.0, globals.notchSize! + 8, 8, 8),
                             child: IconButton(
-                              onPressed: () {
+                              onPressed: () async {
                                 final link =
                                     data.subPrismWalls![index]["wallpaper_url"];
                                 Navigator.push(
@@ -1831,7 +1885,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 padding: EdgeInsets.fromLTRB(
                                     8.0, globals.notchSize! + 8, 8, 8),
                                 child: IconButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     final link =
                                         pdata.wallsP[index].src!["original"];
                                     Navigator.push(
@@ -2384,7 +2438,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding: EdgeInsets.fromLTRB(
                                         8.0, globals.notchSize! + 8, 8, 8),
                                     child: IconButton(
-                                      onPressed: () {
+                                      onPressed: () async {
                                         final link = pdata
                                             .wallsC[index].src!["original"];
                                         Navigator.push(
@@ -2925,7 +2979,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding: EdgeInsets.fromLTRB(
                                         8.0, globals.notchSize! + 8, 8, 8),
                                     child: IconButton(
-                                      onPressed: () {
+                                      onPressed: () async {
                                         final link = wdata.wallsS[index].path;
                                         Navigator.push(
                                             context,
