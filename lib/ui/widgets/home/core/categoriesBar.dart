@@ -97,6 +97,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
       });
     }
     return AppBar(
+      backgroundColor: Theme.of(context).backgroundColor,
       automaticallyImplyLeading: false,
       elevation: 0,
       titleSpacing: 0,

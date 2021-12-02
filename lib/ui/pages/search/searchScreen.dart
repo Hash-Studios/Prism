@@ -92,6 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: AppBar(
+            backgroundColor: Theme.of(context).backgroundColor,
             automaticallyImplyLeading: false,
             titleSpacing: 0,
             title: Row(
@@ -108,7 +109,9 @@ class _SearchScreenState extends State<SearchScreen> {
                           Container(
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).hintColor),
+                                color: Theme.of(context)
+                                    .hintColor
+                                    .withOpacity(0.05)),
                             child: TextField(
                               cursorColor: Theme.of(context).errorColor,
                               style: Theme.of(context)
@@ -168,7 +171,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     onCanceled: () {
                       logger.d('You have not choosed anything');
                     },
-                    color: Theme.of(context).hintColor,
+                    color: Theme.of(context).backgroundColor,
                     tooltip: 'Providers',
                     onSelected: (dynamic choice) {
                       setState(() {
@@ -242,6 +245,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             Padding(
                               padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
                               child: ActionChip(
+                                  elevation: 0,
                                   pressElevation: 5,
                                   padding:
                                       const EdgeInsets.fromLTRB(14, 11, 14, 11),
@@ -249,7 +253,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                       searchController.text.toLowerCase() ==
                                               tags[index].toLowerCase()
                                           ? Theme.of(context).accentColor
-                                          : Theme.of(context).hintColor,
+                                          : Theme.of(context)
+                                              .hintColor
+                                              .withOpacity(0.1),
                                   label: Text(tags[index],
                                       style: Theme.of(context)
                                           .textTheme
