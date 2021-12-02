@@ -43,10 +43,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
+          backgroundColor: Theme.of(context).backgroundColor,
           automaticallyImplyLeading: false,
-          title: const Text("Notifications"),
+          title: Text(
+            "Notifications",
+            style: Theme.of(context).textTheme.headline6?.copyWith(
+                  color: Theme.of(context).accentColor,
+                ),
+          ),
           leading: IconButton(
-            icon: const Icon(JamIcons.close),
+            icon: Icon(
+              JamIcons.close,
+              color: Theme.of(context).accentColor,
+            ),
             onPressed: () {
               if (navStack.length > 1) navStack.removeLast();
               logger.d(navStack.toString());
@@ -56,7 +65,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
           actions: <Widget>[
             IconButton(
                 tooltip: "Notification Settings",
-                icon: const Icon(JamIcons.settings_alt),
+                icon: Icon(
+                  JamIcons.settings_alt,
+                  color: Theme.of(context).accentColor,
+                ),
                 onPressed: () {
                   showModalBottomSheet(
                       isScrollControlled: true,
