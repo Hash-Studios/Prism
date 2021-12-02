@@ -52,7 +52,6 @@ String? currentMode;
 Color? lightAccent;
 Color? darkAccent;
 bool? hqThumbs;
-late bool optimisedWallpapers;
 int? categories;
 int? purity;
 LocalNotification localNotification = LocalNotification();
@@ -121,12 +120,6 @@ Future<void> main() async {
                 .toString()
                 .replaceAll("Color(", "")
                 .replaceAll(")", "")));
-        optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
-        // if (optimisedWallpapers) {
-        //   prefs.put('optimisedWallpapers', true);
-        // } else {
-        prefs.put('optimisedWallpapers', false);
-        // }
         categories = prefs.get('WHcategories') as int? ?? 100;
         if (categories == 100) {
           prefs.put('WHcategories', 100);
