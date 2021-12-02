@@ -1669,7 +1669,6 @@ class ModifiedDownloadButton extends StatelessWidget {
                 link: Provider.of<SetupProvider>(context, listen: false)
                     .setups![index!]["wallpaper_url"]
                     .toString(),
-                colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {

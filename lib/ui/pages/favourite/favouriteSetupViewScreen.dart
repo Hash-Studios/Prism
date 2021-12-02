@@ -1708,7 +1708,6 @@ class ModifiedDownloadButton extends StatelessWidget {
                     Provider.of<FavouriteSetupProvider>(context, listen: false)
                         .liked![index!]["wallpaper_url"]
                         .toString(),
-                colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {

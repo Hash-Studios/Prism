@@ -2260,7 +2260,6 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
               top: topOffset! + fabWallTopOffset,
               left: leftOffset! + fabWallLeftOffset,
               child: DownloadButton(
-                colorChanged: false,
                 link: widget.provider == "WallHaven"
                     ? WData.walls[widget.index].path.toString()
                     : widget.provider == "Prism"
