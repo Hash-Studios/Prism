@@ -1,13 +1,7 @@
 import 'package:Prism/theme/config.dart' as config;
 import 'package:flutter/material.dart';
 
-ThemeData kLightTheme = ThemeData(
-  canvasColor: Colors.transparent,
-  primaryColor: Colors.white,
-  brightness: Brightness.light,
-  errorColor: const Color(0xFFE57697),
-  focusColor: config.Colors().mainColor(1),
-  hintColor: config.Colors().secondColor(1),
+ThemeData kLightTheme = ThemeData.from(
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -70,16 +64,36 @@ ThemeData kLightTheme = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentColor(1),
     ),
-  ), colorScheme: const ColorScheme.light(primary: Color(0xFFE57697)).copyWith(secondary: config.Colors().accentColor(1)),
+  ),
+  colorScheme: ColorScheme(
+    brightness: Brightness.light,
+    primary: config.Colors().mainColor(1),
+    primaryVariant: config.Colors().mainColor(1),
+    secondary: config.Colors().accentColor(1),
+    secondaryVariant: config.Colors().accentColor(1),
+    background: config.Colors().mainColor(1),
+    surface: config.Colors().mainColor(1),
+    onBackground: Colors.black,
+    onSurface: Colors.black,
+    onError: Colors.white,
+    onPrimary: const Color(0xFFE57697).computeLuminance() > 0.5
+        ? Colors.black
+        : Colors.white,
+    onSecondary: const Color(0xFFE57697).computeLuminance() > 0.5
+        ? Colors.black
+        : Colors.white,
+    error: Colors.red.shade400,
+  ),
+).copyWith(
+  textSelectionTheme:
+      const TextSelectionThemeData(cursorColor: Color(0xFFE57697)),
+  highlightColor: const Color(0xFFE57697).withOpacity(0.2),
+  scaffoldBackgroundColor: config.Colors().mainColor(1),
+  toggleableActiveColor: const Color(0xFFE57697),
+  disabledColor: Colors.grey,
 );
 
-ThemeData kDarkTheme = ThemeData(
-  canvasColor: Colors.transparent,
-  primaryColor: config.Colors().mainDarkColor(1),
-  brightness: Brightness.dark,
-  errorColor: const Color(0xFFE57697),
-  focusColor: config.Colors().mainDarkColor(1),
-  hintColor: config.Colors().secondDarkColor(1),
+ThemeData kDarkTheme = ThemeData.from(
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -98,15 +112,17 @@ ThemeData kDarkTheme = ThemeData(
         fontWeight: FontWeight.w500,
         color: config.Colors().accentDarkColor(1)),
     headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
     headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -142,7 +158,33 @@ ThemeData kDarkTheme = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ), colorScheme: const ColorScheme.dark(primary: Color(0xFFE57697)).copyWith(secondary: config.Colors().accentDarkColor(1)),
+  ),
+  colorScheme: ColorScheme(
+    brightness: Brightness.dark,
+    primary: const Color(0xFFE57697),
+    primaryVariant: const Color(0xFFE57697),
+    secondary: Colors.white,
+    secondaryVariant: Colors.white,
+    background: config.Colors().mainDarkColor(1),
+    surface: config.Colors().mainDarkColor(1),
+    onBackground: Colors.white,
+    onSurface: Colors.white,
+    onError: Colors.white,
+    onPrimary: const Color(0xFFE57697).computeLuminance() > 0.5
+        ? Colors.black
+        : Colors.white,
+    onSecondary: const Color(0xFFE57697).computeLuminance() > 0.5
+        ? Colors.black
+        : Colors.white,
+    error: Colors.red.shade400,
+  ),
+).copyWith(
+  textSelectionTheme:
+      const TextSelectionThemeData(cursorColor: Color(0xFFE57697)),
+  highlightColor: const Color(0xFFE57697).withOpacity(0.2),
+  scaffoldBackgroundColor: config.Colors().mainDarkColor(1),
+  toggleableActiveColor: const Color(0xFFE57697),
+  disabledColor: Colors.grey,
 );
 
 ThemeData kLightTheme2 = ThemeData(
@@ -214,7 +256,9 @@ ThemeData kLightTheme2 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentColor(1),
     ),
-  ), colorScheme: const ColorScheme.light(primary: Color(0xFFC19439)).copyWith(secondary: const Color(0xFF96732C)),
+  ),
+  colorScheme: const ColorScheme.light(primary: Color(0xFFC19439))
+      .copyWith(secondary: const Color(0xFF96732C)),
 );
 
 ThemeData kDarkTheme2 = ThemeData(
@@ -286,7 +330,9 @@ ThemeData kDarkTheme2 = ThemeData(
       fontWeight: FontWeight.w400,
       color: Colors.white,
     ),
-  ), colorScheme: const ColorScheme.dark(primary: Color(0xFFFFFFFF)).copyWith(secondary: Colors.white),
+  ),
+  colorScheme: const ColorScheme.dark(primary: Color(0xFFFFFFFF))
+      .copyWith(secondary: Colors.white),
 );
 
 ThemeData kLightTheme3 = ThemeData(
@@ -358,7 +404,9 @@ ThemeData kLightTheme3 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentColor(1),
     ),
-  ), colorScheme: const ColorScheme.light(primary: Color(0xFFA7796D)).copyWith(secondary: const Color(0xFF7D564B)),
+  ),
+  colorScheme: const ColorScheme.light(primary: Color(0xFFA7796D))
+      .copyWith(secondary: const Color(0xFF7D564B)),
 );
 
 ThemeData kLightTheme4 = ThemeData(
@@ -430,7 +478,9 @@ ThemeData kLightTheme4 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentColor(1),
     ),
-  ), colorScheme: const ColorScheme.light(primary: Color(0xFF596F95)).copyWith(secondary: const Color(0xFF36435A)),
+  ),
+  colorScheme: const ColorScheme.light(primary: Color(0xFF596F95))
+      .copyWith(secondary: const Color(0xFF36435A)),
 );
 
 ThemeData kDarkTheme3 = ThemeData(
@@ -502,7 +552,9 @@ ThemeData kDarkTheme3 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF767B45)).copyWith(secondary: const Color(0xFFE3E4D0)),
+  ),
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF767B45))
+      .copyWith(secondary: const Color(0xFFE3E4D0)),
 );
 
 ThemeData kDarkTheme4 = ThemeData(
@@ -574,7 +626,9 @@ ThemeData kDarkTheme4 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF427DA8)).copyWith(secondary: const Color(0xFFB0CCE0)),
+  ),
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF427DA8))
+      .copyWith(secondary: const Color(0xFFB0CCE0)),
 );
 
 ThemeData kDarkTheme5 = ThemeData(
@@ -646,7 +700,9 @@ ThemeData kDarkTheme5 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF4C7044)).copyWith(secondary: const Color(0xFFD9E6D6)),
+  ),
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF4C7044))
+      .copyWith(secondary: const Color(0xFFD9E6D6)),
 );
 
 ThemeData kDarkTheme6 = ThemeData(
@@ -718,7 +774,9 @@ ThemeData kDarkTheme6 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF703826)).copyWith(secondary: const Color(0xFFDFB0A0)),
+  ),
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF703826))
+      .copyWith(secondary: const Color(0xFFDFB0A0)),
 );
 
 ThemeData kDarkTheme7 = ThemeData(
@@ -790,7 +848,9 @@ ThemeData kDarkTheme7 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF2D6079)).copyWith(secondary: const Color(0xFFA9CDDF)),
+  ),
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF2D6079))
+      .copyWith(secondary: const Color(0xFFA9CDDF)),
 );
 
 ThemeData kDarkTheme8 = ThemeData(
@@ -862,5 +922,7 @@ ThemeData kDarkTheme8 = ThemeData(
       fontWeight: FontWeight.w400,
       color: config.Colors().accentDarkColor(1),
     ),
-  ), colorScheme: const ColorScheme.dark(primary: Color(0xFF686E80)).copyWith(secondary: const Color(0xFFEEEFF2)),
+  ),
+  colorScheme: const ColorScheme.dark(primary: Color(0xFF686E80))
+      .copyWith(secondary: const Color(0xFFEEEFF2)),
 );
