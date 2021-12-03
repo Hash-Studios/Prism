@@ -1,328 +1,115 @@
-import 'dart:async';
-import 'dart:io';
-
-import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/auth/badgeModel.dart';
-import 'package:Prism/auth/transactionModel.dart';
-import 'package:Prism/auth/userModel.dart';
-import 'package:Prism/auth/userOldModel.dart';
-import 'package:Prism/data/ads/adsNotifier.dart';
-import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
-import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:Prism/data/palette/paletteNotifier.dart';
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
-import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
-import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
-import 'package:Prism/data/setups/provider/setupProvider.dart';
-import 'package:Prism/data/user/user_notifier.dart';
-import 'package:Prism/global/categoryProvider.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/locator/locator.dart';
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/notifications/localNotification.dart';
-import 'package:Prism/payments/upgrade.dart';
-import 'package:Prism/routes/router.dart' as router;
-import 'package:Prism/theme/darkThemeModel.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/ui/pages/home/core/splashScreen.dart';
-import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
-import 'package:Prism/ui/pages/undefinedScreen.dart';
-import 'package:firebase_analytics/observer.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'package:flutter_downloader/flutter_downloader.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
 
-String userHiveKey = "prismUserV2-1";
-late Box prefs;
-Directory? dir;
-String? currentThemeID;
-String? currentDarkThemeID;
-String? currentMode;
-Color? lightAccent;
-Color? darkAccent;
-bool? hqThumbs;
-int? categories;
-int? purity;
-LocalNotification localNotification = LocalNotification();
-Future<void> main() async {
-  debugPrint = (String? message, {int? wrapWidth}) {
-    if (message!.contains("[Home")) {
-      logger.i(message);
-    } else {
-      logger.d(message);
-    }
-  };
-  WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
-  FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.dumpErrorToConsole(details, forceReport: true);
-  };
-  await setupLocator();
-  localNotification = LocalNotification();
-  Firebase.initializeApp().then((_) {
-    getApplicationDocumentsDirectory().then(
-      (dir) async {
-        await FlutterDownloader.initialize(
-          debug: false,
-        );
-        Hive.init(dir.path);
-        // await Hive.deleteBoxFromDisk('prefs');
-        // Hive.ignoreTypeId<PrismUsers>(33);
-        Hive.registerAdapter(PrismUsersAdapter());
-        Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
-        Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
-        Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
-        Hive.registerAdapter<Badge>(BadgeAdapter());
-        await Hive.openBox<InAppNotif>('inAppNotifs');
-        await Hive.openBox('setups');
-        await Hive.openBox('localFav');
-        await Hive.openBox('appsCache');
-        prefs = await Hive.openBox('prefs');
-        logger.d("Box Opened");
-        if (prefs.get("systemOverlayColor") == null) {
-          prefs.put("systemOverlayColor", 0xFFE57697);
-        }
-        currentThemeID = prefs
-            .get('lightThemeID', defaultValue: "kLFrost White")
-            ?.toString();
-        prefs.put("lightThemeID", currentThemeID);
-        currentDarkThemeID = prefs
-            .get('darkThemeID', defaultValue: "kDMaterial Dark")
-            ?.toString();
-        prefs.put("darkThemeID", currentDarkThemeID);
-        currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
-        prefs.put("themeMode", currentMode);
-        lightAccent = Color(int.parse(
-            prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
-        prefs.put(
-            "lightAccent",
-            int.parse(lightAccent
-                .toString()
-                .replaceAll("Color(", "")
-                .replaceAll(")", "")));
-        darkAccent = Color(int.parse(
-            prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
-        prefs.put(
-            "darkAccent",
-            int.parse(darkAccent
-                .toString()
-                .replaceAll("Color(", "")
-                .replaceAll(")", "")));
-        categories = prefs.get('WHcategories') as int? ?? 100;
-        if (categories == 100) {
-          prefs.put('WHcategories', 100);
-        } else {
-          prefs.put('WHcategories', 111);
-        }
-        purity = prefs.get('WHpurity') as int? ?? 100;
-        if (purity == 100) {
-          prefs.put('WHpurity', 100);
-        } else {
-          prefs.put('WHpurity', 110);
-        }
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          systemNavigationBarColor:
-              Color(prefs.get('systemOverlayColor') as int),
-        ));
-        SystemChrome.setSystemUIOverlayStyle(
-            const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
-        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-            .then(
-          (value) => runZonedGuarded<Future<void>>(
-            () {
-              runApp(
-                RestartWidget(
-                  child: MultiProvider(
-                    providers: [
-                      ChangeNotifierProvider<PaletteNotifier>(
-                        create: (context) => PaletteNotifier(),
-                      ),
-                      ChangeNotifierProvider<AdsNotifier>(
-                        create: (context) => AdsNotifier(),
-                      ),
-                      ChangeNotifierProvider<UserProfileProvider>(
-                        create: (context) => UserProfileProvider(),
-                      ),
-                      ChangeNotifierProvider<FavouriteProvider>(
-                        create: (context) => FavouriteProvider(),
-                      ),
-                      ChangeNotifierProvider<FavouriteSetupProvider>(
-                        create: (context) => FavouriteSetupProvider(),
-                      ),
-                      ChangeNotifierProvider<UserNotifier>(
-                          create: (context) => locator<UserNotifier>()),
-                      ChangeNotifierProvider<CategorySupplier>(
-                        create: (context) => CategorySupplier(),
-                      ),
-                      ChangeNotifierProvider<SetupProvider>(
-                        create: (context) => SetupProvider(),
-                      ),
-                      ChangeNotifierProvider<ProfileWallProvider>(
-                        create: (context) => ProfileWallProvider(),
-                      ),
-                      ChangeNotifierProvider<ProfileSetupProvider>(
-                        create: (context) => ProfileSetupProvider(),
-                      ),
-                      ChangeNotifierProvider<ThemeModel>(
-                        create: (context) =>
-                            ThemeModel(themes[currentThemeID!], lightAccent),
-                      ),
-                      ChangeNotifierProvider<DarkThemeModel>(
-                        create: (context) => DarkThemeModel(
-                            darkThemes[currentDarkThemeID!], darkAccent),
-                      ),
-                      ChangeNotifierProvider<ThemeModeExtended>(
-                        create: (context) =>
-                            ThemeModeExtended(modes[currentMode!]),
-                      ),
-                    ],
-                    child: MyApp(),
-                  ),
-                ),
-              );
-            } as Future<void> Function(),
-            (obj, stacktrace) {
-              logger.e(obj, obj, stacktrace);
-            },
-          ),
-        );
-      },
-    );
-  });
+void main() {
+  runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  @override
-  _MyAppState createState() => _MyAppState();
-}
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
 
-class _MyAppState extends State<MyApp> {
-  Future<bool> getLoginStatus() async {
-    await globals.gAuth.googleSignIn.isSignedIn().then((value) {
-      if (value) {
-        if (prefs.get("logouteveryoneaugust2021", defaultValue: false) ==
-            false) {
-          globals.gAuth.signOutGoogle();
-          prefs.put("logouteveryoneaugust2021", true);
-          toasts.codeSend("Please login again, to enjoy the app!");
-        }
-      } else if (!value) {
-        prefs.put("logouteveryoneaugust2021", true);
-      }
-      if (value) checkPremium();
-      globals.prismUser.loggedIn = value;
-      prefs.put(userHiveKey, globals.prismUser);
-      return value;
-    });
-    return false;
-  }
-
-  @override
-  void initState() {
-    FlutterDisplayMode.setHighRefreshRate();
-    localNotification.createNotificationChannel(
-        "followers", "Followers", "Get notifications for new followers.", true);
-    localNotification.createNotificationChannel(
-        "recommendations",
-        "Recommendations",
-        "Get notifications for recommendations from Prism.",
-        true);
-    localNotification.createNotificationChannel("posts", "Posts",
-        "Get notifications for posts from artists you follow.", true);
-    localNotification.createNotificationChannel("downloads", "Downloads",
-        "Get notifications for download progress of wallpapers.", false);
-    getLoginStatus();
-    localNotification.fetchNotificationData(context);
-    super.initState();
-  }
-
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorObservers: <NavigatorObserver>[observer],
-      onGenerateRoute: router.generateRoute,
-      onUnknownRoute: (settings) => MaterialPageRoute(
-          builder: (context) => UndefinedScreen(
-                name: settings.name,
-              )),
-      theme: Provider.of<ThemeModel>(context).currentTheme,
-      darkTheme: Provider.of<DarkThemeModel>(context).currentTheme,
-      themeMode: Provider.of<ThemeModeExtended>(context).currentMode,
-      home: ((prefs.get('onboarded_new') as bool?) ?? false)
-          ? const SplashWidget()
-          : OnboardingScreen(),
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        // This is the theme of your application.
+        //
+        // Try running your application with "flutter run". You'll see the
+        // application has a blue toolbar. Then, without quitting the app, try
+        // changing the primarySwatch below to Colors.green and then invoke
+        // "hot reload" (press "r" in the console where you ran "flutter run",
+        // or simply save your changes to "hot reload" in a Flutter IDE).
+        // Notice that the counter didn't reset back to zero; the application
+        // is not restarted.
+        primarySwatch: Colors.blue,
+      ),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class RestartWidget extends StatefulWidget {
-  const RestartWidget({this.child});
-  final Widget? child;
-  static void restartApp(BuildContext context) {
-    router.navStack = ["Home"];
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: Color(prefs.get('systemOverlayColor') as int),
-    ));
-    observer = FirebaseAnalyticsObserver(analytics: analytics);
-    context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
-  }
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key, required this.title}) : super(key: key);
+
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
+  final String title;
 
   @override
-  _RestartWidgetState createState() => _RestartWidgetState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _RestartWidgetState extends State<RestartWidget> {
-  Key key = UniqueKey();
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
 
-  void restartApp() {
+  void _incrementCounter() {
     setState(() {
-      key = UniqueKey();
-    });
-    Hive.openBox('prefs').then((prefs) {
-      currentThemeID =
-          prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-      prefs.put("lightThemeID", currentThemeID);
-      currentDarkThemeID =
-          prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-      prefs.put("darkThemeID", currentDarkThemeID);
-      currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
-      prefs.put("themeMode", currentMode);
-      lightAccent = Color(int.parse(
-          prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
-      prefs.put(
-          "lightAccent",
-          int.parse(lightAccent
-              .toString()
-              .replaceAll("Color(", "")
-              .replaceAll(")", "")));
-      darkAccent = Color(int.parse(
-          prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
-      prefs.put(
-          "darkAccent",
-          int.parse(darkAccent
-              .toString()
-              .replaceAll("Color(", "")
-              .replaceAll(")", "")));
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter++;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return KeyedSubtree(
-      key: key,
-      child: widget.child!,
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
+    return Scaffold(
+      appBar: AppBar(
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title: Text(widget.title),
+      ),
+      body: Center(
+        // Center is a layout widget. It takes a single child and positions it
+        // in the middle of the parent.
+        child: Column(
+          // Column is also a layout widget. It takes a list of children and
+          // arranges them vertically. By default, it sizes itself to fit its
+          // children horizontally, and tries to be as tall as its parent.
+          //
+          // Invoke "debug painting" (press "p" in the console, choose the
+          // "Toggle Debug Paint" action from the Flutter Inspector in Android
+          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
+          // to see the wireframe for each widget.
+          //
+          // Column has various properties to control how it sizes itself and
+          // how it positions its children. Here we use mainAxisAlignment to
+          // center the children vertically; the main axis here is the vertical
+          // axis because Columns are vertical (the cross axis would be
+          // horizontal).
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text(
+              'You have pushed the button this many times:',
+            ),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
