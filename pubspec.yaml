@@ -46,6 +46,7 @@ dependencies:
   sprung: ^3.0.0
   animations: ^2.0.2
   flutter_displaymode: ^0.3.2
+  scroll_app_bar: ^2.0.0
 
 dev_dependencies:
   flutter_test:

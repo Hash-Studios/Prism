@@ -6,6 +6,7 @@ import 'package:prism/router/app_router.dart';
 import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/navigation_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:scroll_app_bar/scroll_app_bar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -15,13 +16,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final controller = ScrollController();
   @override
   void initState() {
     super.initState();
     logger.d('App init done.');
   }
 
-  void _incrementCounter() {
+  void _fabAction() {
     // context.read<ThemeController>().setDarkIsTrueBlack(false);
     context.read<ThemeController>().setSchemeIndex(
           (context.read<ThemeController>().schemeIndex + 1) % 40,
@@ -33,17 +35,18 @@ class _HomePageState extends State<HomePage> {
     final darkAppBarContents =
         Theme.of(context).scaffoldBackgroundColor.computeLuminance() > 0.5;
     return AutoTabsRouter(
-        routes: const [
-          WallsRoute(),
-          SetupsRoute(),
-          NotificationsRoute(),
-          ProfileRoute(),
+        routes: [
+          const WallsRoute(),
+          SetupsRoute(controller: controller),
+          const NotificationsRoute(),
+          const ProfileRoute(),
         ],
         homeIndex: 0,
         builder: (context, child, animation) {
           final tabsRouter = AutoTabsRouter.of(context);
           return Scaffold(
-            appBar: AppBar(
+            appBar: ScrollAppBar(
+              controller: controller,
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               systemOverlayStyle: SystemUiOverlayStyle(
                   statusBarIconBrightness:
@@ -111,12 +114,15 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            body: child,
+            body: FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
             floatingActionButton: FloatingActionButton(
               elevation: 10,
-              onPressed: _incrementCounter,
-              tooltip: 'Increment',
-              child: const Icon(Icons.add),
+              onPressed: _fabAction,
+              tooltip: 'Fab',
+              child: const Icon(Icons.shuffle),
             ),
           );
         });
