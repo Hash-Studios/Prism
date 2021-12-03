@@ -141,6 +141,10 @@ You can also report bugs, upload your setups/walls on our telegram channel
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
+### v2.7.0
+- Temporarily removed themes for now
+- Fix download and set wall bugs
+
 ### v2.6.9
 - Laid support for Prism v3
 - New model for users

@@ -1,5 +1,9 @@
 ## Changelog
 
+### v2.7.0
+- Temporarily removed themes for now
+- Fix download and set wall bugs
+
 ### v2.6.9
 - Laid support for Prism v3
 - New model for users

@@ -42,6 +42,13 @@ void showChangelog(BuildContext context, Function func) {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
+                    ChangeVersion(number: 'v2.7.0'),
+                    Change(
+                        icon: JamIcons.download,
+                        text: "Fix wallpaper download bugs."),
+                    Change(
+                        icon: JamIcons.eye,
+                        text: "Temporarily removed themes for now."),
                     ChangeVersion(number: 'v2.6.9'),
                     Change(
                         icon: JamIcons.eye,
