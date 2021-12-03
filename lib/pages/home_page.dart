@@ -5,6 +5,7 @@ import 'package:prism/controllers/theme_controller.dart';
 import 'package:prism/router/app_router.dart';
 import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/navigation_bar.dart';
+import 'package:prism/widgets/scroll_navigation_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:scroll_app_bar/scroll_app_bar.dart';
 
@@ -82,7 +83,9 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            bottomNavigationBar: NavigationBar(
+            bottomNavigationBar: ScrollNavigationBar(
+              elevation: 0,
+              controller: controller,
               selectedIndex: tabsRouter.activeIndex,
               onDestinationSelected: (value) {
                 tabsRouter.setActiveIndex(value);
