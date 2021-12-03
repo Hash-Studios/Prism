@@ -54,3 +54,6 @@ android/app/build.gradle
 android/google-play-console.json
 android/key.jks
 android/android_keys.zip
+
+# Generated code
+*.gr.dart

@@ -1,11 +1,13 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:prism/const/app_color.dart';
 import 'package:prism/const/app_data.dart';
 import 'package:prism/controllers/theme_controller.dart';
+import 'package:prism/router/app_router.dart';
+import 'package:prism/router/route_observer.dart';
 import 'package:prism/services/locator.dart';
-import 'package:prism/services/logger.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
@@ -33,7 +35,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeController = context.watch<ThemeController>();
-    return MaterialApp(
+    final _appRouter = locator<AppRouter>();
+    return MaterialApp.router(
+      routerDelegate: AutoRouterDelegate(
+        _appRouter,
+        navigatorObservers: () => [AppRouteObserver()],
+      ),
+      routeInformationParser: _appRouter.defaultRouteParser(),
       title: 'Prism',
       theme: themeController.useFlexColorScheme
           ? FlexThemeData.light(
@@ -146,58 +154,6 @@ class MyApp extends StatelessWidget {
               ),
             ),
       themeMode: themeController.themeMode,
-      home: const MyHomePage(title: 'Prism'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  @override
-  void initState() {
-    super.initState();
-    logger.d('App init done.');
-  }
-
-  void _incrementCounter() {
-    context.read<ThemeController>().setSchemeIndex(
-          (context.read<ThemeController>().schemeIndex + 1) % 40,
-        );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'Current theme index:',
-            ),
-            Text(
-              '${context.read<ThemeController>().schemeIndex}',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }
