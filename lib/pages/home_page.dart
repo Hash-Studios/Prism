@@ -29,6 +29,47 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Prism'),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.search),
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.filter_list),
+          ),
+        ],
+      ),
+      bottomNavigationBar: SizedBox(
+        height: 56 + 8,
+        width: MediaQuery.of(context).size.width,
+        child: BottomNavigationBar(
+          selectedFontSize: 12,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.image),
+              icon: Icon(Icons.image_outlined),
+              label: 'Walls',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.imagesearch_roller),
+              icon: Icon(Icons.imagesearch_roller_outlined),
+              label: 'Setups',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.notifications),
+              icon: Icon(Icons.notifications_outlined),
+              label: 'Notifications',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.person),
+              icon: Icon(Icons.person_outlined),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
       body: Center(
         child: Card(
