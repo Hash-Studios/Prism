@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prism/widgets/scroll_navigation_bar_controller.dart';
 import 'package:scroll_app_bar/scroll_app_bar.dart';
 
 class SetupsPage extends StatelessWidget {
@@ -9,7 +10,7 @@ class SetupsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Snap(
-      controller: controller.appBar,
+      controller: controller.bottomNavigationBar,
       child: ListView.builder(
         controller: controller,
         itemCount: 200,
