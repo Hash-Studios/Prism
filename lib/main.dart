@@ -1,9 +1,11 @@
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:prism/const/app_color.dart';
 import 'package:prism/const/app_data.dart';
 import 'package:prism/controllers/theme_controller.dart';
 import 'package:prism/services/locator.dart';
+import 'package:prism/services/logger.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
@@ -11,11 +13,18 @@ void main() async {
   setupLocator();
   final ThemeController themeController = ThemeController();
   await themeController.init();
-  runApp(MultiProvider(providers: [
-    ChangeNotifierProvider(
-      create: (_) => themeController,
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => themeController,
+        ),
+      ],
+      child: Phoenix(
+        child: const MyApp(),
+      ),
     ),
-  ], child: const MyApp()));
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -152,6 +161,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  @override
+  void initState() {
+    super.initState();
+    logger.d('App init done.');
+  }
+
   void _incrementCounter() {
     context.read<ThemeController>().setSchemeIndex(
           (context.read<ThemeController>().schemeIndex + 1) % 40,
