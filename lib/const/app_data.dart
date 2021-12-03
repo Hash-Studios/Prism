@@ -70,7 +70,7 @@ class AppData {
 
   // Get the main font that is used in some of the examples.
   // Feel free to try different fonts.
-  static String? get font => GoogleFonts.notoSans().fontFamily;
+  static String? get font => GoogleFonts.poppins().fontFamily;
 
   // Defining the visual density here to so we can change it in one spot when
   // we want to try different options.

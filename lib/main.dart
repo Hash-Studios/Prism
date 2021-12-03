@@ -136,7 +136,7 @@ class MyApp extends StatelessWidget {
                 platform: themeController.platform,
               ),
             ),
-      themeMode: ThemeMode.light,
+      themeMode: themeController.themeMode,
       home: const MyHomePage(title: 'Prism'),
     );
   }
