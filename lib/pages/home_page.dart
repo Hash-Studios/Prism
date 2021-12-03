@@ -1,3 +1,4 @@
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:prism/controllers/theme_controller.dart';
@@ -104,12 +105,40 @@ class _HomePageState extends State<HomePage> {
                   '${context.read<ThemeController>().schemeIndex}',
                   style: Theme.of(context).textTheme.headline4,
                 ),
+                SwitchListTile(
+                  title: const Text('True Black'),
+                  value: context.read<ThemeController>().darkIsTrueBlack,
+                  onChanged: (value) {
+                    context.read<ThemeController>().setDarkIsTrueBlack(value);
+                  },
+                ),
+                SwitchListTile(
+                  title: const Text('True White'),
+                  value: context.read<ThemeController>().lightIsWhite,
+                  onChanged: (value) {
+                    context.read<ThemeController>().setLightIsWhite(value);
+                  },
+                ),
+                SwitchListTile(
+                  title: const Text('Level Surfaces'),
+                  value: context.read<ThemeController>().surfaceMode ==
+                      FlexSurfaceMode.levelSurfacesLowScaffold,
+                  onChanged: (value) {
+                    context.read<ThemeController>().setSurfaceMode(value
+                        ? FlexSurfaceMode.levelSurfacesLowScaffold
+                        : FlexSurfaceMode.highScaffoldLowSurface);
+                    value
+                        ? context.read<ThemeController>().setBlendLevel(30)
+                        : context.read<ThemeController>().setBlendLevel(18);
+                  },
+                ),
               ],
             ),
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        elevation: 10,
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
