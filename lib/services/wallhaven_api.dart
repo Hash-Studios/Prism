@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:prism/model/wallhaven_search_response_model.dart';
-import 'package:prism/model/wallhaven_wall_model.dart';
+import 'package:prism/model/wallhaven/wallhaven_search_response_model.dart';
+import 'package:prism/model/wallhaven/wallhaven_wall_model.dart';
 import 'package:prism/services/logger.dart';
 
 class WallHavenAPI {
