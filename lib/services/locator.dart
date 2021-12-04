@@ -3,6 +3,8 @@ import 'package:prism/controllers/theme_controller.dart';
 import 'package:prism/router/app_router.dart';
 import 'package:prism/services/theme_pref_service.dart';
 import 'package:prism/services/theme_service.dart';
+import 'package:prism/services/wallhaven_api.dart';
+import 'package:prism/services/wallhaven_service.dart';
 
 import 'logger.dart';
 
@@ -13,6 +15,8 @@ void setupLocator() {
   locator.registerFactory<ThemeController>(() => ThemeController());
   locator.registerSingleton<AppRouter>(AppRouter());
   locator.registerLazySingleton<ThemeService>(() => ThemeServicePrefs());
+  locator.registerLazySingleton<WallHavenAPI>(() => WallHavenAPI());
+  locator.registerLazySingleton<WallHavenService>(() => WallHavenService());
   logger.d('Locator setup took ${stopwatch.elapsedMilliseconds} ms');
   stopwatch.stop();
 }

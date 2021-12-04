@@ -46,6 +46,7 @@ dependencies:
   logger: ^1.1.0
   path_provider: ^2.0.7
   provider: ^6.0.1
+  rxdart: ^0.27.3
   scroll_app_bar: ^2.0.0
   shared_preferences: ^2.0.9
   sprung: ^3.0.0

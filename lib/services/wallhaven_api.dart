@@ -14,6 +14,10 @@ class WallHavenAPI {
     ),
   );
 
+  void dispose() {
+    _dio.close();
+  }
+
   Future<Response?> _get({
     required uri,
     Map<String, String>? headers,
