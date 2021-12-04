@@ -1,3 +1,5 @@
+// The code below is from the master branch of scroll_bottom_navigation_bar package from pub.dev.
+
 import 'package:flutter/material.dart';
 import 'package:prism/widgets/navigation_bar.dart';
 import 'package:prism/widgets/navigation_bar_theme.dart';
