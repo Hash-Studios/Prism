@@ -1,6 +1,5 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:prism/controllers/theme_controller.dart';
 import 'package:prism/router/app_router.dart';
 import 'package:prism/services/logger.dart';
@@ -33,8 +32,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final darkAppBarContents =
-        Theme.of(context).scaffoldBackgroundColor.computeLuminance() > 0.5;
     return AutoTabsRouter(
         routes: [
           const WallsRoute(),
@@ -48,38 +45,17 @@ class _HomePageState extends State<HomePage> {
           return Scaffold(
             appBar: ScrollAppBar(
               controller: controller,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarIconBrightness:
-                      darkAppBarContents ? Brightness.dark : Brightness.light),
-              title: Text(
+              title: const Text(
                 'Prism',
-                style: TextStyle(
-                  color: darkAppBarContents
-                      ? Theme.of(context)
-                          .bottomNavigationBarTheme
-                          .unselectedItemColor
-                      : Theme.of(context).appBarTheme.titleTextStyle?.color,
-                ),
               ),
               actions: [
                 IconButton(
                   onPressed: () {},
                   icon: const Icon(Icons.search),
-                  color: darkAppBarContents
-                      ? Theme.of(context)
-                          .bottomNavigationBarTheme
-                          .unselectedItemColor
-                      : Theme.of(context).appBarTheme.titleTextStyle?.color,
                 ),
                 IconButton(
                   onPressed: () {},
                   icon: const Icon(Icons.filter_list),
-                  color: darkAppBarContents
-                      ? Theme.of(context)
-                          .bottomNavigationBarTheme
-                          .unselectedItemColor
-                      : Theme.of(context).appBarTheme.titleTextStyle?.color,
                 ),
               ],
             ),
