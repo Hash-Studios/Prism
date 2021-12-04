@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:prism/model/wallhaven_search_response_model.dart';
+import 'package:prism/model/wallhaven_wall_model.dart';
 import 'package:prism/services/logger.dart';
 
 class WallHavenAPI {
@@ -87,8 +88,18 @@ class WallHavenAPI {
     if (res == null) {
       return null;
     }
-    logger.i(WallHavenSearchResponse.fromJson(res.data).data.first.toJson());
-    logger.i(WallHavenSearchResponse.fromJson(res.data).meta.toJson());
     return WallHavenSearchResponse.fromJson(res.data);
+  }
+
+  Future<WallHavenWall?> getWallById({
+    required String id,
+  }) async {
+    final Response? res = await _get(
+      uri: '/w/$id',
+    );
+    if (res == null) {
+      return null;
+    }
+    return WallHavenWall.fromJson(res.data['data']);
   }
 }
