@@ -15,6 +15,20 @@ class AuthService {
   auth.User? get user => _user;
   PrismUsersV2? get prismUsersV2 => _prismUsersV2;
 
+  Stream<auth.User?> get authStream => _firebaseAuth.userChanges();
+
+  AuthService() {
+    authStream.listen((event) {
+      if (event != null) {
+        if (_user != null) {
+          if (event != _user) {
+            updatePrismUserFromUser(event);
+          }
+        }
+      }
+    });
+  }
+
   Future<void> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleSignInAccount =
@@ -36,74 +50,7 @@ class AuthService {
       assert(_user!.photoURL != null);
 
       if (_user != null) {
-        final List<DocumentSnapshot<Map<String, dynamic>>?> usersData =
-            await getUsersData(user);
-        // User exists in both. Therefore go ahead with the new collection, and forget the old one.
-        logger.d("USERDATA0 ${usersData[0]}");
-        logger.d("USERDATA1 ${usersData[1]}");
-        if (usersData[0] != null && usersData[1] != null) {
-          final doc = usersData[1]!;
-          _prismUsersV2 = PrismUsersV2.fromDocumentSnapshot(doc, _user!);
-          FirebaseFirestore.instance
-              .collection(USER_NEW_COLLECTION)
-              .doc(_prismUsersV2!.id)
-              .update({
-            'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
-            'loggedIn': true,
-          });
-          logger.d("USERDATA CASE1");
-        }
-        // User exists in old database. Copy/create him in the new db.
-        else if (usersData[0] != null && usersData[1] == null) {
-          final doc = usersData[0]!;
-          _prismUsersV2 = PrismUsersV2.fromDocumentSnapshot(doc, _user!);
-          FirebaseFirestore.instance
-              .collection(USER_NEW_COLLECTION)
-              .doc(_prismUsersV2!.id)
-              .set(_prismUsersV2!.toJson());
-          logger.d("USERDATA CASE2");
-        }
-        // User exists in new database. Simply sign him in.
-        else if (usersData[0] == null && usersData[1] != null) {
-          final doc = usersData[1]!;
-          _prismUsersV2 = PrismUsersV2.fromDocumentSnapshot(doc, _user!);
-          FirebaseFirestore.instance
-              .collection(USER_NEW_COLLECTION)
-              .doc(_prismUsersV2!.id)
-              .update({
-            'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
-            'loggedIn': true,
-          });
-          logger.d("USERDATA CASE3");
-        }
-        // User exists in none. Create new data in new db and sign him in.
-        else {
-          _prismUsersV2 = PrismUsersV2(
-            name: _user!.displayName!,
-            bio: "",
-            createdAt: DateTime.now().toUtc().toIso8601String(),
-            email: _user!.email!,
-            username: _user!.displayName!,
-            followers: [],
-            following: [],
-            id: _user!.uid,
-            lastLoginAt: DateTime.now().toUtc().toIso8601String(),
-            links: {},
-            premium: false,
-            loggedIn: true,
-            profilePhoto: _user!.photoURL!,
-            badges: [],
-            coins: 0,
-            subPrisms: [],
-            transactions: [],
-            coverPhoto: "",
-          );
-          FirebaseFirestore.instance
-              .collection(USER_NEW_COLLECTION)
-              .doc(_prismUsersV2!.id)
-              .set(_prismUsersV2!.toJson());
-          logger.d("USERDATA CASE4");
-        }
+        updatePrismUserFromUser(_user!);
       } else {
         logger.i("Login unsuccessful!");
       }
@@ -155,5 +102,76 @@ class AuthService {
       getUsersDataFromCollection(user, USER_NEW_COLLECTION)
     ]).then((value) => output = value);
     return output;
+  }
+
+  Future<void> updatePrismUserFromUser(auth.User event) async {
+    final List<DocumentSnapshot<Map<String, dynamic>>?> usersData =
+        await getUsersData(event);
+    // User exists in both. Therefore go ahead with the new collection, and forget the old one.
+    logger.d("USERDATA0 ${usersData[0]}");
+    logger.d("USERDATA1 ${usersData[1]}");
+    if (usersData[0] != null && usersData[1] != null) {
+      final doc = usersData[1]!;
+      _prismUsersV2 = PrismUsersV2.fromDocumentSnapshot(doc, event);
+      FirebaseFirestore.instance
+          .collection(USER_NEW_COLLECTION)
+          .doc(_prismUsersV2!.id)
+          .update({
+        'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
+        'loggedIn': true,
+      });
+      logger.d("USERDATA CASE1");
+    }
+    // User exists in old database. Copy/create him in the new db.
+    else if (usersData[0] != null && usersData[1] == null) {
+      final doc = usersData[0]!;
+      _prismUsersV2 = PrismUsersV2.fromDocumentSnapshot(doc, event);
+      FirebaseFirestore.instance
+          .collection(USER_NEW_COLLECTION)
+          .doc(_prismUsersV2!.id)
+          .set(_prismUsersV2!.toJson());
+      logger.d("USERDATA CASE2");
+    }
+    // User exists in new database. Simply sign him in.
+    else if (usersData[0] == null && usersData[1] != null) {
+      final doc = usersData[1]!;
+      _prismUsersV2 = PrismUsersV2.fromDocumentSnapshot(doc, event);
+      FirebaseFirestore.instance
+          .collection(USER_NEW_COLLECTION)
+          .doc(_prismUsersV2!.id)
+          .update({
+        'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
+        'loggedIn': true,
+      });
+      logger.d("USERDATA CASE3");
+    }
+    // User exists in none. Create new data in new db and sign him in.
+    else {
+      _prismUsersV2 = PrismUsersV2(
+        name: event.displayName!,
+        bio: "",
+        createdAt: DateTime.now().toUtc().toIso8601String(),
+        email: event.email!,
+        username: event.displayName!,
+        followers: [],
+        following: [],
+        id: event.uid,
+        lastLoginAt: DateTime.now().toUtc().toIso8601String(),
+        links: {},
+        premium: false,
+        loggedIn: true,
+        profilePhoto: event.photoURL!,
+        badges: [],
+        coins: 0,
+        subPrisms: [],
+        transactions: [],
+        coverPhoto: "",
+      );
+      FirebaseFirestore.instance
+          .collection(USER_NEW_COLLECTION)
+          .doc(_prismUsersV2!.id)
+          .set(_prismUsersV2!.toJson());
+      logger.d("USERDATA CASE4");
+    }
   }
 }
