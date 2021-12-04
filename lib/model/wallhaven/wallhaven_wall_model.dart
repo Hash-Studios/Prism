@@ -1,7 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:prism/model/wallhaven_tag_model.dart';
-import 'package:prism/model/wallhaven_thumb_model.dart';
-import 'package:prism/model/wallhaven_uploader_model.dart';
+import 'package:prism/model/wallhaven/wallhaven_tag_model.dart';
+import 'package:prism/model/wallhaven/wallhaven_thumb_model.dart';
+import 'package:prism/model/wallhaven/wallhaven_uploader_model.dart';
 
 part 'wallhaven_wall_model.g.dart';
 

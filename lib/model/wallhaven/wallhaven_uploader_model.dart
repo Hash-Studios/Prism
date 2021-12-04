@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:prism/model/wallhaven_avatar_model.dart';
+import 'package:prism/model/wallhaven/wallhaven_avatar_model.dart';
 
 part 'wallhaven_uploader_model.g.dart';
 

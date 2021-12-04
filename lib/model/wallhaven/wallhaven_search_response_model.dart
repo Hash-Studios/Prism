@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:prism/model/wallhaven_search_meta_model.dart';
-import 'package:prism/model/wallhaven_wall_model.dart';
+import 'package:prism/model/wallhaven/wallhaven_search_meta_model.dart';
+import 'package:prism/model/wallhaven/wallhaven_wall_model.dart';
 
 part 'wallhaven_search_response_model.g.dart';
 
