@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
-import 'package:prism/model/wallhaven/wallhaven_categories.dart';
-import 'package:prism/model/wallhaven/wallhaven_purity.dart';
-import 'package:prism/model/wallhaven/wallhaven_sorting.dart';
 import 'package:prism/model/wallhaven/wallhaven_wall_model.dart';
 import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/inherited_container.dart';
@@ -19,16 +16,6 @@ class WallsPage extends StatefulWidget {
 
 class _WallsPageState extends State<WallsPage> {
   late ScrollController controller;
-  @override
-  void initState() {
-    Future.delayed(Duration.zero, () {
-      context.read<WallHavenController>().purity = Purity.onlySfw;
-      context.read<WallHavenController>().categories = Categories.onlyGeneral;
-      context.read<WallHavenController>().sorting = Sorting.dateAdded;
-      context.read<WallHavenController>().getSearchResults();
-    });
-    super.initState();
-  }
 
   @override
   void didChangeDependencies() {
