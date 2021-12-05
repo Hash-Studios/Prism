@@ -18,6 +18,14 @@ class WallHavenService {
       _wallSearchSubject.stream;
   ValueStream<SearchState> get searchStateStream => _searchStateSubject.stream;
 
+  bool showGeneralCategory = true;
+  bool showAnimeCategory = true;
+  bool showPeopleCategory = true;
+
+  bool showSFWPurity = true;
+  bool showSketchyPurity = false;
+  bool showNSFWPurity = false;
+
   Categories categories = Categories.all;
   Purity purity = Purity.onlySfw;
   int page = 1;
@@ -29,6 +37,30 @@ class WallHavenService {
     _wallHavenAPI.dispose();
     _wallSearchSubject.close();
     _searchStateSubject.close();
+  }
+
+  void updateCategory() {
+    String _categories = Categories.all.toIntString();
+    if (!showGeneralCategory) _categories = '0' + _categories.substring(1);
+    if (!showAnimeCategory) _categories = _categories[0] + '0' + _categories[2];
+    if (!showPeopleCategory) _categories = _categories.substring(0, 2) + '0';
+    if (_categories == '000') {
+      _categories = '100';
+      showGeneralCategory = true;
+    }
+    categories = fromIntStringC(_categories);
+  }
+
+  void updatePurity() {
+    String _purity = Purity.all.toIntString();
+    if (!showSFWPurity) _purity = '0' + _purity.substring(1);
+    if (!showSketchyPurity) _purity = _purity[0] + '0' + _purity[2];
+    if (!showNSFWPurity) _purity = _purity.substring(0, 2) + '0';
+    if (_purity == '000') {
+      _purity = '100';
+      showSFWPurity = true;
+    }
+    purity = fromIntStringP(_purity);
   }
 
   Future<void> clearSearchResults() async {

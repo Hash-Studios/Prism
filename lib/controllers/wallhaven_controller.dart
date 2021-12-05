@@ -16,13 +16,57 @@ class WallHavenController with ChangeNotifier {
       _wallHavenService.wallSearchStream;
   Stream<SearchState> get searchStateStream =>
       _wallHavenService.searchStateStream;
+  SearchState? get searchState =>
+      _wallHavenService.searchStateStream.valueOrNull;
 
+  bool get showGeneralCategory => _wallHavenService.showGeneralCategory;
+  bool get showAnimeCategory => _wallHavenService.showAnimeCategory;
+  bool get showPeopleCategory => _wallHavenService.showPeopleCategory;
+  bool get showSFWPurity => _wallHavenService.showSFWPurity;
+  bool get showSketchyPurity => _wallHavenService.showSketchyPurity;
+  bool get showNSFWPurity => _wallHavenService.showNSFWPurity;
   Categories get categories => _wallHavenService.categories;
   Purity get purity => _wallHavenService.purity;
   int get page => _wallHavenService.page;
   Order get order => _wallHavenService.order;
   Sorting get sorting => _wallHavenService.sorting;
   String? get query => _wallHavenService.query;
+
+  set showGeneralCategory(bool showGeneralCategory) {
+    _wallHavenService.showGeneralCategory = showGeneralCategory;
+    logger.i("showGeneralCategory: $showGeneralCategory");
+    notifyListeners();
+  }
+
+  set showAnimeCategory(bool showAnimeCategory) {
+    _wallHavenService.showAnimeCategory = showAnimeCategory;
+    logger.i("showAnimeCategory: $showAnimeCategory");
+    notifyListeners();
+  }
+
+  set showPeopleCategory(bool showPeopleCategory) {
+    _wallHavenService.showPeopleCategory = showPeopleCategory;
+    logger.i("showPeopleCategory: $showPeopleCategory");
+    notifyListeners();
+  }
+
+  set showSFWPurity(bool showSFWPurity) {
+    _wallHavenService.showSFWPurity = showSFWPurity;
+    logger.i("showSFWPurity: $showSFWPurity");
+    notifyListeners();
+  }
+
+  set showSketchyPurity(bool showSketchyPurity) {
+    _wallHavenService.showSketchyPurity = showSketchyPurity;
+    logger.i("showSketchyPurity: $showSketchyPurity");
+    notifyListeners();
+  }
+
+  set showNSFWPurity(bool showNSFWPurity) {
+    _wallHavenService.showNSFWPurity = showNSFWPurity;
+    logger.i("showNSFWPurity: $showNSFWPurity");
+    notifyListeners();
+  }
 
   set categories(Categories categories) {
     _wallHavenService.categories = categories;
@@ -57,6 +101,18 @@ class WallHavenController with ChangeNotifier {
   set query(String? query) {
     _wallHavenService.query = query;
     logger.i("query: $query");
+    notifyListeners();
+  }
+
+  void updateCategory() {
+    _wallHavenService.updateCategory();
+    logger.i("categories: ${categories.toShortString()}");
+    notifyListeners();
+  }
+
+  void updatePurity() {
+    _wallHavenService.updatePurity();
+    logger.i("purity: ${purity.toShortString()}");
     notifyListeners();
   }
 
