@@ -79,6 +79,19 @@ class ProfilePage extends StatelessWidget {
                 onChanged:
                     context.read<ThemeController>().setTransparentStatusBar,
               ),
+              SwitchListTile.adaptive(
+                  title: const Text('forBackground TabBar'),
+                  value: context.read<ThemeController>().tabBarStyle ==
+                      FlexTabBarStyle.forBackground,
+                  onChanged: (value) {
+                    value
+                        ? context
+                            .read<ThemeController>()
+                            .setTabBarStyle(FlexTabBarStyle.forBackground)
+                        : context
+                            .read<ThemeController>()
+                            .setTabBarStyle(FlexTabBarStyle.forAppBar);
+                  }),
               if (isLight)
                 ListTile(
                   title: const Text('Light mode color'),
