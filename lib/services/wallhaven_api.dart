@@ -73,8 +73,8 @@ class WallHavenAPI {
   Future<WallHavenSearchResponse?> getSearchResults({
     String? query,
     int page = 1,
-    int categories = 111,
-    int purity = 100,
+    String categories = '111',
+    String purity = '100',
     String sorting = 'random',
     String order = 'desc',
   }) async {
@@ -83,8 +83,8 @@ class WallHavenAPI {
       body: {
         'q': query,
         'page': '$page',
-        'categories': '$categories',
-        'purity': '$purity',
+        'categories': categories,
+        'purity': purity,
         'sorting': sorting,
         'order': order,
       },

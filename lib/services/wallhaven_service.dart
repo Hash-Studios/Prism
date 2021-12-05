@@ -34,10 +34,10 @@ class WallHavenService {
     _searchStateSubject.add(SearchState.busy);
     final WallHavenSearchResponse? _wallSearchResponse =
         await _wallHavenAPI.getSearchResults(
-      categories: categories.toInt(),
+      categories: categories.toIntString(),
       order: order.toShortString(),
       page: page,
-      purity: purity.toInt(),
+      purity: purity.toIntString(),
       query: query,
       sorting: sorting.toShortString(),
     );
