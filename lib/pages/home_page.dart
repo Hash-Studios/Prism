@@ -6,6 +6,7 @@ import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/inherited_container.dart';
 import 'package:prism/widgets/navigation_bar.dart';
 import 'package:prism/widgets/scroll_navigation_bar.dart';
+import 'package:prism/widgets/wall_filter_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:scroll_app_bar/scroll_app_bar.dart';
 
@@ -72,7 +73,19 @@ class _HomePageState extends State<HomePage> {
                   icon: const Icon(Icons.search),
                 ),
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    if (tabsRouter.activeIndex == 0) {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        elevation: 0,
+                        backgroundColor: Colors.transparent,
+                        routeSettings:
+                            const RouteSettings(name: '/filter_sheet'),
+                        builder: (context) => const WallFilterSheet(),
+                      );
+                    }
+                  },
                   icon: const Icon(Icons.filter_list),
                 ),
               ],
