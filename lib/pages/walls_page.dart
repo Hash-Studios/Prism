@@ -1,116 +1,88 @@
-import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
-import 'package:prism/const/app_color.dart';
-import 'package:prism/controllers/theme_controller.dart';
-import 'package:prism/widgets/app_bar_style_buttons.dart';
+import 'package:prism/controllers/wallhaven_controller.dart';
+import 'package:prism/model/wallhaven/wallhaven_categories.dart';
+import 'package:prism/model/wallhaven/wallhaven_purity.dart';
+import 'package:prism/model/wallhaven/wallhaven_sorting.dart';
+import 'package:prism/model/wallhaven/wallhaven_wall_model.dart';
+import 'package:prism/services/logger.dart';
+import 'package:prism/widgets/inherited_container.dart';
+import 'package:prism/widgets/scroll_navigation_bar_controller.dart';
 import 'package:provider/provider.dart';
+import 'package:scroll_app_bar/scroll_app_bar.dart';
 
-class WallsPage extends StatelessWidget {
+class WallsPage extends StatefulWidget {
   const WallsPage({Key? key}) : super(key: key);
 
-  String explainAppBarStyle(final FlexAppBarStyle style, final bool isLight) {
-    switch (style) {
-      case FlexAppBarStyle.primary:
-        return isLight ? 'Primary color - Default' : 'Primary color';
-      case FlexAppBarStyle.material:
-        return isLight
-            ? 'White background'
-            : 'Dark background (#121212) - Default';
-      case FlexAppBarStyle.surface:
-        return 'Surface, with primary color blend';
-      case FlexAppBarStyle.background:
-        return 'Background, with primary color blend';
-      case FlexAppBarStyle.custom:
-        return 'Built-in schemes use secondary variant color, '
-            'but you can use any color';
-    }
+  @override
+  State<WallsPage> createState() => _WallsPageState();
+}
+
+class _WallsPageState extends State<WallsPage> {
+  late ScrollController controller;
+  @override
+  void initState() {
+    Future.delayed(Duration.zero, () {
+      context.read<WallHavenController>().purity = Purity.onlySfw;
+      context.read<WallHavenController>().categories = Categories.onlyGeneral;
+      context.read<WallHavenController>().sorting = Sorting.dateAdded;
+      context.read<WallHavenController>().getSearchResults();
+    });
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    controller = InheritedContainer.of(context)!.controller;
+    controller.addListener(() {
+      if (controller.position.atEdge) {
+        if (controller.position.pixels != 0) {
+          context.read<WallHavenController>().page += 1;
+          context.read<WallHavenController>().getSearchResults();
+        }
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isLight = Theme.of(context).brightness == Brightness.light;
-    return Center(
-      child: Card(
-        margin: const EdgeInsets.all(16),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Text(
-                'Current theme index:',
-              ),
-              Text(
-                '${context.read<ThemeController>().schemeIndex}',
-                style: Theme.of(context).textTheme.headline4,
-              ),
-              SwitchListTile.adaptive(
-                title: const Text('True Black'),
-                value: context.read<ThemeController>().darkIsTrueBlack,
-                onChanged: (value) {
-                  context.read<ThemeController>().setDarkIsTrueBlack(value);
-                },
-              ),
-              SwitchListTile.adaptive(
-                title: const Text('True White'),
-                value: context.read<ThemeController>().lightIsWhite,
-                onChanged: (value) {
-                  context.read<ThemeController>().setLightIsWhite(value);
-                },
-              ),
-              SwitchListTile.adaptive(
-                title: const Text('Level Surfaces'),
-                value: context.read<ThemeController>().surfaceMode ==
-                    FlexSurfaceMode.levelSurfacesLowScaffold,
-                onChanged: (value) {
-                  context.read<ThemeController>().setSurfaceMode(value
-                      ? FlexSurfaceMode.levelSurfacesLowScaffold
-                      : FlexSurfaceMode.highScaffoldLowSurface);
-                  value
-                      ? context.read<ThemeController>().setBlendLevel(30)
-                      : context.read<ThemeController>().setBlendLevel(18);
-                },
-              ),
-              SwitchListTile.adaptive(
-                title: const Text('Transparent Status bar'),
-                value: context.read<ThemeController>().transparentStatusBar,
-                onChanged:
-                    context.read<ThemeController>().setTransparentStatusBar,
-              ),
-              if (isLight)
-                ListTile(
-                  title: const Text('Light mode color'),
-                  subtitle: Text(
-                    explainAppBarStyle(
-                        context.read<ThemeController>().lightAppBarStyle,
-                        isLight),
+    return Snap(
+      controller: controller.bottomNavigationBar,
+      child: StreamBuilder<List<WallHavenWall>>(
+          stream: context.read<WallHavenController>().wallSearchStream,
+          builder: (context, snapshot) {
+            return RefreshIndicator(
+              onRefresh: () async {
+                await context.read<WallHavenController>().clearSearchResults();
+                await context.read<WallHavenController>().getSearchResults();
+              },
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1,
+                ),
+                controller: controller,
+                itemCount: snapshot.data?.length ?? 0,
+                itemBuilder: (context, index) => GestureDetector(
+                  onTap: () {
+                    logger.d('Tapped on ${snapshot.data?[index].url}');
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.all(16),
+                    child: SizedBox(
+                      height: 100,
+                      child: snapshot.connectionState == ConnectionState.waiting
+                          ? const Center(child: CircularProgressIndicator())
+                          : Image.network(
+                              snapshot.data?[index].thumbs.small ?? '',
+                              fit: BoxFit.cover,
+                            ),
+                    ),
                   ),
                 ),
-              if (isLight)
-                ListTile(
-                  trailing: AppBarStyleButtons(
-                      style: context.read<ThemeController>().lightAppBarStyle,
-                      onChanged:
-                          context.read<ThemeController>().setLightAppBarStyle,
-                      // To access the custom color we defined for app bar, in this
-                      // toggle buttons widget, we have to pass it in. It is not
-                      // carried with the theme so we cannot get it from there in
-                      // the widget. FlexColorScheme knows the color when
-                      // you switch to it. This is just to be able to show the
-                      // correct color on the 'custom' toggle button option. In our
-                      // example we only actually only have a custom app bar color
-                      // in the 1st custom color example, and we wanted to be
-                      // able to show it on the toggle button.
-                      customAppBarColor:
-                          AppColor.scheme(context.read<ThemeController>())
-                              .light
-                              .appBarColor),
-                ),
-            ],
-          ),
-        ),
-      ),
+              ),
+            );
+          }),
     );
   }
 }
