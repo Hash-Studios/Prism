@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
+import 'package:prism/model/wallhaven/wallhaven_search_state.dart';
 import 'package:prism/model/wallhaven/wallhaven_wall_model.dart';
 import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/inherited_container.dart';
@@ -24,8 +25,11 @@ class _WallsPageState extends State<WallsPage> {
     controller.addListener(() {
       if (controller.position.atEdge) {
         if (controller.position.pixels != 0) {
-          context.read<WallHavenController>().page += 1;
-          context.read<WallHavenController>().getSearchResults();
+          if (context.read<WallHavenController>().searchState !=
+              SearchState.busy) {
+            context.read<WallHavenController>().page += 1;
+            context.read<WallHavenController>().getSearchResults();
+          }
         }
       }
     });
