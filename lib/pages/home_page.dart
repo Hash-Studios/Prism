@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:prism/controllers/theme_controller.dart';
 import 'package:prism/router/app_router.dart';
 import 'package:prism/services/logger.dart';
+import 'package:prism/widgets/inherited_container.dart';
 import 'package:prism/widgets/navigation_bar.dart';
 import 'package:prism/widgets/scroll_navigation_bar.dart';
 import 'package:provider/provider.dart';
@@ -30,14 +31,31 @@ class _HomePageState extends State<HomePage> {
         );
   }
 
+  String appBarText(int index) {
+    switch (index) {
+      case 0:
+        return 'Walls';
+      case 1:
+        return 'Setups';
+      case 2:
+        return 'Notifications';
+      case 3:
+        return 'Profile';
+      default:
+        return 'Walls';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AutoTabsRouter(
-        routes: [
-          const WallsRoute(),
-          SetupsRoute(controller: controller),
-          const NotificationsRoute(),
-          const ProfileRoute(),
+    return InheritedContainer(
+      controller: controller,
+      child: AutoTabsRouter(
+        routes: const [
+          WallsRoute(),
+          SetupsRoute(),
+          NotificationsRoute(),
+          ProfileRoute(),
         ],
         homeIndex: 0,
         builder: (context, child, animation) {
@@ -45,8 +63,8 @@ class _HomePageState extends State<HomePage> {
           return Scaffold(
             appBar: ScrollAppBar(
               controller: controller,
-              title: const Text(
-                'Prism',
+              title: Text(
+                appBarText(tabsRouter.activeIndex),
               ),
               actions: [
                 IconButton(
@@ -104,6 +122,8 @@ class _HomePageState extends State<HomePage> {
               child: const Icon(Icons.shuffle),
             ),
           );
-        });
+        },
+      ),
+    );
   }
 }
