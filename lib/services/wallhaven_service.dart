@@ -4,16 +4,17 @@ import 'package:prism/model/wallhaven/wallhaven_purity.dart';
 import 'package:prism/model/wallhaven/wallhaven_search_response_model.dart';
 import 'package:prism/model/wallhaven/wallhaven_search_state.dart';
 import 'package:prism/model/wallhaven/wallhaven_sorting.dart';
+import 'package:prism/model/wallhaven/wallhaven_wall_model.dart';
 import 'package:prism/services/locator.dart';
 import 'package:prism/services/wallhaven_api.dart';
 import 'package:rxdart/rxdart.dart';
 
 class WallHavenService {
   final WallHavenAPI _wallHavenAPI = locator<WallHavenAPI>();
-  final _wallSearchSubject = BehaviorSubject<WallHavenSearchResponse>();
+  final _wallSearchSubject = BehaviorSubject<List<WallHavenWall>>();
   final _searchStateSubject =
       BehaviorSubject<SearchState>.seeded(SearchState.ready);
-  ValueStream<WallHavenSearchResponse> get wallSearchStream =>
+  ValueStream<List<WallHavenWall>> get wallSearchStream =>
       _wallSearchSubject.stream;
   ValueStream<SearchState> get searchStateStream => _searchStateSubject.stream;
 
@@ -21,13 +22,30 @@ class WallHavenService {
   Purity purity = Purity.onlySfw;
   int page = 1;
   Order order = Order.desc;
-  Sorting sorting = Sorting.random;
+  Sorting sorting = Sorting.dateAdded;
   String? query;
 
   void dispose() {
     _wallHavenAPI.dispose();
     _wallSearchSubject.close();
     _searchStateSubject.close();
+  }
+
+  Future<void> clearSearchResults() async {
+    page = 1;
+    _searchStateSubject.add(SearchState.busy);
+    _wallSearchSubject.add([]);
+    _searchStateSubject.add(SearchState.ready);
+  }
+
+  Future<void> clearSearchFilters() async {
+    categories = Categories.all;
+    purity = Purity.onlySfw;
+  }
+
+  Future<void> clearSearchSorting() async {
+    sorting = Sorting.dateAdded;
+    order = Order.desc;
   }
 
   Future<void> getSearchResults() async {
@@ -42,7 +60,10 @@ class WallHavenService {
       sorting: sorting.toShortString(),
     );
     if (_wallSearchResponse != null) {
-      _wallSearchSubject.add(_wallSearchResponse);
+      final List<WallHavenWall> _currentData =
+          _wallSearchSubject.valueOrNull ?? [];
+      _currentData.addAll(_wallSearchResponse.data);
+      _wallSearchSubject.add(_currentData);
       _searchStateSubject.add(SearchState.ready);
     } else {
       _searchStateSubject.add(SearchState.error);

@@ -75,7 +75,7 @@ class WallHavenAPI {
     int page = 1,
     String categories = '111',
     String purity = '100',
-    String sorting = 'random',
+    String sorting = 'date_added',
     String order = 'desc',
   }) async {
     final Response? res = await _get(
