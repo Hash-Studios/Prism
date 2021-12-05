@@ -8,16 +8,16 @@ class WallHavenSearchMeta {
   int lastPage;
   int perPage;
   int total;
-  String query;
-  String seed;
+  String? query;
+  String? seed;
 
   WallHavenSearchMeta({
     required this.currentPage,
     required this.lastPage,
     required this.perPage,
     required this.total,
-    required this.query,
-    required this.seed,
+    this.query,
+    this.seed,
   });
 
   factory WallHavenSearchMeta.fromJson(Map<String, dynamic> json) =>
