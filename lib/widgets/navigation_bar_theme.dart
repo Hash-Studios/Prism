@@ -237,25 +237,26 @@ class NavigationBarTheme extends InheritedTheme {
           backgroundColor:
               Theme.of(context).bottomNavigationBarTheme.backgroundColor,
           indicatorColor:
-              Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+              Theme.of(context).colorScheme.primary.withOpacity(0.8),
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           labelTextStyle: MaterialStateProperty.resolveWith<TextStyle?>(
             (Set<MaterialState> states) {
               return Theme.of(context).textTheme.caption?.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context)
-                      .bottomNavigationBarTheme
-                      .unselectedItemColor);
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context)
+                        .bottomNavigationBarTheme
+                        .unselectedItemColor,
+                  );
             },
           ),
           iconTheme: MaterialStateProperty.resolveWith(
             (Set<MaterialState> states) {
-              // if (states.contains(MaterialState.selected)) {
-              //   return Theme.of(context)
-              //       .iconTheme
-              //       .copyWith(color: Theme.of(context).colorScheme.onSecondary);
-              // }
+              if (states.contains(MaterialState.selected)) {
+                return Theme.of(context)
+                    .iconTheme
+                    .copyWith(color: Theme.of(context).colorScheme.onSecondary);
+              }
               return Theme.of(context).iconTheme.copyWith(
                   color: Theme.of(context)
                       .bottomNavigationBarTheme
