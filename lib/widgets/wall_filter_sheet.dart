@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
+import 'package:prism/model/wallhaven/wallhaven_order.dart';
 import 'package:prism/model/wallhaven/wallhaven_sorting.dart';
 import 'package:provider/provider.dart';
 
@@ -178,15 +179,29 @@ class SortList extends StatelessWidget {
       controller: controller,
       children: [
         for (final sorting in Sorting.values)
-          RadioListTile<Sorting>(
+          ListTile(
             dense: true,
-            value: sorting,
-            groupValue: context.watch<WallHavenController>().sorting,
-            onChanged: (value) {
-              context.read<WallHavenController>().sorting =
-                  value ?? Sorting.dateAdded;
-            },
             title: Text(sorting.toText()),
+            leading: context.watch<WallHavenController>().sorting == sorting
+                ? sorting == Sorting.random
+                    ? const Icon(Icons.shuffle)
+                    : sorting == Sorting.toplist
+                        ? const Icon(Icons.military_tech_outlined)
+                        : context.watch<WallHavenController>().order ==
+                                Order.desc
+                            ? const Icon(Icons.arrow_downward)
+                            : const Icon(Icons.arrow_upward)
+                : const Icon(
+                    Icons.close,
+                    color: Colors.transparent,
+                  ),
+            onTap: () {
+              if (context.read<WallHavenController>().sorting == sorting) {
+                context.read<WallHavenController>().toggleOrder();
+              } else {
+                context.read<WallHavenController>().sorting = sorting;
+              }
+            },
           ),
       ],
     );
