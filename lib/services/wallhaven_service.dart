@@ -24,7 +24,6 @@ class WallHavenService {
 
   bool showSFWPurity = true;
   bool showSketchyPurity = false;
-  bool showNSFWPurity = false;
 
   Categories categories = Categories.all;
   Purity purity = Purity.onlySfw;
@@ -55,7 +54,6 @@ class WallHavenService {
     String _purity = Purity.all.toIntString();
     if (!showSFWPurity) _purity = '0' + _purity.substring(1);
     if (!showSketchyPurity) _purity = _purity[0] + '0' + _purity[2];
-    if (!showNSFWPurity) _purity = _purity.substring(0, 2) + '0';
     if (_purity == '000') {
       _purity = '100';
       showSFWPurity = true;
