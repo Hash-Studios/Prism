@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:prism/controllers/theme_controller.dart';
+import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/router/app_router.dart';
 import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/inherited_container.dart';
@@ -83,7 +84,12 @@ class _HomePageState extends State<HomePage> {
                         routeSettings:
                             const RouteSettings(name: '/filter_sheet'),
                         builder: (context) => const WallFilterSheet(),
-                      );
+                      ).then((value) {
+                        context
+                            .read<WallHavenController>()
+                            .clearSearchResults();
+                        context.read<WallHavenController>().getSearchResults();
+                      });
                     }
                   },
                   icon: const Icon(Icons.filter_list),
