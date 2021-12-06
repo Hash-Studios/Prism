@@ -158,16 +158,6 @@ class FilterList extends StatelessWidget {
           },
           title: const Text('Sketchy'),
         ),
-        CheckboxListTile(
-          controlAffinity: ListTileControlAffinity.leading,
-          dense: true,
-          value: context.watch<WallHavenController>().showNSFWPurity,
-          onChanged: (value) {
-            context.read<WallHavenController>().showNSFWPurity = value ?? true;
-            context.read<WallHavenController>().updatePurity();
-          },
-          title: const Text('NSFW'),
-        ),
       ],
     );
   }

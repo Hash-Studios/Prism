@@ -24,7 +24,6 @@ class WallHavenController with ChangeNotifier {
   bool get showPeopleCategory => _wallHavenService.showPeopleCategory;
   bool get showSFWPurity => _wallHavenService.showSFWPurity;
   bool get showSketchyPurity => _wallHavenService.showSketchyPurity;
-  bool get showNSFWPurity => _wallHavenService.showNSFWPurity;
   Categories get categories => _wallHavenService.categories;
   Purity get purity => _wallHavenService.purity;
   int get page => _wallHavenService.page;
@@ -59,12 +58,6 @@ class WallHavenController with ChangeNotifier {
   set showSketchyPurity(bool showSketchyPurity) {
     _wallHavenService.showSketchyPurity = showSketchyPurity;
     logger.i("showSketchyPurity: $showSketchyPurity");
-    notifyListeners();
-  }
-
-  set showNSFWPurity(bool showNSFWPurity) {
-    _wallHavenService.showNSFWPurity = showNSFWPurity;
-    logger.i("showNSFWPurity: $showNSFWPurity");
     notifyListeners();
   }
 
