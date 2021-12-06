@@ -97,6 +97,12 @@ class WallHavenController with ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleOrder() {
+    _wallHavenService.toggleOrder();
+    logger.i("order: ${order.toShortString()}");
+    notifyListeners();
+  }
+
   void updateCategory() {
     _wallHavenService.updateCategory();
     logger.i("categories: ${categories.toShortString()}");

@@ -61,6 +61,14 @@ class WallHavenService {
     purity = fromIntStringP(_purity);
   }
 
+  void toggleOrder() {
+    if (order == Order.desc) {
+      order = Order.asc;
+    } else {
+      order = Order.desc;
+    }
+  }
+
   Future<void> clearSearchResults() async {
     page = 1;
     _searchStateSubject.add(SearchState.busy);
