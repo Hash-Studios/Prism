@@ -473,15 +473,15 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                       trash: false,
                     ),
             ),
-            Positioned(
-              top: topOffset + fabWallTopOffset,
-              left: leftOffset + fabWallLeftOffset,
-              child: DownloadButton(
-                link: selectedProvider == "WallHaven"
-                    ? wdata.wallsS[index].path.toString()
-                    : pdata.wallsPS[index].src!["original"].toString(),
-              ),
-            ),
+            // Positioned(
+            //   top: topOffset + fabWallTopOffset,
+            //   left: leftOffset + fabWallLeftOffset,
+            //   child: DownloadButton(
+            //     link: selectedProvider == "WallHaven"
+            //         ? wdata.wallsS[index].path.toString()
+            //         : pdata.wallsPS[index].src!["original"].toString(),
+            //   ),
+            // ),
           ],
         ),
       );

@@ -2259,41 +2259,41 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           trash: false,
                                         ),
             ),
-            Positioned(
-              top: topOffset! + fabWallTopOffset,
-              left: leftOffset! + fabWallLeftOffset,
-              child: DownloadButton(
-                link: widget.provider == "WallHaven"
-                    ? WData.walls[widget.index].path.toString()
-                    : widget.provider == "Prism"
-                        ? Data.subPrismWalls![widget.index]["wallpaper_url"]
-                            .toString()
-                        : widget.provider == "ProfileWall"
-                            ? Provider.of<ProfileWallProvider>(context,
-                                    listen: false)
-                                .profileWalls![widget.index]["wallpaper_url"]
-                                .toString()
-                            : widget.provider == "UserProfileWall"
-                                ? Provider.of<UserData.UserProfileProvider>(
-                                        context)
-                                    .userProfileWalls![widget.index]
-                                    .data()["wallpaper_url"]
-                                    .toString()
-                                : widget.provider == "Pexels"
-                                    ? PData
-                                        .wallsP[widget.index].src!["original"]
-                                        .toString()
-                                    : widget.provider == "Liked"
-                                        ? Provider.of<FavouriteProvider>(
-                                                context,
-                                                listen: false)
-                                            .liked![widget.index]["url"]
-                                            .toString()
-                                        : PData.wallsC[widget.index]
-                                            .src!["original"]
-                                            .toString(),
-              ),
-            ),
+            // Positioned(
+            //   top: topOffset! + fabWallTopOffset,
+            //   left: leftOffset! + fabWallLeftOffset,
+            //   child: DownloadButton(
+            //     link: widget.provider == "WallHaven"
+            //         ? WData.walls[widget.index].path.toString()
+            //         : widget.provider == "Prism"
+            //             ? Data.subPrismWalls![widget.index]["wallpaper_url"]
+            //                 .toString()
+            //             : widget.provider == "ProfileWall"
+            //                 ? Provider.of<ProfileWallProvider>(context,
+            //                         listen: false)
+            //                     .profileWalls![widget.index]["wallpaper_url"]
+            //                     .toString()
+            //                 : widget.provider == "UserProfileWall"
+            //                     ? Provider.of<UserData.UserProfileProvider>(
+            //                             context)
+            //                         .userProfileWalls![widget.index]
+            //                         .data()["wallpaper_url"]
+            //                         .toString()
+            //                     : widget.provider == "Pexels"
+            //                         ? PData
+            //                             .wallsP[widget.index].src!["original"]
+            //                             .toString()
+            //                         : widget.provider == "Liked"
+            //                             ? Provider.of<FavouriteProvider>(
+            //                                     context,
+            //                                     listen: false)
+            //                                 .liked![widget.index]["url"]
+            //                                 .toString()
+            //                             : PData.wallsC[widget.index]
+            //                                 .src!["original"]
+            //                                 .toString(),
+            //   ),
+            // ),
           ],
         ),
       );
