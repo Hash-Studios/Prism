@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:math';
+import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/ads/adsNotifier.dart';
@@ -44,9 +46,34 @@ class DownloadButtonNew extends StatefulWidget {
 }
 
 class _DownloadButtonNewState extends State<DownloadButtonNew> {
+  ReceivePort _port = ReceivePort();
+
   @override
   void initState() {
     super.initState();
+    IsolateNameServer.registerPortWithName(
+        _port.sendPort, 'downloader_send_port');
+    _port.listen((dynamic data) {
+      String id = data[0] as String;
+      DownloadTaskStatus status = data[1] as DownloadTaskStatus;
+      int progress = data[2] as int;
+      setState(() {});
+    });
+
+    FlutterDownloader.registerCallback(downloadCallback);
+  }
+
+  static void downloadCallback(
+      String id, DownloadTaskStatus status, int progress) {
+    final SendPort send =
+        IsolateNameServer.lookupPortByName('downloader_send_port')!;
+    send.send([id, status, progress]);
+  }
+
+  @override
+  void dispose() {
+    IsolateNameServer.removePortNameMapping('downloader_send_port');
+    super.dispose();
   }
 
   @override
@@ -177,11 +204,35 @@ class DownloadButton extends StatefulWidget {
 
 class _DownloadButtonState extends State<DownloadButton> {
   late bool isLoading;
+  ReceivePort _port = ReceivePort();
 
   @override
   void initState() {
     isLoading = false;
+    IsolateNameServer.registerPortWithName(
+        _port.sendPort, 'downloader_send_port');
+    _port.listen((dynamic data) {
+      String id = data[0] as String;
+      DownloadTaskStatus status = data[1] as DownloadTaskStatus;
+      int progress = data[2] as int;
+      setState(() {});
+    });
+
+    FlutterDownloader.registerCallback(downloadCallback);
     super.initState();
+  }
+
+  static void downloadCallback(
+      String id, DownloadTaskStatus status, int progress) {
+    final SendPort send =
+        IsolateNameServer.lookupPortByName('downloader_send_port')!;
+    send.send([id, status, progress]);
+  }
+
+  @override
+  void dispose() {
+    IsolateNameServer.removePortNameMapping('downloader_send_port');
+    super.dispose();
   }
 
   @override
