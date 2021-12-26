@@ -60,6 +60,7 @@ dependencies:
   image_editor: ^1.0.1
   image_picker: ^0.8.4+3
   in_app_update: ^2.0.0
+  json_annotation: ^4.4.0
   json_serializable: ^6.0.1
   logger: ^1.0.0
   paginate_firestore: ^0.3.1

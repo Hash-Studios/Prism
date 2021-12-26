@@ -62,17 +62,15 @@ class BadgeAdapter extends TypeAdapter<Badge> {
 // JsonSerializableGenerator
 // **************************************************************************
 
-Badge _$BadgeFromJson(Map<String, dynamic> json) {
-  return Badge(
-    name: json['name'] as String,
-    description: json['description'] as String,
-    id: json['id'] as String,
-    awardedAt: json['awardedAt'] as String,
-    imageUrl: json['imageUrl'] as String,
-    color: json['color'] as String,
-    url: json['url'] as String,
-  );
-}
+Badge _$BadgeFromJson(Map<String, dynamic> json) => Badge(
+      name: json['name'] as String,
+      description: json['description'] as String,
+      id: json['id'] as String,
+      awardedAt: json['awardedAt'] as String,
+      imageUrl: json['imageUrl'] as String,
+      color: json['color'] as String,
+      url: json['url'] as String,
+    );
 
 Map<String, dynamic> _$BadgeToJson(Badge instance) => <String, dynamic>{
       'name': instance.name,

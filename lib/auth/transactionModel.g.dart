@@ -62,17 +62,16 @@ class PrismTransactionAdapter extends TypeAdapter<PrismTransaction> {
 // JsonSerializableGenerator
 // **************************************************************************
 
-PrismTransaction _$PrismTransactionFromJson(Map<String, dynamic> json) {
-  return PrismTransaction(
-    name: json['name'] as String,
-    description: json['description'] as String,
-    id: json['id'] as String,
-    amount: json['amount'] as String,
-    credit: json['credit'] as bool,
-    by: json['by'] as String,
-    processedAt: json['processedAt'] as String,
-  );
-}
+PrismTransaction _$PrismTransactionFromJson(Map<String, dynamic> json) =>
+    PrismTransaction(
+      name: json['name'] as String,
+      description: json['description'] as String,
+      id: json['id'] as String,
+      amount: json['amount'] as String,
+      credit: json['credit'] as bool,
+      by: json['by'] as String,
+      processedAt: json['processedAt'] as String,
+    );
 
 Map<String, dynamic> _$PrismTransactionToJson(PrismTransaction instance) =>
     <String, dynamic>{
