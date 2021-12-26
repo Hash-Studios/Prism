@@ -1,7 +1,9 @@
 import 'dart:ui';
+
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wdata;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
@@ -10,7 +12,6 @@ import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/logger/logger.dart';
 
 class SearchFocusedMenuDetails extends StatelessWidget {
   final String? selectedProvider;
@@ -136,7 +137,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                     width: childSize!.width,
                     height: childSize!.height * 6 / 8,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).hintColor,
+                      color: Theme.of(context).backgroundColor,
                       borderRadius:
                           const BorderRadius.all(Radius.circular(20.0)),
                     ),
@@ -265,7 +266,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Theme.of(context).hintColor,
+                                    color: Theme.of(context).backgroundColor,
                                     borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(20),
                                         bottomRight: Radius.circular(20))),
@@ -305,7 +306,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                     width: childSize!.width,
                     height: childSize!.height * 6 / 10,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).hintColor,
+                      color: Theme.of(context).backgroundColor,
                       borderRadius:
                           const BorderRadius.all(Radius.circular(20.0)),
                     ),
@@ -423,7 +424,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Theme.of(context).hintColor,
+                                    color: Theme.of(context).backgroundColor,
                                     borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(20),
                                         bottomRight: Radius.circular(20))),
@@ -472,16 +473,15 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                       trash: false,
                     ),
             ),
-            Positioned(
-              top: topOffset + fabWallTopOffset,
-              left: leftOffset + fabWallLeftOffset,
-              child: DownloadButton(
-                colorChanged: false,
-                link: selectedProvider == "WallHaven"
-                    ? wdata.wallsS[index].path.toString()
-                    : pdata.wallsPS[index].src!["original"].toString(),
-              ),
-            ),
+            // Positioned(
+            //   top: topOffset + fabWallTopOffset,
+            //   left: leftOffset + fabWallLeftOffset,
+            //   child: DownloadButton(
+            //     link: selectedProvider == "WallHaven"
+            //         ? wdata.wallsS[index].path.toString()
+            //         : pdata.wallsPS[index].src!["original"].toString(),
+            //   ),
+            // ),
           ],
         ),
       );

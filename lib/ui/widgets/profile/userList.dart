@@ -1,17 +1,17 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:provider/provider.dart';
-import 'package:Prism/logger/logger.dart';
 
 class UserList extends StatelessWidget {
   final bool expanded;
-  UserList({required this.expanded});
+  const UserList({required this.expanded});
   @override
   Widget build(BuildContext context) {
     if (globals.prismUser.loggedIn == false) {

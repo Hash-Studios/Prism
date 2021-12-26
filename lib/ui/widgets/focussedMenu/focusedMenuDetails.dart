@@ -1,12 +1,15 @@
 import 'dart:ui';
+
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
-import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
+import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
@@ -18,8 +21,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class FocusedMenuDetails extends StatefulWidget {
   final String? provider;
@@ -176,7 +177,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                     width: widget.childSize!.width,
                     height: widget.childSize!.height * 6 / 10,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).hintColor,
+                      color: Theme.of(context).backgroundColor,
                       borderRadius:
                           const BorderRadius.all(Radius.circular(20.0)),
                     ),
@@ -311,7 +312,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Theme.of(context).hintColor,
+                                    color: Theme.of(context).backgroundColor,
                                     borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(20),
                                         bottomRight: Radius.circular(20))),
@@ -354,7 +355,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                           width: widget.childSize!.width,
                           height: widget.childSize!.height * 6 / 10,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).hintColor,
+                            color: Theme.of(context).backgroundColor,
                             borderRadius:
                                 const BorderRadius.all(Radius.circular(20.0)),
                           ),
@@ -520,7 +521,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     },
                                     child: Container(
                                       decoration: BoxDecoration(
-                                          color: Theme.of(context).hintColor,
+                                          color:
+                                              Theme.of(context).backgroundColor,
                                           borderRadius: const BorderRadius.only(
                                               topLeft: Radius.circular(20),
                                               bottomRight:
@@ -563,7 +565,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                               width: widget.childSize!.width,
                               height: widget.childSize!.height * 6 / 10,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).hintColor,
+                                color: Theme.of(context).backgroundColor,
                                 borderRadius: const BorderRadius.all(
                                     Radius.circular(20.0)),
                               ),
@@ -698,8 +700,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         },
                                         child: Container(
                                           decoration: BoxDecoration(
-                                              color:
-                                                  Theme.of(context).hintColor,
+                                              color: Theme.of(context)
+                                                  .backgroundColor,
                                               borderRadius:
                                                   const BorderRadius.only(
                                                       topLeft:
@@ -745,7 +747,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                   width: widget.childSize!.width,
                                   height: widget.childSize!.height * 6 / 10,
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).hintColor,
+                                    color: Theme.of(context).backgroundColor,
                                     borderRadius: const BorderRadius.all(
                                         Radius.circular(20.0)),
                                   ),
@@ -891,7 +893,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             child: Container(
                                               decoration: BoxDecoration(
                                                   color: Theme.of(context)
-                                                      .hintColor,
+                                                      .backgroundColor,
                                                   borderRadius:
                                                       const BorderRadius.only(
                                                           topLeft:
@@ -940,7 +942,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       width: widget.childSize!.width,
                                       height: widget.childSize!.height * 6 / 10,
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).hintColor,
+                                        color:
+                                            Theme.of(context).backgroundColor,
                                         borderRadius: const BorderRadius.all(
                                             Radius.circular(20.0)),
                                       ),
@@ -1068,7 +1071,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 child: Container(
                                                   decoration: BoxDecoration(
                                                       color: Theme.of(context)
-                                                          .hintColor,
+                                                          .backgroundColor,
                                                       borderRadius:
                                                           const BorderRadius
                                                                   .only(
@@ -1127,8 +1130,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   6 /
                                                   8,
                                               decoration: BoxDecoration(
-                                                color:
-                                                    Theme.of(context).hintColor,
+                                                color: Theme.of(context)
+                                                    .backgroundColor,
                                                 borderRadius:
                                                     const BorderRadius.all(
                                                         Radius.circular(20.0)),
@@ -1371,7 +1374,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                           8,
                                                   decoration: BoxDecoration(
                                                     color: Theme.of(context)
-                                                        .hintColor,
+                                                        .backgroundColor,
                                                     borderRadius:
                                                         const BorderRadius.all(
                                                             Radius.circular(
@@ -1972,7 +1975,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           height:
                                               widget.childSize!.height * 6 / 8,
                                           decoration: BoxDecoration(
-                                            color: Theme.of(context).hintColor,
+                                            color: Theme.of(context)
+                                                .backgroundColor,
                                             borderRadius:
                                                 const BorderRadius.all(
                                                     Radius.circular(20.0)),
@@ -2255,42 +2259,41 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           trash: false,
                                         ),
             ),
-            Positioned(
-              top: topOffset! + fabWallTopOffset,
-              left: leftOffset! + fabWallLeftOffset,
-              child: DownloadButton(
-                colorChanged: false,
-                link: widget.provider == "WallHaven"
-                    ? WData.walls[widget.index].path.toString()
-                    : widget.provider == "Prism"
-                        ? Data.subPrismWalls![widget.index]["wallpaper_url"]
-                            .toString()
-                        : widget.provider == "ProfileWall"
-                            ? Provider.of<ProfileWallProvider>(context,
-                                    listen: false)
-                                .profileWalls![widget.index]["wallpaper_url"]
-                                .toString()
-                            : widget.provider == "UserProfileWall"
-                                ? Provider.of<UserData.UserProfileProvider>(
-                                        context)
-                                    .userProfileWalls![widget.index]
-                                    .data()["wallpaper_url"]
-                                    .toString()
-                                : widget.provider == "Pexels"
-                                    ? PData
-                                        .wallsP[widget.index].src!["original"]
-                                        .toString()
-                                    : widget.provider == "Liked"
-                                        ? Provider.of<FavouriteProvider>(
-                                                context,
-                                                listen: false)
-                                            .liked![widget.index]["url"]
-                                            .toString()
-                                        : PData.wallsC[widget.index]
-                                            .src!["original"]
-                                            .toString(),
-              ),
-            ),
+            // Positioned(
+            //   top: topOffset! + fabWallTopOffset,
+            //   left: leftOffset! + fabWallLeftOffset,
+            //   child: DownloadButton(
+            //     link: widget.provider == "WallHaven"
+            //         ? WData.walls[widget.index].path.toString()
+            //         : widget.provider == "Prism"
+            //             ? Data.subPrismWalls![widget.index]["wallpaper_url"]
+            //                 .toString()
+            //             : widget.provider == "ProfileWall"
+            //                 ? Provider.of<ProfileWallProvider>(context,
+            //                         listen: false)
+            //                     .profileWalls![widget.index]["wallpaper_url"]
+            //                     .toString()
+            //                 : widget.provider == "UserProfileWall"
+            //                     ? Provider.of<UserData.UserProfileProvider>(
+            //                             context)
+            //                         .userProfileWalls![widget.index]
+            //                         .data()["wallpaper_url"]
+            //                         .toString()
+            //                     : widget.provider == "Pexels"
+            //                         ? PData
+            //                             .wallsP[widget.index].src!["original"]
+            //                             .toString()
+            //                         : widget.provider == "Liked"
+            //                             ? Provider.of<FavouriteProvider>(
+            //                                     context,
+            //                                     listen: false)
+            //                                 .liked![widget.index]["url"]
+            //                                 .toString()
+            //                             : PData.wallsC[widget.index]
+            //                                 .src!["original"]
+            //                                 .toString(),
+            //   ),
+            // ),
           ],
         ),
       );

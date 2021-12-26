@@ -1,45 +1,47 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/data/ads/adsNotifier.dart';
+import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/palette/paletteNotifier.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/data/user/user_notifier.dart';
 import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/locator/locator.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/payments/upgrade.dart';
-import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
-import 'package:Prism/data/setups/provider/setupProvider.dart';
+import 'package:Prism/routes/router.dart' as router;
 import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/routes/router.dart' as router;
-import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 
 String userHiveKey = "prismUserV2-1";
 late Box prefs;
@@ -50,7 +52,6 @@ String? currentMode;
 Color? lightAccent;
 Color? darkAccent;
 bool? hqThumbs;
-late bool optimisedWallpapers;
 int? categories;
 int? purity;
 LocalNotification localNotification = LocalNotification();
@@ -73,6 +74,9 @@ Future<void> main() async {
   Firebase.initializeApp().then((_) {
     getApplicationDocumentsDirectory().then(
       (dir) async {
+        await FlutterDownloader.initialize(
+          debug: false,
+        );
         Hive.init(dir.path);
         // await Hive.deleteBoxFromDisk('prefs');
         // Hive.ignoreTypeId<PrismUsers>(33);
@@ -116,12 +120,6 @@ Future<void> main() async {
                 .toString()
                 .replaceAll("Color(", "")
                 .replaceAll(")", "")));
-        optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
-        // if (optimisedWallpapers) {
-        //   prefs.put('optimisedWallpapers', true);
-        // } else {
-        prefs.put('optimisedWallpapers', false);
-        // }
         categories = prefs.get('WHcategories') as int? ?? 100;
         if (categories == 100) {
           prefs.put('WHcategories', 100);

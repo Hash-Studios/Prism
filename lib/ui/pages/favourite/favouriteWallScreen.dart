@@ -1,4 +1,5 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/favourite/favLoader.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
@@ -6,7 +7,6 @@ import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/logger/logger.dart';
 
 class FavouriteWallpaperScreen extends StatelessWidget {
   const FavouriteWallpaperScreen({

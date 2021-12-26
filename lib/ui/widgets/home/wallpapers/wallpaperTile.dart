@@ -1,15 +1,15 @@
 import 'dart:developer';
 
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:provider/provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class WallpaperTile extends StatelessWidget {
   const WallpaperTile({

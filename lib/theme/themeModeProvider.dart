@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:flutter/material.dart';
 
 Map<String, ThemeMode> modes = {
   "Light": ThemeMode.light,

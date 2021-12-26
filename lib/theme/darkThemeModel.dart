@@ -1,17 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:Prism/theme/theme.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/theme.dart';
+import 'package:flutter/material.dart';
 
 Map<String, ThemeData?> darkThemes = {
   "kDMaterial Dark": kDarkTheme,
-  "kDAMOLED": kDarkTheme2,
-  "kDOlive": kDarkTheme3,
-  "kDDeep Ocean": kDarkTheme4,
-  "kDJungle": kDarkTheme5,
-  "kDPepper": kDarkTheme6,
-  "kDSky": kDarkTheme7,
-  "kDSteel": kDarkTheme8,
+  // "kDAMOLED": kDarkTheme2,
+  // "kDOlive": kDarkTheme3,
+  // "kDDeep Ocean": kDarkTheme4,
+  // "kDJungle": kDarkTheme5,
+  // "kDPepper": kDarkTheme6,
+  // "kDSky": kDarkTheme7,
+  // "kDSteel": kDarkTheme8,
 };
 
 class DarkThemeModel extends ChangeNotifier {

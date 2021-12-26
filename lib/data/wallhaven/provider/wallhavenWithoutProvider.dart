@@ -1,11 +1,11 @@
 import 'dart:convert';
+
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/wallhaven/model/tag.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/routes/router.dart';
+import 'package:http/http.dart' as http;
 
 List<WallPaper> walls = [];
 List<WallPaper> wallsS = [];

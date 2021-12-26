@@ -1,6 +1,11 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/categoryPopUp.dart';
 import 'package:flutter/material.dart';
@@ -8,11 +13,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/logger/logger.dart';
 
 class CategoriesBar extends StatefulWidget {
   const CategoriesBar({
@@ -97,6 +97,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
       });
     }
     return AppBar(
+      backgroundColor: Theme.of(context).backgroundColor,
       automaticallyImplyLeading: false,
       elevation: 0,
       titleSpacing: 0,

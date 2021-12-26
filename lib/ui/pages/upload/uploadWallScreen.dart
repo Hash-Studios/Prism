@@ -2,22 +2,22 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:flare_flutter/flare_actor.dart';
-import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as Path;
-import 'package:Prism/routes/router.dart';
-import 'package:flutter/material.dart';
-import 'package:github/github.dart';
-import 'package:Prism/gitkey.dart';
-import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flare_flutter/flare_actor.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:github/github.dart';
+import 'package:path/path.dart' as Path;
+import 'package:photo_view/photo_view.dart';
 
 class UploadWallScreen extends StatefulWidget {
   final List? arguments;
@@ -184,6 +184,18 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(
+              JamIcons.close,
+              color: Theme.of(context).accentColor,
+            ),
+            onPressed: () async {
+              if (await onWillPop() == true) {
+                Navigator.pop(context);
+              }
+            },
+          ),
+          backgroundColor: Theme.of(context).backgroundColor,
           title: Text(
             "Upload Wallpaper",
             style: TextStyle(color: Theme.of(context).accentColor),

@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
+import 'dart:ui' as ui;
+
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/palette/paletteNotifier.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
@@ -8,13 +11,17 @@ import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wdata;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
-import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/core/colorBar.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/editButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
@@ -22,17 +29,14 @@ import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:palette_generator/palette_generator.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:screenshot/screenshot.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/svgAssets.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 class WallpaperScreen extends StatefulWidget {
   final List? arguments;
@@ -50,16 +54,21 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey genKey = GlobalKey();
   String? provider;
   late int index;
   late String link;
+  String? path;
+  int progress = 0;
+  bool downloading = false;
+  bool applying = false;
+  bool downloaded = false;
+  final ReceivePort _port = ReceivePort();
   late AnimationController shakeController;
   List<Color?>? colors;
   Color? accent = Colors.white;
   bool colorChanged = false;
-  late File _imageFile;
   bool screenshotTaken = false;
-  ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
   bool panelClosed = true;
   bool panelCollapsed = true;
@@ -112,11 +121,120 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     }
   }
 
+  Future<File> _capturePng() async {
+    final RenderRepaintBoundary boundary =
+        genKey.currentContext?.findRenderObject() as RenderRepaintBoundary;
+    final ui.Image image = await boundary.toImage(pixelRatio: 3);
+    final directory = (await getTemporaryDirectory()).path;
+    final ByteData? byteData =
+        await image.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List pngBytes = byteData!.buffer.asUint8List();
+    final r = Random();
+    String rNum = "";
+    for (var i = 0; i < 6; i++) {
+      rNum = "$rNum${r.nextInt(9)}";
+    }
+    final File imgFile = File('$directory/photo_$rNum.png');
+    await imgFile.writeAsBytes(pngBytes);
+    logger.d(imgFile.path);
+    return imgFile;
+  }
+
+  Future<File> _captureAMOLEDPng() async {
+    const int blackThreshold = 18;
+    final RenderRepaintBoundary boundary =
+        genKey.currentContext?.findRenderObject() as RenderRepaintBoundary;
+    final ui.Image image = await boundary.toImage(pixelRatio: 3);
+    final directory = (await getTemporaryDirectory()).path;
+    final ByteData? byteData = await image.toByteData();
+    for (int i = 0; i < image.height; i++) {
+      for (int j = 0; j < image.width; j++) {
+        final pixelData = byteData?.getUint32((i * image.width + j) * 4);
+        if (pixelData != null) {
+          final int red = pixelData >> 24 & 0xFF;
+          final int green = pixelData >> 16 & 0xFF;
+          final int blue = pixelData >> 8 & 0xFF;
+          final int alpha = pixelData & 0xFF;
+          if ((red <= blackThreshold) &&
+              (green <= blackThreshold) &&
+              (blue <= blackThreshold) &&
+              alpha != 0) {
+            byteData?.setUint32((i * image.width + j) * 4, 0x000000FF);
+          }
+        }
+      }
+    }
+    ui.Image? imageEdit;
+    File? imgFileEdit;
+    ui.decodeImageFromPixels(
+      byteData?.buffer.asUint8List() as Uint8List,
+      image.width,
+      image.height,
+      ui.PixelFormat.rgba8888,
+      (ui.Image result) async {
+        imageEdit = result;
+        final ByteData? byteDataEdit =
+            await imageEdit?.toByteData(format: ui.ImageByteFormat.png);
+        final Uint8List pngBytes = byteDataEdit!.buffer.asUint8List();
+        final r = Random();
+        String rNum = "";
+        for (var i = 0; i < 6; i++) {
+          rNum = "$rNum${r.nextInt(9)}";
+        }
+        final File imgFile = File('$directory/photo_$rNum.png');
+        await imgFile.writeAsBytes(pngBytes);
+        logger.d(imgFile.path);
+        imgFileEdit = imgFile;
+      },
+    );
+    await Future.delayed(const Duration(seconds: 3));
+    if (imgFileEdit == null) {
+      await Future.delayed(const Duration(seconds: 3));
+    }
+    return imgFileEdit!;
+  }
+
+  void setupDownloader() {
+    initPlatformState();
+    ui.IsolateNameServer.registerPortWithName(
+        _port.sendPort, 'downloader_send_port');
+    _port.listen((dynamic data) {
+      // String id = data[0];
+      final DownloadTaskStatus status = data[1] as DownloadTaskStatus;
+      if (status == const DownloadTaskStatus(3)) {
+        setState(() {
+          downloaded = true;
+        });
+        toasts.codeSend("Wall Downloaded in Downloads!");
+      }
+      setState(() {
+        if (status == const DownloadTaskStatus(2)) {
+          downloading = true;
+          progress = data[2] as int;
+        } else {
+          downloading = false;
+          progress = 0;
+        }
+      });
+    });
+    FlutterDownloader.registerCallback(callback);
+  }
+
+  void _setPath() async {
+    path = (await _findLocalPath())!;
+    final savedDir = Directory(path ?? "");
+    final bool hasExisted = await savedDir.exists();
+    if (!hasExisted) {
+      savedDir.create();
+    }
+  }
+
   @override
   void initState() {
+    super.initState();
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    super.initState();
+    setupDownloader();
     provider = widget.arguments![0] as String;
     index = widget.arguments![1] as int;
     link = widget.arguments![2] as String;
@@ -128,10 +246,38 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     Future.delayed(const Duration()).then((value) => _updatePaletteGenerator());
   }
 
+  Future<void> initPlatformState() async {
+    _setPath();
+    if (!mounted) return;
+  }
+
+  Future<String?> _findLocalPath() async {
+    String? externalStorageDirPath;
+    if (Platform.isAndroid) {
+      try {
+        externalStorageDirPath = "/storage/emulated/0/Download";
+      } catch (e) {
+        final directory = await getExternalStorageDirectory();
+        externalStorageDirPath = directory?.path;
+      }
+    } else if (Platform.isIOS) {
+      externalStorageDirPath =
+          (await getApplicationDocumentsDirectory()).absolute.path;
+    }
+    return externalStorageDirPath;
+  }
+
+  static void callback(String id, DownloadTaskStatus status, int progress) {
+    final SendPort? send =
+        ui.IsolateNameServer.lookupPortByName('downloader_send_port');
+    send?.send([id, status, progress]);
+  }
+
   @override
   void dispose() {
-    super.dispose();
     shakeController.dispose();
+    ui.IsolateNameServer.removePortNameMapping('downloader_send_port');
+    super.dispose();
   }
 
   @override
@@ -141,11 +287,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
         .chain(CurveTween(curve: Curves.easeOutCubic))
         .animate(shakeController)
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              shakeController.reverse();
-            }
-          });
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          shakeController.reverse();
+        }
+      });
     return WillPopScope(
       onWillPop: onWillPop,
       child: provider == "WallHaven"
@@ -167,41 +313,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                     setState(() {
                       panelClosed = false;
                     });
-                    if (colorChanged) {
-                      screenshotController
-                          .capture(
-                        pixelRatio: 3,
-                        delay: const Duration(milliseconds: 10),
-                      )
-                          .then((Uint8List? image) async {
-                        setState(() {
-                          _imageFile = File.fromRawPath(image!);
-                          screenshotTaken = true;
-                        });
-                        logger.d('Screenshot Taken');
-                      }).catchError((onError) {
-                        logger.d(onError as String);
-                      });
-                    } else {
-                      main.prefs.get('optimisedWallpapers',
-                                  defaultValue: false) ==
-                              true
-                          ? screenshotController
-                              .capture(
-                              pixelRatio: 3,
-                              delay: const Duration(milliseconds: 10),
-                            )
-                              .then((Uint8List? image) async {
-                              setState(() {
-                                _imageFile = File.fromRawPath(image!);
-                                screenshotTaken = true;
-                              });
-                              logger.d('Screenshot Taken');
-                            }).catchError((onError) {
-                              logger.d(onError.toString());
-                            })
-                          : logger.d("Wallpaper Optimisation is disabled!");
-                    }
                   }
                 },
                 onPanelClosed: () {
@@ -235,7 +346,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(30),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                      filter: ui.ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 750),
                         decoration: BoxDecoration(
@@ -456,16 +567,27 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceEvenly,
                                 children: <Widget>[
-                                  DownloadButton(
-                                      colorChanged: colorChanged,
-                                      link: screenshotTaken
-                                          ? _imageFile.path
-                                          : wdata.walls[index].path.toString()),
+                                  DownloadButtonNew(
+                                    colorChanged: colorChanged,
+                                    screenshotCallback: () async {
+                                      final File file = await _capturePng();
+                                      return file;
+                                    },
+                                    loading: downloading,
+                                    path: path ?? "",
+                                    progress: (progress / 100.0)
+                                        .clamp(0, 100)
+                                        .toInt(),
+                                    link: wdata.walls[index].path.toString(),
+                                  ),
                                   SetWallpaperButton(
-                                      colorChanged: colorChanged,
-                                      url: screenshotTaken
-                                          ? _imageFile.path
-                                          : wdata.walls[index].path),
+                                    colorChanged: colorChanged,
+                                    screenshotCallback: () async {
+                                      final File file = await _capturePng();
+                                      return file;
+                                    },
+                                    url: wdata.walls[index].path,
+                                  ),
                                   FavouriteWallpaperButton(
                                     id: wdata.walls[index].id.toString(),
                                     provider: "WallHaven",
@@ -522,8 +644,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             child: CachedNetworkImage(
                               imageUrl: wdata.walls[index].path!,
                               imageBuilder: (context, imageProvider) =>
-                                  Screenshot(
-                                controller: screenshotController,
+                                  RepaintBoundary(
+                                key: genKey,
                                 child: Container(
                                   margin: EdgeInsets.symmetric(
                                       vertical: offsetAnimation.value * 1.25,
@@ -650,40 +772,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         setState(() {
                           panelClosed = false;
                         });
-                        if (colorChanged) {
-                          screenshotController
-                              .capture(
-                            pixelRatio: 3,
-                            delay: const Duration(milliseconds: 10),
-                          )
-                              .then((Uint8List? image) async {
-                            setState(() {
-                              _imageFile = File.fromRawPath(image!);
-                              screenshotTaken = true;
-                            });
-                            logger.d('Screenshot Taken');
-                          }).catchError((onError) {
-                            logger.d(onError.toString());
-                          });
-                        } else {
-                          (main.prefs.get('optimisedWallpapers') ?? true) ==
-                                  true
-                              ? screenshotController
-                                  .capture(
-                                  pixelRatio: 3,
-                                  delay: const Duration(milliseconds: 10),
-                                )
-                                  .then((Uint8List? image) async {
-                                  setState(() {
-                                    _imageFile = File.fromRawPath(image!);
-                                    screenshotTaken = true;
-                                  });
-                                  logger.d('Screenshot Taken');
-                                }).catchError((onError) {
-                                  logger.d(onError.toString());
-                                })
-                              : logger.d("Wallpaper Optimisation is disabled!");
-                        }
                       }
                     },
                     onPanelClosed: () {
@@ -717,7 +805,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(30),
                         child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                          filter:
+                              ui.ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 750),
                             decoration: BoxDecoration(
@@ -1111,20 +1200,31 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceEvenly,
                                     children: <Widget>[
-                                      DownloadButton(
-                                          colorChanged: colorChanged,
-                                          link: screenshotTaken
-                                              ? _imageFile.path
-                                              : data.subPrismWalls![index]
-                                                      ["wallpaper_url"]
-                                                  .toString()),
+                                      DownloadButtonNew(
+                                        colorChanged: colorChanged,
+                                        screenshotCallback: () async {
+                                          final File file = await _capturePng();
+                                          return file;
+                                        },
+                                        loading: downloading,
+                                        path: path ?? "",
+                                        progress: (progress / 100.0)
+                                            .clamp(0, 100)
+                                            .toInt(),
+                                        link: data.subPrismWalls![index]
+                                                ["wallpaper_url"]
+                                            .toString(),
+                                      ),
                                       SetWallpaperButton(
-                                          colorChanged: colorChanged,
-                                          url: screenshotTaken
-                                              ? _imageFile.path
-                                              : data.subPrismWalls![index]
-                                                      ["wallpaper_url"]
-                                                  .toString()),
+                                        colorChanged: colorChanged,
+                                        screenshotCallback: () async {
+                                          final File file = await _capturePng();
+                                          return file;
+                                        },
+                                        url: data.subPrismWalls![index]
+                                                ["wallpaper_url"]
+                                            .toString(),
+                                      ),
                                       FavouriteWallpaperButton(
                                         id: data.subPrismWalls![index]["id"]
                                             .toString(),
@@ -1189,8 +1289,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           ["wallpaper_url"]
                                       .toString(),
                                   imageBuilder: (context, imageProvider) =>
-                                      Screenshot(
-                                    controller: screenshotController,
+                                      RepaintBoundary(
+                                    key: genKey,
                                     child: Container(
                                       margin: EdgeInsets.symmetric(
                                           vertical:
@@ -1265,7 +1365,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             padding: EdgeInsets.fromLTRB(
                                 8.0, globals.notchSize! + 8, 8, 8),
                             child: IconButton(
-                              onPressed: () {
+                              onPressed: () async {
                                 final link =
                                     data.subPrismWalls![index]["wallpaper_url"];
                                 Navigator.push(
@@ -1321,41 +1421,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             setState(() {
                               panelClosed = false;
                             });
-                            if (colorChanged) {
-                              screenshotController
-                                  .capture(
-                                pixelRatio: 3,
-                                delay: const Duration(milliseconds: 10),
-                              )
-                                  .then((Uint8List? image) async {
-                                setState(() {
-                                  _imageFile = File.fromRawPath(image!);
-                                  screenshotTaken = true;
-                                });
-                                logger.d('Screenshot Taken');
-                              }).catchError((onError) {
-                                logger.d(onError.toString());
-                              });
-                            } else {
-                              (main.prefs.get('optimisedWallpapers') ?? true) ==
-                                      true
-                                  ? screenshotController
-                                      .capture(
-                                      pixelRatio: 3,
-                                      delay: const Duration(milliseconds: 10),
-                                    )
-                                      .then((Uint8List? image) async {
-                                      setState(() {
-                                        _imageFile = File.fromRawPath(image!);
-                                        screenshotTaken = true;
-                                      });
-                                      logger.d('Screenshot Taken');
-                                    }).catchError((onError) {
-                                      logger.d(onError.toString());
-                                    })
-                                  : logger
-                                      .d("Wallpaper Optimisation is disabled!");
-                            }
                           }
                         },
                         onPanelClosed: () {
@@ -1389,8 +1454,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(30),
                             child: BackdropFilter(
-                              filter:
-                                  ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                              filter: ui.ImageFilter.blur(
+                                  sigmaX: 12.0, sigmaY: 12.0),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 750),
                                 decoration: BoxDecoration(
@@ -1649,20 +1714,33 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceEvenly,
                                         children: <Widget>[
-                                          DownloadButton(
-                                              colorChanged: colorChanged,
-                                              link: screenshotTaken
-                                                  ? _imageFile.path
-                                                  : pdata.wallsP[index]
-                                                      .src!["original"]
-                                                      .toString()),
+                                          DownloadButtonNew(
+                                            colorChanged: colorChanged,
+                                            screenshotCallback: () async {
+                                              final File file =
+                                                  await _capturePng();
+                                              return file;
+                                            },
+                                            loading: downloading,
+                                            path: path ?? "",
+                                            progress: (progress / 100.0)
+                                                .clamp(0, 100)
+                                                .toInt(),
+                                            link: pdata
+                                                .wallsP[index].src!["original"]
+                                                .toString(),
+                                          ),
                                           SetWallpaperButton(
-                                              colorChanged: colorChanged,
-                                              url: screenshotTaken
-                                                  ? _imageFile.path
-                                                  : pdata.wallsP[index]
-                                                      .src!["original"]
-                                                      .toString()),
+                                            colorChanged: colorChanged,
+                                            screenshotCallback: () async {
+                                              final File file =
+                                                  await _capturePng();
+                                              return file;
+                                            },
+                                            url: pdata
+                                                .wallsP[index].src!["original"]
+                                                .toString(),
+                                          ),
                                           FavouriteWallpaperButton(
                                             id: pdata.wallsP[index].id
                                                 .toString(),
@@ -1726,8 +1804,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           .wallsP[index].src!["original"]
                                           .toString(),
                                       imageBuilder: (context, imageProvider) =>
-                                          Screenshot(
-                                        controller: screenshotController,
+                                          RepaintBoundary(
+                                        key: genKey,
                                         child: Container(
                                           margin: EdgeInsets.symmetric(
                                               vertical:
@@ -1807,7 +1885,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 padding: EdgeInsets.fromLTRB(
                                     8.0, globals.notchSize! + 8, 8, 8),
                                 child: IconButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     final link =
                                         pdata.wallsP[index].src!["original"];
                                     Navigator.push(
@@ -1864,44 +1942,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 setState(() {
                                   panelClosed = false;
                                 });
-                                if (colorChanged) {
-                                  screenshotController
-                                      .capture(
-                                    pixelRatio: 3,
-                                    delay: const Duration(milliseconds: 10),
-                                  )
-                                      .then((Uint8List? image) async {
-                                    setState(() {
-                                      _imageFile = File.fromRawPath(image!);
-                                      screenshotTaken = true;
-                                    });
-                                    logger.d('Screenshot Taken');
-                                  }).catchError((onError) {
-                                    logger.d(onError.toString());
-                                  });
-                                } else {
-                                  main.prefs.get('optimisedWallpapers')
-                                              as bool? ??
-                                          true
-                                      ? screenshotController
-                                          .capture(
-                                          pixelRatio: 3,
-                                          delay:
-                                              const Duration(milliseconds: 10),
-                                        )
-                                          .then((Uint8List? image) async {
-                                          setState(() {
-                                            _imageFile =
-                                                File.fromRawPath(image!);
-                                            screenshotTaken = true;
-                                          });
-                                          logger.d('Screenshot Taken');
-                                        }).catchError((onError) {
-                                          logger.d(onError.toString());
-                                        })
-                                      : logger.d(
-                                          "Wallpaper Optimisation is disabled!");
-                                }
                               }
                             },
                             onPanelClosed: () {
@@ -1935,7 +1975,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(30),
                                 child: BackdropFilter(
-                                  filter: ImageFilter.blur(
+                                  filter: ui.ImageFilter.blur(
                                       sigmaX: 12.0, sigmaY: 12.0),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 750),
@@ -2212,21 +2252,33 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceEvenly,
                                             children: <Widget>[
-                                              DownloadButton(
+                                              DownloadButtonNew(
                                                 colorChanged: colorChanged,
-                                                link: screenshotTaken
-                                                    ? _imageFile.path
-                                                    : pdata.wallsC[index]
-                                                        .src!["original"]
-                                                        .toString(),
+                                                screenshotCallback: () async {
+                                                  final File file =
+                                                      await _capturePng();
+                                                  return file;
+                                                },
+                                                loading: downloading,
+                                                path: path ?? "",
+                                                progress: (progress / 100.0)
+                                                    .clamp(0, 100)
+                                                    .toInt(),
+                                                link: pdata.wallsC[index]
+                                                    .src!["original"]
+                                                    .toString(),
                                               ),
                                               SetWallpaperButton(
-                                                  colorChanged: colorChanged,
-                                                  url: screenshotTaken
-                                                      ? _imageFile.path
-                                                      : pdata.wallsC[index]
-                                                          .src!["original"]
-                                                          .toString()),
+                                                colorChanged: colorChanged,
+                                                screenshotCallback: () async {
+                                                  final File file =
+                                                      await _capturePng();
+                                                  return file;
+                                                },
+                                                url: pdata.wallsC[index]
+                                                    .src!["original"]
+                                                    .toString(),
+                                              ),
                                               FavouriteWallpaperButton(
                                                 id: pdata.wallsC[index].id
                                                     .toString(),
@@ -2295,8 +2347,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 .toString(),
                                             imageBuilder:
                                                 (context, imageProvider) =>
-                                                    Screenshot(
-                                              controller: screenshotController,
+                                                    RepaintBoundary(
+                                              key: genKey,
                                               child: Container(
                                                 margin: EdgeInsets.symmetric(
                                                     vertical:
@@ -2386,7 +2438,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding: EdgeInsets.fromLTRB(
                                         8.0, globals.notchSize! + 8, 8, 8),
                                     child: IconButton(
-                                      onPressed: () {
+                                      onPressed: () async {
                                         final link = pdata
                                             .wallsC[index].src!["original"];
                                         Navigator.push(
@@ -2444,44 +2496,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 setState(() {
                                   panelClosed = false;
                                 });
-                                if (colorChanged) {
-                                  screenshotController
-                                      .capture(
-                                    pixelRatio: 3,
-                                    delay: const Duration(milliseconds: 10),
-                                  )
-                                      .then((Uint8List? image) async {
-                                    setState(() {
-                                      _imageFile = File.fromRawPath(image!);
-                                      screenshotTaken = true;
-                                    });
-                                    logger.d('Screenshot Taken');
-                                  }).catchError((onError) {
-                                    logger.d(onError.toString());
-                                  });
-                                } else {
-                                  main.prefs.get('optimisedWallpapers')
-                                              as bool? ??
-                                          true
-                                      ? screenshotController
-                                          .capture(
-                                          pixelRatio: 3,
-                                          delay:
-                                              const Duration(milliseconds: 10),
-                                        )
-                                          .then((Uint8List? image) async {
-                                          setState(() {
-                                            _imageFile =
-                                                File.fromRawPath(image!);
-                                            screenshotTaken = true;
-                                          });
-                                          logger.d('Screenshot Taken');
-                                        }).catchError((onError) {
-                                          logger.d(onError.toString());
-                                        })
-                                      : logger.d(
-                                          "Wallpaper Optimisation is disabled!");
-                                }
                               }
                             },
                             onPanelClosed: () {
@@ -2515,7 +2529,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(30),
                                 child: BackdropFilter(
-                                  filter: ImageFilter.blur(
+                                  filter: ui.ImageFilter.blur(
                                       sigmaX: 12.0, sigmaY: 12.0),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 750),
@@ -2793,19 +2807,30 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceEvenly,
                                             children: <Widget>[
-                                              DownloadButton(
+                                              DownloadButtonNew(
                                                 colorChanged: colorChanged,
-                                                link: screenshotTaken
-                                                    ? _imageFile.path
-                                                    : wdata.wallsS[index].path
-                                                        .toString(),
+                                                screenshotCallback: () async {
+                                                  final File file =
+                                                      await _capturePng();
+                                                  return file;
+                                                },
+                                                loading: downloading,
+                                                path: path ?? "",
+                                                progress: (progress / 100.0)
+                                                    .clamp(0, 100)
+                                                    .toInt(),
+                                                link: wdata.wallsS[index].path
+                                                    .toString(),
                                               ),
                                               SetWallpaperButton(
-                                                  colorChanged: colorChanged,
-                                                  url: screenshotTaken
-                                                      ? _imageFile.path
-                                                      : wdata
-                                                          .wallsS[index].path),
+                                                colorChanged: colorChanged,
+                                                screenshotCallback: () async {
+                                                  final File file =
+                                                      await _capturePng();
+                                                  return file;
+                                                },
+                                                url: wdata.wallsS[index].path,
+                                              ),
                                               FavouriteWallpaperButton(
                                                 id: wdata.wallsS[index].id
                                                     .toString(),
@@ -2865,8 +2890,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           imageUrl: wdata.wallsS[index].path!,
                                           imageBuilder:
                                               (context, imageProvider) =>
-                                                  Screenshot(
-                                            controller: screenshotController,
+                                                  RepaintBoundary(
+                                            key: genKey,
                                             child: Container(
                                               margin: EdgeInsets.symmetric(
                                                   vertical:
@@ -2954,7 +2979,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding: EdgeInsets.fromLTRB(
                                         8.0, globals.notchSize! + 8, 8, 8),
                                     child: IconButton(
-                                      onPressed: () {
+                                      onPressed: () async {
                                         final link = wdata.wallsS[index].path;
                                         Navigator.push(
                                             context,

@@ -4,17 +4,17 @@ import 'dart:typed_data';
 
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:github/github.dart';
@@ -233,11 +233,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     linkIcons
         .sort((a, b) => a['name'].toString().compareTo(b['name'].toString()));
     final links = globals.prismUser.links;
-    linkIcons.forEach((element) {
+    for (final element in linkIcons) {
       if (links[element['name']] != "" && links[element['name']] != null) {
         element['value'] = links[element['name']];
       }
-    });
+    }
     _link = linkIcons[3];
     bioController = TextEditingController(text: globals.prismUser.bio);
     usernameController =
@@ -424,8 +424,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Theme.of(context).backgroundColor,
           leading: IconButton(
-              icon: const Icon(JamIcons.close),
+              icon: Icon(
+                JamIcons.close,
+                color: Theme.of(context).accentColor,
+              ),
               onPressed: () {
                 navStack.removeLast();
                 logger.d(navStack.toString());
@@ -981,7 +985,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                         showRemoveAlertDialog(context,
                                             () async {
                                           linkController.text = "";
-                                          var links = globals.prismUser.links;
+                                          final links = globals.prismUser.links;
                                           links.remove(
                                               _link?["name"].toString());
                                           globals.prismUser.links = links;
@@ -1101,7 +1105,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               });
                             }
                             if (linkEdit) {
-                              Map links = globals.prismUser.links;
+                              final Map links = globals.prismUser.links;
                               for (int p = 0; p < linkIcons.length; p++) {
                                 if (linkIcons[p]["value"] != "") {
                                   links[linkIcons[p]["name"]] =
@@ -1185,7 +1189,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   });
                                 }
                                 if (linkEdit) {
-                                  Map links = globals.prismUser.links;
+                                  final Map links = globals.prismUser.links;
                                   for (int p = 0; p < linkIcons.length; p++) {
                                     if (linkIcons[p]["value"] != "") {
                                       links[linkIcons[p]["name"]] =

@@ -1,14 +1,14 @@
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/twitterigPopUp.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 class OnboardingScreen extends StatefulWidget {
   @override

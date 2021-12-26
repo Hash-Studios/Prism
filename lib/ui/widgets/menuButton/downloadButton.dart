@@ -1,29 +1,200 @@
+import 'dart:io';
+import 'dart:math';
+import 'dart:isolate';
+import 'dart:ui';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/ads/adsNotifier.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:animations/animations.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flare_flutter/flare_actor.dart';
-import 'package:flutter/material.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter/services.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:gallery_saver/gallery_saver.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter/foundation.dart';
-import 'package:Prism/logger/logger.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+
+class DownloadButtonNew extends StatefulWidget {
+  final String link;
+  final bool colorChanged;
+  final bool loading;
+  final int progress;
+  final String path;
+  final Future<File> Function()? screenshotCallback;
+
+  const DownloadButtonNew({
+    required this.link,
+    required this.loading,
+    required this.progress,
+    required this.path,
+    required this.colorChanged,
+    required this.screenshotCallback,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _DownloadButtonNewState createState() => _DownloadButtonNewState();
+}
+
+class _DownloadButtonNewState extends State<DownloadButtonNew> {
+  ReceivePort _port = ReceivePort();
+
+  @override
+  void initState() {
+    super.initState();
+    IsolateNameServer.registerPortWithName(
+        _port.sendPort, 'downloader_send_port');
+    _port.listen((dynamic data) {
+      String id = data[0] as String;
+      DownloadTaskStatus status = data[1] as DownloadTaskStatus;
+      int progress = data[2] as int;
+      setState(() {});
+    });
+
+    FlutterDownloader.registerCallback(downloadCallback);
+  }
+
+  static void downloadCallback(
+      String id, DownloadTaskStatus status, int progress) {
+    final SendPort send =
+        IsolateNameServer.lookupPortByName('downloader_send_port')!;
+    send.send([id, status, progress]);
+  }
+
+  @override
+  void dispose() {
+    IsolateNameServer.removePortNameMapping('downloader_send_port');
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        if (!widget.loading) {
+          if (globals.prismUser.loggedIn == true) {
+            if (globals.prismUser.premium == true) {
+              finalDownload(widget.link, widget.path);
+            } else {
+              showDownloadPopup(context, () {
+                logger.d("Download");
+                finalDownload(widget.link, widget.path);
+              });
+            }
+          } else {
+            showDownloadPopup(context, () {
+              logger.d("Download");
+              finalDownload(widget.link, widget.path);
+            });
+          }
+        } else {
+          toasts.error("Wait for download to complete!");
+        }
+      },
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(.25),
+                    blurRadius: 4,
+                    offset: const Offset(0, 4))
+              ],
+              borderRadius: BorderRadius.circular(500),
+            ),
+            padding: const EdgeInsets.all(17),
+            child: Icon(
+              JamIcons.download,
+              color: Theme.of(context).accentColor,
+              size: 20,
+            ),
+          ),
+          Positioned(
+              top: 0,
+              left: 0,
+              height: 53,
+              width: 53,
+              child: widget.loading
+                  ? const CircularProgressIndicator()
+                  : Container())
+        ],
+      ),
+    );
+  }
+
+  void showPremiumPopUp(Function func) {
+    if (globals.prismUser.premium == false) {
+      toasts.codeSend("Variants are a premium feature.");
+      Navigator.pushNamed(context, premiumRoute);
+    } else {
+      func();
+    }
+  }
+
+  Future<void> finalDownload(String link, String path) async {
+    if (await Permission.storage.request().isGranted) {
+      String url = link;
+      logger.d('Already not downloaded, downloading $url');
+      final r = Random();
+      String rNum = "";
+      for (var i = 0; i < 6; i++) {
+        rNum = "$rNum${r.nextInt(9)}";
+      }
+      if (widget.colorChanged) {
+        final File? file = await widget.screenshotCallback?.call();
+        url = file?.path ?? link;
+        GallerySaver.saveImage(url, albumName: "Prism").then((value) {
+          analytics.logEvent(
+              name: 'download_wallpaper', parameters: {'link': widget.link});
+          toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+        }).catchError((e, StackTrace s) {
+          logger.e(e, s, s);
+        });
+      } else {
+        if (Platform.isAndroid) {
+          final androidInfo = await DeviceInfoPlugin().androidInfo;
+          logger.d(androidInfo.version.sdkInt);
+          final taskId = await FlutterDownloader.enqueue(
+            url: url,
+            savedDir: path,
+            fileName:
+                "${url.split('/').last.toString().split(".")[0]}$rNum.${url.split('/').last.toString().split(".")[1]}",
+            saveInPublicStorage:
+                (androidInfo.version.sdkInt >= 29) ? true : false,
+          );
+          logger.d('Downloaded wallpaper, saving taskID $taskId $url');
+        } else {
+          final taskId = await FlutterDownloader.enqueue(
+            url: url,
+            savedDir: path,
+            fileName:
+                "${url.split('/').last.toString().split(".")[0]}$rNum.${url.split('/').last.toString().split(".")[1]}",
+          );
+          logger.d('Downloaded wallpaper, saving taskID $taskId $url');
+        }
+      }
+    } else {
+      toasts.error("No storage permission");
+    }
+  }
+}
 
 class DownloadButton extends StatefulWidget {
   final String? link;
-  final bool colorChanged;
 
   const DownloadButton({
     required this.link,
-    required this.colorChanged,
     Key? key,
   }) : super(key: key);
 
@@ -33,14 +204,36 @@ class DownloadButton extends StatefulWidget {
 
 class _DownloadButtonState extends State<DownloadButton> {
   late bool isLoading;
+  ReceivePort _port = ReceivePort();
 
   @override
   void initState() {
     isLoading = false;
+    IsolateNameServer.registerPortWithName(
+        _port.sendPort, 'downloader_send_port');
+    _port.listen((dynamic data) {
+      String id = data[0] as String;
+      DownloadTaskStatus status = data[1] as DownloadTaskStatus;
+      int progress = data[2] as int;
+      setState(() {});
+    });
+
+    FlutterDownloader.registerCallback(downloadCallback);
     super.initState();
   }
 
-  static const platform = MethodChannel('flutter.prism.set_wallpaper');
+  static void downloadCallback(
+      String id, DownloadTaskStatus status, int progress) {
+    final SendPort send =
+        IsolateNameServer.lookupPortByName('downloader_send_port')!;
+    send.send([id, status, progress]);
+  }
+
+  @override
+  void dispose() {
+    IsolateNameServer.removePortNameMapping('downloader_send_port');
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,17 +242,17 @@ class _DownloadButtonState extends State<DownloadButton> {
         if (!isLoading) {
           if (globals.prismUser.loggedIn == true) {
             if (globals.prismUser.premium == true) {
-              onDownload();
+              onDownload(widget.link!);
             } else {
               showDownloadPopup(context, () {
                 logger.d("Download");
-                onDownload();
+                onDownload(widget.link!);
               });
             }
           } else {
             showDownloadPopup(context, () {
               logger.d("Download");
-              onDownload();
+              onDownload(widget.link!);
             });
           }
         } else {
@@ -107,132 +300,51 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
   }
 
-  Future<void> onDownload() async {
-    final status = await Permission.storage.status;
-    if (!status.isGranted) {
-      await Permission.storage.request();
-    }
-    setState(() {
-      isLoading = true;
-    });
-    logger.d(widget.link);
-
-    final androidInfo = await DeviceInfoPlugin().androidInfo;
-    final sdkInt = androidInfo.version.sdkInt;
-    logger.d('(SDK $sdkInt)');
-    // toasts.codeSend("Starting Download");
-    // main.localNotification.createDownloadNotification();
-    // if (sdkInt >= 30) {
-    // if (widget.link!.contains("com.hash.prism")) {
-    //   await platform.invokeMethod(
-    //       'save_image_file', {"link": widget.link}).then((value) {
-    //     if (value as bool) {
-    //       analytics.logEvent(
-    //           name: 'download_wallpaper', parameters: {'link': widget.link});
-    //       toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-    //     } else {
-    //       toasts.error("Couldn't download! Please Retry!");
-    //     }
-    //     setState(() {
-    //       isLoading = false;
-    //     });
-    //     main.localNotification.cancelDownloadNotification();
-    //   }).catchError((e) {
-    //     logger.d(e.toString());
-    //     setState(() {
-    //       isLoading = false;
-    //     });
-    //   });
-    // } else {
-    //   await platform
-    //       .invokeMethod('save_image', {"link": widget.link}).then((value) {
-    //     if (value as bool) {
-    //       analytics.logEvent(
-    //           name: 'download_wallpaper', parameters: {'link': widget.link});
-    //       toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-    //     } else {
-    //       toasts.error("Couldn't download! Please Retry!");
-    //     }
-    //     setState(() {
-    //       isLoading = false;
-    //     });
-    //     main.localNotification.cancelDownloadNotification();
-    //   }).catchError((e) {
-    //     logger.d(e.toString());
-    //     setState(() {
-    //       isLoading = false;
-    //     });
-    //   });
-    // }
-    // } else {
-    if (widget.link!.contains("com.hash.prism")) {
-      debugPrint("Downloading using Picasso");
-      await platform
-          .invokeMethod('save_image_file', {"link": widget.link}).then((value) {
-        if (value as bool) {
-          analytics.logEvent(
-              name: 'download_wallpaper', parameters: {'link': widget.link});
-          toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-        } else {
-          toasts.error("Couldn't download! Please Retry!");
+  Future<void> onDownload(String link) async {
+    if (await Permission.storage.request().isGranted) {
+      final String url = link;
+      String? externalStorageDirPath;
+      if (Platform.isAndroid) {
+        try {
+          externalStorageDirPath = "/storage/emulated/0/Download";
+        } catch (e) {
+          final directory = await getExternalStorageDirectory();
+          externalStorageDirPath = directory?.path;
         }
-        setState(() {
-          isLoading = false;
-        });
-        // main.localNotification.cancelDownloadNotification();
-      }).catchError((e) {
-        logger.d(e.toString());
-        setState(() {
-          isLoading = false;
-        });
-      });
-      // GallerySaver.saveImage(widget.link!, albumName: "Prism").then((value) {
-      //   analytics.logEvent(
-      //       name: 'download_wallpaper', parameters: {'link': widget.link});
-      //   toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-      //   setState(() {
-      //     isLoading = false;
-      //   });
-      //   // main.localNotification.cancelDownloadNotification();
-      // }).catchError((e) {
-      //   setState(() {
-      //     isLoading = false;
-      //   });
-      //   // TODO Cancel all
-      //   // main.localNotification.cancelDownloadNotification();
-      // });
+      } else if (Platform.isIOS) {
+        externalStorageDirPath =
+            (await getApplicationDocumentsDirectory()).absolute.path;
+      }
+      logger.d('Already not downloaded, downloading $url');
+      final r = Random();
+      String rNum = "";
+      for (var i = 0; i < 6; i++) {
+        rNum = "$rNum${r.nextInt(9)}";
+      }
+      if (Platform.isAndroid) {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        logger.d(androidInfo.version.sdkInt);
+        final taskId = await FlutterDownloader.enqueue(
+          url: url,
+          savedDir: externalStorageDirPath ?? "",
+          fileName:
+              "${url.split('/').last.toString().split(".")[0]}$rNum.${url.split('/').last.toString().split(".")[1]}",
+          saveInPublicStorage:
+              (androidInfo.version.sdkInt >= 29) ? true : false,
+        );
+        logger.d('Downloaded wallpaper, saving taskID $taskId $url');
+      } else {
+        final taskId = await FlutterDownloader.enqueue(
+          url: url,
+          savedDir: externalStorageDirPath ?? "",
+          fileName:
+              "${url.split('/').last.toString().split(".")[0]}$rNum.${url.split('/').last.toString().split(".")[1]}",
+        );
+        logger.d('Downloaded wallpaper, saving taskID $taskId $url');
+      }
     } else {
-      debugPrint("Downloading using Platform Method");
-      Future.delayed(const Duration(seconds: 2)).then((value) => setState(() {
-            isLoading = false;
-          }));
-      platform.invokeMethod('download_image_dm', {
-        "link": widget.link,
-        "filename": widget.link!
-            .split('/')
-            .last
-            .replaceAll(".jpg", "")
-            .replaceAll(".png", "")
-      }).then((value) {
-        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-        analytics.logEvent(
-            name: 'download_wallpaper', parameters: {'link': widget.link});
-      });
+      toasts.error("No storage permission");
     }
-    // .then((value) {
-    // if (value as bool) {
-    // toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-    // } else {
-    //   toasts.error("Couldn't download! Please Retry!");
-    // }
-    // main.localNotification.cancelDownloadNotification();
-    // }).catchError((e) {
-    //   logger.d(e.toString());
-    //   setState(() {
-    //     isLoading = false;
-    //   });
-    // });
-    // }
   }
 }
 

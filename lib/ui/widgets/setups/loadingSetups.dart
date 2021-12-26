@@ -1,9 +1,9 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/logger/logger.dart';
 
 class LoadingSetupCards extends StatefulWidget {
   const LoadingSetupCards({

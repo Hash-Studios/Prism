@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter/material.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class EnterCodePanel extends StatefulWidget {
   const EnterCodePanel({
@@ -66,7 +66,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Container(
+                SizedBox(
                   height: 80,
                   width: width - 24,
                   child: Center(

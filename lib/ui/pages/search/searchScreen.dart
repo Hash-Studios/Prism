@@ -1,10 +1,11 @@
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wdata;
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
@@ -13,8 +14,6 @@ import 'package:Prism/ui/widgets/search/searchGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/logger/logger.dart';
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -68,6 +67,43 @@ class _SearchScreenState extends State<SearchScreen> {
     'Summer',
     'Titan',
     'White',
+    '8bit',
+    'Fantasy',
+    'Fashion',
+    'Fitness',
+    'Fruits',
+    'Futuristic',
+    'Gems',
+    'Graffiti',
+    'Halloween',
+    'Hipster',
+    'Holidays',
+    'Industry',
+    'Interiors',
+    'Kids',
+    'Landscapes',
+    'Macro',
+    'Nature',
+    'Night',
+    'People',
+    'Plants',
+    'Portraits',
+    'Retro',
+    'Robots',
+    'Science',
+    'Sports',
+    'Technics',
+    'Textures',
+    'Transport',
+    'Travel',
+    'Wedding',
+    'Zombies',
+    'Cute',
+    'Fairy',
+    'Fairytale',
+    'Funny',
+    'Geometric',
+    'Graphic',
   ];
   late bool isSubmitted;
   TextEditingController searchController = TextEditingController();
@@ -93,6 +129,7 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: AppBar(
+            backgroundColor: Theme.of(context).backgroundColor,
             automaticallyImplyLeading: false,
             titleSpacing: 0,
             title: Row(
@@ -109,7 +146,9 @@ class _SearchScreenState extends State<SearchScreen> {
                           Container(
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).hintColor),
+                                color: Theme.of(context)
+                                    .hintColor
+                                    .withOpacity(0.05)),
                             child: TextField(
                               cursorColor: Theme.of(context).errorColor,
                               style: Theme.of(context)
@@ -169,7 +208,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     onCanceled: () {
                       logger.d('You have not choosed anything');
                     },
-                    color: Theme.of(context).hintColor,
+                    color: Theme.of(context).backgroundColor,
                     tooltip: 'Providers',
                     onSelected: (dynamic choice) {
                       setState(() {
@@ -243,6 +282,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             Padding(
                               padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
                               child: ActionChip(
+                                  elevation: 0,
                                   pressElevation: 5,
                                   padding:
                                       const EdgeInsets.fromLTRB(14, 11, 14, 11),
@@ -250,7 +290,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                       searchController.text.toLowerCase() ==
                                               tags[index].toLowerCase()
                                           ? Theme.of(context).accentColor
-                                          : Theme.of(context).hintColor,
+                                          : Theme.of(context)
+                                              .hintColor
+                                              .withOpacity(0.1),
                                   label: Text(tags[index],
                                       style: Theme.of(context)
                                           .textTheme

@@ -1,11 +1,7 @@
-import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:animations/animations.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void showChangelog(BuildContext context, Function func) {
@@ -46,6 +42,13 @@ void showChangelog(BuildContext context, Function func) {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
+                    ChangeVersion(number: 'v2.7.0'),
+                    Change(
+                        icon: JamIcons.download,
+                        text: "Fix wallpaper download bugs."),
+                    Change(
+                        icon: JamIcons.eye,
+                        text: "Temporarily removed themes for now."),
                     ChangeVersion(number: 'v2.6.9'),
                     Change(
                         icon: JamIcons.eye,
@@ -205,16 +208,18 @@ class Change extends StatelessWidget {
             Icon(
               icon,
               size: 22,
-              color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
-                          "Dark" &&
-                      Provider.of<DarkThemeModel>(context).currentTheme ==
-                          kDarkTheme2
-                  ? Theme.of(context).errorColor == Colors.black
-                      ? Theme.of(context).accentColor
-                      : Theme.of(context).errorColor
-                  : Theme.of(context).errorColor,
+              color:
+                  //  Provider.of<ThemeModeExtended>(context)
+                  //                 .getCurrentModeStyle(
+                  //                     MediaQuery.of(context).platformBrightness) ==
+                  //             "Dark" &&
+                  //         Provider.of<DarkThemeModel>(context).currentTheme ==
+                  //             kDarkTheme2
+                  //     ? Theme.of(context).errorColor == Colors.black
+                  //         ? Theme.of(context).accentColor
+                  //         : Theme.of(context).errorColor
+                  //     :
+                  Theme.of(context).errorColor,
             ),
             const SizedBox(
               width: 20,

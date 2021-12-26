@@ -1,9 +1,9 @@
 import 'dart:developer' as developer;
 import 'dart:io';
 
+import 'package:file_encrypter/file_encrypter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_archive/flutter_archive.dart';
-import 'package:file_encrypter/file_encrypter.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -165,7 +165,7 @@ Future<String> encryptLogsZip(String zipPath) async {
   pathList.removeLast();
   final String outFilename = "${pathList.join("/")}/logs_zip.dat";
   logger.v("Encryption Started");
-  String secretKey = await FileEncrypter.encrypt(
+  final String secretKey = await FileEncrypter.encrypt(
     inFilename: zipPath,
     outFileName: outFilename,
   );

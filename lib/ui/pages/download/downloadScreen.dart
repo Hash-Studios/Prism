@@ -1,6 +1,8 @@
 import 'dart:collection';
 import 'dart:io';
+
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
@@ -9,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/logger/logger.dart';
 
 class DownloadScreen extends StatefulWidget {
   @override

@@ -1,6 +1,8 @@
 import 'dart:io' show Platform;
+
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:animations/animations.dart';
 import 'package:device_info/device_info.dart';
@@ -9,7 +11,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 class PrismList extends StatelessWidget {
   @override

@@ -1,6 +1,6 @@
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class LocalNotification {
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -40,7 +40,7 @@ class LocalNotification {
     final androidNotificationChannel = AndroidNotificationChannel(
       id,
       name,
-      description,
+      description: description,
       playSound: playSound,
     );
     await flutterLocalNotificationsPlugin
@@ -54,7 +54,8 @@ class LocalNotification {
         AndroidNotificationDetails(
       'downloads',
       'Downloads',
-      'Get notifications for download progress of wallpapers.',
+      channelDescription:
+          'Get notifications for download progress of wallpapers.',
       importance: Importance.max,
       priority: Priority.high,
       showProgress: true,
@@ -80,7 +81,8 @@ class LocalNotification {
         AndroidNotificationDetails(
       'downloads',
       'Downloads',
-      'Get notifications for download progress of wallpapers.',
+      channelDescription:
+          'Get notifications for download progress of wallpapers.',
       importance: Importance.min,
       priority: Priority.min,
       color: Color(0xFFE57697),

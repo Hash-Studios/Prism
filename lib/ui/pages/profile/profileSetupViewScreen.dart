@@ -1,35 +1,35 @@
 import 'dart:ui';
 
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
+import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_apps/device_apps.dart';
+import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+import 'package:hive/hive.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/ui/widgets/animated/showUp.dart';
-import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:gallery_saver/gallery_saver.dart';
-import 'package:device_info/device_info.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:hive/hive.dart';
 
 class ProfileSetupViewScreen extends StatefulWidget {
   final List? arguments;
@@ -1752,7 +1752,6 @@ class ModifiedDownloadButton extends StatelessWidget {
                 link: Provider.of<ProfileSetupProvider>(context, listen: false)
                     .profileSetups![index!]["wallpaper_url"]
                     .toString(),
-                colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {

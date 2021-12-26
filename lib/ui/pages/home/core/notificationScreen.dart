@@ -1,20 +1,20 @@
 import 'dart:ui';
 
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:animations/animations.dart';
-import 'package:flutter/material.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/services.dart';
-import 'package:hive/hive.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/main.dart' as main;
-import 'package:intl/intl.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/routes/router.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
+import 'package:animations/animations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -43,10 +43,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
+          backgroundColor: Theme.of(context).backgroundColor,
           automaticallyImplyLeading: false,
-          title: const Text("Notifications"),
+          title: Text(
+            "Notifications",
+            style: Theme.of(context).textTheme.headline6?.copyWith(
+                  color: Theme.of(context).accentColor,
+                ),
+          ),
           leading: IconButton(
-            icon: const Icon(JamIcons.close),
+            icon: Icon(
+              JamIcons.close,
+              color: Theme.of(context).accentColor,
+            ),
             onPressed: () {
               if (navStack.length > 1) navStack.removeLast();
               logger.d(navStack.toString());
@@ -56,7 +65,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
           actions: <Widget>[
             IconButton(
                 tooltip: "Notification Settings",
-                icon: const Icon(JamIcons.settings_alt),
+                icon: Icon(
+                  JamIcons.settings_alt,
+                  color: Theme.of(context).accentColor,
+                ),
                 onPressed: () {
                   showModalBottomSheet(
                       isScrollControlled: true,
@@ -122,7 +134,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   child: Text('No new notifications',
                       style: TextStyle(color: Theme.of(context).accentColor))),
         ),
-        floatingActionButton: notifications!.isNotEmpty
+        floatingActionButton: notifications.isNotEmpty
             ? FloatingActionButton(
                 mini: true,
                 tooltip: "Clear Notifications",

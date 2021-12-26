@@ -1,19 +1,11 @@
-import 'dart:io';
-import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/pages/profile/reviewScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 class DraftSetupScreen extends StatefulWidget {
   const DraftSetupScreen();
@@ -38,6 +30,18 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(
+              JamIcons.close,
+              color: Theme.of(context).accentColor,
+            ),
+            onPressed: () {
+              if (navStack.length > 1) navStack.removeLast();
+              logger.d(navStack.toString());
+              Navigator.pop(context);
+            },
+          ),
+          backgroundColor: Theme.of(context).backgroundColor,
           title: Text(
             "Setup Drafts",
             style: TextStyle(color: Theme.of(context).accentColor),

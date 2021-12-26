@@ -1,5 +1,7 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -10,8 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/analytics/analytics_service.dart';
 
 List<Color> accentColors = [
   const Color(0xFFE57697),
@@ -95,6 +95,7 @@ class _ThemeViewState extends State<ThemeView> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Theme.of(context).backgroundColor,
           automaticallyImplyLeading: false,
           actions: <Widget>[
             IconButton(

@@ -1,21 +1,21 @@
 import 'dart:async';
 
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/menuButton/favIconButton.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:Prism/ui/widgets/premiumBanners/followingFeed.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
-import 'package:timeago/timeago.dart' as timeago;
-import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
-import 'package:Prism/ui/widgets/menuButton/favIconButton.dart';
-import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/ui/widgets/premiumBanners/followingFeed.dart';
-import 'package:Prism/logger/logger.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class FollowingScreen extends StatefulWidget {
   const FollowingScreen({

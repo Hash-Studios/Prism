@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.hash.prism" >
+    package="com.hash.prism"
+    xmlns:tools="http://schemas.android.com/tools" >
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -13,11 +14,13 @@
     <application
         android:name="io.flutter.app.FlutterApplication"
         android:icon="@mipmap/ic_launcher"
+        tools:replace="android:name"
         android:label="Prism" >
         <service
             android:name=".MyTileService"
             android:icon="@drawable/preview_widget"
             android:label="@string/quick_settings"
+            android:exported="true"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
 
             <intent-filter>
@@ -30,6 +33,7 @@
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
+            android:exported="true"
             android:windowSoftInputMode="adjustResize" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
@@ -84,6 +88,9 @@
  Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java
         -->
+         <provider android:name="vn.hunghd.flutterdownloader.DownloadedFileProvider" android:authorities="${applicationId}.flutter_downloader.provider" android:exported="false" android:grantUriPermissions="true">
+      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/provider_paths" />
+    </provider>
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />
