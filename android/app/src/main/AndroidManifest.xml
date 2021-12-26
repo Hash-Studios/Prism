@@ -20,6 +20,7 @@
             android:name=".MyTileService"
             android:icon="@drawable/preview_widget"
             android:label="@string/quick_settings"
+            android:exported="true"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
 
             <intent-filter>
@@ -32,6 +33,7 @@
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
+            android:exported="true"
             android:windowSoftInputMode="adjustResize" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
