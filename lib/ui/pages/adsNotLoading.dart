@@ -30,7 +30,7 @@ class AdsNotLoading extends StatelessWidget {
                 Navigator.pop(context);
               }),
           title: Text(
-            "Ads Error",
+            "",
             style: Theme.of(context).textTheme.headline3,
           ),
         ),
@@ -44,16 +44,25 @@ class AdsNotLoading extends StatelessWidget {
                 const Padding(
                   padding: EdgeInsets.all(8.0),
                   child:
-                      Center(child: Text("🥲", style: TextStyle(fontSize: 80))),
+                      Center(child: Text("😉", style: TextStyle(fontSize: 80))),
                 ),
                 const SizedBox(
                   height: 10,
                 ),
                 Text(
-                  "Unable to load reward ad",
+                  "Wallpaper downloaded",
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyText2!.copyWith(
                       color: Theme.of(context).accentColor, fontSize: 24),
+                ),
+                const SizedBox(
+                  height: 6,
+                ),
+                Text(
+                  "Unable to load rewarded ad",
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                      color: Theme.of(context).accentColor, fontSize: 16),
                 ),
                 const SizedBox(
                   height: 10,
@@ -113,7 +122,7 @@ class AdsNotLoading extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
-                        "Please check your network settings and try again. We have although downloaded the wall for you, because we get it, that it's frustating when the ads don't laod.",
+                        "Please check your network settings and try again. We have although downloaded the wall for you, because we get it, that it's frustating when the ads don't load.",
                         textAlign: TextAlign.left,
                         style: Theme.of(context)
                             .textTheme
