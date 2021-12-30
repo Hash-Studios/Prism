@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:prism/const/app_color.dart';
 import 'package:prism/const/app_data.dart';
+import 'package:prism/controllers/hide_controller.dart';
 import 'package:prism/controllers/theme_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/router/app_router.dart';
@@ -24,6 +25,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => WallHavenController(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => HideController(),
         ),
       ],
       child: Phoenix(

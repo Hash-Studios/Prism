@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:prism/controllers/hide_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/model/wallhaven/wallhaven_search_state.dart';
 import 'package:prism/model/wallhaven/wallhaven_wall_model.dart';
+import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/wallhaven_wall_card.dart';
 import 'package:provider/provider.dart';
 
@@ -16,9 +19,14 @@ class _WallsPageState extends State<WallsPage> {
   late ScrollController controller;
 
   @override
+  void initState() {
+    super.initState();
+    controller = ScrollController();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    controller = ScrollController();
     controller.addListener(() {
       if (controller.position.atEdge) {
         if (controller.position.pixels != 0) {
@@ -29,7 +37,21 @@ class _WallsPageState extends State<WallsPage> {
           }
         }
       }
+      if (controller.position.userScrollDirection == ScrollDirection.forward) {
+        logger.d("Show");
+        context.read<HideController>().showBar();
+      } else if (controller.position.userScrollDirection ==
+          ScrollDirection.reverse) {
+        logger.d("Hide");
+        context.read<HideController>().hideBar();
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
