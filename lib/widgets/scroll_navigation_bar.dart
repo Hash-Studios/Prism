@@ -1,8 +1,8 @@
 // The code below is from the master branch of scroll_bottom_navigation_bar package from pub.dev.
 
 import 'package:flutter/material.dart';
-import 'package:prism/widgets/navigation_bar.dart';
-import 'package:prism/widgets/navigation_bar_theme.dart';
+import 'package:prism/widgets/navigation_bar.dart' as nb;
+import 'package:prism/widgets/navigation_bar_theme.dart' as nbt;
 import 'package:prism/widgets/scroll_navigation_bar_controller.dart';
 
 class ScrollNavigationBar extends StatefulWidget {
@@ -14,10 +14,10 @@ class ScrollNavigationBar extends StatefulWidget {
     this.selectedIndex = 0,
     this.elevation = 8.0,
     this.backgroundColor = Colors.white,
-    this.labelBehavior = NavigationDestinationLabelBehavior.alwaysShow,
+    this.labelBehavior = nb.NavigationDestinationLabelBehavior.alwaysShow,
   })  : assert(destinations.length >= 2),
         assert(
-          destinations.every((NavigationDestination? destination) =>
+          destinations.every((nb.NavigationDestination? destination) =>
               destination?.label != null),
           'Every item must have a non-null title or label',
         ),
@@ -27,14 +27,14 @@ class ScrollNavigationBar extends StatefulWidget {
 
   final ScrollController controller;
 
-  final List<NavigationDestination> destinations;
+  final List<nb.NavigationDestination> destinations;
 
   final ValueChanged<int>? onDestinationSelected;
 
   final int selectedIndex;
   final double? elevation;
   final Color? backgroundColor;
-  final NavigationDestinationLabelBehavior? labelBehavior;
+  final nb.NavigationDestinationLabelBehavior? labelBehavior;
 
   @override
   _ScrollNavigationBarState createState() => _ScrollNavigationBarState();
@@ -46,7 +46,7 @@ class _ScrollNavigationBarState extends State<ScrollNavigationBar> {
   double? elevation;
 
   Color? backgroundColor;
-  NavigationDestinationLabelBehavior? labelBehavior;
+  nb.NavigationDestinationLabelBehavior? labelBehavior;
 
   @override
   void didUpdateWidget(covariant ScrollNavigationBar oldWidget) {
@@ -69,13 +69,14 @@ class _ScrollNavigationBarState extends State<ScrollNavigationBar> {
   }
 
   void _init() {
-    final NavigationBarThemeData bottomTheme = NavigationBarTheme.of(context);
+    final nbt.NavigationBarThemeData bottomTheme =
+        nbt.NavigationBarTheme.of(context);
     elevation = widget.elevation ?? 8.0;
     backgroundColor = widget.backgroundColor ?? bottomTheme.backgroundColor;
   }
 
   Widget _tab(BuildContext context, int index, Widget? child) {
-    navigationBar = NavigationBar(
+    navigationBar = nb.NavigationBar(
       labelBehavior: widget.labelBehavior,
       destinations: widget.destinations,
       onDestinationSelected: (value) {
