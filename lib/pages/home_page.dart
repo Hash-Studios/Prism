@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:prism/controllers/hide_controller.dart';
 import 'package:prism/controllers/theme_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/router/app_router.dart';
@@ -94,8 +95,9 @@ class _HomePageState extends State<HomePage> {
               tabsRouter.setActiveIndex(value);
               setState(() {});
             },
-            backgroundColor:
-                Theme.of(context).bottomNavigationBarTheme.backgroundColor,
+            backgroundColor: context.watch<HideController>().hidden
+                ? Theme.of(context).bottomNavigationBarTheme.backgroundColor
+                : Colors.red,
             labelBehavior: nb.NavigationDestinationLabelBehavior.alwaysShow,
             destinations: const [
               nb.NavigationDestination(
