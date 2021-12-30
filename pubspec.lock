@@ -479,7 +479,7 @@ packages:
     source: hosted
     version: "0.6.3"
   json_annotation:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: json_annotation
       url: "https://pub.dartlang.org"
@@ -681,20 +681,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.27.3"
-  scroll_app_bar:
-    dependency: "direct main"
-    description:
-      name: scroll_app_bar
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.0"
-  scroll_bars_common:
-    dependency: transitive
-    description:
-      name: scroll_bars_common
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.0.0"
   shared_preferences:
     dependency: "direct main"
     description:
