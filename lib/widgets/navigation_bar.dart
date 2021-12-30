@@ -4,7 +4,7 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
-import 'package:prism/widgets/navigation_bar_theme.dart';
+import 'package:prism/widgets/navigation_bar_theme.dart' as nbt;
 
 /// Material 3 Navigation Bar component.
 ///
@@ -19,7 +19,7 @@ import 'package:prism/widgets/navigation_bar_theme.dart';
 ///
 /// The style for the icons and text are not affected by parent
 /// [DefaultTextStyle]s or [IconTheme]s but rather controlled by parameters or
-/// the [NavigationBarThemeData].
+/// the [nbt.NavigationBarThemeData].
 ///
 /// This widget holds a collection of destinations (usually
 /// [NavigationDestination]s).
@@ -97,7 +97,7 @@ class NavigationBar extends StatelessWidget {
 
   /// The color of the [NavigationBar] itself.
   ///
-  /// If null, [NavigationBarThemeData.backgroundColor] is used. If that
+  /// If null, [nbt.NavigationBarThemeData.backgroundColor] is used. If that
   /// is also null, the default blends [ColorScheme.surface] and
   /// [ColorScheme.onSurface] using an [ElevationOverlay].
   final Color? backgroundColor;
@@ -113,7 +113,7 @@ class NavigationBar extends StatelessWidget {
   /// larger and smaller sizes due to the truncating of labels or smaller tap
   /// targets.
   ///
-  /// If null, [NavigationBarThemeData.height] is used. If that
+  /// If null, [nbt.NavigationBarThemeData.height] is used. If that
   /// is also null, the default is 80.
   final double? height;
 
@@ -123,7 +123,7 @@ class NavigationBar extends StatelessWidget {
   /// Can be used to show all labels, show only the selected label, or hide all
   /// labels.
   ///
-  /// If null, [NavigationBarThemeData.labelBehavior] is used. If that
+  /// If null, [nbt.NavigationBarThemeData.labelBehavior] is used. If that
   /// is also null, the default is
   /// [NavigationDestinationLabelBehavior.alwaysShow].
   final NavigationDestinationLabelBehavior? labelBehavior;
@@ -137,8 +137,8 @@ class NavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    final NavigationBarThemeData navigationBarTheme =
-        NavigationBarTheme.of(context);
+    final nbt.NavigationBarThemeData navigationBarTheme =
+        nbt.NavigationBarTheme.of(context);
     final double effectiveHeight = height ?? navigationBarTheme.height ?? 80;
     final NavigationDestinationLabelBehavior effectiveLabelBehavior =
         labelBehavior ??
@@ -238,7 +238,7 @@ class NavigationDestination extends StatelessWidget {
   /// The [Widget] (usually an [Icon]) that's displayed for this
   /// [NavigationDestination].
   ///
-  /// The icon will use [NavigationBarThemeData.iconTheme]. If this is
+  /// The icon will use [nbt.NavigationBarThemeData.iconTheme]. If this is
   /// null, the default [IconThemeData] would use a size of 24.0 and
   /// [ColorScheme.onSurface].
   final Widget icon;
@@ -250,7 +250,7 @@ class NavigationDestination extends StatelessWidget {
   /// [icon] to [selectedIcon] when this destination goes from unselected to
   /// selected.
   ///
-  /// The icon will use [NavigationBarThemeData.iconTheme] with
+  /// The icon will use [nbt.NavigationBarThemeData.iconTheme] with
   /// [MaterialState.selected]. If this is null, the default [IconThemeData]
   /// would use a size of 24.0 and [ColorScheme.onSurface].
   final Widget? selectedIcon;
@@ -259,7 +259,7 @@ class NavigationDestination extends StatelessWidget {
   /// [NavigationDestination].
   ///
   /// The accompanying [Text] widget will use
-  /// [NavigationBarThemeData.labelTextStyle]. If this are null, the default
+  /// [nbt.NavigationBarThemeData.labelTextStyle]. If this are null, the default
   /// text style would use [TextTheme.overline] with [ColorScheme.onSurface].
   final String label;
 
@@ -275,8 +275,8 @@ class NavigationDestination extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
-    final NavigationBarThemeData navigationBarTheme =
-        NavigationBarTheme.of(context);
+    final nbt.NavigationBarThemeData navigationBarTheme =
+        nbt.NavigationBarTheme.of(context);
     final Animation<double> animation =
         _NavigationDestinationInfo.of(context).selectedAnimation;
 

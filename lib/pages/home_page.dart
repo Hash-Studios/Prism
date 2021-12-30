@@ -5,7 +5,7 @@ import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/router/app_router.dart';
 import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/inherited_container.dart';
-import 'package:prism/widgets/navigation_bar.dart';
+import 'package:prism/widgets/navigation_bar.dart' as nb;
 import 'package:prism/widgets/scroll_navigation_bar.dart';
 import 'package:prism/widgets/wall_filter_sheet.dart';
 import 'package:provider/provider.dart';
@@ -106,24 +106,24 @@ class _HomePageState extends State<HomePage> {
               },
               backgroundColor:
                   Theme.of(context).bottomNavigationBarTheme.backgroundColor,
-              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              labelBehavior: nb.NavigationDestinationLabelBehavior.alwaysShow,
               destinations: const [
-                NavigationDestination(
+                nb.NavigationDestination(
                   selectedIcon: Icon(Icons.image),
                   icon: Icon(Icons.image_outlined),
                   label: 'Walls',
                 ),
-                NavigationDestination(
+                nb.NavigationDestination(
                   selectedIcon: Icon(Icons.imagesearch_roller),
                   icon: Icon(Icons.imagesearch_roller_outlined),
                   label: 'Setups',
                 ),
-                NavigationDestination(
+                nb.NavigationDestination(
                   selectedIcon: Icon(Icons.notifications),
                   icon: Icon(Icons.notifications_outlined),
                   label: 'Notifications',
                 ),
-                NavigationDestination(
+                nb.NavigationDestination(
                   selectedIcon: Icon(Icons.person),
                   icon: Icon(Icons.person_outlined),
                   label: 'Profile',

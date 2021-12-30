@@ -8,11 +8,10 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart';
 
-import 'navigation_bar.dart';
+import 'navigation_bar.dart' as nb;
 
-/// Defines default property values for descendant [NavigationBar]
+/// Defines default property values for descendant [nb.NavigationBar]
 /// widgets.
 ///
 /// Descendant widgets obtain the current [NavigationBarThemeData] object
@@ -22,13 +21,13 @@ import 'navigation_bar.dart';
 ///
 /// Typically a [NavigationBarThemeData] is specified as part of the
 /// overall [Theme] with [ThemeData.navigationBarTheme]. Alternatively, a
-/// [NavigationBarTheme] inherited widget can be used to theme [NavigationBar]s
+/// [NavigationBarTheme] inherited widget can be used to theme [nb.NavigationBar]s
 /// in a subtree of widgets.
 ///
 /// All [NavigationBarThemeData] properties are `null` by default.
-/// When null, the [NavigationBar] will provide its own defaults based on the
+/// When null, the [nb.NavigationBar] will provide its own defaults based on the
 /// overall [Theme]'s textTheme and colorScheme. See the individual
-/// [NavigationBar] properties for details.
+/// [nb.NavigationBar] properties for details.
 ///
 /// See also:
 ///
@@ -47,30 +46,30 @@ class NavigationBarThemeData with Diagnosticable {
     this.labelBehavior,
   });
 
-  /// Overrides the default value of [NavigationBar.height].
+  /// Overrides the default value of [nb.NavigationBar.height].
   final double? height;
 
-  /// Overrides the default value of [NavigationBar.backgroundColor].
+  /// Overrides the default value of [nb.NavigationBar.backgroundColor].
   final Color? backgroundColor;
 
-  /// Overrides the default value of [NavigationBar]'s selection indicator.
+  /// Overrides the default value of [nb.NavigationBar]'s selection indicator.
   final Color? indicatorColor;
 
   /// The style to merge with the default text style for
-  /// [NavigationDestination] labels.
+  /// [nb.NavigationDestination] labels.
   ///
   /// You can use this to specify a different style when the label is selected.
   final MaterialStateProperty<TextStyle?>? labelTextStyle;
 
   /// The theme to merge with the default icon theme for
-  /// [NavigationDestination] icons.
+  /// [nb.NavigationDestination] icons.
   ///
   /// You can use this to specify a different icon theme when the icon is
   /// selected.
   final MaterialStateProperty<IconThemeData?>? iconTheme;
 
-  /// Overrides the default value of [NavigationBar.labelBehavior].
-  final NavigationDestinationLabelBehavior? labelBehavior;
+  /// Overrides the default value of [nb.NavigationBar.labelBehavior].
+  final nb.NavigationDestinationLabelBehavior? labelBehavior;
 
   /// Creates a copy of this object with the given fields replaced with the
   /// new values.
@@ -80,7 +79,7 @@ class NavigationBarThemeData with Diagnosticable {
     Color? indicatorColor,
     MaterialStateProperty<TextStyle?>? labelTextStyle,
     MaterialStateProperty<IconThemeData?>? iconTheme,
-    NavigationDestinationLabelBehavior? labelBehavior,
+    nb.NavigationDestinationLabelBehavior? labelBehavior,
   }) {
     return NavigationBarThemeData(
       height: height ?? this.height,
@@ -158,7 +157,7 @@ class NavigationBarThemeData with Diagnosticable {
     properties.add(DiagnosticsProperty<MaterialStateProperty<IconThemeData?>>(
         'iconTheme', iconTheme,
         defaultValue: null));
-    properties.add(DiagnosticsProperty<NavigationDestinationLabelBehavior>(
+    properties.add(DiagnosticsProperty<nb.NavigationDestinationLabelBehavior>(
         'labelBehavior', labelBehavior,
         defaultValue: null));
   }
@@ -193,10 +192,10 @@ class _LerpProperties<T> implements MaterialStateProperty<T> {
   }
 }
 
-/// An inherited widget that defines visual properties for [NavigationBar]s and
-/// [NavigationDestination]s in this widget's subtree.
+/// An inherited widget that defines visual properties for [nb.NavigationBar]s and
+/// [nb.NavigationDestination]s in this widget's subtree.
 ///
-/// Values specified here are used for [NavigationBar] properties that are not
+/// Values specified here are used for [nb.NavigationBar] properties that are not
 /// given an explicit non-null value.
 ///
 /// See also:
@@ -205,7 +204,7 @@ class _LerpProperties<T> implements MaterialStateProperty<T> {
 ///    [NavigationBarThemeData] in the overall theme for the application.
 class NavigationBarTheme extends InheritedTheme {
   /// Creates a navigation rail theme that controls the
-  /// [NavigationBarThemeData] properties for a [NavigationBar].
+  /// [NavigationBarThemeData] properties for a [nb.NavigationBar].
   ///
   /// The data argument must not be null.
   const NavigationBarTheme({
@@ -216,7 +215,7 @@ class NavigationBarTheme extends InheritedTheme {
         super(key: key, child: child);
 
   /// Specifies the background color, label text style, icon theme, and label
-  /// type values for descendant [NavigationBar] widgets.
+  /// type values for descendant [nb.NavigationBar] widgets.
   final NavigationBarThemeData data;
 
   /// The closest instance of this class that encloses the given context.
@@ -238,7 +237,7 @@ class NavigationBarTheme extends InheritedTheme {
               Theme.of(context).bottomNavigationBarTheme.backgroundColor,
           indicatorColor:
               Theme.of(context).colorScheme.primary.withOpacity(0.8),
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          labelBehavior: nb.NavigationDestinationLabelBehavior.alwaysShow,
           labelTextStyle: MaterialStateProperty.resolveWith<TextStyle?>(
             (Set<MaterialState> states) {
               return Theme.of(context).textTheme.caption?.copyWith(
