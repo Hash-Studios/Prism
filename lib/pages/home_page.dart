@@ -89,42 +89,57 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          bottomNavigationBar: nb.NavigationBar(
-            selectedIndex: tabsRouter.activeIndex,
-            onDestinationSelected: (value) {
-              tabsRouter.setActiveIndex(value);
-              setState(() {});
-            },
-            backgroundColor: context.watch<HideController>().hidden
-                ? Theme.of(context).bottomNavigationBarTheme.backgroundColor
-                : Colors.red,
-            labelBehavior: nb.NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: const [
-              nb.NavigationDestination(
-                selectedIcon: Icon(Icons.image),
-                icon: Icon(Icons.image_outlined),
-                label: 'Walls',
-              ),
-              nb.NavigationDestination(
-                selectedIcon: Icon(Icons.imagesearch_roller),
-                icon: Icon(Icons.imagesearch_roller_outlined),
-                label: 'Setups',
-              ),
-              nb.NavigationDestination(
-                selectedIcon: Icon(Icons.notifications),
-                icon: Icon(Icons.notifications_outlined),
-                label: 'Notifications',
-              ),
-              nb.NavigationDestination(
-                selectedIcon: Icon(Icons.person),
-                icon: Icon(Icons.person_outlined),
-                label: 'Profile',
-              ),
-            ],
-          ),
           body: FadeTransition(
             opacity: animation,
-            child: child,
+            child: Stack(
+              children: [
+                child,
+                AnimatedPositioned(
+                  duration: Duration(milliseconds: 300),
+                  bottom: context.watch<HideController>().hidden ? -100 : 0,
+                  child: SizedBox(
+                    height: 100,
+                    width: MediaQuery.of(context).size.width,
+                    child: nb.NavigationBar(
+                      selectedIndex: tabsRouter.activeIndex,
+                      onDestinationSelected: (value) {
+                        tabsRouter.setActiveIndex(value);
+                        setState(() {});
+                      },
+                      backgroundColor: context.watch<HideController>().hidden
+                          ? Theme.of(context)
+                              .bottomNavigationBarTheme
+                              .backgroundColor
+                          : Colors.red,
+                      labelBehavior:
+                          nb.NavigationDestinationLabelBehavior.alwaysShow,
+                      destinations: const [
+                        nb.NavigationDestination(
+                          selectedIcon: Icon(Icons.image),
+                          icon: Icon(Icons.image_outlined),
+                          label: 'Walls',
+                        ),
+                        nb.NavigationDestination(
+                          selectedIcon: Icon(Icons.imagesearch_roller),
+                          icon: Icon(Icons.imagesearch_roller_outlined),
+                          label: 'Setups',
+                        ),
+                        nb.NavigationDestination(
+                          selectedIcon: Icon(Icons.notifications),
+                          icon: Icon(Icons.notifications_outlined),
+                          label: 'Notifications',
+                        ),
+                        nb.NavigationDestination(
+                          selectedIcon: Icon(Icons.person),
+                          icon: Icon(Icons.person_outlined),
+                          label: 'Profile',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           floatingActionButton: FloatingActionButton(
             elevation: 10,
