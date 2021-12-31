@@ -26,8 +26,12 @@ Color invert2(Color color) {
 }
 
 extension DarkLight on Color {
+  Color get darken5 => darken2(this, .05);
+  Color get lighten5 => lighten2(this, .05);
   Color get darken10 => darken2(this);
   Color get lighten10 => lighten2(this);
+  Color get darken20 => darken2(this, .2);
+  Color get lighten20 => lighten2(this, .2);
   Color get darken30 => darken2(this, .3);
   Color get lighten30 => lighten2(this, .3);
   Color get darken50 => darken2(this, .5);
