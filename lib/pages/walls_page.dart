@@ -38,12 +38,16 @@ class _WallsPageState extends State<WallsPage> {
         }
       }
       if (controller.position.userScrollDirection == ScrollDirection.forward) {
-        logger.d("Show");
-        context.read<HideController>().showBar();
+        if (context.read<HideController>().hidden) {
+          logger.d("Show");
+          context.read<HideController>().showBar();
+        }
       } else if (controller.position.userScrollDirection ==
           ScrollDirection.reverse) {
-        logger.d("Hide");
-        context.read<HideController>().hideBar();
+        if (!context.read<HideController>().hidden) {
+          logger.d("Hide");
+          context.read<HideController>().hideBar();
+        }
       }
     });
   }
