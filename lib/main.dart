@@ -1,12 +1,15 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:prism/const/app_color.dart';
 import 'package:prism/const/app_data.dart';
 import 'package:prism/controllers/hide_controller.dart';
+import 'package:prism/controllers/setup_controller.dart';
 import 'package:prism/controllers/theme_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
+import 'package:prism/firebase_options.dart';
 import 'package:prism/router/app_router.dart';
 import 'package:prism/router/route_observer.dart';
 import 'package:prism/services/locator.dart';
@@ -14,6 +17,9 @@ import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   setupLocator();
   final ThemeController themeController = ThemeController();
   await themeController.init();
@@ -25,6 +31,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => WallHavenController(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SetupController(),
         ),
         ChangeNotifierProvider(
           create: (_) => HideController(),

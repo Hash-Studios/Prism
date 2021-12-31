@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:prism/controllers/hide_controller.dart';
+import 'package:prism/controllers/setup_controller.dart';
 import 'package:prism/controllers/theme_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/router/app_router.dart';
@@ -143,9 +144,40 @@ class _HomePageState extends State<HomePage> {
                     width: MediaQuery.of(context).size.width,
                     child: nb.NavigationBar(
                       selectedIndex: tabsRouter.activeIndex,
-                      onDestinationSelected: (value) {
+                      onDestinationSelected: (value) async {
                         tabsRouter.setActiveIndex(value);
                         setState(() {});
+                        switch (value) {
+                          case 0:
+                            if (context
+                                        .read<WallHavenController>()
+                                        .wallSearch ==
+                                    null ||
+                                context
+                                        .read<WallHavenController>()
+                                        .wallSearch
+                                        ?.isEmpty ==
+                                    true) {
+                              await context
+                                  .read<WallHavenController>()
+                                  .getSearchResults();
+                            }
+                            break;
+                          case 1:
+                            if (context.read<SetupController>().setupSearch ==
+                                    null ||
+                                context
+                                        .read<SetupController>()
+                                        .setupSearch
+                                        ?.isEmpty ==
+                                    true) {
+                              await context
+                                  .read<SetupController>()
+                                  .getSearchResults();
+                            }
+                            break;
+                          default:
+                        }
                       },
                       backgroundColor: Theme.of(context)
                           .bottomNavigationBarTheme
