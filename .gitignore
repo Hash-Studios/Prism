@@ -58,3 +58,4 @@ android/android_keys.zip
 # Generated code
 *.gr.dart
 *.g.dart
+lib/firebase_options.dart

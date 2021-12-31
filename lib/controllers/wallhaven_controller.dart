@@ -14,6 +14,8 @@ class WallHavenController with ChangeNotifier {
 
   Stream<List<WallHavenWall>> get wallSearchStream =>
       _wallHavenService.wallSearchStream;
+  List<WallHavenWall>? get wallSearch =>
+      _wallHavenService.wallSearchStream.valueOrNull;
   Stream<SearchState> get searchStateStream =>
       _wallHavenService.searchStateStream;
   SearchState? get searchState =>
