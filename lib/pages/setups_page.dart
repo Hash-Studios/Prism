@@ -3,7 +3,6 @@ import 'package:flutter/rendering.dart';
 import 'package:prism/controllers/hide_controller.dart';
 import 'package:prism/controllers/setup_controller.dart';
 import 'package:prism/model/setup/setup_model.dart';
-import 'package:prism/model/wallhaven/wallhaven_search_state.dart';
 import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/setup_card.dart';
 import 'package:provider/provider.dart';
@@ -62,6 +61,8 @@ class _SetupsPageState extends State<SetupsPage> {
               await context.read<SetupController>().getSearchResults();
             },
             child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(0),
               controller: controller,
               itemCount: snapshot.data?.length ?? 0,
               itemBuilder: (context, index) =>
