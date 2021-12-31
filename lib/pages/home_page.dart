@@ -18,6 +18,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late ScrollController controller;
+  static const Duration duration = Duration(milliseconds: 300);
+  static const Curve curve = Curves.easeOutCubic;
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +52,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final double _appBarHeight =
+        kToolbarHeight + MediaQuery.of(context).padding.top;
+    const double _bottomBarHeight = 80;
     return AutoTabsRouter(
       routes: const [
         WallsRoute(),
@@ -60,45 +66,80 @@ class _HomePageState extends State<HomePage> {
       builder: (context, child, animation) {
         final tabsRouter = AutoTabsRouter.of(context);
         return Scaffold(
-          appBar: AppBar(
-            title: Text(
-              appBarText(tabsRouter.activeIndex),
-            ),
-            actions: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.search),
-              ),
-              IconButton(
-                onPressed: () {
-                  if (tabsRouter.activeIndex == 0) {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      elevation: 0,
-                      backgroundColor: Colors.transparent,
-                      routeSettings: const RouteSettings(name: '/filter_sheet'),
-                      builder: (context) => const WallFilterSheet(),
-                    ).then((value) {
-                      context.read<WallHavenController>().clearSearchResults();
-                      context.read<WallHavenController>().getSearchResults();
-                    });
-                  }
-                },
-                icon: const Icon(Icons.filter_list),
-              ),
-            ],
-          ),
-          body: FadeTransition(
-            opacity: animation,
-            child: Stack(
-              children: [
-                child,
-                AnimatedPositioned(
-                  duration: Duration(milliseconds: 300),
-                  bottom: context.watch<HideController>().hidden ? -100 : 0,
+          body: Stack(
+            children: [
+              AnimatedPositioned(
+                top:
+                    context.watch<HideController>().hidden ? -_appBarHeight : 0,
+                child: AnimatedOpacity(
+                  opacity: context.watch<HideController>().hidden ? 0 : 1,
+                  duration: duration,
+                  curve: curve,
                   child: SizedBox(
-                    height: 100,
+                    height: _appBarHeight,
+                    width: MediaQuery.of(context).size.width,
+                    child: AppBar(
+                      title: Text(
+                        appBarText(tabsRouter.activeIndex),
+                      ),
+                      actions: [
+                        IconButton(
+                          onPressed: () {},
+                          icon: const Icon(Icons.search),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            if (tabsRouter.activeIndex == 0) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                elevation: 0,
+                                backgroundColor: Colors.transparent,
+                                routeSettings:
+                                    const RouteSettings(name: '/filter_sheet'),
+                                builder: (context) => const WallFilterSheet(),
+                              ).then((value) {
+                                context
+                                    .read<WallHavenController>()
+                                    .clearSearchResults();
+                                context
+                                    .read<WallHavenController>()
+                                    .getSearchResults();
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.filter_list),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                duration: duration,
+                curve: curve,
+              ),
+              FadeTransition(
+                  opacity: animation,
+                  child: AnimatedContainer(
+                    duration: duration,
+                    curve: curve,
+                    padding: EdgeInsets.only(
+                        top: context.watch<HideController>().hidden
+                            ? 0
+                            : _appBarHeight),
+                    child: child,
+                  )),
+              AnimatedPositioned(
+                duration: duration,
+                curve: curve,
+                bottom: context.watch<HideController>().hidden
+                    ? -_bottomBarHeight
+                    : 0,
+                child: AnimatedOpacity(
+                  opacity: context.watch<HideController>().hidden ? 0 : 1,
+                  duration: duration,
+                  curve: curve,
+                  child: SizedBox(
+                    height: _bottomBarHeight,
                     width: MediaQuery.of(context).size.width,
                     child: nb.NavigationBar(
                       selectedIndex: tabsRouter.activeIndex,
@@ -106,11 +147,9 @@ class _HomePageState extends State<HomePage> {
                         tabsRouter.setActiveIndex(value);
                         setState(() {});
                       },
-                      backgroundColor: context.watch<HideController>().hidden
-                          ? Theme.of(context)
-                              .bottomNavigationBarTheme
-                              .backgroundColor
-                          : Colors.red,
+                      backgroundColor: Theme.of(context)
+                          .bottomNavigationBarTheme
+                          .backgroundColor,
                       labelBehavior:
                           nb.NavigationDestinationLabelBehavior.alwaysShow,
                       destinations: const [
@@ -138,14 +177,22 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          floatingActionButton: FloatingActionButton(
-            elevation: 10,
-            onPressed: _fabAction,
-            tooltip: 'Fab',
-            child: const Icon(Icons.shuffle),
+          floatingActionButton: AnimatedContainer(
+            duration: duration,
+            curve: curve,
+            padding: EdgeInsets.only(
+                bottom: context.watch<HideController>().hidden
+                    ? 0
+                    : _bottomBarHeight),
+            child: FloatingActionButton(
+              elevation: 10,
+              onPressed: _fabAction,
+              tooltip: 'Fab',
+              child: const Icon(Icons.shuffle),
+            ),
           ),
         );
       },
