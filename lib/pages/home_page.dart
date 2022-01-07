@@ -100,12 +100,14 @@ class _HomePageState extends State<HomePage> {
                                     const RouteSettings(name: '/filter_sheet'),
                                 builder: (context) => const WallFilterSheet(),
                               ).then((value) {
-                                context
-                                    .read<WallHavenController>()
-                                    .clearSearchResults();
-                                context
-                                    .read<WallHavenController>()
-                                    .getSearchResults();
+                                if (value) {
+                                  context
+                                      .read<WallHavenController>()
+                                      .clearSearchResults();
+                                  context
+                                      .read<WallHavenController>()
+                                      .getSearchResults();
+                                }
                               });
                             }
                           },
