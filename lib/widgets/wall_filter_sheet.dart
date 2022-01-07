@@ -17,68 +17,84 @@ class WallFilterSheet extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.of(context).pop(),
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        builder: (context, controller) {
-          return DefaultTabController(
-            length: 3,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).backgroundColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.05),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
-                      ),
-                    ),
-                    child: const TabBar(
-                      tabs: [
-                        Tab(
-                          height: 54,
-                          child:
-                              Text('Display', style: TextStyle(fontSize: 12)),
-                        ),
-                        Tab(
-                          height: 54,
-                          child: Text('Filter', style: TextStyle(fontSize: 12)),
-                        ),
-                        Tab(
-                          height: 54,
-                          child: Text('Sort', style: TextStyle(fontSize: 12)),
-                        )
-                      ],
-                      indicatorSize: TabBarIndicatorSize.label,
+      child: Stack(
+        children: [
+          DraggableScrollableSheet(
+            initialChildSize: 0.5,
+            minChildSize: 0.4,
+            maxChildSize: 0.9,
+            builder: (context, controller) {
+              return DefaultTabController(
+                length: 3,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).backgroundColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
                     ),
                   ),
-                  SizedBox(
-                    height: (MediaQuery.of(context).size.height * 0.9) - 56,
-                    child: TabBarView(
-                      children: [
-                        DisplayList(controller: controller),
-                        FilterList(controller: controller),
-                        SortList(controller: controller),
-                      ],
-                    ),
-                  )
-                ],
-              ),
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.05),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(24),
+                            topRight: Radius.circular(24),
+                          ),
+                        ),
+                        child: const TabBar(
+                          tabs: [
+                            Tab(
+                              height: 54,
+                              child: Text('Display',
+                                  style: TextStyle(fontSize: 12)),
+                            ),
+                            Tab(
+                              height: 54,
+                              child: Text('Filter',
+                                  style: TextStyle(fontSize: 12)),
+                            ),
+                            Tab(
+                              height: 54,
+                              child:
+                                  Text('Sort', style: TextStyle(fontSize: 12)),
+                            )
+                          ],
+                          indicatorSize: TabBarIndicatorSize.label,
+                        ),
+                      ),
+                      SizedBox(
+                        height: (MediaQuery.of(context).size.height * 0.9) - 56,
+                        child: TabBarView(
+                          children: [
+                            DisplayList(controller: controller),
+                            FilterList(controller: controller),
+                            SortList(controller: controller),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: const Icon(Icons.check),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
