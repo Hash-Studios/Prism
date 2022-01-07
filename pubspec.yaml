@@ -46,6 +46,9 @@ dependencies:
   json_annotation: ^4.4.0
   json_serializable: ^6.1.1
   logger: ^1.1.0
+  logger_flutter:
+    git:
+      url: git://github.com/xaynetwork/logger_flutter.git
   palette_generator: ^0.3.2
   path_provider: ^2.0.7
   provider: ^6.0.1

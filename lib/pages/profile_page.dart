@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'package:logger_flutter/logger_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:prism/const/app_color.dart';
 import 'package:prism/controllers/theme_controller.dart';
@@ -65,6 +66,13 @@ class ProfilePage extends StatelessWidget {
                       },
                     );
                   }
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.bug_report),
+                title: Text("Launch debugger"),
+                onTap: () {
+                  LogConsole.openLogConsole(context);
                 },
               ),
               const Text(

@@ -506,6 +506,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.0"
+  logger_flutter:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: "2621bf35644f76c888d4fa158088ef9cc7fd025c"
+      url: "git://github.com/xaynetwork/logger_flutter.git"
+    source: git
+    version: "1.0.0"
   logging:
     dependency: transitive
     description:
