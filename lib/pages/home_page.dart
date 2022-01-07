@@ -212,20 +212,22 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          floatingActionButton: AnimatedContainer(
-            duration: duration,
-            curve: curve,
-            padding: EdgeInsets.only(
-                bottom: context.watch<HideController>().hidden
-                    ? 0
-                    : _bottomBarHeight),
-            child: FloatingActionButton(
-              elevation: 10,
-              onPressed: _fabAction,
-              tooltip: 'Fab',
-              child: const Icon(Icons.shuffle),
-            ),
-          ),
+          floatingActionButton: context.watch<HideController>().hidden
+              ? null
+              : AnimatedContainer(
+                  duration: duration,
+                  curve: curve,
+                  padding: EdgeInsets.only(
+                      bottom: context.watch<HideController>().hidden
+                          ? 0
+                          : _bottomBarHeight),
+                  child: FloatingActionButton(
+                    elevation: 10,
+                    onPressed: _fabAction,
+                    tooltip: 'Fab',
+                    child: const Icon(Icons.shuffle),
+                  ),
+                ),
         );
       },
     );
