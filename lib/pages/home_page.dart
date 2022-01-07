@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:prism/controllers/hide_controller.dart';
 import 'package:prism/controllers/setup_controller.dart';
 import 'package:prism/controllers/theme_controller.dart';
+import 'package:prism/controllers/toast_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/router/app_router.dart';
+import 'package:prism/services/locator.dart';
 import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/navigation_bar.dart' as nb;
 import 'package:prism/widgets/wall_filter_sheet.dart';
@@ -49,6 +51,12 @@ class _HomePageState extends State<HomePage> {
       default:
         return 'Walls';
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    locator<ToastController>().init(context);
+    super.didChangeDependencies();
   }
 
   @override
