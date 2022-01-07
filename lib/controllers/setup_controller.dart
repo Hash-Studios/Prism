@@ -21,4 +21,13 @@ class SetupController extends ChangeNotifier {
     await _setupService.clearSearchResults();
     notifyListeners();
   }
+
+  Future<void> getMoreSearchResults() async {
+    await _setupService.getMoreSearchResults();
+    notifyListeners();
+  }
+
+  Future<Setup?> getSetupFromName(String name) async {
+    return await _setupService.getSetupFromName(name);
+  }
 }
