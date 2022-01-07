@@ -80,6 +80,18 @@ class ProfilePage extends StatelessWidget {
                     context.read<ThemeController>().setTransparentStatusBar,
               ),
               SwitchListTile.adaptive(
+                title: const Text('Transparent Bottom bar'),
+                value: context
+                        .read<ThemeController>()
+                        .bottomNavigationBarOpacity ==
+                    0.8,
+                onChanged: (val) {
+                  context
+                      .read<ThemeController>()
+                      .setBottomNavigationBarOpacity(val ? 0.8 : 1);
+                },
+              ),
+              SwitchListTile.adaptive(
                   title: const Text('forBackground TabBar'),
                   value: context.read<ThemeController>().tabBarStyle ==
                       FlexTabBarStyle.forBackground,
@@ -125,7 +137,7 @@ class ProfilePage extends StatelessWidget {
                   onPressed: () {
                     WallHavenService().getSearchResults();
                   },
-                  child: Text('Search'))
+                  child: const Text('Search'))
             ],
           ),
         ),
