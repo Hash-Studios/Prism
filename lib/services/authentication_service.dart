@@ -56,7 +56,7 @@ class AuthService {
       }
     } catch (e, s) {
       logger.i("Login unsuccessful due to error!");
-      logger.e(e, s, s);
+      logger.e(e, e, s);
     }
   }
 

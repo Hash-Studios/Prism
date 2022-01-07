@@ -1,7 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:prism/const/app_color.dart';
 import 'package:prism/controllers/theme_controller.dart';
+import 'package:prism/services/authentication_service.dart';
+import 'package:prism/services/locator.dart';
 import 'package:prism/services/wallhaven_service.dart';
 import 'package:prism/widgets/app_bar_style_buttons.dart';
 import 'package:provider/provider.dart';
@@ -39,6 +42,31 @@ class ProfilePage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              StreamBuilder<User?>(
+                stream: locator<AuthService>().authStream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return ListTile(
+                      leading: Icon(Icons.person),
+                      title:
+                          Text(locator<AuthService>().prismUsersV2?.name ?? ''),
+                      subtitle: Text(
+                          locator<AuthService>().prismUsersV2?.email ?? ''),
+                      onTap: () {
+                        locator<AuthService>().signOutWithGoogle();
+                      },
+                    );
+                  } else {
+                    return ListTile(
+                      leading: Icon(Icons.person),
+                      title: Text("Login to see your profile"),
+                      onTap: () {
+                        locator<AuthService>().signInWithGoogle();
+                      },
+                    );
+                  }
+                },
+              ),
               const Text(
                 'Current theme index:',
               ),
