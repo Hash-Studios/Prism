@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:prism/controllers/hide_controller.dart';
 import 'package:prism/controllers/setup_controller.dart';
 import 'package:prism/model/setup/setup_model.dart';
+import 'package:prism/model/wallhaven/wallhaven_search_state.dart';
 import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/setup_card.dart';
 import 'package:provider/provider.dart';
@@ -27,13 +28,13 @@ class _SetupsPageState extends State<SetupsPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     controller.addListener(() {
-      // if (controller.position.atEdge) {
-      //   if (controller.position.pixels != 0) {
-      //     if (context.read<SetupController>().searchState != SearchState.busy) {
-      //       context.read<SetupController>().getSearchResults();
-      //     }
-      //   }
-      // }
+      if (controller.position.atEdge) {
+        if (controller.position.pixels != 0) {
+          if (context.read<SetupController>().searchState != SearchState.busy) {
+            context.read<SetupController>().getMoreSearchResults();
+          }
+        }
+      }
       if (controller.position.userScrollDirection == ScrollDirection.forward) {
         if (context.read<HideController>().hidden) {
           logger.d("Show");
@@ -51,7 +52,6 @@ class _SetupsPageState extends State<SetupsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller = ScrollController();
     return StreamBuilder<List<Setup>>(
         stream: context.read<SetupController>().setupSearchStream,
         builder: (context, snapshot) {
