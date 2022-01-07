@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:prism/model/setup/setup_model.dart';
+import 'package:prism/model/setup/setup_upload_state.dart';
 import 'package:prism/model/wallhaven/wallhaven_search_state.dart';
 import 'package:prism/services/logger.dart';
 import 'package:rxdart/rxdart.dart';
@@ -10,14 +11,20 @@ class SetupService {
   final _setupDocSubject = BehaviorSubject<List<DocumentSnapshot>>();
   final _searchStateSubject =
       BehaviorSubject<SearchState>.seeded(SearchState.ready);
+  final _setupUploadStateSubject =
+      BehaviorSubject<SetupUploadState>.seeded(SetupUploadState.ready);
+
   ValueStream<List<Setup>> get setupSearchStream => _setupSearchSubject.stream;
   List<Setup> get setupSearch => _setupSearchSubject.stream.value;
   ValueStream<SearchState> get searchStateStream => _searchStateSubject.stream;
+  ValueStream<SetupUploadState> get setupUploadStateStream =>
+      _setupUploadStateSubject.stream;
 
   void dispose() {
     _setupSearchSubject.close();
     _setupDocSubject.close();
     _searchStateSubject.close();
+    _setupUploadStateSubject.close();
   }
 
   Future<void> clearSearchResults() async {
@@ -90,6 +97,61 @@ class SetupService {
     }).catchError((error) {
       _searchStateSubject.add(SearchState.error);
       return null;
+    });
+  }
+
+  Future<void> uploadSetup(Setup _setup) async {
+    _setupUploadStateSubject.add(SetupUploadState.busy);
+    await _firebaseFirestore
+        .collection("setupsv3")
+        .add(_setup.toJson())
+        .then((snapshot) {
+      //TODO: If premium is true, and user is logged in send notification to reviewers
+      _setupUploadStateSubject.add(SetupUploadState.ready);
+    }).catchError((error) {
+      _setupUploadStateSubject.add(SetupUploadState.error);
+    });
+  }
+
+  Future<void> editSetup(String setupDocId, Setup _setup) async {
+    await _firebaseFirestore
+        .collection("setupsv3")
+        .doc(setupDocId)
+        .set(
+            _setup.toJson(),
+            SetOptions(
+              merge: true,
+            ))
+        .then((snapshot) {
+      //TODO: Send update toast
+      _setupUploadStateSubject.add(SetupUploadState.ready);
+    }).catchError((error) {
+      _setupUploadStateSubject.add(SetupUploadState.error);
+    });
+  }
+
+  Future<void> draftSetup(Setup _setup) async {
+    await _firebaseFirestore
+        .collection("draftSetupsv3")
+        .add(_setup.toJson())
+        .then((snapshot) {
+      //TODO: Draft saved!
+      _setupUploadStateSubject.add(SetupUploadState.ready);
+    }).catchError((error) {
+      _setupUploadStateSubject.add(SetupUploadState.error);
+    });
+  }
+
+  Future<void> deleteSetup(String setupDocId) async {
+    await _firebaseFirestore
+        .collection("setupsv3")
+        .doc(setupDocId)
+        .delete()
+        .then((snapshot) {
+      //TODO: Setup deleted!
+      _setupUploadStateSubject.add(SetupUploadState.ready);
+    }).catchError((error) {
+      _setupUploadStateSubject.add(SetupUploadState.error);
     });
   }
 }
