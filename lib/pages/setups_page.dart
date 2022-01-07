@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:prism/controllers/hide_controller.dart';
+import 'package:prism/controllers/settings_controller.dart';
 import 'package:prism/controllers/setup_controller.dart';
+import 'package:prism/model/settings/wall_display_mode.dart';
 import 'package:prism/model/setup/setup_model.dart';
 import 'package:prism/model/wallhaven/wallhaven_search_state.dart';
 import 'package:prism/services/logger.dart';
 import 'package:prism/widgets/setup_card.dart';
+import 'package:prism/widgets/setup_immersive_card.dart';
 import 'package:provider/provider.dart';
 
 class SetupsPage extends StatefulWidget {
@@ -60,14 +63,30 @@ class _SetupsPageState extends State<SetupsPage> {
               await context.read<SetupController>().clearSearchResults();
               await context.read<SetupController>().getSearchResults();
             },
-            child: ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(0),
-              controller: controller,
-              itemCount: snapshot.data?.length ?? 0,
-              itemBuilder: (context, index) =>
-                  SetupCard(snapshot: snapshot, index: index),
-            ),
+            child: () {
+              switch (context.watch<SettingsController>().wallDisplayMode) {
+                case WallDisplayMode.comfortable:
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(0),
+                    controller: controller,
+                    itemCount: snapshot.data?.length ?? 0,
+                    itemBuilder: (context, index) =>
+                        SetupCard(snapshot: snapshot, index: index),
+                  );
+                case WallDisplayMode.immersive:
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(0),
+                    controller: controller,
+                    itemCount: snapshot.data?.length ?? 0,
+                    itemBuilder: (context, index) =>
+                        SetupImmersiveCard(snapshot: snapshot, index: index),
+                  );
+                default:
+                  // TODO: Add error page
+                  return Container();
+              }
+            }(),
           );
         });
   }
