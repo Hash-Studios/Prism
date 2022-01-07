@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:prism/controllers/hide_controller.dart';
+import 'package:prism/controllers/settings_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
+import 'package:prism/model/settings/wall_display_mode.dart';
 import 'package:prism/model/wallhaven/wallhaven_search_state.dart';
 import 'package:prism/model/wallhaven/wallhaven_wall_model.dart';
 import 'package:prism/services/logger.dart';
+import 'package:prism/widgets/wallhaven_immersive_wall_card.dart';
 import 'package:prism/widgets/wallhaven_wall_card.dart';
 import 'package:provider/provider.dart';
 
@@ -68,21 +71,36 @@ class _WallsPageState extends State<WallsPage> {
             await context.read<WallHavenController>().clearSearchResults();
             await context.read<WallHavenController>().getSearchResults();
           },
-          child: GridView.builder(
-            padding: const EdgeInsets.all(10),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 9 / 16,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            controller: controller,
-            itemCount: snapshot.data?.length ?? 0,
-            itemBuilder: (context, index) => WallHavenWallCard(
-              snapshot: snapshot,
-              index: index,
-            ),
-          ),
+          child: () {
+            switch (context.watch<SettingsController>().wallDisplayMode) {
+              case WallDisplayMode.comfortable:
+                return GridView.builder(
+                  padding: const EdgeInsets.all(10),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 9 / 16,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  controller: controller,
+                  itemCount: snapshot.data?.length ?? 0,
+                  itemBuilder: (context, index) => WallHavenWallCard(
+                    wallpaper: snapshot.data![index],
+                  ),
+                );
+              case WallDisplayMode.immersive:
+                return ListView.builder(
+                  padding: const EdgeInsets.all(0),
+                  controller: controller,
+                  itemCount: snapshot.data?.length ?? 0,
+                  itemBuilder: (context, index) => WallHavenImmersiveWallCard(
+                      wallpaper: snapshot.data?[index]),
+                );
+              default:
+                // TODO: Add error page
+                return Container();
+            }
+          }(),
         );
       },
     );

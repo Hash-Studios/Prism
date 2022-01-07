@@ -7,12 +7,10 @@ import 'package:timeago/timeago.dart' as timeago;
 class WallHavenWallCard extends StatelessWidget {
   const WallHavenWallCard({
     Key? key,
-    required this.snapshot,
-    required this.index,
+    required this.wallpaper,
   }) : super(key: key);
 
-  final AsyncSnapshot<List<WallHavenWall>> snapshot;
-  final int index;
+  final WallHavenWall wallpaper;
 
   @override
   Widget build(BuildContext context) {
@@ -24,12 +22,12 @@ class WallHavenWallCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: GestureDetector(
               onTap: () {
-                logger.d('Tapped on ${snapshot.data?[index].url}');
+                logger.d('Tapped on ${wallpaper.url}');
               },
               child: Container(
                 color: Theme.of(context).primaryColor.withOpacity(0.2),
                 child: CachedNetworkImage(
-                  imageUrl: snapshot.data?[index].thumbs.large ?? '',
+                  imageUrl: wallpaper.thumbs.original,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -45,9 +43,7 @@ class WallHavenWallCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  timeago.format(
-                      snapshot.data?[index].createdAt ?? DateTime.now(),
-                      allowFromNow: true),
+                  timeago.format(wallpaper.createdAt, allowFromNow: true),
                   softWrap: false,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
