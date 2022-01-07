@@ -1,6 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:prism/controllers/settings_controller.dart';
+import 'package:prism/model/settings/wall_thumb_quality.dart';
 import 'package:prism/model/wallhaven/wallhaven_wall_model.dart';
+import 'package:provider/provider.dart';
 
 class WallHavenImmersiveWallCard extends StatelessWidget {
   const WallHavenImmersiveWallCard({
@@ -12,6 +15,10 @@ class WallHavenImmersiveWallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final wallpaperUrl = context.watch<SettingsController>().wallThumbQuality ==
+            WallThumbQuality.high
+        ? wallpaper?.path
+        : wallpaper?.thumbs.original;
     return Stack(
       children: [
         Container(
@@ -28,7 +35,7 @@ class WallHavenImmersiveWallCard extends StatelessWidget {
                           .toRadixString(16)),
               radix: 16)),
           child: CachedNetworkImage(
-            imageUrl: wallpaper?.thumbs.original ?? '',
+            imageUrl: wallpaperUrl ?? '',
             fit: BoxFit.cover,
           ),
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:prism/controllers/settings_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/model/settings/wall_display_mode.dart';
+import 'package:prism/model/settings/wall_thumb_quality.dart';
 import 'package:prism/model/wallhaven/wallhaven_order.dart';
 import 'package:prism/model/wallhaven/wallhaven_sorting.dart';
 import 'package:provider/provider.dart';
@@ -113,6 +114,23 @@ class DisplayList extends StatelessWidget {
                   value ?? displayMode;
             },
             title: Text(displayMode.toText()),
+          ),
+        const ListTile(
+          title: Text("Thumbnail Quality"),
+          visualDensity: VisualDensity.compact,
+          dense: true,
+        ),
+        for (final thumbQuality in WallThumbQuality.values)
+          RadioListTile<WallThumbQuality>(
+            controlAffinity: ListTileControlAffinity.leading,
+            dense: true,
+            value: thumbQuality,
+            groupValue: context.watch<SettingsController>().wallThumbQuality,
+            onChanged: (value) {
+              context.read<SettingsController>().wallThumbQuality =
+                  value ?? thumbQuality;
+            },
+            title: Text(thumbQuality.toText()),
           ),
       ],
     );
