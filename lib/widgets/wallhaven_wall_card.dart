@@ -1,7 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:prism/controllers/settings_controller.dart';
+import 'package:prism/model/settings/wall_thumb_quality.dart';
 import 'package:prism/model/wallhaven/wallhaven_wall_model.dart';
 import 'package:prism/services/logger.dart';
+import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class WallHavenWallCard extends StatelessWidget {
@@ -14,6 +17,10 @@ class WallHavenWallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final wallpaperUrl = context.watch<SettingsController>().wallThumbQuality ==
+            WallThumbQuality.high
+        ? wallpaper.path
+        : wallpaper.thumbs.original;
     return Column(
       children: [
         Expanded(
@@ -27,7 +34,7 @@ class WallHavenWallCard extends StatelessWidget {
               child: Container(
                 color: Theme.of(context).primaryColor.withOpacity(0.2),
                 child: CachedNetworkImage(
-                  imageUrl: wallpaper.thumbs.original,
+                  imageUrl: wallpaperUrl,
                   fit: BoxFit.cover,
                 ),
               ),
