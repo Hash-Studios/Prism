@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:prism/model/setup/attachment_model.dart';
 import 'package:prism/model/setup/icon_model.dart';
 import 'package:prism/model/setup/wallpaper_model.dart';
 import 'package:prism/model/setup/widget_model.dart';
@@ -32,6 +33,7 @@ class Setup {
   List<SetupIcon> icons;
   List<SetupWidget> widgets;
   List<SetupWallpaper> wallpapers;
+  List<SetupAttachment>? attachments;
 
   Setup({
     required this.id,
@@ -45,6 +47,7 @@ class Setup {
     required this.userPhoto,
     required this.wallpapers,
     required this.widgets,
+    this.attachments,
   });
 
   factory Setup.fromJson(Map<String, dynamic> json) => _$SetupFromJson(json);
