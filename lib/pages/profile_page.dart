@@ -84,11 +84,11 @@ class ProfilePage extends StatelessWidget {
                 value: context
                         .read<ThemeController>()
                         .bottomNavigationBarOpacity ==
-                    0.8,
+                    0.95,
                 onChanged: (val) {
                   context
                       .read<ThemeController>()
-                      .setBottomNavigationBarOpacity(val ? 0.8 : 1);
+                      .setBottomNavigationBarOpacity(val ? 0.95 : 1);
                 },
               ),
               SwitchListTile.adaptive(
