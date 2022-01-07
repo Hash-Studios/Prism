@@ -48,25 +48,31 @@ class SetupService {
   }
 
   Future<void> getMoreSearchResults() async {
-    _searchStateSubject.add(SearchState.busy);
-    await _firebaseFirestore
-        .collection("setupsv3")
-        .where("review", isEqualTo: true)
-        .orderBy("created_at", descending: true)
-        .startAfterDocument(
-            _setupDocSubject.value[_setupDocSubject.value.length - 1])
-        .limit(10)
-        .get()
-        .then((snapshot) {
-      _setupDocSubject.add(snapshot.docs);
-      final setups =
-          snapshot.docs.map((doc) => Setup.fromJson(doc.data())).toList();
-      logger.d(setups);
-      _setupSearchSubject.add(setups);
-      _searchStateSubject.add(SearchState.ready);
-    }).catchError((error) {
-      _searchStateSubject.add(SearchState.error);
-    });
+    if (_setupSearchSubject.hasValue && _setupSearchSubject.value.isNotEmpty) {
+      _searchStateSubject.add(SearchState.busy);
+      await _firebaseFirestore
+          .collection("setupsv3")
+          .where("review", isEqualTo: true)
+          .orderBy("created_at", descending: true)
+          .startAfterDocument(
+              _setupDocSubject.value[_setupDocSubject.value.length - 1])
+          .limit(10)
+          .get()
+          .then((snapshot) {
+        final tempDocs = _setupDocSubject.value;
+        tempDocs.addAll(snapshot.docs);
+        _setupDocSubject.add(tempDocs);
+        final tempSetups = _setupSearchSubject.value;
+        final setups =
+            snapshot.docs.map((doc) => Setup.fromJson(doc.data())).toList();
+        logger.d(setups);
+        tempSetups.addAll(setups);
+        _setupSearchSubject.add(tempSetups);
+        _searchStateSubject.add(SearchState.ready);
+      }).catchError((error) {
+        _searchStateSubject.add(SearchState.error);
+      });
+    }
   }
 
   Future<Setup?> getSetupFromName(String name) async {
