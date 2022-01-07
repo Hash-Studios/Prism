@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:prism/controllers/settings_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
+import 'package:prism/model/settings/wall_display_mode.dart';
 import 'package:prism/model/wallhaven/wallhaven_order.dart';
 import 'package:prism/model/wallhaven/wallhaven_sorting.dart';
 import 'package:provider/provider.dart';
@@ -65,7 +67,7 @@ class WallFilterSheet extends StatelessWidget {
                     height: (MediaQuery.of(context).size.height * 0.9) - 56,
                     child: TabBarView(
                       children: [
-                        Container(),
+                        DisplayList(controller: controller),
                         FilterList(controller: controller),
                         SortList(controller: controller),
                       ],
@@ -77,6 +79,42 @@ class WallFilterSheet extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class DisplayList extends StatelessWidget {
+  const DisplayList({
+    Key? key,
+    required this.controller,
+  }) : super(key: key);
+
+  final ScrollController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      controller: controller,
+      children: [
+        const ListTile(
+          title: Text("Display Mode"),
+          visualDensity: VisualDensity.compact,
+          dense: true,
+        ),
+        for (final displayMode in WallDisplayMode.values)
+          RadioListTile<WallDisplayMode>(
+            controlAffinity: ListTileControlAffinity.leading,
+            dense: true,
+            value: displayMode,
+            groupValue: context.watch<SettingsController>().wallDisplayMode,
+            onChanged: (value) {
+              context.read<SettingsController>().wallDisplayMode =
+                  value ?? displayMode;
+            },
+            title: Text(displayMode.toText()),
+          ),
+      ],
     );
   }
 }
