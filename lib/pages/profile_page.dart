@@ -4,6 +4,7 @@ import 'package:logger_flutter/logger_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:prism/const/app_color.dart';
 import 'package:prism/controllers/theme_controller.dart';
+import 'package:prism/controllers/toast_controller.dart';
 import 'package:prism/services/authentication_service.dart';
 import 'package:prism/services/locator.dart';
 import 'package:prism/services/wallhaven_service.dart';
@@ -73,6 +74,14 @@ class ProfilePage extends StatelessWidget {
                 title: Text("Launch debugger"),
                 onTap: () {
                   LogConsole.openLogConsole(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.message),
+                title: Text("Show toast"),
+                onTap: () {
+                  locator<ToastController>()
+                      .messageToast("Happy if you read this!", context);
                 },
               ),
               const Text(

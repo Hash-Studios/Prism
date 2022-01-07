@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:prism/controllers/hide_controller.dart';
 import 'package:prism/controllers/setup_controller.dart';
 import 'package:prism/controllers/theme_controller.dart';
+import 'package:prism/controllers/toast_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/router/app_router.dart';
 import 'package:prism/services/authentication_service.dart';
@@ -31,6 +32,7 @@ void setupLocator() {
   locator.registerLazySingleton<SetupService>(() => SetupService());
   locator.registerLazySingleton<SettingsService>(() => SettingsService());
   locator.registerLazySingleton<AuthService>(() => AuthService());
+  locator.registerLazySingleton<ToastController>(() => ToastController());
   locator.registerLazySingleton<PaletteGeneratorService>(
       () => PaletteGeneratorService());
   locator.registerLazySingleton<HideService>(() => HideService());
