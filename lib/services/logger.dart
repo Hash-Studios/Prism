@@ -4,13 +4,15 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 // import 'package:flutter_archive/flutter_archive.dart';
 import 'package:logger/logger.dart';
+import 'package:logger_flutter/logger_flutter.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
-final printer = LogOutputPrinter();
+final printer = PrettyPrinter();
 final logger = Logger(
   level: Level.debug,
   printer: printer,
+  output: LogConsole.wrap(innerOutput: ConsoleOutput()),
   filter: kDebugMode
       ? PassThroughFilter()
       : PassThroughFilter(), //!ProductionFilter(), Add before final release
