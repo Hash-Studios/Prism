@@ -6,6 +6,7 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:prism/const/app_color.dart';
 import 'package:prism/const/app_data.dart';
 import 'package:prism/controllers/hide_controller.dart';
+import 'package:prism/controllers/settings_controller.dart';
 import 'package:prism/controllers/setup_controller.dart';
 import 'package:prism/controllers/theme_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
@@ -28,6 +29,9 @@ void main() async {
       providers: [
         ChangeNotifierProvider(
           create: (_) => themeController,
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SettingsController(),
         ),
         ChangeNotifierProvider(
           create: (_) => WallHavenController(),
