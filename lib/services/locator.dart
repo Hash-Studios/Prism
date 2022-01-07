@@ -6,6 +6,7 @@ import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/router/app_router.dart';
 import 'package:prism/services/hide_service.dart';
 import 'package:prism/services/palette_generator_service.dart';
+import 'package:prism/services/settings_service.dart';
 import 'package:prism/services/setup_service.dart';
 import 'package:prism/services/theme_pref_service.dart';
 import 'package:prism/services/theme_service.dart';
@@ -27,6 +28,7 @@ void setupLocator() {
   locator.registerLazySingleton<WallHavenAPI>(() => WallHavenAPI());
   locator.registerLazySingleton<WallHavenService>(() => WallHavenService());
   locator.registerLazySingleton<SetupService>(() => SetupService());
+  locator.registerLazySingleton<SettingsService>(() => SettingsService());
   locator.registerLazySingleton<PaletteGeneratorService>(
       () => PaletteGeneratorService());
   locator.registerLazySingleton<HideService>(() => HideService());
