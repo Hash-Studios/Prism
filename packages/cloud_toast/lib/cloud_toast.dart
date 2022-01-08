@@ -106,6 +106,21 @@ class CloudToast {
     );
   }
 
+  void errorToast(
+    dynamic message, [
+    dynamic error,
+    StackTrace? trace,
+  ]) {
+    manualToast(
+      child: Center(child: Text(message)),
+      width: MediaQuery.of(context!).size.width,
+      height: MediaQuery.of(context!).padding.top + kToolbarHeight + 40,
+      top: 0,
+      left: 0,
+      color: const Color(0xffae2727),
+    );
+  }
+
   void manualToast({
     required Widget child,
     double? width,
