@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_toast/cloud_toast.dart';
+import 'package:prism/services/logger.dart';
 // import 'package:prism/services/logger.dart';
 
 class ToastController {
@@ -16,5 +17,9 @@ class ToastController {
 
   void messageToast(String msg) {
     cloudToast.messageToast(msg);
+  }
+
+  void errorToast(String msg) {
+    cloudToast.errorToast(msg);
   }
 }
