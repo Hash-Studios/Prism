@@ -81,7 +81,7 @@ class ProfilePage extends StatelessWidget {
                 title: Text("Show toast"),
                 onTap: () {
                   locator<ToastController>()
-                      .messageToast("Happy if you read this!", context);
+                      .messageToast("Happy if you read this!");
                 },
               ),
               const Text(
