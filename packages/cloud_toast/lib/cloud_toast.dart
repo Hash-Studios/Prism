@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 library cloud_toast;
 
 import 'dart:async';
@@ -94,6 +96,53 @@ class CloudToast {
     _entry = null;
   }
 
+  void messageToast(String msg) {
+    manualToast(
+      child: Center(child: Text(msg)),
+      width: MediaQuery.of(context!).size.width,
+      height: MediaQuery.of(context!).padding.top + kToolbarHeight + 40,
+      top: 0,
+      left: 0,
+    );
+  }
+
+  void manualToast({
+    required Widget child,
+    double? width,
+    double? height,
+    Color color = const Color(0xff27ae61),
+    double? top,
+    double? bottom,
+    double? left,
+    double? right,
+    ToastPosition? toastPosition = ToastPosition.TOP,
+    Duration? toastDuration = const Duration(seconds: 4),
+    Duration? fadeDuration = const Duration(milliseconds: 350),
+  }) {
+    if (context == null) {
+      throw ("Error: Context is null, Please call init(context) before showing toast.");
+    }
+    final Widget toast = Container(
+      child: child,
+      width: width,
+      height: height,
+      color: color,
+    );
+    showToast(
+      child: toast,
+      positionedToastBuilder: (context, child) => Positioned(
+        child: child,
+        top: top,
+        left: left,
+        bottom: bottom,
+        right: right,
+      ),
+      gravity: toastPosition,
+      toastDuration: toastDuration,
+      fadeDuration: fadeDuration,
+    );
+  }
+
   /// showToast accepts all the required paramenters and prepares the child
   /// calls _showOverlay to display toast
   ///
@@ -104,7 +153,7 @@ class CloudToast {
     PositionedToastBuilder? positionedToastBuilder,
     Duration? toastDuration,
     ToastPosition? gravity,
-    int fadeDuration = 350,
+    Duration? fadeDuration = const Duration(milliseconds: 350),
   }) {
     if (context == null) {
       throw ("Error: Context is null, Please call init(context) before showing toast.");
@@ -183,12 +232,12 @@ class _ToastEntry {
 /// animations for [FToast]
 class _ToastStateFul extends StatefulWidget {
   const _ToastStateFul(this.child, this.duration,
-      {Key? key, this.fadeDuration = 350})
+      {Key? key, this.fadeDuration = const Duration(milliseconds: 350)})
       : super(key: key);
 
   final Widget child;
   final Duration duration;
-  final int fadeDuration;
+  final Duration? fadeDuration;
 
   @override
   ToastStateFulState createState() => ToastStateFulState();
@@ -210,7 +259,8 @@ class ToastStateFulState extends State<_ToastStateFul>
 
   /// Controller to start and hide the animation
   AnimationController? _animationController;
-  late Animation _fadeAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   Timer? _timer;
 
@@ -218,10 +268,16 @@ class ToastStateFulState extends State<_ToastStateFul>
   void initState() {
     _animationController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: widget.fadeDuration),
+      duration: widget.fadeDuration,
+      reverseDuration: widget.fadeDuration,
     );
-    _fadeAnimation =
-        CurvedAnimation(parent: _animationController!, curve: Curves.easeIn);
+    _fadeAnimation = CurvedAnimation(
+        parent: _animationController!,
+        curve: Curves.easeInCubic,
+        reverseCurve: Curves.easeOutCubic);
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, -1), end: const Offset(0, 0))
+            .animate(_fadeAnimation);
     super.initState();
 
     showIt();
@@ -247,11 +303,14 @@ class ToastStateFulState extends State<_ToastStateFul>
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
-      opacity: _fadeAnimation as Animation<double>,
-      child: Center(
-        child: Material(
-          color: Colors.transparent,
-          child: widget.child,
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Center(
+          child: Material(
+            color: Colors.transparent,
+            child: widget.child,
+          ),
         ),
       ),
     );
