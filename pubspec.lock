@@ -190,6 +190,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.6.5"
+  cloud_toast:
+    dependency: "direct main"
+    description:
+      path: "packages/cloud_toast"
+      relative: true
+    source: path
+    version: "0.0.1"
   code_builder:
     dependency: transitive
     description:
@@ -373,13 +380,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  fluttertoast:
-    dependency: "direct main"
-    description:
-      name: fluttertoast
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "8.0.8"
   frontend_server_client:
     dependency: transitive
     description:

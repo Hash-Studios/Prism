@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:cloud_toast/cloud_toast.dart';
 // import 'package:prism/services/logger.dart';
 
 class ToastController {
-  late final FToast fToast;
+  late final CloudToast fToast;
 
   void init(BuildContext context) {
     try {
-      fToast = FToast();
+      fToast = CloudToast();
       fToast.init(context);
     } catch (e, s) {
       // logger.e(e, e, s);
@@ -30,7 +30,7 @@ class ToastController {
         top: 0,
         left: 0,
       ),
-      gravity: ToastGravity.TOP,
+      gravity: ToastPosition.TOP,
       toastDuration: const Duration(seconds: 2),
       fadeDuration: 250,
     );
