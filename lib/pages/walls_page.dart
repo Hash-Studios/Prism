@@ -94,7 +94,7 @@ class _WallsPageState extends State<WallsPage> {
                   controller: controller,
                   itemCount: snapshot.data?.length ?? 0,
                   itemBuilder: (context, index) => WallHavenImmersiveWallCard(
-                      wallpaper: snapshot.data?[index]),
+                      wallpaper: snapshot.data![index]),
                 );
               default:
                 // TODO: Add error page
