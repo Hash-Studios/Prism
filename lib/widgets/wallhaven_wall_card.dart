@@ -50,7 +50,8 @@ class WallHavenWallCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  timeago.format(wallpaper.createdAt, allowFromNow: true),
+                  timeago.format(wallpaper.createdAt ?? DateTime.now(),
+                      allowFromNow: true),
                   softWrap: false,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
