@@ -51,7 +51,7 @@ class WallHavenWall extends Wallpaper {
           wallpaper_url: url,
           createdAt: createdAt,
           wallpaper_provider: "WallHaven",
-          wallpaper_thumb: thumbs.small,
+          wallpaper_thumb: thumbs.original,
           category: category,
           by: uploader?.username,
           resolution: resolution,
