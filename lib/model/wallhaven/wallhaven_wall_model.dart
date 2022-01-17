@@ -50,7 +50,7 @@ class WallHavenWall extends Wallpaper {
           id: id,
           wallpaper_url: url,
           createdAt: createdAt,
-          wallpaper_provider: "WallHaven",
+          wallpaper_provider: WallpaperProvider.WallHaven,
           wallpaper_thumb: thumbs.original,
           category: category,
           by: uploader?.username,
@@ -87,5 +87,6 @@ class WallHavenWall extends Wallpaper {
             .toList(),
       );
 
+  @override
   Map<String, dynamic> toJson() => _$WallHavenWallToJson(this);
 }
