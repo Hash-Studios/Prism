@@ -34,7 +34,7 @@ class PexelsWall extends Wallpaper {
           id: id.toString(),
           wallpaper_url: url,
           createdAt: DateTime.now(),
-          wallpaper_provider: "Pexels",
+          wallpaper_provider: WallpaperProvider.Pexels,
           wallpaper_thumb: src.small,
           by: photographer,
           resolution: "${width}x$height",
@@ -54,5 +54,6 @@ class PexelsWall extends Wallpaper {
         src: PexelsSrc.fromJson(json['src'] as Map<String, dynamic>),
       );
 
+  @override
   Map<String, dynamic> toJson() => _$PexelsWallToJson(this);
 }

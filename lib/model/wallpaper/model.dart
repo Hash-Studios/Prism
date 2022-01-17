@@ -3,6 +3,14 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'model.g.dart';
 
+enum WallpaperProvider {
+  Prism,
+  WallHaven,
+  Pexels,
+  PrismLive,
+  PexelsLive,
+}
+
 class TimestampConverter implements JsonConverter<DateTime?, Timestamp?> {
   const TimestampConverter();
 
@@ -30,7 +38,7 @@ class Wallpaper {
   bool? review;
   String? size;
   String? userPhoto;
-  String wallpaper_provider;
+  WallpaperProvider wallpaper_provider;
   String wallpaper_thumb;
   String wallpaper_url;
   String? name;
