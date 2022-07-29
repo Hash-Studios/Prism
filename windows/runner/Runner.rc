@@ -90,10 +90,10 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.hash" "\0"
-            VALUE "FileDescription", "A new Flutter project." "\0"
+            VALUE "FileDescription", "prism" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "prism" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2021 com.hash. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2022 com.hash. All rights reserved." "\0"
             VALUE "OriginalFilename", "prism.exe" "\0"
             VALUE "ProductName", "prism" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

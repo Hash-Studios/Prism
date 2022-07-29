@@ -8,6 +8,7 @@
 .buildlog/
 .history
 .svn/
+migrate_working_dir/
 
 # IntelliJ related
 *.iml
@@ -22,6 +23,7 @@
 
 # Flutter/Dart/Pub related
 **/doc/api/
+**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -29,33 +31,25 @@
 .pub-cache/
 .pub/
 /build/
-/keys/
-android/key.properties
-keytool.exe
 
 # Web related
 lib/generated_plugin_registrant.dart
 
-# Exceptions to above rules.
-!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
-android/key.properties
-key.jks
-pubspec.lock
-android/app/google-services.json
-lib/gitkey.dart
-android/app/.settings/org.eclipse.buildship.core.prefs
-android/app/.project
-android/app/.classpath
-android/.project
-.vscode/settings.json
-android/.settings/org.eclipse.buildship.core.prefs
-android/gradle/wrapper/gradle-wrapper.properties
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
 android/app/build.gradle
 android/google-play-console.json
 android/key.jks
 android/android_keys.zip
-
-# Generated code
 *.gr.dart
 *.g.dart
 lib/firebase_options.dart

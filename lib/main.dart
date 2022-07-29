@@ -83,20 +83,14 @@ class MyApp extends StatelessWidget {
               platform: themeController.platform,
               subThemesData: FlexSubThemesData(
                 useTextTheme: themeController.useTextTheme,
-                defaultRadius: themeController.useDefaultRadius
-                    ? null
-                    : themeController.cornerRadius,
+                defaultRadius: themeController.useDefaultRadius ? null : themeController.cornerRadius,
                 fabUseShape: themeController.fabUseShape,
                 interactionEffects: themeController.interactionEffects,
-                bottomNavigationBarOpacity:
-                    themeController.bottomNavigationBarOpacity,
-                bottomNavigationBarElevation:
-                    themeController.bottomNavigationBarElevation,
+                bottomNavigationBarOpacity: themeController.bottomNavigationBarOpacity,
+                bottomNavigationBarElevation: themeController.bottomNavigationBarElevation,
                 inputDecoratorIsFilled: themeController.inputDecoratorIsFilled,
-                inputDecoratorBorderType:
-                    themeController.inputDecoratorBorderType,
-                inputDecoratorUnfocusedHasBorder:
-                    themeController.inputDecoratorUnfocusedHasBorder,
+                inputDecoratorBorderType: themeController.inputDecoratorBorderType,
+                inputDecoratorUnfocusedHasBorder: themeController.inputDecoratorUnfocusedHasBorder,
                 blendOnColors: themeController.blendLightOnColors,
                 blendTextTheme: themeController.blendLightTextTheme,
                 popupMenuOpacity: 0.96,
@@ -138,20 +132,14 @@ class MyApp extends StatelessWidget {
               platform: themeController.platform,
               subThemesData: FlexSubThemesData(
                 useTextTheme: themeController.useTextTheme,
-                defaultRadius: themeController.useDefaultRadius
-                    ? null
-                    : themeController.cornerRadius,
+                defaultRadius: themeController.useDefaultRadius ? null : themeController.cornerRadius,
                 fabUseShape: themeController.fabUseShape,
                 interactionEffects: themeController.interactionEffects,
-                bottomNavigationBarOpacity:
-                    themeController.bottomNavigationBarOpacity,
-                bottomNavigationBarElevation:
-                    themeController.bottomNavigationBarElevation,
+                bottomNavigationBarOpacity: themeController.bottomNavigationBarOpacity,
+                bottomNavigationBarElevation: themeController.bottomNavigationBarElevation,
                 inputDecoratorIsFilled: themeController.inputDecoratorIsFilled,
-                inputDecoratorBorderType:
-                    themeController.inputDecoratorBorderType,
-                inputDecoratorUnfocusedHasBorder:
-                    themeController.inputDecoratorUnfocusedHasBorder,
+                inputDecoratorBorderType: themeController.inputDecoratorBorderType,
+                inputDecoratorUnfocusedHasBorder: themeController.inputDecoratorUnfocusedHasBorder,
                 blendOnColors: themeController.blendDarkOnColors,
                 blendTextTheme: themeController.blendDarkTextTheme,
                 popupMenuOpacity: 0.95,
