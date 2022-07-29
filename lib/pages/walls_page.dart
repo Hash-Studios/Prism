@@ -33,8 +33,7 @@ class _WallsPageState extends State<WallsPage> {
     controller.addListener(() {
       if (controller.position.atEdge) {
         if (controller.position.pixels != 0) {
-          if (context.read<WallHavenController>().searchState !=
-              SearchState.busy) {
+          if (context.read<WallHavenController>().searchState != SearchState.busy) {
             context.read<WallHavenController>().page += 1;
             context.read<WallHavenController>().getSearchResults();
           }
@@ -45,8 +44,7 @@ class _WallsPageState extends State<WallsPage> {
           logger.d("Show");
           context.read<HideController>().showBar();
         }
-      } else if (controller.position.userScrollDirection ==
-          ScrollDirection.reverse) {
+      } else if (controller.position.userScrollDirection == ScrollDirection.reverse) {
         if (!context.read<HideController>().hidden) {
           logger.d("Hide");
           context.read<HideController>().hideBar();
@@ -78,7 +76,7 @@ class _WallsPageState extends State<WallsPage> {
                   padding: const EdgeInsets.all(10),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 9 / 16,
+                    childAspectRatio: 9 / 12,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
@@ -93,8 +91,7 @@ class _WallsPageState extends State<WallsPage> {
                   padding: const EdgeInsets.all(0),
                   controller: controller,
                   itemCount: snapshot.data?.length ?? 0,
-                  itemBuilder: (context, index) => WallHavenImmersiveWallCard(
-                      wallpaper: snapshot.data![index]),
+                  itemBuilder: (context, index) => WallHavenImmersiveWallCard(wallpaper: snapshot.data![index]),
                 );
               default:
                 // TODO: Add error page

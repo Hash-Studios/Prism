@@ -9,6 +9,7 @@ import 'package:prism/controllers/hide_controller.dart';
 import 'package:prism/controllers/settings_controller.dart';
 import 'package:prism/controllers/setup_controller.dart';
 import 'package:prism/controllers/theme_controller.dart';
+import 'package:prism/controllers/toast_controller.dart';
 import 'package:prism/controllers/wallhaven_controller.dart';
 import 'package:prism/firebase_options.dart';
 import 'package:prism/router/app_router.dart';
@@ -41,6 +42,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => HideController(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ToastController(),
         ),
       ],
       child: Phoenix(
@@ -82,20 +86,14 @@ class MyApp extends StatelessWidget {
               platform: themeController.platform,
               subThemesData: FlexSubThemesData(
                 useTextTheme: themeController.useTextTheme,
-                defaultRadius: themeController.useDefaultRadius
-                    ? null
-                    : themeController.cornerRadius,
+                defaultRadius: themeController.useDefaultRadius ? null : themeController.cornerRadius,
                 fabUseShape: themeController.fabUseShape,
                 interactionEffects: themeController.interactionEffects,
-                bottomNavigationBarOpacity:
-                    themeController.bottomNavigationBarOpacity,
-                bottomNavigationBarElevation:
-                    themeController.bottomNavigationBarElevation,
+                bottomNavigationBarOpacity: themeController.bottomNavigationBarOpacity,
+                bottomNavigationBarElevation: themeController.bottomNavigationBarElevation,
                 inputDecoratorIsFilled: themeController.inputDecoratorIsFilled,
-                inputDecoratorBorderType:
-                    themeController.inputDecoratorBorderType,
-                inputDecoratorUnfocusedHasBorder:
-                    themeController.inputDecoratorUnfocusedHasBorder,
+                inputDecoratorBorderType: themeController.inputDecoratorBorderType,
+                inputDecoratorUnfocusedHasBorder: themeController.inputDecoratorUnfocusedHasBorder,
                 blendOnColors: themeController.blendLightOnColors,
                 blendTextTheme: themeController.blendLightTextTheme,
                 popupMenuOpacity: 0.96,
@@ -136,20 +134,14 @@ class MyApp extends StatelessWidget {
               platform: themeController.platform,
               subThemesData: FlexSubThemesData(
                 useTextTheme: themeController.useTextTheme,
-                defaultRadius: themeController.useDefaultRadius
-                    ? null
-                    : themeController.cornerRadius,
+                defaultRadius: themeController.useDefaultRadius ? null : themeController.cornerRadius,
                 fabUseShape: themeController.fabUseShape,
                 interactionEffects: themeController.interactionEffects,
-                bottomNavigationBarOpacity:
-                    themeController.bottomNavigationBarOpacity,
-                bottomNavigationBarElevation:
-                    themeController.bottomNavigationBarElevation,
+                bottomNavigationBarOpacity: themeController.bottomNavigationBarOpacity,
+                bottomNavigationBarElevation: themeController.bottomNavigationBarElevation,
                 inputDecoratorIsFilled: themeController.inputDecoratorIsFilled,
-                inputDecoratorBorderType:
-                    themeController.inputDecoratorBorderType,
-                inputDecoratorUnfocusedHasBorder:
-                    themeController.inputDecoratorUnfocusedHasBorder,
+                inputDecoratorBorderType: themeController.inputDecoratorBorderType,
+                inputDecoratorUnfocusedHasBorder: themeController.inputDecoratorUnfocusedHasBorder,
                 blendOnColors: themeController.blendDarkOnColors,
                 blendTextTheme: themeController.blendDarkTextTheme,
                 popupMenuOpacity: 0.95,

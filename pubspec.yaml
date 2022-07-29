@@ -58,13 +58,14 @@ dependencies:
   shared_preferences: ^2.0.15
   sprung: ^3.0.1
   timeago: ^3.2.2
+  path: ^1.8.1
+  marquee: ^2.2.3
 
   # Firebase
   firebase_core: ^1.20.0
   cloud_firestore: ^3.4.2
   firebase_auth: ^3.6.1
   google_sign_in: ^5.4.0
-  path: ^1.8.1
 
 dependency_overrides:
   analyzer: '4.2.0'

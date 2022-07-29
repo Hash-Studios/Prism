@@ -33,8 +33,7 @@ void setupLocator() {
   locator.registerLazySingleton<SettingsService>(() => SettingsService());
   locator.registerLazySingleton<AuthService>(() => AuthService());
   locator.registerLazySingleton<ToastController>(() => ToastController());
-  locator.registerLazySingleton<PaletteGeneratorService>(
-      () => PaletteGeneratorService());
+  locator.registerLazySingleton<PaletteGeneratorService>(() => PaletteGeneratorService());
   locator.registerLazySingleton<HideService>(() => HideService());
   logger.d('Locator setup took ${stopwatch.elapsedMilliseconds} ms');
   stopwatch.stop();

@@ -19,9 +19,7 @@ class ProfilePage extends StatelessWidget {
       case FlexAppBarStyle.primary:
         return isLight ? 'Primary color - Default' : 'Primary color';
       case FlexAppBarStyle.material:
-        return isLight
-            ? 'White background'
-            : 'Dark background (#121212) - Default';
+        return isLight ? 'White background' : 'Dark background (#121212) - Default';
       case FlexAppBarStyle.surface:
         return 'Surface, with primary color blend';
       case FlexAppBarStyle.background:
@@ -50,10 +48,8 @@ class ProfilePage extends StatelessWidget {
                   if (snapshot.hasData) {
                     return ListTile(
                       leading: const Icon(Icons.person),
-                      title:
-                          Text(locator<AuthService>().prismUsersV2?.name ?? ''),
-                      subtitle: Text(
-                          locator<AuthService>().prismUsersV2?.email ?? ''),
+                      title: Text(locator<AuthService>().prismUsersV2?.name ?? ''),
+                      subtitle: Text(locator<AuthService>().prismUsersV2?.email ?? ''),
                       onTap: () {
                         locator<AuthService>().signOutWithGoogle();
                       },
@@ -80,10 +76,18 @@ class ProfilePage extends StatelessWidget {
                 leading: const Icon(Icons.message),
                 title: const Text("Show toast"),
                 onTap: () {
-                  locator<ToastController>()
-                      .messageToast("Happy if you read this!");
-                  locator<ToastController>()
-                      .errorToast("Sad if you read this!");
+                  locator<ToastController>().messageToast("Happy if you read this!");
+                  locator<ToastController>().errorToast("Sad if you read this!");
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.message),
+                title: const Text("Show marquee toast"),
+                onTap: () {
+                  Provider.of<ToastController>(context, listen: false).animateMarqueeToolBar(
+                    text: 'NEW WALLPAPERS ARE LIVE!!!',
+                    duration: const Duration(seconds: 10),
+                  );
                 },
               ),
               const Text(
@@ -109,12 +113,10 @@ class ProfilePage extends StatelessWidget {
               ),
               SwitchListTile.adaptive(
                 title: const Text('Level Surfaces'),
-                value: context.read<ThemeController>().surfaceMode ==
-                    FlexSurfaceMode.levelSurfacesLowScaffold,
+                value: context.read<ThemeController>().surfaceMode == FlexSurfaceMode.levelSurfacesLowScaffold,
                 onChanged: (value) {
-                  context.read<ThemeController>().setSurfaceMode(value
-                      ? FlexSurfaceMode.levelSurfacesLowScaffold
-                      : FlexSurfaceMode.highScaffoldLowSurface);
+                  context.read<ThemeController>().setSurfaceMode(
+                      value ? FlexSurfaceMode.levelSurfacesLowScaffold : FlexSurfaceMode.highScaffoldLowSurface);
                   value
                       ? context.read<ThemeController>().setBlendLevel(30)
                       : context.read<ThemeController>().setBlendLevel(18);
@@ -123,49 +125,35 @@ class ProfilePage extends StatelessWidget {
               SwitchListTile.adaptive(
                 title: const Text('Transparent Status bar'),
                 value: context.read<ThemeController>().transparentStatusBar,
-                onChanged:
-                    context.read<ThemeController>().setTransparentStatusBar,
+                onChanged: context.read<ThemeController>().setTransparentStatusBar,
               ),
               SwitchListTile.adaptive(
                 title: const Text('Transparent Bottom bar'),
-                value: context
-                        .read<ThemeController>()
-                        .bottomNavigationBarOpacity ==
-                    0.95,
+                value: context.read<ThemeController>().bottomNavigationBarOpacity == 0.95,
                 onChanged: (val) {
-                  context
-                      .read<ThemeController>()
-                      .setBottomNavigationBarOpacity(val ? 0.95 : 1);
+                  context.read<ThemeController>().setBottomNavigationBarOpacity(val ? 0.95 : 1);
                 },
               ),
               SwitchListTile.adaptive(
                   title: const Text('forBackground TabBar'),
-                  value: context.read<ThemeController>().tabBarStyle ==
-                      FlexTabBarStyle.forBackground,
+                  value: context.read<ThemeController>().tabBarStyle == FlexTabBarStyle.forBackground,
                   onChanged: (value) {
                     value
-                        ? context
-                            .read<ThemeController>()
-                            .setTabBarStyle(FlexTabBarStyle.forBackground)
-                        : context
-                            .read<ThemeController>()
-                            .setTabBarStyle(FlexTabBarStyle.forAppBar);
+                        ? context.read<ThemeController>().setTabBarStyle(FlexTabBarStyle.forBackground)
+                        : context.read<ThemeController>().setTabBarStyle(FlexTabBarStyle.forAppBar);
                   }),
               if (isLight)
                 ListTile(
                   title: const Text('Light mode color'),
                   subtitle: Text(
-                    explainAppBarStyle(
-                        context.read<ThemeController>().lightAppBarStyle,
-                        isLight),
+                    explainAppBarStyle(context.read<ThemeController>().lightAppBarStyle, isLight),
                   ),
                 ),
               if (isLight)
                 ListTile(
                   trailing: AppBarStyleButtons(
                       style: context.read<ThemeController>().lightAppBarStyle,
-                      onChanged:
-                          context.read<ThemeController>().setLightAppBarStyle,
+                      onChanged: context.read<ThemeController>().setLightAppBarStyle,
                       // To access the custom color we defined for app bar, in this
                       // toggle buttons widget, we have to pass it in. It is not
                       // carried with the theme so we cannot get it from there in
@@ -175,10 +163,7 @@ class ProfilePage extends StatelessWidget {
                       // example we only actually only have a custom app bar color
                       // in the 1st custom color example, and we wanted to be
                       // able to show it on the toggle button.
-                      customAppBarColor:
-                          AppColor.scheme(context.read<ThemeController>())
-                              .light
-                              .appBarColor),
+                      customAppBarColor: AppColor.scheme(context.read<ThemeController>()).light.appBarColor),
                 ),
               ElevatedButton(
                   onPressed: () {
