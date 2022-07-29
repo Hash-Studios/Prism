@@ -59,6 +59,15 @@ dependencies:
   sprung: ^3.0.1
   timeago: ^3.2.2
 
+  # Firebase
+  firebase_core: ^1.20.0
+  cloud_firestore: ^3.4.2
+  firebase_auth: ^3.6.1
+  google_sign_in: ^5.4.0
+
+dependency_overrides:
+  analyzer: '4.2.0'
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
