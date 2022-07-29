@@ -40,9 +40,9 @@ class WallHavenService {
 
   void updateCategory() {
     String _categories = Categories.all.toIntString();
-    if (!showGeneralCategory) _categories = '0' + _categories.substring(1);
-    if (!showAnimeCategory) _categories = _categories[0] + '0' + _categories[2];
-    if (!showPeopleCategory) _categories = _categories.substring(0, 2) + '0';
+    if (!showGeneralCategory) _categories = '0${_categories.substring(1)}';
+    if (!showAnimeCategory) _categories = '${_categories[0]}0${_categories[2]}';
+    if (!showPeopleCategory) _categories = '${_categories.substring(0, 2)}0';
     if (_categories == '000') {
       _categories = '100';
       showGeneralCategory = true;
@@ -52,8 +52,8 @@ class WallHavenService {
 
   void updatePurity() {
     String _purity = Purity.all.toIntString();
-    if (!showSFWPurity) _purity = '0' + _purity.substring(1);
-    if (!showSketchyPurity) _purity = _purity[0] + '0' + _purity[2];
+    if (!showSFWPurity) _purity = '0${_purity.substring(1)}';
+    if (!showSketchyPurity) _purity = '${_purity[0]}0${_purity[2]}';
     if (_purity == '000') {
       _purity = '100';
       showSFWPurity = true;

@@ -37,18 +37,18 @@ class SetupController extends ChangeNotifier {
     return await _setupService.getSetupFromName(name);
   }
 
-  Future<void> uploadSetup(Setup _setup) async {
-    await _setupService.uploadSetup(_setup);
+  Future<void> uploadSetup(Setup setup) async {
+    await _setupService.uploadSetup(setup);
     notifyListeners();
   }
 
-  Future<void> editSetup(String setupDocId, Setup _setup) async {
-    await _setupService.editSetup(setupDocId, _setup);
+  Future<void> editSetup(String setupDocId, Setup setup) async {
+    await _setupService.editSetup(setupDocId, setup);
     notifyListeners();
   }
 
-  Future<void> draftSetup(Setup _setup) async {
-    await _setupService.draftSetup(_setup);
+  Future<void> draftSetup(Setup setup) async {
+    await _setupService.draftSetup(setup);
     notifyListeners();
   }
 

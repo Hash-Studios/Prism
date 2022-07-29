@@ -61,9 +61,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final double _appBarHeight =
+    final double appBarHeight =
         kToolbarHeight + MediaQuery.of(context).padding.top;
-    const double _bottomBarHeight = 80;
+    const double bottomBarHeight = 80;
     return AutoTabsRouter(
       routes: const [
         WallsRoute(),
@@ -78,14 +78,15 @@ class _HomePageState extends State<HomePage> {
           body: Stack(
             children: [
               AnimatedPositioned(
-                top:
-                    context.watch<HideController>().hidden ? -_appBarHeight : 0,
+                top: context.watch<HideController>().hidden ? -appBarHeight : 0,
+                duration: duration,
+                curve: curve,
                 child: AnimatedOpacity(
                   opacity: context.watch<HideController>().hidden ? 0 : 1,
                   duration: duration,
                   curve: curve,
                   child: SizedBox(
-                    height: _appBarHeight,
+                    height: appBarHeight,
                     width: MediaQuery.of(context).size.width,
                     child: AppBar(
                       title: Text(
@@ -125,8 +126,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                duration: duration,
-                curve: curve,
               ),
               FadeTransition(
                   opacity: animation,
@@ -136,21 +135,21 @@ class _HomePageState extends State<HomePage> {
                     padding: EdgeInsets.only(
                         top: context.watch<HideController>().hidden
                             ? 0
-                            : _appBarHeight),
+                            : appBarHeight),
                     child: child,
                   )),
               AnimatedPositioned(
                 duration: duration,
                 curve: curve,
                 bottom: context.watch<HideController>().hidden
-                    ? -_bottomBarHeight
+                    ? -bottomBarHeight
                     : 0,
                 child: AnimatedOpacity(
                   opacity: context.watch<HideController>().hidden ? 0 : 1,
                   duration: duration,
                   curve: curve,
                   child: SizedBox(
-                    height: _bottomBarHeight,
+                    height: bottomBarHeight,
                     width: MediaQuery.of(context).size.width,
                     child: nb.NavigationBar(
                       selectedIndex: tabsRouter.activeIndex,
@@ -230,7 +229,7 @@ class _HomePageState extends State<HomePage> {
                   padding: EdgeInsets.only(
                       bottom: context.watch<HideController>().hidden
                           ? 0
-                          : _bottomBarHeight),
+                          : bottomBarHeight),
                   child: FloatingActionButton(
                     elevation: 10,
                     onPressed: _fabAction,

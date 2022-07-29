@@ -474,7 +474,7 @@ abstract class ThemeService {
 
   /// Default value for the primaryLight color, also to reset settings.
   static const Color defaultPrimaryVariantLight =
-      FlexColor.materialLightPrimaryVariant;
+      FlexColor.materialLightPrimaryContainer;
 
   /// Loads setting for primaryVariantLight color, in example 5.
   Future<Color> primaryVariantLight();
@@ -499,7 +499,7 @@ abstract class ThemeService {
 
   /// Default value for the secondaryLight color, also to reset settings.
   static const Color defaultSecondaryVariantLight =
-      FlexColor.materialLightSecondaryVariant;
+      FlexColor.materialLightSecondaryContainer;
 
   /// Loads setting for secondaryVariantLight color, in example 5.
   Future<Color> secondaryVariantLight();
@@ -524,7 +524,7 @@ abstract class ThemeService {
 
   /// Default value for the primaryDark color, also to reset settings.
   static const Color defaultPrimaryVariantDark =
-      FlexColor.materialDarkPrimaryVariant;
+      FlexColor.materialDarkPrimaryContainer;
 
   /// Loads setting for primaryVariantDark color, in example 5.
   Future<Color> primaryVariantDark();
@@ -549,7 +549,7 @@ abstract class ThemeService {
 
   /// Default value for the secondaryDark color, also to reset settings.
   static const Color defaultSecondaryVariantDark =
-      FlexColor.materialDarkSecondaryVariant;
+      FlexColor.materialDarkSecondaryContainer;
 
   /// Loads setting for secondaryVariantDark color, in example 5.
   Future<Color> secondaryVariantDark();

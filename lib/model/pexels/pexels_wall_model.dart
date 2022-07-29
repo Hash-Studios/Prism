@@ -40,19 +40,8 @@ class PexelsWall extends Wallpaper {
           resolution: "${width}x$height",
         );
 
-  factory PexelsWall.fromJson(Map<String, dynamic> json) => PexelsWall(
-        id: json['id'] as int,
-        url: json['url'] as String,
-        width: json['width'] as int,
-        alt: json['alt'] as String,
-        avgColor: json['avg_color'] as String,
-        height: json['height'] as int,
-        liked: json['liked'] as bool,
-        photographer: json['photographer'] as String,
-        photographerId: json['photographer_id'] as int,
-        photographerUrl: json['photographer_url'] as String,
-        src: PexelsSrc.fromJson(json['src'] as Map<String, dynamic>),
-      );
+  factory PexelsWall.fromJson(Map<String, dynamic> json) =>
+      _$PexelsWallFromJson(json);
 
   @override
   Map<String, dynamic> toJson() => _$PexelsWallToJson(this);

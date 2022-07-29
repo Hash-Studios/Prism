@@ -24,14 +24,10 @@ Feature-rich, cross-platform, open source wallpaper manager app with Flutter & D
     <a href="#getting-started"><b>Getting Started</b></a> •
     <a href="#roadmap"><b>Roadmap</b></a> •
     <a href="#releases"><b>Releases</b></a>
-    
-    
 
-    
 </p>  
 
 <p align="center"><img src="assets/header.png" alt="Feature-rich, cross-platform, open source wallpaper manager app with Flutter & Dart." width="1000px" /></p>
-
 
 ## Getting Started
 
@@ -48,7 +44,7 @@ samples, guidance on mobile development, and a full API reference.
 
 ## Roadmap
 
-```
+```text
 Roadmap
 -- work in progress
 ```
@@ -61,13 +57,14 @@ Also latest features are tracked on the Telegram [channel](https://t.me/HashStud
 Please see the [releases tab](https://github.com/Hash-Studios/Prism/releases) for more details about the latest release.
 
 ## Contributing
+
 First off, thanks for visiting Prism's repo and taking your time to read this doc.
 Any contributions you make are **greatly appreciated**. Please look at [CONTRIBUTING.md](https://github.com/Hash-Studios/Prism/blob/main/doc/CONTRIBUTING.md) for details.
 
 ## Changelog
 
- - Add WallHaven API
- - Add login/sign-in with Google
- - Add debugger
- - Add default theme
- - Add basic setups
+- Add WallHaven API
+- Add login/sign-in with Google
+- Add debugger
+- Add default theme
+- Add basic setups
