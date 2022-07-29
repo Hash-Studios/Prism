@@ -56,13 +56,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeController = context.watch<ThemeController>();
-    final _appRouter = locator<AppRouter>();
+    final appRouter = locator<AppRouter>();
     return MaterialApp.router(
       routerDelegate: AutoRouterDelegate(
-        _appRouter,
+        appRouter,
         navigatorObservers: () => [AppRouteObserver()],
       ),
-      routeInformationParser: _appRouter.defaultRouteParser(),
+      routeInformationParser: appRouter.defaultRouteParser(),
       title: 'Prism',
       theme: themeController.useFlexColorScheme
           ? FlexThemeData.light(
@@ -77,20 +77,25 @@ class MyApp extends StatelessWidget {
               tooltipsMatchBackground: themeController.tooltipsMatchBackground,
               swapColors: themeController.swapLightColors,
               lightIsWhite: themeController.lightIsWhite,
-              useSubThemes: themeController.useSubThemes,
               visualDensity: AppData.visualDensity,
               fontFamily: AppData.font,
               platform: themeController.platform,
               subThemesData: FlexSubThemesData(
                 useTextTheme: themeController.useTextTheme,
-                defaultRadius: themeController.useDefaultRadius ? null : themeController.cornerRadius,
+                defaultRadius: themeController.useDefaultRadius
+                    ? null
+                    : themeController.cornerRadius,
                 fabUseShape: themeController.fabUseShape,
                 interactionEffects: themeController.interactionEffects,
-                bottomNavigationBarOpacity: themeController.bottomNavigationBarOpacity,
-                bottomNavigationBarElevation: themeController.bottomNavigationBarElevation,
+                bottomNavigationBarOpacity:
+                    themeController.bottomNavigationBarOpacity,
+                bottomNavigationBarElevation:
+                    themeController.bottomNavigationBarElevation,
                 inputDecoratorIsFilled: themeController.inputDecoratorIsFilled,
-                inputDecoratorBorderType: themeController.inputDecoratorBorderType,
-                inputDecoratorUnfocusedHasBorder: themeController.inputDecoratorUnfocusedHasBorder,
+                inputDecoratorBorderType:
+                    themeController.inputDecoratorBorderType,
+                inputDecoratorUnfocusedHasBorder:
+                    themeController.inputDecoratorUnfocusedHasBorder,
                 blendOnColors: themeController.blendLightOnColors,
                 blendTextTheme: themeController.blendLightTextTheme,
                 popupMenuOpacity: 0.96,
@@ -126,20 +131,25 @@ class MyApp extends StatelessWidget {
               tooltipsMatchBackground: themeController.tooltipsMatchBackground,
               swapColors: themeController.swapDarkColors,
               darkIsTrueBlack: themeController.darkIsTrueBlack,
-              useSubThemes: themeController.useSubThemes,
               visualDensity: AppData.visualDensity,
               fontFamily: AppData.font,
               platform: themeController.platform,
               subThemesData: FlexSubThemesData(
                 useTextTheme: themeController.useTextTheme,
-                defaultRadius: themeController.useDefaultRadius ? null : themeController.cornerRadius,
+                defaultRadius: themeController.useDefaultRadius
+                    ? null
+                    : themeController.cornerRadius,
                 fabUseShape: themeController.fabUseShape,
                 interactionEffects: themeController.interactionEffects,
-                bottomNavigationBarOpacity: themeController.bottomNavigationBarOpacity,
-                bottomNavigationBarElevation: themeController.bottomNavigationBarElevation,
+                bottomNavigationBarOpacity:
+                    themeController.bottomNavigationBarOpacity,
+                bottomNavigationBarElevation:
+                    themeController.bottomNavigationBarElevation,
                 inputDecoratorIsFilled: themeController.inputDecoratorIsFilled,
-                inputDecoratorBorderType: themeController.inputDecoratorBorderType,
-                inputDecoratorUnfocusedHasBorder: themeController.inputDecoratorUnfocusedHasBorder,
+                inputDecoratorBorderType:
+                    themeController.inputDecoratorBorderType,
+                inputDecoratorUnfocusedHasBorder:
+                    themeController.inputDecoratorUnfocusedHasBorder,
                 blendOnColors: themeController.blendDarkOnColors,
                 blendTextTheme: themeController.blendDarkTextTheme,
                 popupMenuOpacity: 0.95,

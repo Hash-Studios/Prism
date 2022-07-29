@@ -49,7 +49,7 @@ class ProfilePage extends StatelessWidget {
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     return ListTile(
-                      leading: Icon(Icons.person),
+                      leading: const Icon(Icons.person),
                       title:
                           Text(locator<AuthService>().prismUsersV2?.name ?? ''),
                       subtitle: Text(
@@ -60,8 +60,8 @@ class ProfilePage extends StatelessWidget {
                     );
                   } else {
                     return ListTile(
-                      leading: Icon(Icons.person),
-                      title: Text("Login to see your profile"),
+                      leading: const Icon(Icons.person),
+                      title: const Text("Login to see your profile"),
                       onTap: () {
                         locator<AuthService>().signInWithGoogle();
                       },
@@ -70,15 +70,15 @@ class ProfilePage extends StatelessWidget {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.bug_report),
-                title: Text("Launch debugger"),
+                leading: const Icon(Icons.bug_report),
+                title: const Text("Launch debugger"),
                 onTap: () {
                   LogConsole.openLogConsole(context);
                 },
               ),
               ListTile(
-                leading: Icon(Icons.message),
-                title: Text("Show toast"),
+                leading: const Icon(Icons.message),
+                title: const Text("Show toast"),
                 onTap: () {
                   locator<ToastController>()
                       .messageToast("Happy if you read this!");

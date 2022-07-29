@@ -1,5 +1,4 @@
 import 'package:flex_color_scheme/flex_color_scheme.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:prism/services/locator.dart';
@@ -631,17 +630,17 @@ class ThemeController with ChangeNotifier {
         description: FlexColor.customDescription,
         light: FlexSchemeColor(
           primary: primaryLight,
-          primaryVariant: primaryVariantLight,
+          primaryContainer: primaryVariantLight,
           secondary: secondaryLight,
-          secondaryVariant: secondaryVariantLight,
+          secondaryContainer: secondaryVariantLight,
           appBarColor: secondaryVariantLight,
           error: FlexColor.materialLightError,
         ),
         dark: FlexSchemeColor(
           primary: primaryDark,
-          primaryVariant: primaryVariantDark,
+          primaryContainer: primaryVariantDark,
           secondary: secondaryDark,
-          secondaryVariant: secondaryVariantDark,
+          secondaryContainer: secondaryVariantDark,
           appBarColor: secondaryVariantDark,
           error: FlexColor.materialDarkError,
         ),
@@ -651,13 +650,13 @@ class ThemeController with ChangeNotifier {
   Future<void> setCustomScheme(FlexSchemeData scheme) async {
     // Don't notify listeners while setting new values for each value.
     await setPrimaryLight(scheme.light.primary, false);
-    await setPrimaryVariantLight(scheme.light.primaryVariant, false);
+    await setPrimaryVariantLight(scheme.light.primaryContainer, false);
     await setSecondaryLight(scheme.light.secondary, false);
-    await setSecondaryVariantLight(scheme.light.secondaryVariant, false);
+    await setSecondaryVariantLight(scheme.light.secondaryContainer, false);
     await setPrimaryDark(scheme.dark.primary, false);
-    await setPrimaryVariantDark(scheme.dark.primaryVariant, false);
+    await setPrimaryVariantDark(scheme.dark.primaryContainer, false);
     await setSecondaryDark(scheme.dark.secondary, false);
-    await setSecondaryVariantDark(scheme.dark.secondaryVariant, false);
+    await setSecondaryVariantDark(scheme.dark.secondaryContainer, false);
     // Notify listeners, after all individual values have been set.
     notifyListeners();
   }

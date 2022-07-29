@@ -13,10 +13,10 @@ class LoadingPage extends StatefulWidget {
   const LoadingPage({Key? key}) : super(key: key);
 
   @override
-  _LoadingPageState createState() => _LoadingPageState();
+  LoadingPageState createState() => LoadingPageState();
 }
 
-class _LoadingPageState extends State<LoadingPage> {
+class LoadingPageState extends State<LoadingPage> {
   String shortcut = "No Action Set";
   @override
   void initState() {

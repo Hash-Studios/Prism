@@ -29,7 +29,7 @@ class WallpaperImmersiveCard extends StatelessWidget {
               double.parse(
                   wallpaper.resolution?.split("x")[0].toString() ?? "0"),
           child: CachedNetworkImage(
-            imageUrl: wallpaperUrl ?? '',
+            imageUrl: wallpaperUrl,
             fit: BoxFit.cover,
           ),
         ),

@@ -69,18 +69,18 @@ class PrismUsersV2 {
       premium: mapData["premium"] as bool,
       lastLoginAt: mapData["lastLoginAt"]?.toString() ??
           DateTime.now().toUtc().toIso8601String(),
-      links: mapData["links"] as Map<String, dynamic> ?? {},
-      followers: mapData["followers"] as List ?? [],
-      following: mapData["following"] as List ?? [],
+      links: mapData["links"] as Map<String, dynamic>? ?? {},
+      followers: mapData["followers"] as List? ?? [],
+      following: mapData["following"] as List? ?? [],
       profilePhoto: (mapData["profilePhoto"] ?? user.photoURL).toString(),
       bio: (mapData["bio"] ?? "").toString(),
       loggedIn: true,
-      badges: (mapData['badges'] as List<dynamic> ?? [])
+      badges: (mapData['badges'] as List<dynamic>? ?? [])
           .map((e) => Badge.fromJson(e as Map<String, dynamic>))
           .toList(),
-      subPrisms: mapData['subPrisms'] as List<dynamic> ?? [],
-      coins: mapData['coins'] as int ?? 0,
-      transactions: (mapData['transactions'] as List<dynamic> ?? [])
+      subPrisms: mapData['subPrisms'] as List<dynamic>? ?? [],
+      coins: mapData['coins'] as int? ?? 0,
+      transactions: (mapData['transactions'] as List<dynamic>? ?? [])
           .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
           .toList(),
       coverPhoto: mapData["coverPhoto"]?.toString(),
@@ -103,18 +103,18 @@ class PrismUsersV2 {
       premium: mapData["premium"] as bool,
       lastLoginAt: mapData["lastLoginAt"]?.toString() ??
           DateTime.now().toUtc().toIso8601String(),
-      links: mapData["links"] as Map<String, dynamic> ?? {},
-      followers: mapData["followers"] as List ?? [],
-      following: mapData["following"] as List ?? [],
+      links: mapData["links"] as Map<String, dynamic>? ?? {},
+      followers: mapData["followers"] as List? ?? [],
+      following: mapData["following"] as List? ?? [],
       profilePhoto: (mapData["profilePhoto"] ?? "").toString(),
       bio: (mapData["bio"] ?? "").toString(),
       loggedIn: true,
-      badges: (mapData['badges'] as List<dynamic> ?? [])
+      badges: (mapData['badges'] as List<dynamic>? ?? [])
           .map((e) => Badge.fromJson(e as Map<String, dynamic>))
           .toList(),
-      subPrisms: mapData['subPrisms'] as List<dynamic> ?? [],
-      coins: mapData['coins'] as int ?? 0,
-      transactions: (mapData['transactions'] as List<dynamic> ?? [])
+      subPrisms: mapData['subPrisms'] as List<dynamic>? ?? [],
+      coins: mapData['coins'] as int? ?? 0,
+      transactions: (mapData['transactions'] as List<dynamic>? ?? [])
           .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
           .toList(),
       coverPhoto: mapData["coverPhoto"]?.toString(),

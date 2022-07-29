@@ -8,35 +8,35 @@ class AppColor {
 
   static const FlexSchemeColor _defaultLight = FlexSchemeColor(
     primary: Color(0xffbb0053),
-    primaryVariant: Color(0xff87003c),
+    primaryContainer: Color(0xff87003c),
     secondary: Color(0xff795732),
-    secondaryVariant: Color(0xff45321c),
+    secondaryContainer: Color(0xff45321c),
     appBarColor: Color(0xff45321c),
     error: Color(0xffb00020),
   );
 
   static const FlexSchemeColor _defaultDark = FlexSchemeColor(
     primary: Color(0xfffdb0c2),
-    primaryVariant: Color(0xffda005f),
+    primaryContainer: Color(0xffda005f),
     secondary: Color(0xffffcb9b),
-    secondaryVariant: Color(0xffecbd91),
+    secondaryContainer: Color(0xffecbd91),
     appBarColor: Color(0xffecbd91),
     error: Color(0xffcf6679),
   );
 
   static const FlexSchemeColor _myScheme1Light = FlexSchemeColor(
     primary: Color(0xFF00296B),
-    primaryVariant: Color(0xFF2F5C91),
+    primaryContainer: Color(0xFF2F5C91),
     secondary: Color(0xFFFF7B00),
-    secondaryVariant: Color(0xFFFDB100),
+    secondaryContainer: Color(0xFFFDB100),
     appBarColor: Color(0xFFf95738),
   );
 
   static const FlexSchemeColor _myScheme1Dark = FlexSchemeColor(
     primary: Color(0xFF6B8BC3),
-    primaryVariant: Color(0xFF4874AA),
+    primaryContainer: Color(0xFF4874AA),
     secondary: Color(0xffff7155),
-    secondaryVariant: Color(0xFFF1CB9D),
+    secondaryContainer: Color(0xFFF1CB9D),
     appBarColor: Color(0xFF892807),
   );
 
