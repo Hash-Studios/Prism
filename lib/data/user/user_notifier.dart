@@ -1,3 +1,6 @@
+// LEGACY SNAPSHOT (Phase-2 cutover): User search provider/notifier -> UserSearchBloc.
+// This file is intentionally commented out for traceability.
+/*
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/data/user/user_service.dart';
 import 'package:Prism/locator/locator.dart';
@@ -17,3 +20,4 @@ class UserNotifier with ChangeNotifier {
     });
   }
 }
+*/

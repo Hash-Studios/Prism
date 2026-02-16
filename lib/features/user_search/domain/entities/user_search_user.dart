@@ -5,6 +5,11 @@ class UserSearchUser {
     required this.username,
     required this.email,
     required this.profilePhoto,
+    required this.coverPhoto,
+    required this.bio,
+    required this.links,
+    required this.followers,
+    required this.following,
     required this.premium,
   });
 
@@ -13,5 +18,10 @@ class UserSearchUser {
   final String username;
   final String email;
   final String profilePhoto;
+  final String? coverPhoto;
+  final String bio;
+  final Map<String, dynamic> links;
+  final List<dynamic> followers;
+  final List<dynamic> following;
   final bool premium;
 }

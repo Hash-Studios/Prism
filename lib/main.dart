@@ -12,10 +12,9 @@ import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
-import 'package:Prism/data/user/user_notifier.dart';
 import 'package:Prism/features/palette/presentation/bloc/palette_bloc.dart';
+import 'package:Prism/features/user_search/presentation/bloc/user_search_bloc.dart';
 import 'package:Prism/global/categoryProvider.dart';
-import 'package:Prism/locator/locator.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/payments/upgrade.dart';
@@ -70,7 +69,6 @@ Future<void> main() async {
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.dumpErrorToConsole(details, forceReport: true);
   };
-  await setupLocator();
   localNotification = LocalNotification();
   Firebase.initializeApp().then((_) {
     getApplicationDocumentsDirectory().then(
@@ -92,32 +90,16 @@ Future<void> main() async {
         if (prefs.get("systemOverlayColor") == null) {
           prefs.put("systemOverlayColor", 0xFFE57697);
         }
-        currentThemeID = prefs
-            .get('lightThemeID', defaultValue: "kLFrost White")
-            ?.toString();
+        currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
         prefs.put("lightThemeID", currentThemeID);
-        currentDarkThemeID = prefs
-            .get('darkThemeID', defaultValue: "kDMaterial Dark")
-            ?.toString();
+        currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
         prefs.put("darkThemeID", currentDarkThemeID);
         currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
         prefs.put("themeMode", currentMode);
-        lightAccent = Color(int.parse(
-            prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
-        prefs.put(
-            "lightAccent",
-            int.parse(lightAccent
-                .toString()
-                .replaceAll("Color(", "")
-                .replaceAll(")", "")));
-        darkAccent = Color(int.parse(
-            prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
-        prefs.put(
-            "darkAccent",
-            int.parse(darkAccent
-                .toString()
-                .replaceAll("Color(", "")
-                .replaceAll(")", "")));
+        lightAccent = Color(int.parse(prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
+        prefs.put("lightAccent", int.parse(lightAccent.toString().replaceAll("Color(", "").replaceAll(")", "")));
+        darkAccent = Color(int.parse(prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
+        prefs.put("darkAccent", int.parse(darkAccent.toString().replaceAll("Color(", "").replaceAll(")", "")));
         optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
         // if (optimisedWallpapers) {
         //   prefs.put('optimisedWallpapers', true);
@@ -138,13 +120,10 @@ Future<void> main() async {
         }
         configureDependencies();
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          systemNavigationBarColor:
-              Color(prefs.get('systemOverlayColor') as int),
+          systemNavigationBarColor: Color(prefs.get('systemOverlayColor') as int),
         ));
-        SystemChrome.setSystemUIOverlayStyle(
-            const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
-        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-            .then(
+        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
           (value) => runZonedGuarded<Future<void>>(
             () {
               runApp(
@@ -163,8 +142,6 @@ Future<void> main() async {
                       ChangeNotifierProvider<FavouriteSetupProvider>(
                         create: (context) => FavouriteSetupProvider(),
                       ),
-                      ChangeNotifierProvider<UserNotifier>(
-                          create: (context) => locator<UserNotifier>()),
                       ChangeNotifierProvider<CategorySupplier>(
                         create: (context) => CategorySupplier(),
                       ),
@@ -178,22 +155,22 @@ Future<void> main() async {
                         create: (context) => ProfileSetupProvider(),
                       ),
                       ChangeNotifierProvider<ThemeModel>(
-                        create: (context) =>
-                            ThemeModel(themes[currentThemeID!], lightAccent),
+                        create: (context) => ThemeModel(themes[currentThemeID!], lightAccent),
                       ),
                       ChangeNotifierProvider<DarkThemeModel>(
-                        create: (context) => DarkThemeModel(
-                            darkThemes[currentDarkThemeID!], darkAccent),
+                        create: (context) => DarkThemeModel(darkThemes[currentDarkThemeID!], darkAccent),
                       ),
                       ChangeNotifierProvider<ThemeModeExtended>(
-                        create: (context) =>
-                            ThemeModeExtended(modes[currentMode!]),
+                        create: (context) => ThemeModeExtended(modes[currentMode!]),
                       ),
                     ],
                     child: MultiBlocProvider(
                       providers: [
                         BlocProvider<PaletteBloc>(
                           create: (_) => getIt<PaletteBloc>(),
+                        ),
+                        BlocProvider<UserSearchBloc>(
+                          create: (_) => getIt<UserSearchBloc>(),
                         ),
                       ],
                       child: MyApp(),
@@ -221,8 +198,7 @@ class _MyAppState extends State<MyApp> {
   Future<bool> getLoginStatus() async {
     await globals.gAuth.googleSignIn.isSignedIn().then((value) {
       if (value) {
-        if (prefs.get("logouteveryoneaugust2021", defaultValue: false) ==
-            false) {
+        if (prefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
           globals.gAuth.signOutGoogle();
           prefs.put("logouteveryoneaugust2021", true);
           toasts.codeSend("Please login again, to enjoy the app!");
@@ -241,17 +217,13 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     FlutterDisplayMode.setHighRefreshRate();
+    localNotification.createNotificationChannel("followers", "Followers", "Get notifications for new followers.", true);
     localNotification.createNotificationChannel(
-        "followers", "Followers", "Get notifications for new followers.", true);
+        "recommendations", "Recommendations", "Get notifications for recommendations from Prism.", true);
     localNotification.createNotificationChannel(
-        "recommendations",
-        "Recommendations",
-        "Get notifications for recommendations from Prism.",
-        true);
-    localNotification.createNotificationChannel("posts", "Posts",
-        "Get notifications for posts from artists you follow.", true);
-    localNotification.createNotificationChannel("downloads", "Downloads",
-        "Get notifications for download progress of wallpapers.", false);
+        "posts", "Posts", "Get notifications for posts from artists you follow.", true);
+    localNotification.createNotificationChannel(
+        "downloads", "Downloads", "Get notifications for download progress of wallpapers.", false);
     getLoginStatus();
     localNotification.fetchNotificationData(context);
     super.initState();
@@ -269,9 +241,7 @@ class _MyAppState extends State<MyApp> {
       theme: Provider.of<ThemeModel>(context).currentTheme,
       darkTheme: Provider.of<DarkThemeModel>(context).currentTheme,
       themeMode: Provider.of<ThemeModeExtended>(context).currentMode,
-      home: ((prefs.get('onboarded_new') as bool?) ?? false)
-          ? const SplashWidget()
-          : OnboardingScreen(),
+      home: ((prefs.get('onboarded_new') as bool?) ?? false) ? const SplashWidget() : OnboardingScreen(),
     );
   }
 }
@@ -300,30 +270,16 @@ class _RestartWidgetState extends State<RestartWidget> {
       key = UniqueKey();
     });
     Hive.openBox('prefs').then((prefs) {
-      currentThemeID =
-          prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+      currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
       prefs.put("lightThemeID", currentThemeID);
-      currentDarkThemeID =
-          prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
+      currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
       prefs.put("darkThemeID", currentDarkThemeID);
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);
-      lightAccent = Color(int.parse(
-          prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
-      prefs.put(
-          "lightAccent",
-          int.parse(lightAccent
-              .toString()
-              .replaceAll("Color(", "")
-              .replaceAll(")", "")));
-      darkAccent = Color(int.parse(
-          prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
-      prefs.put(
-          "darkAccent",
-          int.parse(darkAccent
-              .toString()
-              .replaceAll("Color(", "")
-              .replaceAll(")", "")));
+      lightAccent = Color(int.parse(prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
+      prefs.put("lightAccent", int.parse(lightAccent.toString().replaceAll("Color(", "").replaceAll(")", "")));
+      darkAccent = Color(int.parse(prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
+      prefs.put("darkAccent", int.parse(darkAccent.toString().replaceAll("Color(", "").replaceAll(")", "")));
     });
   }
 

@@ -1,3 +1,6 @@
+// LEGACY SNAPSHOT (Phase-2 cutover): Old user-search locator wiring.
+// DI is now handled via get_it + injectable in core/di.
+/*
 import 'package:Prism/data/user/user_notifier.dart';
 import 'package:Prism/data/user/user_service.dart';
 import 'package:Prism/logger/logger.dart';
@@ -14,3 +17,4 @@ Future<void> setupLocator() async {
   logger.d('SETUP LOCATOR EXECUTED IN ${stopwatch.elapsed}');
   stopwatch.stop();
 }
+*/

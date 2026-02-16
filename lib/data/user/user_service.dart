@@ -1,3 +1,6 @@
+// LEGACY SNAPSHOT (Phase-2 cutover): User search service -> UserSearchRepository/UseCase/Bloc.
+// This file is intentionally commented out for traceability.
+/*
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -36,3 +39,4 @@ class UserService {
     _stateSubject.close();
   }
 }
+*/
