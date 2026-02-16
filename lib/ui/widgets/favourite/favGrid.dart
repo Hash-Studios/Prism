@@ -1,7 +1,7 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
@@ -32,9 +32,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
-            "Dark"
+    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
         ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
@@ -102,9 +100,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                     children: <Widget>[
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
-                        child: Provider.of<ThemeModeExtended>(context)
-                                    .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                "Dark"
+                        child: context.prismModeStyleForContext() == "Dark"
                             ? SvgPicture.string(
                                 favouritesDark
                                     .replaceAll("181818",

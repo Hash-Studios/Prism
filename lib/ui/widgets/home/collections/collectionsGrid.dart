@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/premiumBanners/premiumBanner.dart';
@@ -34,9 +34,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
-            "Dark"
+    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
         ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
@@ -172,11 +170,8 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
-                                    color: Provider.of<ThemeModeExtended>(context)
-                                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                            "Light"
-                                        ? Colors.black12
-                                        : Colors.black54)
+                                    color:
+                                        context.prismModeStyleForContext() == "Light" ? Colors.black12 : Colors.black54)
                               ]),
                           height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 63.5,
                           width: MediaQuery.of(context).size.width / 2 - 59)),
@@ -201,11 +196,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                               maxLines: 1,
                               style: Theme.of(context).textTheme.headline2!.copyWith(
                                   fontSize: 16,
-                                  color: Provider.of<ThemeModeExtended>(context)
-                                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                          "Light"
-                                      ? Colors.black
-                                      : Colors.white,
+                                  color: context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white,
                                   fontWeight: FontWeight.bold),
                             ),
                     ),
@@ -221,11 +212,8 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
-                                    color: Provider.of<ThemeModeExtended>(context)
-                                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                            "Light"
-                                        ? Colors.black26
-                                        : Colors.black54)
+                                    color:
+                                        context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54)
                               ]),
                           height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
                           width: MediaQuery.of(context).size.width / 2 - 59)),
@@ -259,11 +247,8 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
-                                    color: Provider.of<ThemeModeExtended>(context)
-                                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                            "Light"
-                                        ? Colors.black26
-                                        : Colors.black54)
+                                    color:
+                                        context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54)
                               ]),
                           height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
                           width: MediaQuery.of(context).size.width / 2 - 59)),

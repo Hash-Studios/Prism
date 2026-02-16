@@ -1,4 +1,4 @@
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,10 +16,7 @@ class SeeMoreButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FlatButton(
-      color: Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-              "Dark"
-          ? Colors.white10
-          : Colors.black.withOpacity(.1),
+      color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       onPressed: () {
         func();

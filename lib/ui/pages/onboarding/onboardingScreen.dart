@@ -1,6 +1,6 @@
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/twitterigPopUp.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
@@ -166,8 +166,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         color: Theme.of(context).hintColor,
                                         padding: EdgeInsets.zero,
                                         onPressed: () {
-                                          Provider.of<ThemeModeExtended>(context, listen: false)
-                                              .changeThemeMode("Light");
+                                          context.setPrismThemeMode("Light");
 
                                           setState(() {
                                             selectedTheme = 1;
@@ -232,8 +231,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         color: Theme.of(context).hintColor,
                                         padding: EdgeInsets.zero,
                                         onPressed: () {
-                                          Provider.of<ThemeModeExtended>(context, listen: false)
-                                              .changeThemeMode("Dark");
+                                          context.setPrismThemeMode("Dark");
                                           setState(() {
                                             selectedTheme = 2;
                                           });
@@ -296,8 +294,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         color: Theme.of(context).hintColor,
                                         padding: EdgeInsets.zero,
                                         onPressed: () {
-                                          Provider.of<ThemeModeExtended>(context, listen: false)
-                                              .changeThemeMode("System");
+                                          context.setPrismThemeMode("System");
                                           setState(() {
                                             selectedTheme = 3;
                                           });

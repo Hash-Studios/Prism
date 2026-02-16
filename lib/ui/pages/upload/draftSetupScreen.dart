@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/pages/profile/reviewScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

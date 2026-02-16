@@ -1,6 +1,6 @@
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
@@ -35,9 +35,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
-            "Dark"
+    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
         ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
@@ -132,11 +130,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
           itemBuilder: (context, index) {
             if (index == PData.wallsC.length - 1) {
               return FlatButton(
-                  color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                          "Dark"
-                      ? Colors.white10
-                      : Colors.black.withOpacity(.1),
+                  color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   onPressed: () {
                     if (!seeMoreLoader) {

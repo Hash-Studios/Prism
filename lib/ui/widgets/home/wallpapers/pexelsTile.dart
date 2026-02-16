@@ -1,5 +1,5 @@
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/pexelsGrid.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -23,19 +23,11 @@ class PexelsTile extends StatelessWidget {
         Container(
           decoration: PData.wallsP.isEmpty
               ? BoxDecoration(
-                  color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                          "Dark"
-                      ? Colors.white10
-                      : Colors.black.withOpacity(.1),
+                  color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
                   borderRadius: BorderRadius.circular(20),
                 )
               : BoxDecoration(
-                  color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                          "Dark"
-                      ? Colors.white10
-                      : Colors.black.withOpacity(.1),
+                  color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
                       image: CachedNetworkImageProvider(PData.wallsP[index].src!["medium"].toString()),

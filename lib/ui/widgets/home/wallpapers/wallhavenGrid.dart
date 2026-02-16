@@ -1,7 +1,7 @@
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/carouselDots.dart';
@@ -81,9 +81,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Provider.of<ThemeModeExtended>(context)
-                                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                            "Dark"
+                                    color: context.prismModeStyleForContext() == "Dark"
                                         ? Colors.white10
                                         : Colors.black.withOpacity(.1),
                                     borderRadius: BorderRadius.circular(20),
@@ -129,9 +127,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                               child: wData.walls.isEmpty
                                   ? Container(
                                       decoration: BoxDecoration(
-                                        color: Provider.of<ThemeModeExtended>(context)
-                                                    .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                                "Dark"
+                                        color: context.prismModeStyleForContext() == "Dark"
                                             ? Colors.white10
                                             : Colors.black.withOpacity(.1),
                                         borderRadius: BorderRadius.circular(20),
@@ -139,9 +135,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                     )
                                   : Container(
                                       decoration: BoxDecoration(
-                                          color: Provider.of<ThemeModeExtended>(context)
-                                                      .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                                  "Dark"
+                                          color: context.prismModeStyleForContext() == "Dark"
                                               ? Colors.white10
                                               : Colors.black.withOpacity(.1),
                                           borderRadius: BorderRadius.circular(20),

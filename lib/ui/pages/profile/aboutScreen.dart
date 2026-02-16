@@ -1,9 +1,8 @@
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/theme/darkThemeModel.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/contriPopUp.dart';
 import 'package:Prism/ui/widgets/profile/prismList.dart';
@@ -304,10 +303,7 @@ class ActionButton extends StatelessWidget {
       child: ActionChip(
           avatar: Icon(
             icon,
-            color: Provider.of<ThemeModeExtended>(context)
-                            .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                        "Dark" &&
-                    Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
+            color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
                 ? Theme.of(context).errorColor == Colors.black
                     ? Theme.of(context).accentColor
                     : Theme.of(context).errorColor
