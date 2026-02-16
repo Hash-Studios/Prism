@@ -23,7 +23,7 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   @override
   Widget build(BuildContext context) {
-    final CollectionReference draftSetups = firestore.collection('draftSetups');
+    final CollectionReference<Map<String, dynamic>> draftSetups = firestore.collection('draftSetups');
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
@@ -34,13 +34,13 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
             style: TextStyle(color: Theme.of(context).colorScheme.secondary),
           ),
         ),
-        body: StreamBuilder<QuerySnapshot>(
+        body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: draftSetups
                 .where("email", isEqualTo: globals.prismUser.email)
                 .where("review", isEqualTo: false)
                 .orderBy('created_at', descending: true)
                 .snapshots(),
-            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
               if (!snapshot.hasData) {
                 return Center(
                   child: Loader(),
@@ -48,7 +48,7 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
               } else {
                 if (snapshot.data!.docs.isNotEmpty) {
                   return ListView.builder(
-                    itemCount: snapshot.data!.docs.length ?? 0,
+                    itemCount: snapshot.data!.docs.length,
                     itemBuilder: (context, index) => SetupTile(snapshot.data!.docs[index], true),
                   );
                 } else {

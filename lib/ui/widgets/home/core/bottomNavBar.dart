@@ -505,7 +505,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   }
 
   Future getImage() async {
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _wallpaper = File(pickedFile.path);
@@ -788,7 +788,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
     final BannerAd banner = BannerAd(
       size: size,
       request: AdBannerWidget.request,
-      adUnitId: kReleaseMode ? "ca-app-pub-4649644680694757/8480286673" : BannerAd.testAdUnitId,
+      adUnitId: kReleaseMode ? "ca-app-pub-4649644680694757/8480286673" : "ca-app-pub-3940256099942544/6300978111",
       listener: BannerAdListener(
         onAdLoaded: (Ad ad) {
           logger.d('$BannerAd loaded.');

@@ -126,17 +126,17 @@ class _WallReviewState extends State<WallReview> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   @override
   Widget build(BuildContext context) {
-    final CollectionReference walls = firestore.collection('walls');
-    final CollectionReference rejectedWalls = firestore.collection('rejectedWalls');
+    final CollectionReference<Map<String, dynamic>> walls = firestore.collection('walls');
+    final CollectionReference<Map<String, dynamic>> rejectedWalls = firestore.collection('rejectedWalls');
     return SingleChildScrollView(
       child: Column(
         children: [
-          StreamBuilder<QuerySnapshot>(
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: rejectedWalls
                   .where("email", isEqualTo: globals.prismUser.email)
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
-              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
                 if (!snapshot.hasData) {
                   return Container();
                 } else {
@@ -148,13 +148,13 @@ class _WallReviewState extends State<WallReview> {
                   );
                 }
               }),
-          StreamBuilder<QuerySnapshot>(
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: walls
                   .where("email", isEqualTo: globals.prismUser.email)
                   .where("review", isEqualTo: false)
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
-              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
                 if (!snapshot.hasData) {
                   return Center(
                     child: Loader(),
@@ -175,7 +175,7 @@ class _WallReviewState extends State<WallReview> {
 }
 
 class WallTile extends StatelessWidget {
-  final DocumentSnapshot wallpaper;
+  final DocumentSnapshot<Map<String, dynamic>> wallpaper;
   WallTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static const platform = MethodChannel('flutter.prism.set_wallpaper');
@@ -403,7 +403,7 @@ class WallTile extends StatelessWidget {
                                               color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         actions: [
-                                          FlatButton(
+                                          MaterialButton(
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).hintColor,
                                             onPressed: () async {
@@ -419,7 +419,7 @@ class WallTile extends StatelessWidget {
                                               ),
                                             ),
                                           ),
-                                          FlatButton(
+                                          MaterialButton(
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).colorScheme.error,
                                             onPressed: () {
@@ -460,7 +460,7 @@ class WallTile extends StatelessWidget {
 }
 
 class RejectedWallTile extends StatelessWidget {
-  final DocumentSnapshot wallpaper;
+  final DocumentSnapshot<Map<String, dynamic>> wallpaper;
   RejectedWallTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static const platform = MethodChannel('flutter.prism.set_wallpaper');
@@ -688,7 +688,7 @@ class RejectedWallTile extends StatelessWidget {
                                               color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         actions: [
-                                          FlatButton(
+                                          MaterialButton(
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).hintColor,
                                             onPressed: () async {
@@ -704,7 +704,7 @@ class RejectedWallTile extends StatelessWidget {
                                               ),
                                             ),
                                           ),
-                                          FlatButton(
+                                          MaterialButton(
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).colorScheme.error,
                                             onPressed: () {
@@ -774,17 +774,17 @@ class _SetupReviewState extends State<SetupReview> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   @override
   Widget build(BuildContext context) {
-    final CollectionReference setups = firestore.collection('setups');
-    final CollectionReference rejectedSetups = firestore.collection('rejectedSetups');
+    final CollectionReference<Map<String, dynamic>> setups = firestore.collection('setups');
+    final CollectionReference<Map<String, dynamic>> rejectedSetups = firestore.collection('rejectedSetups');
     return SingleChildScrollView(
       child: Column(
         children: [
-          StreamBuilder<QuerySnapshot>(
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: rejectedSetups
                   .where("email", isEqualTo: globals.prismUser.email)
                   .orderBy('created_at', descending: true)
                   .snapshots(),
-              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
                 if (!snapshot.hasData) {
                   return Container();
                 } else {
@@ -796,13 +796,13 @@ class _SetupReviewState extends State<SetupReview> {
                   );
                 }
               }),
-          StreamBuilder<QuerySnapshot>(
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: setups
                   .where("email", isEqualTo: globals.prismUser.email)
                   .where("review", isEqualTo: false)
                   .orderBy('created_at', descending: true)
                   .snapshots(),
-              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
                 if (!snapshot.hasData) {
                   return Center(
                     child: Loader(),
@@ -823,7 +823,7 @@ class _SetupReviewState extends State<SetupReview> {
 }
 
 class SetupTile extends StatelessWidget {
-  final DocumentSnapshot wallpaper;
+  final DocumentSnapshot<Map<String, dynamic>> wallpaper;
   final bool draft;
   SetupTile(this.wallpaper, this.draft);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
@@ -1238,7 +1238,7 @@ class SetupTile extends StatelessWidget {
                                         color: Theme.of(context).colorScheme.secondary),
                                   ),
                                   actions: [
-                                    FlatButton(
+                                    MaterialButton(
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                       color: Theme.of(context).hintColor,
                                       onPressed: () async {
@@ -1259,7 +1259,7 @@ class SetupTile extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                    FlatButton(
+                                    MaterialButton(
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                       color: Theme.of(context).colorScheme.error,
                                       onPressed: () {
@@ -1297,7 +1297,7 @@ class SetupTile extends StatelessWidget {
 }
 
 class RejectedSetupTile extends StatelessWidget {
-  final DocumentSnapshot wallpaper;
+  final DocumentSnapshot<Map<String, dynamic>> wallpaper;
   RejectedSetupTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static const platform = MethodChannel('flutter.prism.set_wallpaper');
@@ -1671,7 +1671,7 @@ class RejectedSetupTile extends StatelessWidget {
                                               color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         actions: [
-                                          FlatButton(
+                                          MaterialButton(
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).hintColor,
                                             onPressed: () async {
@@ -1687,7 +1687,7 @@ class RejectedSetupTile extends StatelessWidget {
                                               ),
                                             ),
                                           ),
-                                          FlatButton(
+                                          MaterialButton(
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).colorScheme.error,
                                             onPressed: () {

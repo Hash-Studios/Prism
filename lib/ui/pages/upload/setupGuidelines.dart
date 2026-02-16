@@ -29,7 +29,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
   }
 
   Future getSetup() async {
-    final pickedFile = await picker2.getImage(source: ImageSource.gallery);
+    final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _setup = File(pickedFile.path);

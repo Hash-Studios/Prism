@@ -127,7 +127,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               crossAxisSpacing: 8),
           itemBuilder: (context, index) {
             if (index == PData.wallsC.length - 1) {
-              return FlatButton(
+              return MaterialButton(
                   color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   onPressed: () {

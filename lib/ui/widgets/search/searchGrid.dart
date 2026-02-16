@@ -149,7 +149,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
           itemBuilder: (context, index) {
             if (widget.selectedProvider == "WallHaven") {
               if (index == wData.wallsS.length - 1 && index >= 23) {
-                return FlatButton(
+                return MaterialButton(
                     color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
@@ -166,7 +166,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               }
             } else if (widget.selectedProvider == "Pexels") {
               if (index == pData.wallsPS.length - 1 && index >= 23) {
-                return FlatButton(
+                return MaterialButton(
                     color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     onPressed: () {

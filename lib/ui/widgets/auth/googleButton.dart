@@ -43,7 +43,7 @@ class _GoogleButtonState extends State<GoogleButton> {
                 ),
                 borderRadius: BorderRadius.circular(500),
               ),
-        child: FlatButton(
+        child: MaterialButton(
           colorBrightness: Brightness.light,
           padding: const EdgeInsets.all(0),
           shape: const StadiumBorder(),

@@ -60,48 +60,61 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
   bool wallpaperUploaded = false;
   bool secondWidgetAdded = false;
 
+  Map<String, dynamic> _setupData(DocumentSnapshot<Object?> doc) =>
+      (doc.data() as Map<String, dynamic>? ?? const <String, dynamic>{});
+
   @override
   void initState() {
     super.initState();
     setupDoc = widget.arguments![0] as DocumentSnapshot;
-    imageURL = setupDoc.data()!["image"].toString();
+    final Map<String, dynamic> setupData = _setupData(setupDoc);
+    final dynamic wallpaperUrlData = setupData["wallpaper_url"];
+    final String wallpaperUrlText = wallpaperUrlData?.toString() ?? "";
+    imageURL = setupData["image"]?.toString();
     groupWidgetValue = 0;
-    setupName = TextEditingController(text: setupDoc.data()!["name"].toString());
-    id = setupDoc.data()!["id"].toString();
-    setupDesc = TextEditingController(text: setupDoc.data()!["desc"].toString());
-    iconName = TextEditingController(text: setupDoc.data()!["icon"].toString());
-    iconURL = TextEditingController(text: setupDoc.data()!["icon_url"].toString());
-    widgetName1 = TextEditingController(text: setupDoc.data()!["widget"].toString());
-    widgetURL1 = TextEditingController(text: setupDoc.data()!["widget_url"].toString());
-    if ("${setupDoc.data()!["wallpaper_url"]}" != "") {
-      if ("${setupDoc.data()!["wallpaper_url"]}"[0] != "[") {
-        if ("${setupDoc.data()!["wall_id"]}" != "") {
+    setupName = TextEditingController(text: setupData["name"]?.toString() ?? "");
+    id = setupData["id"]?.toString();
+    setupDesc = TextEditingController(text: setupData["desc"]?.toString() ?? "");
+    iconName = TextEditingController(text: setupData["icon"]?.toString() ?? "");
+    iconURL = TextEditingController(text: setupData["icon_url"]?.toString() ?? "");
+    widgetName1 = TextEditingController(text: setupData["widget"]?.toString() ?? "");
+    widgetURL1 = TextEditingController(text: setupData["widget_url"]?.toString() ?? "");
+    if (wallpaperUrlText.isNotEmpty) {
+      if (wallpaperUrlText[0] != "[") {
+        if ((setupData["wall_id"]?.toString() ?? "").isNotEmpty) {
           wallpaperUploaded = true;
-          wallpaperUploadLink = setupDoc.data()!["wallpaper_url"].toString();
-          wallpaperId = setupDoc.data()!["wall_id"].toString();
+          wallpaperUploadLink = wallpaperUrlText;
+          wallpaperId = setupData["wall_id"]?.toString() ?? "";
           groupValue = 1;
         } else {
-          wallpaperUrl = TextEditingController(text: setupDoc.data()!["wallpaper_url"].toString());
+          wallpaperUrl = TextEditingController(text: wallpaperUrlText);
           groupValue = 0;
         }
       } else {
-        wallpaperAppName = TextEditingController(text: setupDoc.data()!["wallpaper_url"][0].toString());
-        wallpaperAppWallName = TextEditingController(text: setupDoc.data()!["wallpaper_url"][2].toString());
-        wallpaperAppLink = TextEditingController(text: setupDoc.data()!["wallpaper_url"][1].toString());
+        final List<dynamic> wallpaperUrlList = wallpaperUrlData is List ? wallpaperUrlData : const <dynamic>[];
+        wallpaperAppName = TextEditingController(
+          text: wallpaperUrlList.isNotEmpty ? wallpaperUrlList[0].toString() : "",
+        );
+        wallpaperAppWallName = TextEditingController(
+          text: wallpaperUrlList.length > 2 ? wallpaperUrlList[2].toString() : "",
+        );
+        wallpaperAppLink = TextEditingController(
+          text: wallpaperUrlList.length > 1 ? wallpaperUrlList[1].toString() : "",
+        );
         groupValue = 2;
       }
     } else {
-      wallpaperUrl = TextEditingController(text: setupDoc.data()!["wallpaper_url"].toString());
+      wallpaperUrl = TextEditingController(text: wallpaperUrlText);
       groupValue = 0;
     }
-    widgetName2 = TextEditingController(text: setupDoc.data()!["widget2"].toString());
-    widgetURL2 = TextEditingController(text: setupDoc.data()!["widget_url2"].toString());
+    widgetName2 = TextEditingController(text: setupData["widget2"]?.toString() ?? "");
+    widgetURL2 = TextEditingController(text: setupData["widget_url2"]?.toString() ?? "");
     isUploading = false;
     isProcessing = false;
-    wallpaperProvider = setupDoc.data()!["wallpaper_provider"].toString();
-    wallpaperThumb = setupDoc.data()!["wallpaper_thumb"].toString();
-    review = setupDoc.data()!["review"] as bool?;
-    secondWidgetAdded = "${setupDoc.data()!["widget2"]}" != "";
+    wallpaperProvider = setupData["wallpaper_provider"]?.toString();
+    wallpaperThumb = setupData["wallpaper_thumb"]?.toString();
+    review = setupData["review"] as bool?;
+    secondWidgetAdded = (setupData["widget2"]?.toString() ?? "").isNotEmpty;
   }
 
   final Map<int, Widget> logoWidgets = <int, Widget>{
@@ -166,7 +179,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
 
   Future pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         image = File(pickedFile.path);
@@ -908,7 +921,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               ? Theme.of(context).hintColor
                               : Theme.of(context).colorScheme.error,
                           onPressed: () async {
-                            final pickedFile = await ImagePicker().getImage(source: ImageSource.gallery);
+                            final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
                             if (pickedFile != null) {
                               Future.delayed(const Duration()).then((value) async {
                                 final argumentsFromWall = await Navigator.pushNamed(context, uploadWallRoute,

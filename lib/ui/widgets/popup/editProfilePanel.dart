@@ -245,7 +245,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future getPFP() async {
-    final pickedFile = await picker2.getImage(source: ImageSource.gallery);
+    final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _pfp = File(pickedFile.path);
@@ -255,7 +255,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future getCover() async {
-    final pickedFile = await picker2.getImage(source: ImageSource.gallery);
+    final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _cover = File(pickedFile.path);
@@ -357,7 +357,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             color: Theme.of(context).colorScheme.secondary),
       ),
       actions: [
-        FlatButton(
+        MaterialButton(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
           color: Theme.of(context).hintColor,
           onPressed: () async {
@@ -372,7 +372,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             ),
           ),
         ),
-        FlatButton(
+        MaterialButton(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
           color: Theme.of(context).colorScheme.error,
           onPressed: () {

@@ -16,7 +16,8 @@ const String USER_NEW_COLLECTION = 'usersv2';
 
 class GoogleAuth {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+  bool _googleSignInInitialized = false;
 
   String? name;
   String? email;
@@ -26,14 +27,22 @@ class GoogleAuth {
   bool isLoggedIn = false;
   bool isLoading = false;
 
+  Future<void> _ensureGoogleSignInInitialized() async {
+    if (_googleSignInInitialized) {
+      return;
+    }
+    await googleSignIn.initialize();
+    _googleSignInInitialized = true;
+  }
+
   Future<String> signInWithGoogle() async {
     isLoading = true;
     prefs = await Hive.openBox('prefs');
-    final GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
-    final GoogleSignInAuthentication googleSignInAuthentication = googleSignInAccount!.authentication;
+    await _ensureGoogleSignInInitialized();
+    final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
+    final GoogleSignInAuthentication googleSignInAuthentication = googleSignInAccount.authentication;
 
     final AuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleSignInAuthentication.accessToken,
       idToken: googleSignInAuthentication.idToken,
     );
 
@@ -119,6 +128,7 @@ class GoogleAuth {
   }
 
   Future<bool> signOutGoogle() async {
+    await _ensureGoogleSignInInitialized();
     await googleSignIn.signOut();
     globals.prismUser = PrismUsersV2(
       name: "",
@@ -143,24 +153,25 @@ class GoogleAuth {
     Hive.openBox('prefs').then((value) {
       value.put(main.userHiveKey, globals.prismUser);
     });
-    await Purchases.reset();
+    await Purchases.logOut();
     try {
       FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
         'loggedIn': false,
       });
     } catch (e, st) {
-      logger.e(e, e, st);
+      logger.e('Failed to mark user logged out', error: e, stackTrace: st);
     }
     logger.d("User Sign Out");
     return true;
   }
 
   Future<bool> isSignedIn() async {
-    await googleSignIn.isSignedIn().then((value) {
-      logger.d(value.toString());
-      return value;
-    });
-    return false;
+    await _ensureGoogleSignInInitialized();
+    final Future<GoogleSignInAccount?>? lightweightAuth = googleSignIn.attemptLightweightAuthentication();
+    final GoogleSignInAccount? account = lightweightAuth == null ? null : await lightweightAuth;
+    final bool isSignedIn = account != null;
+    logger.d(isSignedIn.toString());
+    return isSignedIn;
   }
 
   Future<DocumentSnapshot?> getUserOLD(User? user) async {

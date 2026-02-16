@@ -147,63 +147,51 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
   }
 
   Future<bool> initDynamicLinks(BuildContext context) async {
-    final PendingDynamicLinkData data = await FirebaseDynamicLinks.instance.getInitialLink();
-    final Uri deepLink = data.link;
-
-    if (linkOpened == 0) {
-      logger.d("opened while closed altogether via deep link");
-      if (deepLink.pathSegments[0] == "share") {
+    void handleDeepLink(Uri deepLink, {bool shouldMarkOpened = false}) {
+      if (deepLink.pathSegments.isEmpty) {
+        return;
+      }
+      final routeSegment = deepLink.pathSegments[0];
+      if (routeSegment == "share") {
         Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareRoute, arguments: [
               deepLink.queryParameters["id"],
               deepLink.queryParameters["provider"],
               deepLink.queryParameters["url"],
               deepLink.queryParameters["thumb"],
             ]));
-        linkOpened = 1;
-      } else if (deepLink.pathSegments[0] == "user") {
+      } else if (routeSegment == "user") {
         Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, followerProfileRoute, arguments: [
               deepLink.queryParameters["email"],
             ]));
-        linkOpened = 1;
-      } else if (deepLink.pathSegments[0] == "setup") {
+      } else if (routeSegment == "setup") {
         Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
               deepLink.queryParameters["name"],
               deepLink.queryParameters["thumbUrl"],
             ]));
+      } else if (routeSegment == "refer") {
+        // TODO: add referral handling.
+      }
+      if (shouldMarkOpened) {
         linkOpened = 1;
-      } else if (deepLink.pathSegments[0] == "refer") {
-        //TODO write code to add coins in friend/user account
-        linkOpened = 1;
-      } else {}
+      }
+    }
+
+    final PendingDynamicLinkData? data = await FirebaseDynamicLinks.instance.getInitialLink();
+    final Uri? initialDeepLink = data?.link;
+    if (linkOpened == 0 && initialDeepLink != null) {
+      logger.d("opened while closed altogether via deep link");
+      handleDeepLink(initialDeepLink, shouldMarkOpened: true);
       logger.d("opened while closed altogether via deep link2345");
     }
 
-    FirebaseDynamicLinks.instance.onLink(onSuccess: (PendingDynamicLinkData dynamicLink) async {
+    FirebaseDynamicLinks.instance.onLink.listen((PendingDynamicLinkData dynamicLink) {
       final Uri deepLink = dynamicLink.link;
-
       logger.d("opened while bg via deep link1");
-      if (deepLink.pathSegments[0] == "share") {
-        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareRoute, arguments: [
-              deepLink.queryParameters["id"],
-              deepLink.queryParameters["provider"],
-              deepLink.queryParameters["url"],
-              deepLink.queryParameters["thumb"],
-            ]));
-      } else if (deepLink.pathSegments[0] == "user") {
-        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, followerProfileRoute, arguments: [
-              deepLink.queryParameters["email"],
-            ]));
-      } else if (deepLink.pathSegments[0] == "setup") {
-        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
-              deepLink.queryParameters["name"],
-              deepLink.queryParameters["thumbUrl"],
-            ]));
-      } else {}
-
+      handleDeepLink(deepLink);
       logger.d("opened while bg via deep link2345");
-    }, onError: (OnLinkErrorException e) async {
+    }).onError((Object error) {
       logger.d('onLinkError');
-      logger.d(e.message);
+      logger.d(error.toString());
     });
     return true;
   }
@@ -390,7 +378,7 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
 //         ],
 //       ),
 //       actions: [
-//         FlatButton(
+//         MaterialButton(
 //           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
 //           textColor: Theme.of(context).accentColor,
 //           onPressed: () {
@@ -401,7 +389,7 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
 //             'LATER',
 //           ),
 //         ),
-//         FlatButton(
+//         MaterialButton(
 //           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
 //           textColor: Theme.of(context).accentColor,
 //           color: Theme.of(context).errorColor,

@@ -14,7 +14,7 @@ class SeeMoreButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FlatButton(
+    return MaterialButton(
       color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       onPressed: () {

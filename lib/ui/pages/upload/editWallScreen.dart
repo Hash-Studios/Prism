@@ -284,43 +284,28 @@ class _EditWallScreenState extends State<EditWallScreen> {
             Icons.flip,
             color: Theme.of(context).colorScheme.secondary,
           ),
-          label: Text(
-            'Flip',
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-          ),
+          label: 'Flip',
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.rotate_left,
             color: Theme.of(context).colorScheme.secondary,
           ),
-          label: Text(
-            'Rotate Left',
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-          ),
+          label: 'Rotate Left',
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.rotate_right,
             color: Theme.of(context).colorScheme.secondary,
           ),
-          label: Text(
-            'Rotate Right',
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-          ),
+          label: 'Rotate Right',
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.crop,
             color: Theme.of(context).colorScheme.secondary,
           ),
-          label: Text(
+          label:
             cropRatio == 1 / 2
                 ? "9:18"
                 : cropRatio == 9 / 16
@@ -330,10 +315,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
                         : cropRatio == 9 / 19.5
                             ? "9:19.5"
                             : "9:18",
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-          ),
         ),
       ],
       onTap: (int index) {
@@ -356,18 +337,24 @@ class _EditWallScreenState extends State<EditWallScreen> {
   Future<void> crop([bool test = false]) async {
     final ExtendedImageEditorState state = editorKey.currentState!;
     final Rect? rect = state.getCropRect();
+    if (rect == null) {
+      return;
+    }
     final EditActionDetails? action = state.editAction;
-    final double radian = action!.rotateAngle;
+    if (action == null) {
+      return;
+    }
+    final double radian = action.rotateRadians;
 
     final bool flipHorizontal = action.flipY;
-    final bool flipVertical = action.flipX;
+    const bool flipVertical = false;
     final Uint8List img = state.rawImageData;
 
     final ImageEditorOption option = ImageEditorOption();
 
     option.addOption(ClipOption.fromRect(rect));
     option.addOption(FlipOption(horizontal: flipHorizontal, vertical: flipVertical));
-    if (action.hasRotateAngle) {
+    if (action.rotateRadians != 0) {
       option.addOption(RotateOption(radian.toInt()));
     }
 
@@ -380,10 +367,13 @@ class _EditWallScreenState extends State<EditWallScreen> {
     logger.d(const JsonEncoder.withIndent('  ').convert(option.toJson()));
 
     final DateTime start = DateTime.now();
-    final Uint8List result = await ImageEditor.editImage(
+    final Uint8List? result = await ImageEditor.editImage(
       image: img,
       imageEditorOption: option,
     );
+    if (result == null) {
+      return;
+    }
 
     logger.d('result.length = ${result.length}');
 
@@ -401,7 +391,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
   }
 
   void rotate(bool right) {
-    editorKey.currentState!.rotate(right: right);
+    editorKey.currentState!.rotate(degree: right ? 90 : -90);
   }
 
   Widget _buildSat() {

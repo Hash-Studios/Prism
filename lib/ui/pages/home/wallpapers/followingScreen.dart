@@ -27,9 +27,9 @@ class FollowingScreen extends StatefulWidget {
 }
 
 class _FollowingScreenState extends State<FollowingScreen> {
-  StreamController<QuerySnapshot>? _streamController;
-  late QuerySnapshot finalQuery;
-  List<DocumentSnapshot> finalDocs = [];
+  StreamController<QuerySnapshot<Map<String, dynamic>>>? _streamController;
+  late QuerySnapshot<Map<String, dynamic>> finalQuery;
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> finalDocs = [];
   late List following;
   final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
   CollectionReference? walls;
@@ -58,13 +58,13 @@ class _FollowingScreenState extends State<FollowingScreen> {
     load(_streamController!);
   }
 
-  Future<void> load(StreamController<QuerySnapshot> sc) async {
+  Future<void> load(StreamController<QuerySnapshot<Map<String, dynamic>>> sc) async {
     await databaseReference
         .collection(USER_NEW_COLLECTION)
         .where("email", isEqualTo: globals.prismUser.email)
         .get()
         .then((value) {
-      following = value.docs[0].data()["following"] as List? ?? [];
+      following = (value.docs[0].data() as Map<String, dynamic>)["following"] as List? ?? [];
     });
     databaseReference
         .collection("walls")
@@ -89,15 +89,11 @@ class _FollowingScreenState extends State<FollowingScreen> {
       onWillPop: onWillPop,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-        child: StaggeredGridView.builder(
-          gridDelegate: SliverStaggeredGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 8,
-            staggeredTileCount: finalDocs.length + 1,
-            staggeredTileBuilder: (index) {
-              return StaggeredTile.fit(index == finalDocs.length ? 2 : 1);
-            },
-          ),
+        child: MasonryGridView.builder(
+          gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          itemCount: finalDocs.length + 1,
           controller: controller,
           itemBuilder: (context, index) {
             if (index == finalDocs.length) {
@@ -125,7 +121,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
 class FollowingTile extends StatefulWidget {
   final int index;
-  final List<DocumentSnapshot> finalDocs;
+  final List<QueryDocumentSnapshot<Map<String, dynamic>>> finalDocs;
   const FollowingTile(this.index, this.finalDocs);
   @override
   _FollowingTileState createState() => _FollowingTileState();

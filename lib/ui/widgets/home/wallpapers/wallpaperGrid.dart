@@ -51,7 +51,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
   @override
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
-    final CarouselController carouselController = CarouselController();
+    final CarouselSliderController carouselController = CarouselSliderController();
     return Padding(
       padding: const EdgeInsets.only(top: 5.0),
       child: NestedScrollView(

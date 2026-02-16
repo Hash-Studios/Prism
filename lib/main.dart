@@ -35,7 +35,7 @@ import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -177,7 +177,7 @@ Future<void> main() async {
               );
             } as Future<void> Function(),
             (obj, stacktrace) {
-              logger.e(obj, obj, stacktrace);
+              logger.e('Uncaught zone error', error: obj, stackTrace: stacktrace);
             },
           ),
         );
@@ -193,22 +193,22 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   Future<bool> getLoginStatus() async {
-    await globals.gAuth.googleSignIn.isSignedIn().then((value) {
-      if (value) {
-        if (prefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
-          globals.gAuth.signOutGoogle();
-          prefs.put("logouteveryoneaugust2021", true);
-          toasts.codeSend("Please login again, to enjoy the app!");
-        }
-      } else if (!value) {
+    final bool value = await globals.gAuth.isSignedIn();
+    if (value) {
+      if (prefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
+        globals.gAuth.signOutGoogle();
         prefs.put("logouteveryoneaugust2021", true);
+        toasts.codeSend("Please login again, to enjoy the app!");
       }
-      if (value) checkPremium();
-      globals.prismUser.loggedIn = value;
-      prefs.put(userHiveKey, globals.prismUser);
-      return value;
-    });
-    return false;
+    } else if (!value) {
+      prefs.put("logouteveryoneaugust2021", true);
+    }
+    if (value) {
+      checkPremium();
+    }
+    globals.prismUser.loggedIn = value;
+    prefs.put(userHiveKey, globals.prismUser);
+    return value;
   }
 
   @override

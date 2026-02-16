@@ -15,16 +15,16 @@ import 'package:flutter/services.dart';
 import 'package:purchases_flutter/object_wrappers.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
-PurchaserInfo? _purchaserInfo;
+CustomerInfo? _purchaserInfo;
 
 Future<void> checkPremium() async {
   appData.isPro = false;
 
   await Purchases.setup(apiKey, appUserId: globals.prismUser.id);
 
-  PurchaserInfo purchaserInfo;
+  CustomerInfo purchaserInfo;
   try {
-    purchaserInfo = await Purchases.getPurchaserInfo();
+    purchaserInfo = await Purchases.getCustomerInfo();
     if (purchaserInfo.entitlements.all['prism_premium'] != null) {
       appData.isPro = purchaserInfo.entitlements.all['prism_premium']!.isActive;
     } else {
@@ -60,9 +60,9 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     await Purchases.setDebugLogsEnabled(true);
     await Purchases.setup(apiKey, appUserId: globals.prismUser.id);
 
-    PurchaserInfo purchaserInfo;
+    CustomerInfo purchaserInfo;
     try {
-      purchaserInfo = await Purchases.getPurchaserInfo();
+      purchaserInfo = await Purchases.getCustomerInfo();
       logger.d(purchaserInfo.toString());
       if (purchaserInfo.entitlements.all['prism_premium'] != null) {
         appData.isPro = purchaserInfo.entitlements.all['prism_premium']!.isActive;
@@ -78,9 +78,9 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   }
 
   Future<void> fetchData() async {
-    PurchaserInfo? purchaserInfo;
+    CustomerInfo? purchaserInfo;
     try {
-      purchaserInfo = await Purchases.getPurchaserInfo();
+      purchaserInfo = await Purchases.getCustomerInfo();
     } on PlatformException catch (e) {
       logger.d(e.toString());
     }
@@ -302,7 +302,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                                 color: Theme.of(context).colorScheme.secondary),
                                             textAlign: TextAlign.center,
                                           ),
-                                          if (lifetime.product.title.contains("SALE"))
+                                          if (lifetime.storeProduct.title.contains("SALE"))
                                             Text(
                                               'SALE',
                                               style:
@@ -315,7 +315,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       ),
                                       const Spacer(flex: 4),
                                       Text(
-                                        lifetime.product.priceString,
+                                        lifetime.storeProduct.priceString,
                                         style: Theme.of(context)
                                             .textTheme
                                             .displaySmall!
@@ -334,7 +334,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                     onTap: () async {
                                       try {
                                         logger.d('now trying to restore');
-                                        final PurchaserInfo restoredInfo = await Purchases.restoreTransactions();
+                                        final CustomerInfo restoredInfo = await Purchases.restorePurchases();
                                         logger.d('restore completed');
                                         logger.d(restoredInfo.toString());
 
@@ -443,7 +443,8 @@ class _PurchaseButtonState extends State<PurchaseButton> {
         onTap: () async {
           try {
             logger.d('now trying to purchase');
-            _purchaserInfo = await Purchases.purchasePackage(widget.package);
+            final purchaseResult = await Purchases.purchasePackage(widget.package);
+            _purchaserInfo = purchaseResult.customerInfo;
             logger.d('purchase completed');
 
             appData.isPro = _purchaserInfo!.entitlements.all["prism_premium"]!.isActive;

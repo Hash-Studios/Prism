@@ -6,6 +6,17 @@ import 'package:hive/hive.dart';
 
 part 'userOldModel.g.dart';
 
+Map<String, dynamic> _legacyDocumentData(DocumentSnapshot<Object?> doc) {
+  final data = doc.data();
+  if (data is Map<String, dynamic>) {
+    return data;
+  }
+  if (data is Map) {
+    return data.map((key, value) => MapEntry(key.toString(), value));
+  }
+  return <String, dynamic>{};
+}
+
 @HiveType(typeId: 1)
 class PrismUsers {
   @HiveField(0)
@@ -121,20 +132,23 @@ class PrismUsers {
     });
   }
 
-  factory PrismUsers.fromDocumentSnapshot(DocumentSnapshot doc, User user) => PrismUsers.withoutSave(
-        bio: (doc.data()!["bio"] ?? "").toString(),
-        createdAt: doc.data()!["createdAt"].toString(),
-        email: doc.data()!["email"].toString(),
-        username: (doc.data()!["username"] ?? user.displayName).toString(),
-        followers: doc.data()!["followers"] as List ?? [],
-        following: doc.data()!["following"] as List ?? [],
-        id: doc.data()!["id"].toString(),
-        lastLogin: ((doc.data()!["lastLogin"] as Timestamp?) ?? Timestamp.now()).toDate(),
-        links: doc.data()!["links"] as Map ?? {},
-        premium: doc.data()!["premium"] as bool,
-        loggedIn: true,
-        profilePhoto: (doc.data()!["profilePhoto"] ?? user.photoURL).toString(),
-      );
+  factory PrismUsers.fromDocumentSnapshot(DocumentSnapshot<Object?> doc, User user) {
+    final data = _legacyDocumentData(doc);
+    return PrismUsers.withoutSave(
+      bio: (data["bio"] ?? "").toString(),
+      createdAt: data["createdAt"].toString(),
+      email: data["email"].toString(),
+      username: (data["username"] ?? user.displayName).toString(),
+      followers: data["followers"] as List? ?? <dynamic>[],
+      following: data["following"] as List? ?? <dynamic>[],
+      id: data["id"].toString(),
+      lastLogin: ((data["lastLogin"] as Timestamp?) ?? Timestamp.now()).toDate(),
+      links: data["links"] as Map? ?? <dynamic, dynamic>{},
+      premium: data["premium"] as bool? ?? false,
+      loggedIn: true,
+      profilePhoto: (data["profilePhoto"] ?? user.photoURL).toString(),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         "bio": bio,

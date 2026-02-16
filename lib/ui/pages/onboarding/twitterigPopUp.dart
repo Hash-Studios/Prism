@@ -874,7 +874,7 @@ class FollowHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CollectionReference users = firestore.collection(USER_NEW_COLLECTION);
+    final CollectionReference<Map<String, dynamic>> users = firestore.collection(USER_NEW_COLLECTION);
     return ShowUpTransition(
       forward: true,
       slideSide: SlideFromSlide.bottom,
@@ -910,13 +910,14 @@ class FollowHeaderCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  StreamBuilder<QuerySnapshot>(
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                     stream: users.where("email", isEqualTo: globals.prismUser.email).snapshots(),
-                    builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                    builder: (BuildContext context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
                       if (!snapshot.hasData) {
                         return Container();
                       } else {
-                        final List following = snapshot.data!.docs[0].data()['following'] as List? ?? [];
+                        final Map<String, dynamic> currentUserData = snapshot.data!.docs[0].data();
+                        final List<dynamic> following = List<dynamic>.from(currentUserData['following'] as List? ?? []);
                         if (following.contains(email)) {
                           return Padding(
                             padding: const EdgeInsets.all(8.0),
@@ -946,7 +947,8 @@ class FollowHeaderCard extends StatelessWidget {
                                 users.where("email", isEqualTo: email).get().then((value) {
                                   if (value.docs.isEmpty) {
                                   } else {
-                                    final List followers = value.docs[0].data()['followers'] as List? ?? [];
+                                    final Map<String, dynamic> userData = value.docs[0].data() as Map<String, dynamic>;
+                                    final List<dynamic> followers = List<dynamic>.from(userData['followers'] as List? ?? []);
                                     followers.add(globals.prismUser.email);
                                     value.docs[0].reference.update({'followers': followers});
                                   }

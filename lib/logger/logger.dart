@@ -56,16 +56,16 @@ class LogOutputPrinter extends PrettyPrinter {
     final logLvl = event.level;
     final logStrace = event.stackTrace;
     final logError = event.error;
-    final color = PrettyPrinter.levelColors[logLvl];
+    final color = levelColors?[logLvl] ?? AnsiColor.none();
     final prefix = SimplePrinter.levelPrefixes[logLvl];
     final str =
         "---------------------------------------------------------------------------\nLEVEL : $logLvl\nMESSAGE : ${DateTime.now().toString().substring(11, 22)} :: $logMsg\nERROR : $logError\nSTACKTRACE : $logStrace";
     Future.delayed(const Duration(seconds: 1)).then((value) => _logFile!.writeStringSync('$str\n'));
-    final timeStr = getTime().substring(0, 12);
+    final timeStr = getTime(DateTime.now()).substring(0, 12);
     if (logStrace != null) {
       // print(color!('$timeStr $prefix - $logMsg \n$logStrace'));
       developer.log(
-        color!('$logMsg \n$logStrace'),
+        color('$logMsg \n$logStrace').toString(),
         name: "$timeStr :: ${prefix!.replaceAll("[", "").replaceAll("]", "")}",
         stackTrace: logStrace,
         level: 2000,
@@ -73,7 +73,7 @@ class LogOutputPrinter extends PrettyPrinter {
     } else {
       // print(color!('$timeStr $prefix - $logMsg'));
       developer.log(
-        color!('$logMsg'),
+        color('$logMsg').toString(),
         name: "$timeStr :: ${prefix!.replaceAll("[", "").replaceAll("]", "")}",
       );
     }
@@ -152,7 +152,7 @@ Future<String> zipLogs() async {
     await ZipFile.createFromFiles(sourceDir: sourceDir, files: files, zipFile: zipFile);
     logger.v("Zipping Finished Successfully");
   } catch (e, strace) {
-    logger.e(e, e, strace);
+    logger.e('Failed to zip logs', error: e, stackTrace: strace);
   }
   final String encryptedString = await encryptLogsZip(zipFile.path);
   return encryptedString;
@@ -164,7 +164,7 @@ Future<String> encryptLogsZip(String zipPath) async {
   final String outFilename = "${pathList.join("/")}/logs_zip.dat";
   logger.v("Encryption Started");
   final String secretKey = await FileEncrypter.encrypt(
-    inFilename: zipPath,
+    inFileName: zipPath,
     outFileName: outFilename,
   );
   logger.v("Encryption Done");

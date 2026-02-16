@@ -77,7 +77,7 @@ void showChangelog(BuildContext context, Function func) {
       ),
     ),
     actions: [
-      FlatButton(
+      MaterialButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         onPressed: () {
           launch("https://bit.ly/prismchanges");
@@ -91,7 +91,7 @@ void showChangelog(BuildContext context, Function func) {
           ),
         ),
       ),
-      FlatButton(
+      MaterialButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         color: Theme.of(context).colorScheme.error,
         onPressed: () {

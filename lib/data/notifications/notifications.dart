@@ -7,7 +7,17 @@ import 'package:hive/hive.dart';
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 
-Future<QuerySnapshot> getLastMonthNotifs(String modifier) async {
+Map<String, dynamic> _asMap(Object? raw) {
+  if (raw is Map<String, dynamic>) {
+    return raw;
+  }
+  if (raw is Map) {
+    return raw.map((key, value) => MapEntry(key.toString(), value));
+  }
+  return <String, dynamic>{};
+}
+
+Future<QuerySnapshot<Map<String, dynamic>>> getLastMonthNotifs(String modifier) async {
   return databaseReference
       .collection("notifications")
       .orderBy("createdAt", descending: true)
@@ -16,7 +26,7 @@ Future<QuerySnapshot> getLastMonthNotifs(String modifier) async {
       .get();
 }
 
-Future<QuerySnapshot> getLatestNotifs(String modifier) async {
+Future<QuerySnapshot<Map<String, dynamic>>> getLatestNotifs(String modifier) async {
   return databaseReference
       .collection("notifications")
       .orderBy("createdAt", descending: true)
@@ -33,8 +43,9 @@ Future<void> getNotifs() async {
     if (globals.prismUser.premium == false) {
       getLatestNotifs('free').then((snap) {
         for (final doc in snap.docs) {
-          if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
-            box.add(InAppNotif.fromSnapshot(doc.data()));
+          final data = _asMap(doc.data());
+          if (data['modifier'] != '' || data['modifier'] != null) {
+            box.add(InAppNotif.fromSnapshot(data));
           }
         }
       });
@@ -42,30 +53,34 @@ Future<void> getNotifs() async {
     if (globals.prismUser.premium == true) {
       getLatestNotifs('premium').then((snap) {
         for (final doc in snap.docs) {
-          if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
-            box.add(InAppNotif.fromSnapshot(doc.data()));
+          final data = _asMap(doc.data());
+          if (data['modifier'] != '' || data['modifier'] != null) {
+            box.add(InAppNotif.fromSnapshot(data));
           }
         }
       });
     }
     getLatestNotifs('all').then((snap) {
       for (final doc in snap.docs) {
-        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(doc.data()));
+        final data = _asMap(doc.data());
+        if (data['modifier'] != '' || data['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(data));
         }
       }
     });
     getLatestNotifs(globals.currentAppVersion).then((snap) {
       for (final doc in snap.docs) {
-        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(doc.data()));
+        final data = _asMap(doc.data());
+        if (data['modifier'] != '' || data['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(data));
         }
       }
     });
     getLatestNotifs(globals.prismUser.email).then((snap) {
       for (final doc in snap.docs) {
-        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(doc.data()));
+        final data = _asMap(doc.data());
+        if (data['modifier'] != '' || data['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(data));
         }
       }
     });
@@ -76,8 +91,9 @@ Future<void> getNotifs() async {
     if (globals.prismUser.premium == false) {
       getLastMonthNotifs('free').then((snap) {
         for (final doc in snap.docs) {
-          if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
-            box.add(InAppNotif.fromSnapshot(doc.data()));
+          final data = _asMap(doc.data());
+          if (data['modifier'] != '' || data['modifier'] != null) {
+            box.add(InAppNotif.fromSnapshot(data));
           }
         }
       });
@@ -85,30 +101,34 @@ Future<void> getNotifs() async {
     if (globals.prismUser.premium == true) {
       getLastMonthNotifs('premium').then((snap) {
         for (final doc in snap.docs) {
-          if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
-            box.add(InAppNotif.fromSnapshot(doc.data()));
+          final data = _asMap(doc.data());
+          if (data['modifier'] != '' || data['modifier'] != null) {
+            box.add(InAppNotif.fromSnapshot(data));
           }
         }
       });
     }
     getLastMonthNotifs('all').then((snap) {
       for (final doc in snap.docs) {
-        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(doc.data()));
+        final data = _asMap(doc.data());
+        if (data['modifier'] != '' || data['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(data));
         }
       }
     });
     getLastMonthNotifs(globals.currentAppVersion).then((snap) {
       for (final doc in snap.docs) {
-        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(doc.data()));
+        final data = _asMap(doc.data());
+        if (data['modifier'] != '' || data['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(data));
         }
       }
     });
     getLastMonthNotifs(globals.prismUser.email).then((snap) {
       for (final doc in snap.docs) {
-        if (doc.data()['modifier'] != '' || doc.data()['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(doc.data()));
+        final data = _asMap(doc.data());
+        if (data['modifier'] != '' || data['modifier'] != null) {
+          box.add(InAppNotif.fromSnapshot(data));
         }
       }
     });

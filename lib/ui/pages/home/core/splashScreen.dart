@@ -36,7 +36,12 @@ class _SplashWidgetState extends State<SplashWidget> {
   Future<bool> loading() async {
     try {
       remoteConfig = RemoteConfig.instance;
-      await remoteConfig.setConfigSettings(RemoteConfigSettings());
+      await remoteConfig.setConfigSettings(
+        RemoteConfigSettings(
+          fetchTimeout: const Duration(seconds: 30),
+          minimumFetchInterval: const Duration(hours: 6),
+        ),
+      );
       await remoteConfig.setDefaults(<String, dynamic>{
         'topImageLink':
             'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4',
@@ -53,8 +58,8 @@ class _SplashWidgetState extends State<SplashWidget> {
         'verifiedUsers': '["akshaymaurya3006@gmail.com","maurya.abhay30@gmail.com",]'
       });
       logger.d("Started Fetching Values from rc");
-      await remoteConfig.fetch(expiration: const Duration(hours: 6));
-      final rcBool = await remoteConfig.activateFetched();
+      await remoteConfig.fetch();
+      final rcBool = await remoteConfig.activate();
       logger.d("Fetched Values from rc");
       globals.topImageLink = remoteConfig.getString('topImageLink');
       globals.bannerText = remoteConfig.getString('bannerText');

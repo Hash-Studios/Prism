@@ -72,9 +72,7 @@ class _ShareButtonState extends State<ShareButton> {
         socialMetaTagParameters: SocialMetaTagParameters(
             title: "Prism Wallpapers - ${widget.id}",
             imageUrl: Uri.parse(widget.thumbUrl),
-            description: "Check out this amazing wallpaper I got, from Prism Wallpapers App."),
-        dynamicLinkParametersOptions:
-            DynamicLinkParametersOptions(shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
+            description: "Check out this amazing wallpaper I got, from Prism Wallpapers App."),
         uriPrefix: 'https://prismwallpapers.page.link',
         link: Uri.parse(
             'http://prism.hash.com/share?id=${widget.id}&provider=${widget.provider}&url=${widget.url}&thumb=${widget.thumbUrl}'),
@@ -82,12 +80,12 @@ class _ShareButtonState extends State<ShareButton> {
           packageName: 'com.hash.prism',
           minimumVersion: 1,
         ),
-        iosParameters: IosParameters(
+        iosParameters: IOSParameters(
           bundleId: 'com.hash.prism',
           minimumVersion: '1.0.1',
           appStoreId: '1405860595',
         ));
-    final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
+    final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters, shortLinkType: ShortDynamicLinkType.short);
     final Uri shortUrl = shortDynamicLink.shortUrl;
     Clipboard.setData(ClipboardData(text: shortUrl.toString()));
     Share.share("🔥Check this out ➜ $shortUrl");
