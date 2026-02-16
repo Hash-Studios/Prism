@@ -1,6 +1,6 @@
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
+import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as WData;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
@@ -16,7 +16,6 @@ import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FocusedMenuDetails extends StatefulWidget {
@@ -608,12 +607,14 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   ),
                                                   backgroundColor: Colors.black,
                                                   label: Text(
-                                                    Provider.of<UserData.UserProfileProvider>(context)
+                                                    context
+                                                            .publicProfileLegacyProvider()
                                                             .userProfileWalls![widget.index]
                                                             .data()["by"]
                                                             .toString()[0]
                                                             .toUpperCase() +
-                                                        Provider.of<UserData.UserProfileProvider>(context)
+                                                        context
+                                                            .publicProfileLegacyProvider()
                                                             .userProfileWalls![widget.index]
                                                             .data()["by"]
                                                             .toString()
@@ -626,7 +627,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               Padding(
                                                 padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                 child: Text(
-                                                  Provider.of<UserData.UserProfileProvider>(context)
+                                                  context
+                                                      .publicProfileLegacyProvider()
                                                       .userProfileWalls![widget.index]
                                                       .data()["id"]
                                                       .toString()
@@ -646,7 +648,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    Provider.of<UserData.UserProfileProvider>(context)
+                                                    context
+                                                        .publicProfileLegacyProvider()
                                                         .userProfileWalls![widget.index]
                                                         .data()["size"]
                                                         .toString(),
@@ -666,7 +669,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    Provider.of<UserData.UserProfileProvider>(context)
+                                                    context
+                                                        .publicProfileLegacyProvider()
                                                         .userProfileWalls![widget.index]
                                                         .data()["resolution"]
                                                         .toString(),
@@ -1540,7 +1544,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                         : widget.provider == "ProfileWall"
                             ? context.profileWallsLegacy(listen: false)![widget.index]["wallpaper_url"].toString()
                             : widget.provider == "UserProfileWall"
-                                ? Provider.of<UserData.UserProfileProvider>(context)
+                                ? context
+                                    .publicProfileLegacyProvider()
                                     .userProfileWalls![widget.index]
                                     .data()["wallpaper_url"]
                                     .toString()
@@ -1580,13 +1585,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                             )
                           : widget.provider == "UserProfileWall"
                               ? FavouriteWallpaperButton(
-                                  id: Provider.of<UserData.UserProfileProvider>(context)
+                                  id: context
+                                      .publicProfileLegacyProvider()
                                       .userProfileWalls![widget.index]["id"]
                                       .toString(),
                                   provider: "Prism",
-                                  prism: Provider.of<UserData.UserProfileProvider>(context)
-                                      .userProfileWalls![widget.index]
-                                      .data(),
+                                  prism: context.publicProfileLegacyProvider().userProfileWalls![widget.index].data(),
                                   trash: false,
                                 )
                               : widget.provider == "Pexels"
@@ -1627,7 +1631,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                         : widget.provider == "ProfileWall"
                             ? context.profileWallsLegacy(listen: false)![widget.index]["wallpaper_url"].toString()
                             : widget.provider == "UserProfileWall"
-                                ? Provider.of<UserData.UserProfileProvider>(context)
+                                ? context
+                                    .publicProfileLegacyProvider()
                                     .userProfileWalls![widget.index]
                                     .data()["wallpaper_url"]
                                     .toString()

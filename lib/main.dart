@@ -8,15 +8,15 @@ import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
-import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/features/ads/presentation/bloc/ads_bloc.dart';
 import 'package:Prism/features/category_feed/presentation/bloc/category_feed_bloc.dart';
 import 'package:Prism/features/favourite_setups/presentation/bloc/favourite_setups_bloc.dart';
 import 'package:Prism/features/favourite_walls/presentation/bloc/favourite_walls_bloc.dart';
 import 'package:Prism/features/palette/presentation/bloc/palette_bloc.dart';
+import 'package:Prism/features/public_profile/presentation/bloc/public_profile_bloc.dart';
 import 'package:Prism/features/profile_setups/presentation/bloc/profile_setups_bloc.dart';
 import 'package:Prism/features/profile_walls/presentation/bloc/profile_walls_bloc.dart';
+import 'package:Prism/features/setups/presentation/bloc/setups_bloc.dart';
 import 'package:Prism/features/theme_dark/presentation/bloc/theme_dark_bloc.dart';
 import 'package:Prism/features/theme_light/presentation/bloc/theme_light_bloc.dart';
 import 'package:Prism/features/theme_mode/presentation/bloc/theme_mode_bloc.dart';
@@ -42,7 +42,6 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
 
 String userHiveKey = "prismUserV2-1";
 late Box prefs;
@@ -130,53 +129,49 @@ Future<void> main() async {
             () {
               runApp(
                 RestartWidget(
-                  child: MultiProvider(
+                  child: MultiBlocProvider(
                     providers: [
-                      ChangeNotifierProvider<UserProfileProvider>(
-                        create: (context) => UserProfileProvider(),
+                      BlocProvider<AdsBloc>(
+                        create: (_) => getIt<AdsBloc>(),
                       ),
-                      ChangeNotifierProvider<SetupProvider>(
-                        create: (context) => SetupProvider(),
+                      BlocProvider<PaletteBloc>(
+                        create: (_) => getIt<PaletteBloc>(),
+                      ),
+                      BlocProvider<UserSearchBloc>(
+                        create: (_) => getIt<UserSearchBloc>(),
+                      ),
+                      BlocProvider<CategoryFeedBloc>(
+                        create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
+                      ),
+                      BlocProvider<ProfileWallsBloc>(
+                        create: (_) => getIt<ProfileWallsBloc>(),
+                      ),
+                      BlocProvider<FavouriteWallsBloc>(
+                        create: (_) => getIt<FavouriteWallsBloc>(),
+                      ),
+                      BlocProvider<FavouriteSetupsBloc>(
+                        create: (_) => getIt<FavouriteSetupsBloc>(),
+                      ),
+                      BlocProvider<ProfileSetupsBloc>(
+                        create: (_) => getIt<ProfileSetupsBloc>(),
+                      ),
+                      BlocProvider<SetupsBloc>(
+                        create: (_) => getIt<SetupsBloc>(),
+                      ),
+                      BlocProvider<PublicProfileBloc>(
+                        create: (_) => getIt<PublicProfileBloc>(),
+                      ),
+                      BlocProvider<ThemeLightBloc>(
+                        create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
+                      ),
+                      BlocProvider<ThemeDarkBloc>(
+                        create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
+                      ),
+                      BlocProvider<ThemeModeBloc>(
+                        create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
                       ),
                     ],
-                    child: MultiBlocProvider(
-                      providers: [
-                        BlocProvider<AdsBloc>(
-                          create: (_) => getIt<AdsBloc>(),
-                        ),
-                        BlocProvider<PaletteBloc>(
-                          create: (_) => getIt<PaletteBloc>(),
-                        ),
-                        BlocProvider<UserSearchBloc>(
-                          create: (_) => getIt<UserSearchBloc>(),
-                        ),
-                        BlocProvider<CategoryFeedBloc>(
-                          create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
-                        ),
-                        BlocProvider<ProfileWallsBloc>(
-                          create: (_) => getIt<ProfileWallsBloc>(),
-                        ),
-                        BlocProvider<FavouriteWallsBloc>(
-                          create: (_) => getIt<FavouriteWallsBloc>(),
-                        ),
-                        BlocProvider<FavouriteSetupsBloc>(
-                          create: (_) => getIt<FavouriteSetupsBloc>(),
-                        ),
-                        BlocProvider<ProfileSetupsBloc>(
-                          create: (_) => getIt<ProfileSetupsBloc>(),
-                        ),
-                        BlocProvider<ThemeLightBloc>(
-                          create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
-                        ),
-                        BlocProvider<ThemeDarkBloc>(
-                          create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
-                        ),
-                        BlocProvider<ThemeModeBloc>(
-                          create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
-                        ),
-                      ],
-                      child: MyApp(),
-                    ),
+                    child: MyApp(),
                   ),
                 ),
               );

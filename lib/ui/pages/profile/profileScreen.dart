@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
+import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
@@ -107,19 +107,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       );
                     }
+                    final doc = snapshot.data!.docs[0];
+                    final data = doc.data() as Map<String, dynamic>;
                     return ProfileChild(
                       ownProfile: false,
-                      id: snapshot.data!.docs[0].id,
-                      bio: snapshot.data!.docs[0].data()["bio"].toString(),
-                      coverPhoto: snapshot.data!.docs[0].data()["coverPhoto"] as String,
-                      email: snapshot.data!.docs[0].data()["email"].toString(),
-                      links: snapshot.data!.docs[0].data()["links"] as Map,
-                      name: snapshot.data!.docs[0].data()["name"].toString(),
-                      premium: snapshot.data!.docs[0].data()["premium"] as bool,
-                      userPhoto: snapshot.data!.docs[0].data()["profilePhoto"].toString(),
-                      username: snapshot.data!.docs[0].data()["username"].toString(),
-                      followers: snapshot.data!.docs[0].data()["followers"] as List,
-                      following: snapshot.data!.docs[0].data()["following"] as List,
+                      id: doc.id,
+                      bio: data["bio"].toString(),
+                      coverPhoto: data["coverPhoto"] as String,
+                      email: data["email"].toString(),
+                      links: data["links"] as Map,
+                      name: data["name"].toString(),
+                      premium: data["premium"] as bool,
+                      userPhoto: data["profilePhoto"].toString(),
+                      username: data["username"].toString(),
+                      followers: data["followers"] as List,
+                      following: data["following"] as List,
                     );
                   }
                   return ColoredBox(

@@ -1,4 +1,4 @@
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
+import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
@@ -12,7 +12,6 @@ import 'package:Prism/ui/widgets/premiumBanners/walls.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 
 class UserProfileGrid extends StatefulWidget {
   final String? email;
@@ -89,7 +88,7 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
 
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
-    Provider.of<UserProfileProvider>(context, listen: false).getuserProfileWalls(widget.email);
+    context.publicProfileLegacyProvider(listen: false).getuserProfileWalls(widget.email);
   }
 
   @override
@@ -98,8 +97,8 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileKey,
         onRefresh: refreshList,
-        child: Provider.of<UserProfileProvider>(context).userProfileWalls != null
-            ? Provider.of<UserProfileProvider>(context).userProfileWalls!.isEmpty
+        child: context.publicProfileLegacyProvider().userProfileWalls != null
+            ? context.publicProfileLegacyProvider().userProfileWalls!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -158,16 +157,15 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                 : GridView.builder(
                     shrinkWrap: true,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: Provider.of<UserProfileProvider>(context).userProfileWalls!.length,
+                    itemCount: context.publicProfileLegacyProvider().userProfileWalls!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                         childAspectRatio: 0.6625,
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      if (index ==
-                              Provider.of<UserProfileProvider>(context, listen: false).userProfileWalls!.length - 1 &&
-                          !(Provider.of<UserProfileProvider>(context, listen: false).userProfileWalls!.length < 12)) {
+                      if (index == context.publicProfileLegacyProvider(listen: false).userProfileWalls!.length - 1 &&
+                          !(context.publicProfileLegacyProvider(listen: false).userProfileWalls!.length < 12)) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
                           func: () {
@@ -175,8 +173,7 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                               setState(() {
                                 seeMoreLoader = true;
                               });
-                              Provider.of<UserProfileProvider>(context, listen: false)
-                                  .seeMoreUserProfileWalls(widget.email);
+                              context.publicProfileLegacyProvider(listen: false).seeMoreUserProfileWalls(widget.email);
                               setState(() {
                                 Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
                               });
@@ -188,9 +185,8 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                           ? PremiumBannerWalls(
                               comparator: !globals.isPremiumWall(
                                   globals.premiumCollections,
-                                  Provider.of<UserProfileProvider>(context)
-                                          .userProfileWalls![index]
-                                          .data()["collections"] as List? ??
+                                  context.publicProfileLegacyProvider().userProfileWalls![index].data()["collections"]
+                                          as List? ??
                                       []),
                               defaultChild: FocusedMenuHolder(
                                 provider: "UserProfileWall",
@@ -241,10 +237,7 @@ class PhotographerWallTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               image: DecorationImage(
                   image: CachedNetworkImageProvider(
-                    Provider.of<UserProfileProvider>(context)
-                        .userProfileWalls![index]
-                        .data()["wallpaper_thumb"]
-                        .toString(),
+                    context.publicProfileLegacyProvider().userProfileWalls![index].data()["wallpaper_thumb"].toString(),
                   ),
                   fit: BoxFit.cover)),
         ),
@@ -256,11 +249,12 @@ class PhotographerWallTile extends StatelessWidget {
               splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
               highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
               onTap: () {
-                if (Provider.of<UserProfileProvider>(context, listen: false).userProfileWalls == []) {
+                if (context.publicProfileLegacyProvider(listen: false).userProfileWalls == []) {
                 } else {
                   globals.isPremiumWall(
                                   globals.premiumCollections,
-                                  Provider.of<UserProfileProvider>(context, listen: false)
+                                  context
+                                          .publicProfileLegacyProvider(listen: false)
                                           .userProfileWalls![index]
                                           .data()["collections"] as List? ??
                                       []) ==
@@ -274,7 +268,8 @@ class PhotographerWallTile extends StatelessWidget {
                         })
                       : Navigator.pushNamed(context, userProfileWallViewRoute, arguments: [
                           index,
-                          Provider.of<UserProfileProvider>(context, listen: false)
+                          context
+                              .publicProfileLegacyProvider(listen: false)
                               .userProfileWalls![index]
                               .data()["wallpaper_thumb"],
                         ]);

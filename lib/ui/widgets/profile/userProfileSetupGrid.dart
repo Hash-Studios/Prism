@@ -1,4 +1,4 @@
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
+import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
@@ -12,7 +12,6 @@ import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 
 class UserProfileSetupGrid extends StatefulWidget {
   final String? email;
@@ -106,7 +105,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
 
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
-    Provider.of<UserProfileProvider>(context, listen: false).getUserProfileSetups(widget.email);
+    context.publicProfileLegacyProvider(listen: false).getUserProfileSetups(widget.email);
   }
 
   @override
@@ -115,8 +114,8 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileKey,
         onRefresh: refreshList,
-        child: Provider.of<UserProfileProvider>(context).userProfileSetups != null
-            ? Provider.of<UserProfileProvider>(context).userProfileSetups!.isEmpty
+        child: context.publicProfileLegacyProvider().userProfileSetups != null
+            ? context.publicProfileLegacyProvider().userProfileSetups!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -175,16 +174,15 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                 : GridView.builder(
                     shrinkWrap: true,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: Provider.of<UserProfileProvider>(context).userProfileSetups!.length,
+                    itemCount: context.publicProfileLegacyProvider().userProfileSetups!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                         childAspectRatio: 0.5025,
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      if (index ==
-                              Provider.of<UserProfileProvider>(context, listen: false).userProfileSetups!.length - 1 &&
-                          !(Provider.of<UserProfileProvider>(context, listen: false).userProfileSetups!.length < 8)) {
+                      if (index == context.publicProfileLegacyProvider(listen: false).userProfileSetups!.length - 1 &&
+                          !(context.publicProfileLegacyProvider(listen: false).userProfileSetups!.length < 8)) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
                           func: () {
@@ -192,8 +190,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                               setState(() {
                                 seeMoreLoader = true;
                               });
-                              Provider.of<UserProfileProvider>(context, listen: false)
-                                  .seeMoreUserProfileSetups(widget.email);
+                              context.publicProfileLegacyProvider(listen: false).seeMoreUserProfileSetups(widget.email);
                               setState(() {
                                 Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
                               });
@@ -211,7 +208,8 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        Provider.of<UserProfileProvider>(context)
+                                        context
+                                            .publicProfileLegacyProvider()
                                             .userProfileSetups![index]
                                             .data()["image"]
                                             .toString(),
@@ -226,8 +224,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                                   splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
                                   highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                                   onTap: () {
-                                    if (Provider.of<UserProfileProvider>(context, listen: false).userProfileSetups ==
-                                        []) {
+                                    if (context.publicProfileLegacyProvider(listen: false).userProfileSetups == []) {
                                     } else {
                                       if (globals.prismUser.premium == true) {
                                         Navigator.pushNamed(context, userProfileSetupViewRoute, arguments: [index]);

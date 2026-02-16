@@ -23,7 +23,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive/hive.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
-import 'package:provider/provider.dart';
 import 'package:quick_actions/quick_actions.dart';
 // import 'package:rate_my_app/rate_my_app.dart';
 // import 'package:smooth_star_rating/smooth_star_rating.dart';

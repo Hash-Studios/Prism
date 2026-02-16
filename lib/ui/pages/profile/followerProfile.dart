@@ -11,7 +11,7 @@
 // import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:flutter/cupertino.dart';
 // import 'package:flutter/material.dart';
-// import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
+// import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 // import 'package:Prism/main.dart' as main;
 // import 'package:Prism/theme/toasts.dart' as toasts;
 // import 'package:Prism/global/globals.dart' as globals;

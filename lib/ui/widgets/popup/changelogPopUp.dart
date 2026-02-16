@@ -4,7 +4,6 @@ import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:animations/animations.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void showChangelog(BuildContext context, Function func) {
