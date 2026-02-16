@@ -1,3 +1,6 @@
+// LEGACY SNAPSHOT (Phase-2 cutover): ThemeModeExtended provider -> ThemeModeBloc.
+// This file is intentionally commented out for traceability.
+/*
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 
@@ -51,3 +54,4 @@ class ThemeModeExtended extends ChangeNotifier {
     return "Dark";
   }
 }
+*/

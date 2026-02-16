@@ -1,10 +1,9 @@
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/darkThemeModel.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/premiumBanners/setupOld.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
@@ -172,108 +171,103 @@ class _SetupPageState extends State<SetupPage> {
                       itemCount: Provider.of<SetupProvider>(context, listen: false).setups!.isEmpty
                           ? 1
                           : Provider.of<SetupProvider>(context, listen: false).setups!.length,
-                      itemBuilder: (context, index) => Provider.of<SetupProvider>(context, listen: false)
-                              .setups!
-                              .isEmpty
-                          ? Loader()
-                          : GestureDetector(
-                              onTap: () {
-                                if (pageNumber >= 5) {
-                                  showPremiumPopUp(() {
-                                    Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
-                                  });
-                                } else {
-                                  Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
-                                }
-                              },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: EdgeInsets.only(
-                                  top: pageNumber == index + 1 || pageNumber == index - 1
-                                      ? MediaQuery.of(context).size.height * 0.12
-                                      : MediaQuery.of(context).size.height * 0.0499,
-                                ),
-                                child: Align(
-                                  alignment: Alignment.topCenter,
-                                  child: CachedNetworkImage(
-                                    imageUrl: Provider.of<SetupProvider>(context, listen: false)
-                                        .setups![index]['image']
-                                        .toString(),
-                                    imageBuilder: (context, imageProvider) => Container(
-                                      width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
-                                      height: MediaQuery.of(context).size.height * 0.7,
-                                      decoration: BoxDecoration(
-                                        boxShadow: pageNumber == index
-                                            ? Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
-                                                        MediaQuery.of(context).platformBrightness) ==
-                                                    "Light"
-                                                ? [
-                                                    BoxShadow(
-                                                      color: Colors.black.withOpacity(.15),
-                                                      blurRadius: 38,
-                                                      offset: const Offset(0, 19),
-                                                    ),
-                                                    BoxShadow(
-                                                      color: Colors.black.withOpacity(.10),
-                                                      blurRadius: 12,
-                                                      offset: const Offset(0, 15),
-                                                    )
-                                                  ]
-                                                : [
-                                                    BoxShadow(
-                                                      color: Colors.black.withOpacity(.7),
-                                                      blurRadius: 38,
-                                                      offset: const Offset(0, 19),
-                                                    ),
-                                                    BoxShadow(
-                                                      color: Colors.black.withOpacity(.6),
-                                                      blurRadius: 12,
-                                                      offset: const Offset(0, 15),
-                                                    )
-                                                  ]
-                                            : [],
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: PremiumBannerSetupOld(
-                                        comparator: index < 5,
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(10),
-                                          child: SizedBox(
-                                            width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
-                                            height: MediaQuery.of(context).size.height * 0.7,
-                                            child: Image(image: imageProvider, fit: BoxFit.fill),
+                      itemBuilder: (context, index) =>
+                          Provider.of<SetupProvider>(context, listen: false).setups!.isEmpty
+                              ? Loader()
+                              : GestureDetector(
+                                  onTap: () {
+                                    if (pageNumber >= 5) {
+                                      showPremiumPopUp(() {
+                                        Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
+                                      });
+                                    } else {
+                                      Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
+                                    }
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: EdgeInsets.only(
+                                      top: pageNumber == index + 1 || pageNumber == index - 1
+                                          ? MediaQuery.of(context).size.height * 0.12
+                                          : MediaQuery.of(context).size.height * 0.0499,
+                                    ),
+                                    child: Align(
+                                      alignment: Alignment.topCenter,
+                                      child: CachedNetworkImage(
+                                        imageUrl: Provider.of<SetupProvider>(context, listen: false)
+                                            .setups![index]['image']
+                                            .toString(),
+                                        imageBuilder: (context, imageProvider) => Container(
+                                          width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
+                                          height: MediaQuery.of(context).size.height * 0.7,
+                                          decoration: BoxDecoration(
+                                            boxShadow: pageNumber == index
+                                                ? context.prismModeStyleForContext() == "Light"
+                                                    ? [
+                                                        BoxShadow(
+                                                          color: Colors.black.withOpacity(.15),
+                                                          blurRadius: 38,
+                                                          offset: const Offset(0, 19),
+                                                        ),
+                                                        BoxShadow(
+                                                          color: Colors.black.withOpacity(.10),
+                                                          blurRadius: 12,
+                                                          offset: const Offset(0, 15),
+                                                        )
+                                                      ]
+                                                    : [
+                                                        BoxShadow(
+                                                          color: Colors.black.withOpacity(.7),
+                                                          blurRadius: 38,
+                                                          offset: const Offset(0, 19),
+                                                        ),
+                                                        BoxShadow(
+                                                          color: Colors.black.withOpacity(.6),
+                                                          blurRadius: 12,
+                                                          offset: const Offset(0, 15),
+                                                        )
+                                                      ]
+                                                : [],
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: PremiumBannerSetupOld(
+                                            comparator: index < 5,
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(10),
+                                              child: SizedBox(
+                                                width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
+                                                height: MediaQuery.of(context).size.height * 0.7,
+                                                child: Image(image: imageProvider, fit: BoxFit.fill),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        progressIndicatorBuilder: (context, url, downloadProgress) => SizedBox(
+                                          width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
+                                          height: MediaQuery.of(context).size.height * 0.7,
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                                valueColor: AlwaysStoppedAnimation(
+                                                  context.prismModeStyleForContext() == "Dark" &&
+                                                          context.prismIsAmoledDark()
+                                                      ? Theme.of(context).errorColor == Colors.black
+                                                          ? Theme.of(context).accentColor
+                                                          : Theme.of(context).errorColor
+                                                      : Theme.of(context).errorColor,
+                                                ),
+                                                value: downloadProgress.progress),
+                                          ),
+                                        ),
+                                        errorWidget: (context, url, error) => Center(
+                                          child: Icon(
+                                            JamIcons.close_circle_f,
+                                            color: Theme.of(context).accentColor,
                                           ),
                                         ),
                                       ),
                                     ),
-                                    progressIndicatorBuilder: (context, url, downloadProgress) => SizedBox(
-                                      width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
-                                      height: MediaQuery.of(context).size.height * 0.7,
-                                      child: Center(
-                                        child: CircularProgressIndicator(
-                                            valueColor: AlwaysStoppedAnimation(
-                                              Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
-                                                              MediaQuery.of(context).platformBrightness) ==
-                                                          "Dark" &&
-                                                      Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
-                                                  ? Theme.of(context).errorColor == Colors.black
-                                                      ? Theme.of(context).accentColor
-                                                      : Theme.of(context).errorColor
-                                                  : Theme.of(context).errorColor,
-                                            ),
-                                            value: downloadProgress.progress),
-                                      ),
-                                    ),
-                                    errorWidget: (context, url, error) => Center(
-                                      child: Icon(
-                                        JamIcons.close_circle_f,
-                                        color: Theme.of(context).accentColor,
-                                      ),
-                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
                     ),
                   );
                 }
@@ -292,10 +286,7 @@ class _SetupPageState extends State<SetupPage> {
               },
               child: Icon(
                 JamIcons.chevron_left,
-                color: Provider.of<ThemeModeExtended>(context)
-                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                            "Dark" &&
-                        Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
+                color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
                     ? Theme.of(context).errorColor == Colors.black
                         ? Theme.of(context).accentColor
                         : Theme.of(context).errorColor
@@ -316,10 +307,7 @@ class _SetupPageState extends State<SetupPage> {
               },
               child: Icon(
                 JamIcons.chevron_right,
-                color: Provider.of<ThemeModeExtended>(context)
-                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                            "Dark" &&
-                        Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
+                color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
                     ? Theme.of(context).errorColor == Colors.black
                         ? Theme.of(context).accentColor
                         : Theme.of(context).errorColor

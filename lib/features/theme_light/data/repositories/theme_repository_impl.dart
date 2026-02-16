@@ -17,6 +17,22 @@ class ThemeRepositoryImpl implements ThemeRepository {
   static const String _defaultDarkTheme = 'kDMaterial Dark';
   static const int _defaultAccent = 0xffe57697;
   static const String _defaultMode = 'Dark';
+  static const Map<String, int> _lightThemeDefaultAccents = <String, int>{
+    'kLFrost White': 0xffe57697,
+    'kLCoffee': 0xffc19439,
+    'kLRose': 0xffa7796d,
+    'kLCotton Blue': 0xff596f95,
+  };
+  static const Map<String, int> _darkThemeDefaultAccents = <String, int>{
+    'kDMaterial Dark': 0xffe57697,
+    'kDAMOLED': 0xff000000,
+    'kDOlive': 0xff767b45,
+    'kDDeep Ocean': 0xff427da8,
+    'kDJungle': 0xff4c7044,
+    'kDPepper': 0xff703826,
+    'kDSky': 0xff2d6079,
+    'kDSteel': 0xff686e80,
+  };
 
   ThemeLightEntity _readLightTheme() {
     return ThemeLightEntity(
@@ -45,6 +61,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
   Future<Result<ThemeLightEntity>> setLightTheme(String themeId) async {
     try {
       await _prefsBox.put('lightThemeID', themeId);
+      await _prefsBox.put('lightAccent', _lightThemeDefaultAccents[themeId] ?? _defaultAccent);
       return Result.success(_readLightTheme());
     } catch (error) {
       return Result.error(CacheFailure('Unable to set light theme: $error'));
@@ -74,6 +91,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
   Future<Result<ThemeDarkEntity>> setDarkTheme(String themeId) async {
     try {
       await _prefsBox.put('darkThemeID', themeId);
+      await _prefsBox.put('darkAccent', _darkThemeDefaultAccents[themeId] ?? _defaultAccent);
       return Result.success(_readDarkTheme());
     } catch (error) {
       return Result.error(CacheFailure('Unable to set dark theme: $error'));

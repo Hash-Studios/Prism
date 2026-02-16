@@ -1,3 +1,6 @@
+// LEGACY SNAPSHOT (Phase-2 cutover): DarkThemeModel provider -> ThemeDarkBloc.
+// This file is intentionally commented out for traceability.
+/*
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/main.dart' as main;
@@ -51,3 +54,4 @@ class DarkThemeModel extends ChangeNotifier {
     return notifyListeners();
   }
 }
+*/

@@ -6,6 +6,7 @@ import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
@@ -13,6 +14,9 @@ import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/features/ads/presentation/bloc/ads_bloc.dart';
 import 'package:Prism/features/palette/presentation/bloc/palette_bloc.dart';
+import 'package:Prism/features/theme_dark/presentation/bloc/theme_dark_bloc.dart';
+import 'package:Prism/features/theme_light/presentation/bloc/theme_light_bloc.dart';
+import 'package:Prism/features/theme_mode/presentation/bloc/theme_mode_bloc.dart';
 import 'package:Prism/features/user_search/presentation/bloc/user_search_bloc.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/logger/logger.dart';
@@ -20,9 +24,6 @@ import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
-import 'package:Prism/theme/darkThemeModel.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
@@ -151,15 +152,6 @@ Future<void> main() async {
                       ChangeNotifierProvider<ProfileSetupProvider>(
                         create: (context) => ProfileSetupProvider(),
                       ),
-                      ChangeNotifierProvider<ThemeModel>(
-                        create: (context) => ThemeModel(themes[currentThemeID!], lightAccent),
-                      ),
-                      ChangeNotifierProvider<DarkThemeModel>(
-                        create: (context) => DarkThemeModel(darkThemes[currentDarkThemeID!], darkAccent),
-                      ),
-                      ChangeNotifierProvider<ThemeModeExtended>(
-                        create: (context) => ThemeModeExtended(modes[currentMode!]),
-                      ),
                     ],
                     child: MultiBlocProvider(
                       providers: [
@@ -171,6 +163,15 @@ Future<void> main() async {
                         ),
                         BlocProvider<UserSearchBloc>(
                           create: (_) => getIt<UserSearchBloc>(),
+                        ),
+                        BlocProvider<ThemeLightBloc>(
+                          create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
+                        ),
+                        BlocProvider<ThemeDarkBloc>(
+                          create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
+                        ),
+                        BlocProvider<ThemeModeBloc>(
+                          create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
                         ),
                       ],
                       child: MyApp(),
@@ -238,9 +239,9 @@ class _MyAppState extends State<MyApp> {
           builder: (context) => UndefinedScreen(
                 name: settings.name,
               )),
-      theme: Provider.of<ThemeModel>(context).currentTheme,
-      darkTheme: Provider.of<DarkThemeModel>(context).currentTheme,
-      themeMode: Provider.of<ThemeModeExtended>(context).currentMode,
+      theme: context.prismLightTheme(),
+      darkTheme: context.prismDarkTheme(),
+      themeMode: context.prismThemeMode(),
       home: ((prefs.get('onboarded_new') as bool?) ?? false) ? const SplashWidget() : OnboardingScreen(),
     );
   }

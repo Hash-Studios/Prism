@@ -1,5 +1,5 @@
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/premiumBanners/wallsCarousel.dart';
 import 'package:Prism/ui/widgets/premiumBanners/walls.dart';
@@ -92,9 +92,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Provider.of<ThemeModeExtended>(context)
-                                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                            "Dark"
+                                    color: context.prismModeStyleForContext() == "Dark"
                                         ? Colors.white10
                                         : Colors.black.withOpacity(.1),
                                     borderRadius: BorderRadius.circular(20),
@@ -150,9 +148,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                               child: Data.subPrismWalls!.isEmpty
                                   ? Container(
                                       decoration: BoxDecoration(
-                                        color: Provider.of<ThemeModeExtended>(context)
-                                                    .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                                "Dark"
+                                        color: context.prismModeStyleForContext() == "Dark"
                                             ? Colors.white10
                                             : Colors.black.withOpacity(.1),
                                         borderRadius: BorderRadius.circular(20),
@@ -163,9 +159,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                           Data.subPrismWalls![i]["collections"] as List? ?? []),
                                       child: Container(
                                         decoration: BoxDecoration(
-                                            color: Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
-                                                        MediaQuery.of(context).platformBrightness) ==
-                                                    "Dark"
+                                            color: context.prismModeStyleForContext() == "Dark"
                                                 ? Colors.white10
                                                 : Colors.black.withOpacity(.1),
                                             borderRadius: BorderRadius.circular(20),

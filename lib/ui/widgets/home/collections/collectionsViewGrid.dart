@@ -1,6 +1,6 @@
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
@@ -33,9 +33,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
-            "Dark"
+    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
         ? TweenSequence<Color?>(
             [
               TweenSequenceItem(

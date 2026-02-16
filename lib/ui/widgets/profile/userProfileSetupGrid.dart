@@ -1,7 +1,7 @@
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/ui/widgets/premiumBanners/setupPhotographer.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
@@ -56,9 +56,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
-            "Dark"
+    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
         ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
@@ -125,9 +123,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                     children: <Widget>[
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
-                        child: Provider.of<ThemeModeExtended>(context)
-                                    .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                                "Dark"
+                        child: context.prismModeStyleForContext() == "Dark"
                             ? SvgPicture.string(
                                 postsDark
                                     .replaceAll("181818",

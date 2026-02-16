@@ -1,7 +1,7 @@
 import 'dart:developer';
 
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -37,19 +37,11 @@ class WallpaperTile extends StatelessWidget {
         Container(
           decoration: Data.subPrismWalls!.isEmpty
               ? BoxDecoration(
-                  color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                          "Dark"
-                      ? Colors.white10
-                      : Colors.black.withOpacity(.1),
+                  color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
                   borderRadius: BorderRadius.circular(20),
                 )
               : BoxDecoration(
-                  color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                          "Dark"
-                      ? Colors.white10
-                      : Colors.black.withOpacity(.1),
+                  color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
                     image: CachedNetworkImageProvider(

@@ -1,3 +1,6 @@
+// LEGACY SNAPSHOT (Phase-2 cutover): ThemeModel provider -> ThemeLightBloc.
+// This file is intentionally commented out for traceability.
+/*
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/main.dart' as main;
@@ -45,3 +48,4 @@ class ThemeModel extends ChangeNotifier {
     return notifyListeners();
   }
 }
+*/

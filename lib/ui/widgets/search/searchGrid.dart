@@ -1,7 +1,7 @@
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pData;
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/searchFocusedMenu.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
@@ -38,9 +38,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
-            "Dark"
+    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
         ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
@@ -154,11 +152,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
             if (widget.selectedProvider == "WallHaven") {
               if (index == wData.wallsS.length - 1 && index >= 23) {
                 return FlatButton(
-                    color: Provider.of<ThemeModeExtended>(context)
-                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                            "Dark"
-                        ? Colors.white10
-                        : Colors.black.withOpacity(.1),
+                    color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
@@ -175,11 +169,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
             } else if (widget.selectedProvider == "Pexels") {
               if (index == pData.wallsPS.length - 1 && index >= 23) {
                 return FlatButton(
-                    color: Provider.of<ThemeModeExtended>(context)
-                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
-                            "Dark"
-                        ? Colors.white10
-                        : Colors.black.withOpacity(.1),
+                    color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {

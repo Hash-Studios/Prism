@@ -1,15 +1,12 @@
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/theme/darkThemeModel.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/analytics/analytics_service.dart';
 
@@ -53,27 +50,13 @@ class _ThemeViewState extends State<ThemeView> {
   late bool changingLight;
   @override
   void initState() {
-    currentTheme = Provider.of<ThemeModel>(context, listen: false).currentTheme;
-    selectedTheme = Provider.of<ThemeModel>(context, listen: false).getIndex(currentTheme);
-    currentDarkTheme = Provider.of<DarkThemeModel>(context, listen: false).currentTheme;
-    selectedDarkTheme = Provider.of<DarkThemeModel>(context, listen: false).getIndex(currentDarkTheme);
-    selectedAccentColor = Color(int.parse(Provider.of<ThemeModel>(context, listen: false)
-        .currentTheme!
-        .errorColor
-        .toString()
-        .replaceAll("MaterialColor(primary value: Color(0xff", "")
-        .replaceAll("Color(", "")
-        .replaceAll(")", "")));
-    selectedDarkAccentColor = Color(int.parse(Provider.of<DarkThemeModel>(context, listen: false)
-        .currentTheme!
-        .errorColor
-        .toString()
-        .replaceAll("MaterialColor(primary value: Color(0xff", "")
-        .replaceAll("Color(", "")
-        .replaceAll(")", "")));
-    changingLight = Provider.of<ThemeModeExtended>(context, listen: false)
-            .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
-        "Light";
+    currentTheme = context.prismLightTheme(listen: false);
+    selectedTheme = PrismThemeMapper.lightThemeIndex(context.prismLightThemeId(listen: false));
+    currentDarkTheme = context.prismDarkTheme(listen: false);
+    selectedDarkTheme = PrismThemeMapper.darkThemeIndex(context.prismDarkThemeId(listen: false));
+    selectedAccentColor = Color(context.prismLightAccentValue(listen: false));
+    selectedDarkAccentColor = Color(context.prismDarkAccentValue(listen: false));
+    changingLight = context.prismModeStyleForWindow(listen: false) == "Light";
     super.initState();
   }
 
@@ -150,9 +133,9 @@ class _ThemeViewState extends State<ThemeView> {
                   isScrollControlled: true,
                   context: context,
                   builder: (context) => PreferencePanel(
-                    selectedValue: Provider.of<ThemeModeExtended>(context, listen: false).currentMode == ThemeMode.light
+                    selectedValue: context.prismThemeMode(listen: false) == ThemeMode.light
                         ? 1
-                        : Provider.of<ThemeModeExtended>(context, listen: false).currentMode == ThemeMode.dark
+                        : context.prismThemeMode(listen: false) == ThemeMode.dark
                             ? 2
                             : 0,
                     func: (bool value) {
@@ -170,7 +153,7 @@ class _ThemeViewState extends State<ThemeView> {
                     color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
               ),
               subtitle: Text(
-                Provider.of<ThemeModeExtended>(context).getCurrentModeAbs(),
+                context.prismModeAbs(),
                 style: const TextStyle(fontSize: 12),
               ),
             ),
@@ -192,10 +175,10 @@ class _ThemeViewState extends State<ThemeView> {
                     )
                   ],
                 ),
-                width: Provider.of<ThemeModeExtended>(context).currentMode == ThemeMode.system
+                width: context.prismThemeMode() == ThemeMode.system
                     ? MediaQuery.of(context).size.height * 0.35 * 0.4993924666
                     : MediaQuery.of(context).size.height * 0.45 * 0.4993924666,
-                height: Provider.of<ThemeModeExtended>(context).currentMode == ThemeMode.system
+                height: context.prismThemeMode() == ThemeMode.system
                     ? MediaQuery.of(context).size.height * 0.35
                     : MediaQuery.of(context).size.height * 0.45,
                 child: ClipRRect(
@@ -205,8 +188,8 @@ class _ThemeViewState extends State<ThemeView> {
                           themePicture
                               .replaceAll(
                                   "181818",
-                                  Provider.of<ThemeModel>(context)
-                                      .currentTheme!
+                                  context
+                                      .prismLightTheme()
                                       .primaryColor
                                       .value
                                       .toRadixString(16)
@@ -214,64 +197,29 @@ class _ThemeViewState extends State<ThemeView> {
                                       .substring(2))
                               .replaceAll(
                                   "E57697", selectedAccentColor!.value.toRadixString(16).toString().substring(2))
-                              .replaceAll(
-                                  "F0F0F0",
-                                  Provider.of<ThemeModel>(context)
-                                      .currentTheme!
-                                      .accentColor
-                                      .value
-                                      .toRadixString(16)
-                                      .toString()
-                                      .substring(2))
-                              .replaceAll(
-                                  "2F2F2F",
-                                  Provider.of<ThemeModel>(context)
-                                      .currentTheme!
-                                      .hintColor
-                                      .value
-                                      .toRadixString(16)
-                                      .toString()
-                                      .substring(2)),
+                              .replaceAll("F0F0F0",
+                                  context.prismLightTheme().accentColor.value.toRadixString(16).toString().substring(2))
+                              .replaceAll("2F2F2F",
+                                  context.prismLightTheme().hintColor.value.toRadixString(16).toString().substring(2)),
                           fit: BoxFit.cover,
                         )
                       : SvgPicture.string(
                           themePicture
-                              .replaceAll(
-                                  "181818",
-                                  Provider.of<DarkThemeModel>(context)
-                                      .currentTheme!
-                                      .primaryColor
-                                      .value
-                                      .toRadixString(16)
-                                      .toString()
-                                      .substring(2))
+                              .replaceAll("181818",
+                                  context.prismDarkTheme().primaryColor.value.toRadixString(16).toString().substring(2))
                               .replaceAll(
                                   "E57697", selectedDarkAccentColor!.value.toRadixString(16).toString().substring(2))
-                              .replaceAll(
-                                  "F0F0F0",
-                                  Provider.of<DarkThemeModel>(context)
-                                      .currentTheme!
-                                      .accentColor
-                                      .value
-                                      .toRadixString(16)
-                                      .toString()
-                                      .substring(2))
-                              .replaceAll(
-                                  "2F2F2F",
-                                  Provider.of<DarkThemeModel>(context)
-                                      .currentTheme!
-                                      .hintColor
-                                      .value
-                                      .toRadixString(16)
-                                      .toString()
-                                      .substring(2)),
+                              .replaceAll("F0F0F0",
+                                  context.prismDarkTheme().accentColor.value.toRadixString(16).toString().substring(2))
+                              .replaceAll("2F2F2F",
+                                  context.prismDarkTheme().hintColor.value.toRadixString(16).toString().substring(2)),
                           fit: BoxFit.cover,
                         ),
                 ),
               ),
             ),
             const Divider(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.dark)
+            if (context.prismThemeMode() != ThemeMode.dark)
               Container(
                 width: MediaQuery.of(context).size.width,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -282,13 +230,13 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.dark)
+            if (context.prismThemeMode() != ThemeMode.dark)
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.07,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: themes.length,
+                  itemCount: prismLightThemes.length,
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
                   itemBuilder: (context, index) {
                     return Padding(
@@ -299,19 +247,12 @@ class _ThemeViewState extends State<ThemeView> {
                           color: Theme.of(context).hintColor,
                           padding: EdgeInsets.zero,
                           onPressed: () {
-                            Provider.of<ThemeModel>(context, listen: false)
-                                .changeThemeByID(themes.keys.toList()[index]);
+                            context.setPrismLightTheme(prismLightThemes.keys.toList()[index]);
                             logger.d(selectedAccentColor.toString());
                             setState(() {
                               changingLight = true;
                               selectedTheme = index;
-                              selectedAccentColor = Color(int.parse(Provider.of<ThemeModel>(context, listen: false)
-                                  .currentTheme!
-                                  .errorColor
-                                  .toString()
-                                  .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                                  .replaceAll("Color(", "")
-                                  .replaceAll(")", "")));
+                              selectedAccentColor = Color(context.prismLightAccentValue(listen: false));
                             });
                             logger.d(selectedAccentColor.toString());
                           },
@@ -323,7 +264,7 @@ class _ThemeViewState extends State<ThemeView> {
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.black12),
                                   borderRadius: BorderRadius.circular(10),
-                                  color: themes[themes.keys.toList()[index]]!.hintColor,
+                                  color: prismLightThemes[prismLightThemes.keys.toList()[index]]!.hintColor,
                                 ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -331,11 +272,11 @@ class _ThemeViewState extends State<ThemeView> {
                                     Padding(
                                       padding: const EdgeInsets.all(4.0),
                                       child: Text(
-                                        themes.keys.toList()[index].substring(2),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .subtitle2!
-                                            .copyWith(color: themes[themes.keys.toList()[index]]!.accentColor),
+                                        prismLightThemes.keys.toList()[index].substring(2),
+                                        style: Theme.of(context).textTheme.subtitle2!.copyWith(
+                                              color:
+                                                  prismLightThemes[prismLightThemes.keys.toList()[index]]!.accentColor,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -371,7 +312,7 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.light)
+            if (context.prismThemeMode() != ThemeMode.light)
               Container(
                 width: MediaQuery.of(context).size.width,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -382,13 +323,13 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.light)
+            if (context.prismThemeMode() != ThemeMode.light)
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.07,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: darkThemes.length,
+                  itemCount: prismDarkThemes.length,
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
                   itemBuilder: (context, index) {
                     return Padding(
@@ -399,20 +340,12 @@ class _ThemeViewState extends State<ThemeView> {
                           color: Theme.of(context).hintColor,
                           padding: EdgeInsets.zero,
                           onPressed: () {
-                            Provider.of<DarkThemeModel>(context, listen: false)
-                                .changeThemeByID(darkThemes.keys.toList()[index]);
+                            context.setPrismDarkTheme(prismDarkThemes.keys.toList()[index]);
                             logger.d(selectedDarkAccentColor.toString());
                             setState(() {
                               changingLight = false;
                               selectedDarkTheme = index;
-                              selectedDarkAccentColor = Color(int.parse(
-                                  Provider.of<DarkThemeModel>(context, listen: false)
-                                      .currentTheme!
-                                      .errorColor
-                                      .toString()
-                                      .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                                      .replaceAll("Color(", "")
-                                      .replaceAll(")", "")));
+                              selectedDarkAccentColor = Color(context.prismDarkAccentValue(listen: false));
                             });
                             logger.d(selectedDarkAccentColor.toString());
                           },
@@ -424,7 +357,7 @@ class _ThemeViewState extends State<ThemeView> {
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.black12),
                                   borderRadius: BorderRadius.circular(10),
-                                  color: darkThemes[darkThemes.keys.toList()[index]]!.hintColor,
+                                  color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!.hintColor,
                                 ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -432,11 +365,10 @@ class _ThemeViewState extends State<ThemeView> {
                                     Padding(
                                       padding: const EdgeInsets.all(4.0),
                                       child: Text(
-                                        darkThemes.keys.toList()[index].substring(2),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .subtitle2!
-                                            .copyWith(color: darkThemes[darkThemes.keys.toList()[index]]!.accentColor),
+                                        prismDarkThemes.keys.toList()[index].substring(2),
+                                        style: Theme.of(context).textTheme.subtitle2!.copyWith(
+                                              color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!.accentColor,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -473,7 +405,7 @@ class _ThemeViewState extends State<ThemeView> {
             else
               Container(),
             const Divider(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.dark)
+            if (context.prismThemeMode() != ThemeMode.dark)
               Container(
                 width: MediaQuery.of(context).size.width,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -484,7 +416,7 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.dark)
+            if (context.prismThemeMode() != ThemeMode.dark)
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.055,
@@ -499,7 +431,7 @@ class _ThemeViewState extends State<ThemeView> {
                           changingLight = true;
                           selectedAccentColor = accentColors[index];
                         });
-                        Provider.of<ThemeModel>(context, listen: false).changeAccent(selectedAccentColor);
+                        context.setPrismLightAccent(selectedAccentColor);
                       },
                       child: Stack(
                         children: [
@@ -543,7 +475,7 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.light)
+            if (context.prismThemeMode() != ThemeMode.light)
               Container(
                 width: MediaQuery.of(context).size.width,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -554,7 +486,7 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.light)
+            if (context.prismThemeMode() != ThemeMode.light)
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.055,
@@ -569,7 +501,7 @@ class _ThemeViewState extends State<ThemeView> {
                           changingLight = false;
                           selectedDarkAccentColor = accentColors[index];
                         });
-                        Provider.of<DarkThemeModel>(context, listen: false).changeAccent(selectedDarkAccentColor);
+                        context.setPrismDarkAccent(selectedDarkAccentColor);
                       },
                       child: Stack(
                         children: [
@@ -685,10 +617,8 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       widget.selectedValue = 0;
                     });
                     Navigator.pop(context);
-                    Provider.of<ThemeModeExtended>(context, listen: false).changeThemeMode("System");
-                    widget.func!(Provider.of<ThemeModeExtended>(context, listen: false)
-                            .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
-                        "Light");
+                    context.setPrismThemeMode("System");
+                    widget.func!(context.prismModeStyleForWindow(listen: false) == "Light");
                   },
                   child: SizedBox(
                     width: width - 20,
@@ -726,7 +656,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       widget.selectedValue = 1;
                     });
                     Navigator.pop(context);
-                    Provider.of<ThemeModeExtended>(context, listen: false).changeThemeMode("Light");
+                    context.setPrismThemeMode("Light");
                     widget.func!(true);
                   },
                   child: SizedBox(
@@ -765,7 +695,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       widget.selectedValue = 2;
                     });
                     Navigator.pop(context);
-                    Provider.of<ThemeModeExtended>(context, listen: false).changeThemeMode("Dark");
+                    context.setPrismThemeMode("Dark");
                     widget.func!(false);
                   },
                   child: SizedBox(
