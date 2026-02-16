@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
@@ -7,7 +5,6 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/followingScreen.dart';
@@ -16,8 +13,6 @@ import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
-import 'package:animations/animations.dart';
-import 'package:device_info/device_info.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,7 +21,6 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:quick_actions/quick_actions.dart';
 // import 'package:rate_my_app/rate_my_app.dart';
 // import 'package:smooth_star_rating/smooth_star_rating.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 TabController? tabController;
 

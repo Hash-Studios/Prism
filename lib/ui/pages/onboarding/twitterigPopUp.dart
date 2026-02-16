@@ -947,8 +947,9 @@ class FollowHeaderCard extends StatelessWidget {
                                 users.where("email", isEqualTo: email).get().then((value) {
                                   if (value.docs.isEmpty) {
                                   } else {
-                                    final Map<String, dynamic> userData = value.docs[0].data() as Map<String, dynamic>;
-                                    final List<dynamic> followers = List<dynamic>.from(userData['followers'] as List? ?? []);
+                                    final Map<String, dynamic> userData = value.docs[0].data();
+                                    final List<dynamic> followers =
+                                        List<dynamic>.from(userData['followers'] as List? ?? []);
                                     followers.add(globals.prismUser.email);
                                     value.docs[0].reference.update({'followers': followers});
                                   }

@@ -1,5 +1,4 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:animations/animations.dart';
 import 'package:flare_flutter/flare_actor.dart';
