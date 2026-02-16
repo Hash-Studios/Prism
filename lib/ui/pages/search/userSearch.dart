@@ -1,19 +1,17 @@
-import 'package:Prism/auth/userModel.dart';
-import 'package:Prism/data/user/user_service.dart';
-import 'package:Prism/data/user/user_notifier.dart';
+import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
+import 'package:Prism/features/user_search/presentation/bloc/user_search_bloc.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/locator/locator.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/ui/pages/search/searchScreen.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UserSearch extends StatefulWidget {
@@ -26,6 +24,7 @@ class UserSearch extends StatefulWidget {
 class _UserSearchState extends State<UserSearch> {
   TextEditingController searchController = TextEditingController();
   late bool isSubmitted;
+
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     logger.d(navStack.toString());
@@ -36,11 +35,20 @@ class _UserSearchState extends State<UserSearch> {
   void initState() {
     isSubmitted = false;
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<UserSearchBloc>().add(const UserSearchEvent.cleared());
+    });
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final _userService = locator<UserService>();
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
@@ -55,15 +63,11 @@ class _UserSearchState extends State<UserSearch> {
               child: Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: Container(
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(500),
-                      color: Theme.of(context).hintColor),
+                  decoration:
+                      BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                   child: TextField(
                     cursorColor: Theme.of(context).errorColor,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline5!
-                        .copyWith(color: Theme.of(context).accentColor),
+                    style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                     controller: searchController,
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -72,22 +76,23 @@ class _UserSearchState extends State<UserSearch> {
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       hintText: "Search",
-                      hintStyle: Theme.of(context)
-                          .textTheme
-                          .headline5!
-                          .copyWith(color: Theme.of(context).accentColor),
+                      hintStyle: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                       suffixIcon: Icon(
                         JamIcons.search,
                         color: Theme.of(context).accentColor,
                       ),
                     ),
                     onSubmitted: (tex) {
-                      if (tex.trim() != "") {
+                      if (tex.trim().isNotEmpty) {
                         setState(() {
                           isSubmitted = true;
-                          _userService.fetchUsers(tex);
                         });
+                        context.read<UserSearchBloc>().add(
+                              UserSearchEvent.searchRequested(query: tex.trim()),
+                            );
+                        return;
                       }
+                      context.read<UserSearchBloc>().add(const UserSearchEvent.cleared());
                     },
                   ),
                 ),
@@ -101,36 +106,20 @@ class _UserSearchState extends State<UserSearch> {
   }
 }
 
-class UserSearchLoader extends StatefulWidget {
-  @override
-  _UserSearchLoaderState createState() => _UserSearchLoaderState();
-}
-
-class _UserSearchLoaderState extends State<UserSearchLoader> {
-  @override
-  void initState() {
-    super.initState();
-  }
+class UserSearchLoader extends StatelessWidget {
+  const UserSearchLoader({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final _userNotifier = Provider.of<UserNotifier>(context, listen: false);
-
-    return StreamBuilder<List<PrismUsersV2>>(
-      stream: _userNotifier.sessionsStream,
-      builder: (ctx, snapshot) {
-        if (snapshot == null) {
-          logger.d("snapshot null");
+    return BlocBuilder<UserSearchBloc, UserSearchState>(
+      builder: (context, state) {
+        if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
           return const LoadingCards();
         }
-        if (snapshot.connectionState == ConnectionState.waiting ||
-            snapshot.connectionState == ConnectionState.none) {
-          logger.d("snapshot none, waiting");
+        if (state.status == LoadStatus.failure) {
           return const LoadingCards();
-        } else {
-          logger.d("${snapshot.data}");
-          return UsersResultList(users: snapshot.data!);
         }
+        return UsersResultList(users: state.users);
       },
     );
   }
@@ -138,7 +127,7 @@ class _UserSearchLoaderState extends State<UserSearchLoader> {
 
 class UsersResultList extends StatefulWidget {
   const UsersResultList({required this.users, Key? key}) : super(key: key);
-  final List<PrismUsersV2> users;
+  final List<UserSearchUser> users;
 
   @override
   _UsersResultListState createState() => _UsersResultListState();
@@ -155,7 +144,15 @@ class _UsersResultListState extends State<UsersResultList> {
   @override
   void initState() {
     super.initState();
-    _data = generateItems(widget.users.length ?? 0);
+    _data = generateItems(widget.users.length);
+  }
+
+  @override
+  void didUpdateWidget(covariant UsersResultList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.users.length != widget.users.length) {
+      _data = generateItems(widget.users.length);
+    }
   }
 
   @override
@@ -170,19 +167,17 @@ class _UsersResultListState extends State<UsersResultList> {
             _data[index] = !isExpanded;
           });
         },
-        children: widget.users.map<ExpansionPanel>((PrismUsersV2 user) {
+        children: widget.users.map<ExpansionPanel>((UserSearchUser user) {
           return ExpansionPanel(
             canTapOnHeader: true,
-            backgroundColor: _data[widget.users.indexOf(user)]
-                ? Theme.of(context).errorColor
-                : Theme.of(context).primaryColor,
+            backgroundColor:
+                _data[widget.users.indexOf(user)] ? Theme.of(context).errorColor : Theme.of(context).primaryColor,
             headerBuilder: (BuildContext context, bool isExpanded) {
               return ListTile(
                 title: Row(
                   children: [
                     Padding(
-                      padding: EdgeInsets.all(
-                          _data[widget.users.indexOf(user)] ? 2 : 8.0),
+                      padding: EdgeInsets.all(_data[widget.users.indexOf(user)] ? 2 : 8.0),
                       child: CircleAvatar(
                         foregroundImage: CachedNetworkImageProvider(
                           user.profilePhoto ?? "".toString(),
@@ -198,15 +193,12 @@ class _UsersResultListState extends State<UsersResultList> {
                     ),
                   ],
                 ),
-                tileColor: _data[widget.users.indexOf(user)]
-                    ? Theme.of(context).errorColor
-                    : Theme.of(context).primaryColor,
+                tileColor:
+                    _data[widget.users.indexOf(user)] ? Theme.of(context).errorColor : Theme.of(context).primaryColor,
               );
             },
             body: Container(
-              color: _data[widget.users.indexOf(user)]
-                  ? Theme.of(context).errorColor
-                  : Theme.of(context).primaryColor,
+              color: _data[widget.users.indexOf(user)] ? Theme.of(context).errorColor : Theme.of(context).primaryColor,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Card(
@@ -234,16 +226,14 @@ class _UsersResultListState extends State<UsersResultList> {
                                         ),
                                     fit: BoxFit.cover,
                                     width: MediaQuery.of(context).size.width,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.19,
+                                    height: MediaQuery.of(context).size.height * 0.19,
                                   )
                                 : CachedNetworkImage(
                                     imageUrl: user.coverPhoto ??
                                         "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Headers%2FheaderDefault.png?alt=media&token=1a10b128-c355-45d8-af96-678c13c05b3c",
                                     fit: BoxFit.cover,
                                     width: MediaQuery.of(context).size.width,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.19,
+                                    height: MediaQuery.of(context).size.height * 0.19,
                                   ),
                           ),
                           const SizedBox(
@@ -255,14 +245,12 @@ class _UsersResultListState extends State<UsersResultList> {
                             width: double.maxFinite,
                             height: (user.links ?? {}).keys.toList().isEmpty
                                 ? MediaQuery.of(context).size.height * 0.21 - 37
-                                : MediaQuery.of(context).size.height * 0.27 -
-                                    37,
+                                : MediaQuery.of(context).size.height * 0.27 - 37,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.7,
+                                  width: MediaQuery.of(context).size.width * 0.7,
                                   child: Text(
                                     "${user.name}",
                                     textAlign: TextAlign.center,
@@ -280,8 +268,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                   height: 2,
                                 ),
                                 SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.7,
+                                  width: MediaQuery.of(context).size.width * 0.7,
                                   child: Text(
                                     "@${user.username}",
                                     textAlign: TextAlign.center,
@@ -289,9 +276,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontFamily: "Proxima Nova",
-                                      color: Theme.of(context)
-                                          .accentColor
-                                          .withOpacity(0.6),
+                                      color: Theme.of(context).accentColor.withOpacity(0.6),
                                       fontSize: 16,
                                       fontWeight: FontWeight.normal,
                                     ),
@@ -301,8 +286,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                   height: 15,
                                 ),
                                 SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.7,
+                                  width: MediaQuery.of(context).size.width * 0.7,
                                   child: Text(
                                     user.bio ?? "",
                                     textAlign: TextAlign.center,
@@ -310,9 +294,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontFamily: "Proxima Nova",
-                                      color: Theme.of(context)
-                                          .accentColor
-                                          .withOpacity(0.6),
+                                      color: Theme.of(context).accentColor.withOpacity(0.6),
                                       fontSize: 14,
                                       fontWeight: FontWeight.normal,
                                     ),
@@ -322,20 +304,16 @@ class _UsersResultListState extends State<UsersResultList> {
                                   height: 15,
                                 ),
                                 SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.7,
+                                  width: MediaQuery.of(context).size.width * 0.7,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       RichText(
                                         text: TextSpan(
-                                          text:
-                                              "${(user.following ?? []).length}",
+                                          text: "${(user.following ?? []).length}",
                                           style: TextStyle(
                                             fontFamily: "Proxima Nova",
-                                            color: Theme.of(context)
-                                                .accentColor
-                                                .withOpacity(1),
+                                            color: Theme.of(context).accentColor.withOpacity(1),
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -343,9 +321,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                             TextSpan(
                                               text: " Following",
                                               style: TextStyle(
-                                                color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(0.6),
+                                                color: Theme.of(context).accentColor.withOpacity(0.6),
                                                 fontWeight: FontWeight.normal,
                                               ),
                                             ),
@@ -358,13 +334,10 @@ class _UsersResultListState extends State<UsersResultList> {
                                       const SizedBox(width: 24),
                                       RichText(
                                         text: TextSpan(
-                                          text:
-                                              "${(user.followers ?? []).length}",
+                                          text: "${(user.followers ?? []).length}",
                                           style: TextStyle(
                                             fontFamily: "Proxima Nova",
-                                            color: Theme.of(context)
-                                                .accentColor
-                                                .withOpacity(1),
+                                            color: Theme.of(context).accentColor.withOpacity(1),
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -372,9 +345,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                             TextSpan(
                                               text: " Followers",
                                               style: TextStyle(
-                                                color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(0.6),
+                                                color: Theme.of(context).accentColor.withOpacity(0.6),
                                                 fontWeight: FontWeight.normal,
                                               ),
                                             ),
@@ -395,95 +366,60 @@ class _UsersResultListState extends State<UsersResultList> {
                                   SizedBox(
                                     width: MediaQuery.of(context).size.width,
                                     height: 48,
-                                    child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          ...(user.links ?? {})
-                                              .keys
-                                              .toList()
-                                              .map((e) => IconButton(
-                                                  padding:
-                                                      const EdgeInsets.all(2),
-                                                  icon: Container(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            6.0),
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                      color: Theme.of(context)
-                                                          .accentColor
-                                                          .withOpacity(0.1),
-                                                    ),
-                                                    child: Icon(
-                                                      linksData[e]!["icon"]
-                                                          as IconData,
-                                                      size: 20,
-                                                      color: Theme.of(context)
-                                                          .accentColor
-                                                          .withOpacity(0.8),
-                                                    ),
-                                                  ),
-                                                  onPressed: () {
-                                                    if (user.links != null) {
-                                                      final links = user.links;
-                                                      if (links![e]
-                                                          .toString()
-                                                          .contains(
-                                                              "@gmail.com")) {
-                                                        launch(
-                                                            "mailto:${user.links[e].toString()}");
-                                                      }
-                                                    } else {
-                                                      launch(user.links[e]
-                                                              .toString() ??
-                                                          "");
-                                                    }
-                                                  }))
-                                              .toList()
-                                              .sublist(
-                                                0,
-                                                (user.links ?? {})
-                                                            .keys
-                                                            .toList()
-                                                            .length >
-                                                        3
-                                                    ? 3
-                                                    : (user.links ?? {})
-                                                        .keys
-                                                        .toList()
-                                                        .length,
-                                              ),
-                                          if ((user.links ?? {})
-                                                  .keys
-                                                  .toList()
-                                                  .length >
-                                              3)
-                                            IconButton(
-                                                padding:
-                                                    const EdgeInsets.all(2),
-                                                icon: Container(
-                                                  padding:
-                                                      const EdgeInsets.all(6.0),
-                                                  decoration: BoxDecoration(
-                                                    shape: BoxShape.circle,
-                                                    color: Theme.of(context)
-                                                        .accentColor
-                                                        .withOpacity(0.1),
-                                                  ),
-                                                  child: Icon(
-                                                    JamIcons.more_horizontal,
-                                                    size: 20,
-                                                    color: Theme.of(context)
-                                                        .accentColor
-                                                        .withOpacity(0.8),
-                                                  ),
+                                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                      ...(user.links ?? {})
+                                          .keys
+                                          .toList()
+                                          .map((e) => IconButton(
+                                              padding: const EdgeInsets.all(2),
+                                              icon: Container(
+                                                padding: const EdgeInsets.all(6.0),
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: Theme.of(context).accentColor.withOpacity(0.1),
                                                 ),
-                                                onPressed: () {
-                                                  showNoLoadLinksPopUp(context,
-                                                      user.links ?? {});
-                                                }),
-                                        ]),
+                                                child: Icon(
+                                                  linksData[e]!["icon"] as IconData,
+                                                  size: 20,
+                                                  color: Theme.of(context).accentColor.withOpacity(0.8),
+                                                ),
+                                              ),
+                                              onPressed: () {
+                                                if (user.links != null) {
+                                                  final links = user.links;
+                                                  if (links![e].toString().contains("@gmail.com")) {
+                                                    launch("mailto:${user.links[e].toString()}");
+                                                  }
+                                                } else {
+                                                  launch(user.links[e].toString() ?? "");
+                                                }
+                                              }))
+                                          .toList()
+                                          .sublist(
+                                            0,
+                                            (user.links ?? {}).keys.toList().length > 3
+                                                ? 3
+                                                : (user.links ?? {}).keys.toList().length,
+                                          ),
+                                      if ((user.links ?? {}).keys.toList().length > 3)
+                                        IconButton(
+                                            padding: const EdgeInsets.all(2),
+                                            icon: Container(
+                                              padding: const EdgeInsets.all(6.0),
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: Theme.of(context).accentColor.withOpacity(0.1),
+                                              ),
+                                              child: Icon(
+                                                JamIcons.more_horizontal,
+                                                size: 20,
+                                                color: Theme.of(context).accentColor.withOpacity(0.8),
+                                              ),
+                                            ),
+                                            onPressed: () {
+                                              showNoLoadLinksPopUp(context, user.links ?? {});
+                                            }),
+                                    ]),
                                   )
                               ],
                             ),
@@ -519,10 +455,9 @@ class _UsersResultListState extends State<UsersResultList> {
                       Positioned(
                         child: IconButton(
                           onPressed: () {
-                            Navigator.pushNamed(context, followerProfileRoute,
-                                arguments: [
-                                  user.email,
-                                ]);
+                            Navigator.pushNamed(context, followerProfileRoute, arguments: [
+                              user.email,
+                            ]);
                           },
                           icon: const Icon(
                             JamIcons.user_circle,
