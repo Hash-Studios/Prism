@@ -1,5 +1,9 @@
 import 'dart:math';
 
+import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
@@ -7,12 +11,6 @@ import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/premiumBanners/premiumBanner.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:provider/provider.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
-import 'package:Prism/logger/logger.dart';
 
 class CollectionsGrid extends StatefulWidget {
   @override
@@ -187,14 +185,16 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                               CData.collections![index]['name'].toString().toUpperCase(),
                               textAlign: TextAlign.center,
                               maxLines: 1,
-                              style: Theme.of(context).textTheme.headline2!.copyWith(
-                                  fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                                  fontSize: 16,
+                                  color: Theme.of(context).colorScheme.secondary,
+                                  fontWeight: FontWeight.bold),
                             )
                           : Text(
                               "LOADING",
                               textAlign: TextAlign.center,
                               maxLines: 1,
-                              style: Theme.of(context).textTheme.headline2!.copyWith(
+                              style: Theme.of(context).textTheme.displayMedium!.copyWith(
                                   fontSize: 16,
                                   color: context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white,
                                   fontWeight: FontWeight.bold),

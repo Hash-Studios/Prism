@@ -1,6 +1,8 @@
 import 'dart:io' show Platform;
+
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:animations/animations.dart';
 import 'package:device_info/device_info.dart';
@@ -9,7 +11,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 class PrismList extends StatelessWidget {
   @override
@@ -23,7 +24,9 @@ class PrismList extends StatelessWidget {
             title: Text(
               "What's new?",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Check out the changelog",
@@ -39,7 +42,9 @@ class PrismList extends StatelessWidget {
             title: Text(
               "Share Prism!",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Quick link to pass on to your friends and enemies",
@@ -56,7 +61,9 @@ class PrismList extends StatelessWidget {
             title: Text(
               "Privacy Policy",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Read Prism's Privacy Policy.",
@@ -102,7 +109,9 @@ class PrismList extends StatelessWidget {
             title: Text(
               "API",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Prism uses Wallhaven and Pexels API for wallpapers",
@@ -111,7 +120,6 @@ class PrismList extends StatelessWidget {
             onTap: () async {
               showModal(
                 context: context,
-                configuration: const FadeScaleTransitionConfiguration(),
                 builder: (context) => AlertDialog(
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(
@@ -135,7 +143,7 @@ class PrismList extends StatelessWidget {
                                         : index == 2
                                             ? JamIcons.unsplash
                                             : JamIcons.github,
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                               title: Text(
                                 index == 0
@@ -145,7 +153,7 @@ class PrismList extends StatelessWidget {
                                         : index == 2
                                             ? "Unsplash API"
                                             : "GitHub API",
-                                style: Theme.of(context).textTheme.headline4,
+                                style: Theme.of(context).textTheme.headlineMedium,
                               ),
                               onTap: index == 0
                                   ? () async {
@@ -184,7 +192,9 @@ class PrismList extends StatelessWidget {
             title: Text(
               "Report a bug",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Tell us if you found out a bug",

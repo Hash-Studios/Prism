@@ -1,13 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter/material.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class EnterCodePanel extends StatefulWidget {
   const EnterCodePanel({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _EnterCodePanelState createState() => _EnterCodePanelState();
@@ -57,19 +57,19 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
             const Spacer(),
             Text(
               "Enter Code",
-              style: Theme.of(context).textTheme.headline2,
+              style: Theme.of(context).textTheme.displayMedium,
             ),
             const Spacer(flex: 2),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Container(
+                SizedBox(
                   height: 80,
                   width: width - 24,
                   child: Center(
                     child: TextField(
                       cursorColor: const Color(0xFFE57697),
-                      style: Theme.of(context).textTheme.headline5!.copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.white),
                       controller: codeController,
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -86,7 +86,8 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                             borderRadius: BorderRadius.circular(10),
                             borderSide: const BorderSide(color: Colors.white, width: 2)),
                         labelText: "Enter Code",
-                        labelStyle: Theme.of(context).textTheme.headline5!.copyWith(fontSize: 14, color: Colors.white),
+                        labelStyle:
+                            Theme.of(context).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
                         prefixIcon: const Icon(
                           JamIcons.coin,
                           color: Colors.white,
@@ -147,12 +148,13 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                         width: width - 14,
                         height: 60,
                         decoration: BoxDecoration(
-                          color:
-                              !enabled ? Theme.of(context).primaryColor : Theme.of(context).errorColor.withOpacity(0.2),
+                          color: !enabled
+                              ? Theme.of(context).primaryColor
+                              : Theme.of(context).colorScheme.error.withOpacity(0.2),
                           border: Border.all(
                               color: !enabled
-                                  ? Theme.of(context).accentColor.withOpacity(0.5)
-                                  : Theme.of(context).errorColor,
+                                  ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+                                  : Theme.of(context).colorScheme.error,
                               width: 3),
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -164,8 +166,8 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                                   style: TextStyle(
                                       fontSize: 16,
                                       color: !enabled
-                                          ? Theme.of(context).accentColor.withOpacity(0.5)
-                                          : Theme.of(context).accentColor,
+                                          ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+                                          : Theme.of(context).colorScheme.secondary,
                                       fontWeight: FontWeight.bold),
                                 ),
                         ),
@@ -185,7 +187,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
                 ),
               ),

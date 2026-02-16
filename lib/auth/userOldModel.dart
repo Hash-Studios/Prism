@@ -1,9 +1,8 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hive/hive.dart';
 
 part 'userOldModel.g.dart';
 

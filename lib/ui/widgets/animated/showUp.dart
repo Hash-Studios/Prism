@@ -48,16 +48,12 @@ class _ShowUpTransitionState extends State<ShowUpTransition> with SingleTickerPr
     switch (widget.slideSide) {
       case SlideFromSlide.left:
         selectedSlide = slideSides[0];
-        break;
       case SlideFromSlide.right:
         selectedSlide = slideSides[1];
-        break;
       case SlideFromSlide.bottom:
         selectedSlide = slideSides[2];
-        break;
       case SlideFromSlide.top:
         selectedSlide = slideSides[3];
-        break;
     }
     _animOffset = Tween<Offset>(begin: selectedSlide, end: Offset.zero)
         .animate(CurvedAnimation(curve: Curves.fastLinearToSlowEaseIn, parent: _animController));

@@ -4,7 +4,6 @@ import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 List<WallPaperP> wallsP = [];

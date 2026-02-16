@@ -1,7 +1,8 @@
 import 'dart:io';
-import 'package:intl/intl.dart';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class ClockOverlay extends StatefulWidget {
   final String? link;
@@ -70,7 +71,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: widget.accent == null
-                          ? Theme.of(context).accentColor
+                          ? Theme.of(context).colorScheme.secondary
                           : widget.accent!.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,
@@ -87,7 +88,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: widget.accent == null
-                          ? Theme.of(context).accentColor
+                          ? Theme.of(context).colorScheme.secondary
                           : widget.accent!.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,

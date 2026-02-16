@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:flutter/foundation.dart';
+import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:Prism/logger/logger.dart';
 
 class FollowersScreen extends StatefulWidget {
   final List? arguments;
@@ -52,7 +51,10 @@ class _FollowersScreenState extends State<FollowersScreen> {
                     ),
                     title: Text(
                       followers![index].toString(),
-                      style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium!
+                          .copyWith(color: Theme.of(context).colorScheme.secondary),
                     ),
                     onTap: () {
                       Navigator.pushNamed(context, followerProfileRoute, arguments: [followers![index].toString()]);

@@ -1,24 +1,24 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/apps/appsData.dart';
+import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:github/github.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as Path;
-import 'package:Prism/routes/router.dart';
-import 'package:flutter/material.dart';
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/global/globals.dart' as globals;
 
 class EditSetupReviewScreen extends StatefulWidget {
   final List? arguments;
@@ -75,7 +75,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
     widgetURL1 = TextEditingController(text: setupDoc.data()!["widget_url"].toString());
     if ("${setupDoc.data()!["wallpaper_url"]}" != "") {
       if ("${setupDoc.data()!["wallpaper_url"]}"[0] != "[") {
-        if ("${setupDoc.data()!["wall_id"]}" != "" && "${setupDoc.data()!["wall_id"]}" != null) {
+        if ("${setupDoc.data()!["wall_id"]}" != "") {
           wallpaperUploaded = true;
           wallpaperUploadLink = setupDoc.data()!["wallpaper_url"].toString();
           wallpaperId = setupDoc.data()!["wall_id"].toString();
@@ -101,38 +101,38 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
     wallpaperProvider = setupDoc.data()!["wallpaper_provider"].toString();
     wallpaperThumb = setupDoc.data()!["wallpaper_thumb"].toString();
     review = setupDoc.data()!["review"] as bool?;
-    secondWidgetAdded = "${setupDoc.data()!["widget2"]}" != "" && "${setupDoc.data()!["widget2"]}" != null;
+    secondWidgetAdded = "${setupDoc.data()!["widget2"]}" != "";
   }
 
   final Map<int, Widget> logoWidgets = <int, Widget>{
-    0: Padding(
-      padding: const EdgeInsets.all(4),
+    0: const Padding(
+      padding: EdgeInsets.all(4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(JamIcons.link),
           Text("Link"),
         ],
       ),
     ),
-    1: Padding(
-      padding: const EdgeInsets.all(4),
+    1: const Padding(
+      padding: EdgeInsets.all(4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(JamIcons.upload),
           Text("Upload"),
         ],
       ),
     ),
-    2: Padding(
-      padding: const EdgeInsets.all(4),
+    2: const Padding(
+      padding: EdgeInsets.all(4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(JamIcons.android),
           Text("App"),
         ],
@@ -140,23 +140,23 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
     )
   };
   final Map<int, Widget> widgetsIcons = <int, Widget>{
-    0: Padding(
-      padding: const EdgeInsets.all(4),
+    0: const Padding(
+      padding: EdgeInsets.all(4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(JamIcons.google_play),
           Text("Widgets"),
         ],
       ),
     ),
-    1: Padding(
-      padding: const EdgeInsets.all(4),
+    1: const Padding(
+      padding: EdgeInsets.all(4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(JamIcons.google_play_circle),
           Text("* Icons"),
         ],
@@ -183,7 +183,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
     });
     try {
       final String base64Image = base64Encode(imageBytes);
-      final github = GitHub(auth: Authentication.withToken(token));
+      final github = GitHub(auth: const Authentication.withToken(token));
       await github.repositories
           .createFile(RepositorySlug(gitUserName, repoName2),
               CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)))
@@ -218,24 +218,19 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
         appBar: AppBar(
           title: Text(
             "Edit Setup",
-            style: TextStyle(color: Theme.of(context).accentColor),
+            style: TextStyle(color: Theme.of(context).colorScheme.secondary),
           ),
           actions: [
             TextButton(
               onPressed: !isProcessing && !isUploading
                   ? () async {
                       if (setupName.text == "" ||
-                          setupName.text == null ||
                           setupDesc.text == "" ||
-                          setupDesc.text == null ||
                           (wallpaperUploaded == false &&
-                              (wallpaperUrl.text == "" || wallpaperUrl.text == null) &&
-                              ((wallpaperAppLink.text == "" || wallpaperAppLink.text == null) ||
-                                  (wallpaperAppName.text == "" || wallpaperAppName.text == null))) ||
+                              (wallpaperUrl.text == "") &&
+                              ((wallpaperAppLink.text == "") || (wallpaperAppName.text == ""))) ||
                           iconName.text == "" ||
-                          iconName.text == null ||
-                          iconURL.text == "" ||
-                          iconURL.text == null) {
+                          iconURL.text == "") {
                         toasts.error("Please fill all required fields!");
                       } else {
                         navStack.removeLast();
@@ -250,10 +245,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           wallpaperThumb,
                           wallpaperUploaded == true
                               ? wallpaperUploadLink
-                              : wallpaperAppName.text != "" &&
-                                      wallpaperAppName.text != null &&
-                                      wallpaperAppLink.text != "" &&
-                                      wallpaperAppLink.text != null
+                              : wallpaperAppName.text != "" && wallpaperAppLink.text != ""
                                   ? [wallpaperAppName.text, wallpaperAppLink.text, wallpaperAppWallName.text]
                                   : wallpaperUrl.text,
                           iconName.text,
@@ -274,9 +266,9 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                 "Post",
                 style: TextStyle(
                   color: !isProcessing && !isUploading
-                      ? Theme.of(context).errorColor == Colors.black
+                      ? Theme.of(context).colorScheme.error == Colors.black
                           ? Colors.white
-                          : Theme.of(context).errorColor
+                          : Theme.of(context).colorScheme.error
                       : Theme.of(context).hintColor,
                   fontWeight: FontWeight.normal,
                 ),
@@ -290,7 +282,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: CircleAvatar(
-                  backgroundColor: Theme.of(context).errorColor,
+                  backgroundColor: Theme.of(context).colorScheme.error,
                   radius: 20,
                   child: ClipOval(child: Image.network(globals.prismUser.profilePhoto)),
                 ),
@@ -308,7 +300,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.normal,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       decoration: InputDecoration(
                         labelText: "* Write a Name...",
@@ -316,12 +308,12 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         hintStyle: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                         labelStyle: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                         floatingLabelBehavior: FloatingLabelBehavior.never,
                         border: InputBorder.none,
@@ -333,7 +325,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.normal,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       decoration: InputDecoration(
                         labelText: "* Write a description... (50 chars only)",
@@ -341,12 +333,12 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         hintStyle: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                         labelStyle: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                         floatingLabelBehavior: FloatingLabelBehavior.never,
                         border: InputBorder.none,
@@ -375,7 +367,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         width: 120,
                         child: Center(
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).errorColor),
+                            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
                           ),
                         ),
                       )
@@ -395,7 +387,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.normal,
-                color: Theme.of(context).accentColor,
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             children: [
@@ -404,10 +396,10 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                 child: CupertinoSegmentedControl(
                     children: widgetsIcons,
                     groupValue: groupWidgetValue,
-                    borderColor: Theme.of(context).accentColor,
+                    borderColor: Theme.of(context).colorScheme.secondary,
                     pressedColor: Theme.of(context).hintColor,
                     unselectedColor: Theme.of(context).primaryColor,
-                    selectedColor: Theme.of(context).accentColor,
+                    selectedColor: Theme.of(context).colorScheme.secondary,
                     padding: EdgeInsets.zero,
                     onValueChanged: (int val) {
                       setState(() {
@@ -424,8 +416,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         decoration:
                             BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                         child: TextField(
-                          cursorColor: Theme.of(context).errorColor,
-                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                          cursorColor: Theme.of(context).colorScheme.error,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall!
+                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                           controller: widgetName1,
                           focusNode: textFocusNode,
                           decoration: InputDecoration(
@@ -435,11 +430,13 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             hintText: "Write widget app name...",
-                            hintStyle:
-                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headlineSmall!
+                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                             suffixIcon: Icon(
                               JamIcons.android,
-                              color: Theme.of(context).accentColor,
+                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                         ),
@@ -451,8 +448,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         decoration:
                             BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                         child: TextField(
-                          cursorColor: Theme.of(context).errorColor,
-                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                          cursorColor: Theme.of(context).colorScheme.error,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall!
+                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                           controller: widgetURL1,
                           focusNode: textFocusNode,
                           decoration: InputDecoration(
@@ -462,11 +462,13 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             hintText: "Write widget app link...",
-                            hintStyle:
-                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headlineSmall!
+                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                             suffixIcon: Icon(
                               JamIcons.google_play,
-                              color: Theme.of(context).accentColor,
+                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                         ),
@@ -479,9 +481,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                           child: TextField(
-                            cursorColor: Theme.of(context).errorColor,
-                            style:
-                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                            cursorColor: Theme.of(context).colorScheme.error,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall!
+                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                             controller: widgetName2,
                             focusNode: textFocusNode,
                             decoration: InputDecoration(
@@ -491,11 +495,13 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
                               hintText: "Write 2nd widget app name...",
-                              hintStyle:
-                                  Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                              hintStyle: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall!
+                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                               suffixIcon: Icon(
                                 JamIcons.android,
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                             ),
                           ),
@@ -508,7 +514,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               secondWidgetAdded = true;
                             });
                           },
-                          child: Text("Add more widget", style: Theme.of(context).textTheme.bodyText2)),
+                          child: Text("Add more widget", style: Theme.of(context).textTheme.bodyMedium)),
                     if (secondWidgetAdded == true)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -516,9 +522,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                           child: TextField(
-                            cursorColor: Theme.of(context).errorColor,
-                            style:
-                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                            cursorColor: Theme.of(context).colorScheme.error,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall!
+                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                             controller: widgetURL2,
                             focusNode: textFocusNode,
                             decoration: InputDecoration(
@@ -528,11 +536,13 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
                               hintText: "Write 2nd widget app link...",
-                              hintStyle:
-                                  Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                              hintStyle: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall!
+                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                               suffixIcon: Icon(
                                 JamIcons.google_play,
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                             ),
                           ),
@@ -551,8 +561,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         decoration:
                             BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                         child: TextField(
-                          cursorColor: Theme.of(context).errorColor,
-                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                          cursorColor: Theme.of(context).colorScheme.error,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall!
+                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                           controller: iconName,
                           focusNode: textFocusNode,
                           decoration: InputDecoration(
@@ -562,8 +575,10 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             hintText: "Write icon pack name...",
-                            hintStyle:
-                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headlineSmall!
+                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                             suffixIcon: IconButton(
                               onPressed: () {
                                 bool fetched = false;
@@ -573,7 +588,6 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                 showModalBottomSheet(
                                   context: context,
                                   isScrollControlled: true,
-                                  enableDrag: true,
                                   backgroundColor: Colors.transparent,
                                   shape: const RoundedRectangleBorder(
                                     borderRadius: BorderRadius.only(
@@ -583,7 +597,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   ),
                                   builder: (context) => GestureDetector(
                                     onTap: () => Navigator.of(context).pop(),
-                                    child: Container(
+                                    child: ColoredBox(
                                         color: const Color.fromRGBO(0, 0, 0, 0.001),
                                         child: GestureDetector(
                                             onTap: () {},
@@ -630,7 +644,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                                               decoration: BoxDecoration(
                                                                 color: Theme.of(context)
                                                                     .textTheme
-                                                                    .bodyText1!
+                                                                    .bodyLarge!
                                                                     .color!
                                                                     .withOpacity(0.1),
                                                                 borderRadius: BorderRadius.circular(5000),
@@ -681,19 +695,19 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                                                     },
                                                                     style: Theme.of(context)
                                                                         .textTheme
-                                                                        .bodyText1!
+                                                                        .bodyLarge!
                                                                         .copyWith(fontSize: 16),
                                                                     decoration: InputDecoration(
                                                                       prefixIcon: const Icon(Icons.search),
                                                                       hintText: "Search Icons",
                                                                       hintStyle: Theme.of(context)
                                                                           .textTheme
-                                                                          .bodyText1!
+                                                                          .bodyLarge!
                                                                           .copyWith(
                                                                             fontSize: 16,
                                                                             color: Theme.of(context)
                                                                                 .textTheme
-                                                                                .bodyText1!
+                                                                                .bodyLarge!
                                                                                 .color!
                                                                                 .withOpacity(0.6),
                                                                           ),
@@ -743,7 +757,9 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                                                                   .toString()
                                                                                   .trim(),
                                                                               style: TextStyle(
-                                                                                color: Theme.of(context).accentColor,
+                                                                                color: Theme.of(context)
+                                                                                    .colorScheme
+                                                                                    .secondary,
                                                                                 fontSize: 16,
                                                                                 fontFamily: "Proxima Nova",
                                                                                 fontWeight: FontWeight.normal,
@@ -755,7 +771,8 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                                                                   .trim(),
                                                                               style: TextStyle(
                                                                                 color: Theme.of(context)
-                                                                                    .accentColor
+                                                                                    .colorScheme
+                                                                                    .secondary
                                                                                     .withOpacity(0.5),
                                                                                 fontSize: 12,
                                                                                 fontFamily: "Proxima Nova",
@@ -777,7 +794,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               },
                               icon: Icon(
                                 JamIcons.search,
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                             ),
                           ),
@@ -790,8 +807,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         decoration:
                             BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                         child: TextField(
-                          cursorColor: Theme.of(context).errorColor,
-                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                          cursorColor: Theme.of(context).colorScheme.error,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall!
+                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                           controller: iconURL,
                           focusNode: textFocusNode,
                           decoration: InputDecoration(
@@ -801,11 +821,13 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             hintText: "Write icon app link...",
-                            hintStyle:
-                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headlineSmall!
+                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                             suffixIcon: Icon(
                               JamIcons.google_play_circle,
-                              color: Theme.of(context).accentColor,
+                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                         ),
@@ -824,7 +846,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.normal,
-                color: Theme.of(context).accentColor,
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             children: [
@@ -833,10 +855,10 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                 child: CupertinoSegmentedControl(
                     children: logoWidgets,
                     groupValue: groupValue,
-                    borderColor: Theme.of(context).accentColor,
+                    borderColor: Theme.of(context).colorScheme.secondary,
                     pressedColor: Theme.of(context).hintColor,
                     unselectedColor: Theme.of(context).primaryColor,
-                    selectedColor: Theme.of(context).accentColor,
+                    selectedColor: Theme.of(context).colorScheme.secondary,
                     padding: EdgeInsets.zero,
                     onValueChanged: (int val) {
                       setState(() {
@@ -851,8 +873,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                     decoration:
                         BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                     child: TextField(
-                      cursorColor: Theme.of(context).errorColor,
-                      style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                      cursorColor: Theme.of(context).colorScheme.error,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall!
+                          .copyWith(color: Theme.of(context).colorScheme.secondary),
                       controller: wallpaperUrl,
                       focusNode: textFocusNode,
                       decoration: InputDecoration(
@@ -862,11 +887,13 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         hintText: "Write wallpaper link...",
-                        hintStyle:
-                            Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                        hintStyle: Theme.of(context)
+                            .textTheme
+                            .headlineSmall!
+                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                         suffixIcon: Icon(
                           JamIcons.picture,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                     ),
@@ -877,8 +904,9 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                     ? Padding(
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                         child: FloatingActionButton.extended(
-                          backgroundColor:
-                              wallpaperUploaded == true ? Theme.of(context).hintColor : Theme.of(context).errorColor,
+                          backgroundColor: wallpaperUploaded == true
+                              ? Theme.of(context).hintColor
+                              : Theme.of(context).colorScheme.error,
                           onPressed: () async {
                             final pickedFile = await ImagePicker().getImage(source: ImageSource.gallery);
                             if (pickedFile != null) {
@@ -900,11 +928,12 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           },
                           label: Text(
                             wallpaperUploaded == true ? "Change Wall" : "Upload",
-                            style: TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.normal),
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.normal),
                           ),
                           icon: Icon(
                             JamIcons.upload,
-                            color: Theme.of(context).accentColor,
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                         ),
                       )
@@ -916,11 +945,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                               child: TextField(
-                                cursorColor: Theme.of(context).errorColor,
+                                cursorColor: Theme.of(context).colorScheme.error,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5!
-                                    .copyWith(color: Theme.of(context).accentColor),
+                                    .headlineSmall!
+                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
                                 controller: wallpaperAppName,
                                 focusNode: textFocusNode,
                                 decoration: InputDecoration(
@@ -932,11 +961,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   hintText: "Write wallpaper app name...",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5!
-                                      .copyWith(color: Theme.of(context).accentColor),
+                                      .headlineSmall!
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                   suffixIcon: Icon(
                                     JamIcons.android,
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                 ),
                               ),
@@ -948,11 +977,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                               child: TextField(
-                                cursorColor: Theme.of(context).errorColor,
+                                cursorColor: Theme.of(context).colorScheme.error,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5!
-                                    .copyWith(color: Theme.of(context).accentColor),
+                                    .headlineSmall!
+                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
                                 controller: wallpaperAppLink,
                                 focusNode: textFocusNode,
                                 decoration: InputDecoration(
@@ -964,11 +993,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   hintText: "Write app link...",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5!
-                                      .copyWith(color: Theme.of(context).accentColor),
+                                      .headlineSmall!
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                   suffixIcon: Icon(
                                     JamIcons.google_play,
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                 ),
                               ),
@@ -980,11 +1009,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                               child: TextField(
-                                cursorColor: Theme.of(context).errorColor,
+                                cursorColor: Theme.of(context).colorScheme.error,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5!
-                                    .copyWith(color: Theme.of(context).accentColor),
+                                    .headlineSmall!
+                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
                                 controller: wallpaperAppWallName,
                                 focusNode: textFocusNode,
                                 decoration: InputDecoration(
@@ -996,11 +1025,11 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   hintText: "Write wallpaper name",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5!
-                                      .copyWith(color: Theme.of(context).accentColor),
+                                      .headlineSmall!
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                   suffixIcon: Icon(
                                     JamIcons.picture,
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                 ),
                               ),
@@ -1019,7 +1048,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w100,
-                color: Theme.of(context).accentColor.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.secondary.withOpacity(0.7),
               ),
             ),
           ),
@@ -1034,7 +1063,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w100,
-                color: Theme.of(context).accentColor.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.secondary.withOpacity(0.7),
               ),
             ),
           )

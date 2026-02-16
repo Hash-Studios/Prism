@@ -1,18 +1,19 @@
 import 'dart:async';
+
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/payments/components.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:purchases_flutter/object_wrappers.dart';
-import 'package:Prism/payments/components.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 PurchaserInfo? _purchaserInfo;
 
@@ -130,7 +131,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
 class UpsellScreen extends StatefulWidget {
   final Offerings? offerings;
 
-  const UpsellScreen({Key? key, required this.offerings}) : super(key: key);
+  const UpsellScreen({super.key, required this.offerings});
 
   @override
   _UpsellScreenState createState() => _UpsellScreenState();
@@ -184,7 +185,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance!.addPostFrameCallback((_) => _scrollToBottom());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     if (widget.offerings != null) {
       final offering = widget.offerings!.current;
       if (offering != null) {
@@ -197,7 +198,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                 gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomCenter,
-                    colors: [Theme.of(context).errorColor, Theme.of(context).primaryColor],
+                    colors: [Theme.of(context).colorScheme.error, Theme.of(context).primaryColor],
                     stops: const [0.1, 0.6]),
               ),
               child: SafeArea(
@@ -236,8 +237,9 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       width: MediaQuery.of(context).size.width * 0.8,
                                       child: Text(
                                         "Premium",
-                                        style: Theme.of(context).textTheme.headline2!.copyWith(
-                                            fontWeight: FontWeight.bold, color: Theme.of(context).accentColor),
+                                        style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).colorScheme.secondary),
                                       ),
                                     ),
                                   ],
@@ -256,7 +258,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                         "Unlock everything",
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline5!
+                                            .headlineSmall!
                                             .copyWith(color: const Color(0xFFE57697)),
                                       ),
                                     ),
@@ -280,9 +282,9 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                   width: MediaQuery.of(context).size.width * 0.8,
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: Theme.of(context).errorColor == Colors.black
-                                              ? Theme.of(context).accentColor
-                                              : Theme.of(context).errorColor,
+                                          color: Theme.of(context).colorScheme.error == Colors.black
+                                              ? Theme.of(context).colorScheme.secondary
+                                              : Theme.of(context).colorScheme.error,
                                           width: 4),
                                       color: const Color(0x15ffffff),
                                       borderRadius: BorderRadius.circular(10)),
@@ -295,14 +297,16 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                         children: [
                                           Text(
                                             'Lifetime',
-                                            style: Theme.of(context).textTheme.headline3!.copyWith(
-                                                fontWeight: FontWeight.bold, color: Theme.of(context).accentColor),
+                                            style: Theme.of(context).textTheme.displaySmall!.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context).colorScheme.secondary),
                                             textAlign: TextAlign.center,
                                           ),
                                           if (lifetime.product.title.contains("SALE"))
                                             Text(
                                               'SALE',
-                                              style: Theme.of(context).textTheme.headline6!.copyWith(color: Colors.red),
+                                              style:
+                                                  Theme.of(context).textTheme.titleLarge!.copyWith(color: Colors.red),
                                               textAlign: TextAlign.center,
                                             )
                                           else
@@ -314,8 +318,8 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                         lifetime.product.priceString,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline3!
-                                            .copyWith(color: Theme.of(context).accentColor),
+                                            .displaySmall!
+                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                                         textAlign: TextAlign.center,
                                       ),
                                       const Spacer(),
@@ -362,16 +366,16 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                     child: Container(
                                       width: MediaQuery.of(context).size.width * 0.8,
                                       decoration: BoxDecoration(
-                                          color: Theme.of(context).errorColor == Colors.black
-                                              ? Theme.of(context).accentColor.withOpacity(0.1)
-                                              : Theme.of(context).accentColor,
+                                          color: Theme.of(context).colorScheme.error == Colors.black
+                                              ? Theme.of(context).colorScheme.secondary.withOpacity(0.1)
+                                              : Theme.of(context).colorScheme.secondary,
                                           borderRadius: BorderRadius.circular(500)),
                                       padding: const EdgeInsets.symmetric(vertical: 12.0),
                                       child: Text(
                                         'Restore',
-                                        style: Theme.of(context).textTheme.headline3!.copyWith(
+                                        style: Theme.of(context).textTheme.displaySmall!.copyWith(
                                             fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).errorColor == Colors.black
+                                            color: Theme.of(context).colorScheme.error == Colors.black
                                                 ? Colors.white
                                                 : Theme.of(context).primaryColor),
                                         textAlign: TextAlign.center,
@@ -389,8 +393,8 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                     textAlign: TextAlign.center,
                                     style: Theme.of(context)
                                         .textTheme
-                                        .headline6!
-                                        .copyWith(fontSize: 12, color: Theme.of(context).accentColor),
+                                        .titleLarge!
+                                        .copyWith(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
                                   ),
                                 ),
                                 const Spacer(),
@@ -423,7 +427,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
 class PurchaseButton extends StatefulWidget {
   final Package package;
 
-  const PurchaseButton({Key? key, required this.package}) : super(key: key);
+  const PurchaseButton({super.key, required this.package});
 
   @override
   _PurchaseButtonState createState() => _PurchaseButtonState();
@@ -469,16 +473,16 @@ class _PurchaseButtonState extends State<PurchaseButton> {
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
           decoration: BoxDecoration(
-              color: Theme.of(context).errorColor == Colors.black
-                  ? Theme.of(context).accentColor
-                  : Theme.of(context).errorColor,
+              color: Theme.of(context).colorScheme.error == Colors.black
+                  ? Theme.of(context).colorScheme.secondary
+                  : Theme.of(context).colorScheme.error,
               borderRadius: BorderRadius.circular(500)),
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Text(
             'Purchase',
             style: Theme.of(context)
                 .textTheme
-                .headline3!
+                .displaySmall!
                 .copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
             textAlign: TextAlign.center,
           ),
@@ -503,7 +507,7 @@ class ProScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(18.0),
                   child: Icon(
                     Icons.star,
-                    color: Theme.of(context).errorColor,
+                    color: Theme.of(context).colorScheme.error,
                     size: 44.0,
                   ),
                 ),
@@ -513,7 +517,7 @@ class ProScreen extends StatelessWidget {
                       "You are a Prism Premium user.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                       ),
@@ -524,7 +528,7 @@ class ProScreen extends StatelessWidget {
                       "You can use the app in all its functionality.\n\nPlease contact us at hash.studios.inc@gmail.com if you have any problem.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                       ).copyWith(fontSize: 14),
@@ -542,27 +546,27 @@ class FeatureChip extends StatelessWidget {
   const FeatureChip({
     required this.icon,
     required this.text,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 10, 8, 10),
       child: ActionChip(
-          backgroundColor: Theme.of(context).errorColor.withOpacity(0.3),
+          backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.3),
           labelPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
           avatar: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8.0),
             child: Icon(
               icon,
               size: 22,
-              color: Theme.of(context).accentColor,
+              color: Theme.of(context).colorScheme.secondary,
             ),
           ),
           label: Text(
             " $text",
-            style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+            style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
           ),
           onPressed: () {}),
     );

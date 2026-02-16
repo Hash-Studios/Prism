@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/pages/home/wallpapers/customFilters.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
@@ -18,15 +18,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image/image.dart' as imagelib;
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photofilters/filters/filters.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:photofilters/filters/preset_filters.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:provider/provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
 
 class WallpaperFilterScreen extends StatefulWidget {
   final imagelib.Image image;
@@ -35,12 +31,12 @@ class WallpaperFilterScreen extends StatefulWidget {
   final String finalFilename;
 
   const WallpaperFilterScreen({
-    Key? key,
+    super.key,
     required this.image,
     required this.finalImage,
     required this.filename,
     required this.finalFilename,
-  }) : super(key: key);
+  });
 
   @override
   State<StatefulWidget> createState() => _WallpaperFilterScreenState();
@@ -256,7 +252,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         appBar: AppBar(
           title: Text(
             "Edit Wallpaper",
-            style: Theme.of(context).textTheme.headline3,
+            style: Theme.of(context).textTheme.displaySmall,
           ),
           leading: IconButton(
               icon: const Icon(JamIcons.close),
@@ -272,7 +268,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
             else if (isLoading)
               Center(
                 child: SizedBox(
-                    width: 20, height: 20, child: CircularProgressIndicator(color: Theme.of(context).errorColor)),
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(color: Theme.of(context).colorScheme.error)),
               )
             else
               IconButton(
@@ -361,7 +359,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                     ),
                     Expanded(
                       flex: 2,
-                      child: Container(
+                      child: ColoredBox(
                         color: Theme.of(context).primaryColor,
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -402,8 +400,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                       selectedFilters[index].name,
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2!
-                                          .copyWith(color: Theme.of(context).accentColor),
+                                          .bodyMedium!
+                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
                                     )
                                   ],
                                 ),
@@ -540,14 +538,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                               child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation(
                                   context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                                      ? Theme.of(context).errorColor == Colors.black
-                                          ? Theme.of(context).accentColor
-                                          : Theme.of(context).errorColor
-                                      : Theme.of(context).errorColor,
+                                      ? Theme.of(context).colorScheme.error == Colors.black
+                                          ? Theme.of(context).colorScheme.secondary
+                                          : Theme.of(context).colorScheme.error
+                                      : Theme.of(context).colorScheme.error,
                                 ),
                               ),
                             ),
-                            Icon(Icons.high_quality_rounded, color: Theme.of(context).accentColor),
+                            Icon(Icons.high_quality_rounded, color: Theme.of(context).colorScheme.secondary),
                           ],
                         ),
                       ),
@@ -579,14 +577,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                               child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation(
                                   context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                                      ? Theme.of(context).errorColor == Colors.black
-                                          ? Theme.of(context).accentColor
-                                          : Theme.of(context).errorColor
-                                      : Theme.of(context).errorColor,
+                                      ? Theme.of(context).colorScheme.error == Colors.black
+                                          ? Theme.of(context).colorScheme.secondary
+                                          : Theme.of(context).colorScheme.error
+                                      : Theme.of(context).colorScheme.error,
                                 ),
                               ),
                             ),
-                            Icon(Icons.high_quality_rounded, color: Theme.of(context).accentColor),
+                            Icon(Icons.high_quality_rounded, color: Theme.of(context).colorScheme.secondary),
                           ],
                         ),
                       ),
@@ -616,13 +614,13 @@ List<int> applyFilter(Map<String, dynamic> params) {
   final Filter? filter = params["filter"] as Filter?;
   final imagelib.Image image = params["image"] as imagelib.Image;
   final String filename = params["filename"] as String;
-  List<int> _bytes = image.getBytes();
+  List<int> bytes = image.getBytes();
   if (filter != null) {
-    filter.apply(_bytes as Uint8List, image.width, image.height);
+    filter.apply(bytes as Uint8List, image.width, image.height);
   }
-  final imagelib.Image _image = imagelib.Image.fromBytes(image.width, image.height, _bytes);
+  final imagelib.Image image0 = imagelib.Image.fromBytes(image.width, image.height, bytes);
 
-  return _bytes = imagelib.encodeNamedImage(_image, filename)!;
+  return bytes = imagelib.encodeNamedImage(image0, filename)!;
 }
 
 ///The global buildThumbnail function

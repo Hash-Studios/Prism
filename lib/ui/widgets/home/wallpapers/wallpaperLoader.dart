@@ -1,7 +1,7 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/logger/logger.dart';
 
 class WallpaperLoader extends StatefulWidget {
   final Future future;
@@ -25,10 +25,6 @@ class _WallpaperLoaderState extends State<WallpaperLoader> {
     return FutureBuilder(
       future: _future,
       builder: (ctx, snapshot) {
-        if (snapshot == null) {
-          logger.d("snapshot null");
-          return const LoadingCards();
-        }
         if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
           logger.d("snapshot none, waiting");
           return const LoadingCards();

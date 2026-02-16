@@ -1,16 +1,16 @@
-import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
-import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
+import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/logger/logger.dart';
 
 class UserList extends StatelessWidget {
   final bool expanded;
-  UserList({required this.expanded});
+  const UserList({required this.expanded});
   @override
   Widget build(BuildContext context) {
     if (globals.prismUser.loggedIn == false) {
@@ -49,8 +49,8 @@ class UserList extends StatelessWidget {
         leading: const Icon(JamIcons.log_in),
         title: Text(
           "Sign in",
-          style:
-              TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
         ),
         subtitle: const Text(
           "Sign in to sync data across devices",
@@ -63,12 +63,12 @@ class UserList extends StatelessWidget {
         leading: const Icon(JamIcons.user_circle),
         title: Text(
           "User",
-          style:
-              TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
         ),
         subtitle: Text(
           globals.prismUser.loggedIn == true ? "Clear favorites or logout" : "Login with Google",
-          style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
+          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
         ),
         children: <Widget>[
           if (globals.prismUser.loggedIn == true)
@@ -81,7 +81,7 @@ class UserList extends StatelessWidget {
                     title: Text(
                       "Clear favourite walls",
                       style: TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                           fontWeight: FontWeight.w500,
                           fontFamily: "Proxima Nova"),
                     ),
@@ -92,7 +92,6 @@ class UserList extends StatelessWidget {
                     onTap: () async {
                       showModal(
                         context: context,
-                        configuration: const FadeScaleTransitionConfiguration(),
                         builder: (context) => AlertDialog(
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.all(
@@ -105,7 +104,7 @@ class UserList extends StatelessWidget {
                             child: Center(
                               child: Text(
                                 "Do you want remove all your favourite wallpapers?",
-                                style: Theme.of(context).textTheme.headline4,
+                                style: Theme.of(context).textTheme.headlineMedium,
                               ),
                             ),
                           ),
@@ -121,7 +120,7 @@ class UserList extends StatelessWidget {
                                 'YES',
                                 style: TextStyle(
                                   fontSize: 16.0,
-                                  color: Theme.of(context).errorColor,
+                                  color: Theme.of(context).colorScheme.error,
                                 ),
                               ),
                             ),
@@ -129,7 +128,7 @@ class UserList extends StatelessWidget {
                               padding: const EdgeInsets.only(right: 8.0),
                               child: FlatButton(
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                color: Theme.of(context).errorColor,
+                                color: Theme.of(context).colorScheme.error,
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
@@ -154,7 +153,7 @@ class UserList extends StatelessWidget {
                     title: Text(
                       "Clear favourite setups",
                       style: TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                           fontWeight: FontWeight.w500,
                           fontFamily: "Proxima Nova"),
                     ),
@@ -165,7 +164,6 @@ class UserList extends StatelessWidget {
                     onTap: () async {
                       showModal(
                         context: context,
-                        configuration: const FadeScaleTransitionConfiguration(),
                         builder: (context) => AlertDialog(
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.all(
@@ -178,7 +176,7 @@ class UserList extends StatelessWidget {
                             child: Center(
                               child: Text(
                                 "Do you want remove all your favourite setups?",
-                                style: Theme.of(context).textTheme.headline4,
+                                style: Theme.of(context).textTheme.headlineMedium,
                               ),
                             ),
                           ),
@@ -194,7 +192,7 @@ class UserList extends StatelessWidget {
                                 'YES',
                                 style: TextStyle(
                                   fontSize: 16.0,
-                                  color: Theme.of(context).errorColor,
+                                  color: Theme.of(context).colorScheme.error,
                                 ),
                               ),
                             ),
@@ -202,7 +200,7 @@ class UserList extends StatelessWidget {
                               padding: const EdgeInsets.only(right: 8.0),
                               child: FlatButton(
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                color: Theme.of(context).errorColor,
+                                color: Theme.of(context).colorScheme.error,
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
@@ -227,7 +225,7 @@ class UserList extends StatelessWidget {
                     title: Text(
                       "Logout",
                       style: TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                           fontWeight: FontWeight.w500,
                           fontFamily: "Proxima Nova"),
                     ),

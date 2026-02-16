@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:flutter/material.dart';
 import 'package:extended_image/extended_image.dart';
+import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart' hide ImageSource;
-import 'package:Prism/logger/logger.dart';
 
 class EditWallScreen extends StatefulWidget {
   final List? arguments;
@@ -90,10 +91,10 @@ class _EditWallScreenState extends State<EditWallScreen> {
         appBar: AppBar(
             title: Text(
               "Edit Wallpaper",
-              style: Theme.of(context).textTheme.headline3!.copyWith(color: Theme.of(context).accentColor),
+              style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
             ),
             leading: IconButton(
-                icon: Icon(JamIcons.close, color: Theme.of(context).accentColor),
+                icon: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
                 onPressed: () {
                   navStack.removeLast();
                   logger.d(navStack.toString());
@@ -101,7 +102,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                 }),
             actions: <Widget>[
               IconButton(
-                icon: Icon(JamIcons.history, color: Theme.of(context).accentColor),
+                icon: Icon(JamIcons.history, color: Theme.of(context).colorScheme.secondary),
                 onPressed: () {
                   setState(() {
                     sat = 1;
@@ -111,7 +112,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                 },
               ),
               IconButton(
-                icon: Icon(Icons.check, color: Theme.of(context).accentColor),
+                icon: Icon(Icons.check, color: Theme.of(context).colorScheme.secondary),
                 onPressed: () async {
                   await crop();
                 },
@@ -141,14 +142,14 @@ class _EditWallScreenState extends State<EditWallScreen> {
                             children: <Widget>[
                               Icon(
                                 JamIcons.brush,
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                               Text(
                                 "Saturation",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2!
-                                    .copyWith(color: Theme.of(context).accentColor),
+                                    .bodyMedium!
+                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
                               )
                             ],
                           ),
@@ -157,14 +158,14 @@ class _EditWallScreenState extends State<EditWallScreen> {
                             children: <Widget>[
                               Icon(
                                 JamIcons.brightness,
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                               Text(
                                 "Brightness",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2!
-                                    .copyWith(color: Theme.of(context).accentColor),
+                                    .bodyMedium!
+                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
                               )
                             ],
                           ),
@@ -173,14 +174,14 @@ class _EditWallScreenState extends State<EditWallScreen> {
                             children: <Widget>[
                               Icon(
                                 JamIcons.background_color,
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                               Text(
                                 "Contrast",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2!
-                                    .copyWith(color: Theme.of(context).accentColor),
+                                    .bodyMedium!
+                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
                               )
                             ],
                           ),
@@ -211,20 +212,26 @@ class _EditWallScreenState extends State<EditWallScreen> {
                           const Spacer(flex: 3),
                           Text(
                             sat.toStringAsFixed(2),
-                            style:
-                                Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium!
+                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                           ),
                           const Spacer(flex: 2),
                           Text(
                             bright.toStringAsFixed(2),
-                            style:
-                                Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium!
+                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                           ),
                           const Spacer(flex: 2),
                           Text(
                             con.toStringAsFixed(2),
-                            style:
-                                Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium!
+                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                           ),
                           const Spacer(flex: 3),
                         ],
@@ -275,45 +282,45 @@ class _EditWallScreenState extends State<EditWallScreen> {
         BottomNavigationBarItem(
           icon: Icon(
             Icons.flip,
-            color: Theme.of(context).accentColor,
+            color: Theme.of(context).colorScheme.secondary,
           ),
-          title: Text(
+          label: Text(
             'Flip',
-            style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                  color: Theme.of(context).accentColor,
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
           ),
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.rotate_left,
-            color: Theme.of(context).accentColor,
+            color: Theme.of(context).colorScheme.secondary,
           ),
-          title: Text(
+          label: Text(
             'Rotate Left',
-            style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                  color: Theme.of(context).accentColor,
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
           ),
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.rotate_right,
-            color: Theme.of(context).accentColor,
+            color: Theme.of(context).colorScheme.secondary,
           ),
-          title: Text(
+          label: Text(
             'Rotate Right',
-            style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                  color: Theme.of(context).accentColor,
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
           ),
         ),
         BottomNavigationBarItem(
           icon: Icon(
             Icons.crop,
-            color: Theme.of(context).accentColor,
+            color: Theme.of(context).colorScheme.secondary,
           ),
-          title: Text(
+          label: Text(
             cropRatio == 1 / 2
                 ? "9:18"
                 : cropRatio == 9 / 16
@@ -323,8 +330,8 @@ class _EditWallScreenState extends State<EditWallScreen> {
                         : cropRatio == 9 / 19.5
                             ? "9:19.5"
                             : "9:18",
-            style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                  color: Theme.of(context).accentColor,
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
           ),
         ),
@@ -333,16 +340,12 @@ class _EditWallScreenState extends State<EditWallScreen> {
         switch (index) {
           case 0:
             flip();
-            break;
           case 1:
             rotate(false);
-            break;
           case 2:
             rotate(true);
-            break;
           case 3:
             changeCropRatio();
-            break;
         }
       },
       selectedItemColor: Theme.of(context).primaryColor,
@@ -403,7 +406,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Widget _buildSat() {
     return Slider(
-      activeColor: Theme.of(context).accentColor,
+      activeColor: Theme.of(context).colorScheme.secondary,
       inactiveColor: Theme.of(context).hintColor,
       label: 'sat : ${sat.toStringAsFixed(2)}',
       onChanged: (double value) {
@@ -419,7 +422,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Widget _buildBrightness() {
     return Slider(
-      activeColor: Theme.of(context).accentColor,
+      activeColor: Theme.of(context).colorScheme.secondary,
       inactiveColor: Theme.of(context).hintColor,
       label: bright.toStringAsFixed(2),
       onChanged: (double value) {
@@ -435,7 +438,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Widget _buildCon() {
     return Slider(
-      activeColor: Theme.of(context).accentColor,
+      activeColor: Theme.of(context).colorScheme.secondary,
       inactiveColor: Theme.of(context).hintColor,
       label: 'con : ${con.toStringAsFixed(2)}',
       onChanged: (double value) {

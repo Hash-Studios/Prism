@@ -1,10 +1,10 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:animations/animations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/logger/logger.dart';
 
 final databaseReference = FirebaseFirestore.instance;
 List<Color> colors = [
@@ -85,7 +85,8 @@ Color showColors(BuildContext context) {
                 padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
                 child: Text(
                   "Select a color",
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).accentColor),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                 ),
               ),
             ],
@@ -95,7 +96,7 @@ Color showColors(BuildContext context) {
           ),
           Wrap(
             children: <Widget>[
-              for (var color in colors)
+              for (final color in colors)
                 GestureDetector(
                   onTap: () {
                     currentColor = color;
@@ -136,7 +137,7 @@ Color showColors(BuildContext context) {
     actions: [
       FlatButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: Theme.of(context).errorColor,
+        color: Theme.of(context).colorScheme.error,
         onPressed: () {
           Navigator.of(context).pop();
         },
@@ -150,9 +151,6 @@ Color showColors(BuildContext context) {
     backgroundColor: Theme.of(context).primaryColor,
     actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
   );
-  showModal(
-      context: context,
-      configuration: const FadeScaleTransitionConfiguration(),
-      builder: (BuildContext context) => colorPopUp);
+  showModal(context: context, builder: (BuildContext context) => colorPopUp);
   return const Color(0x00000000);
 }

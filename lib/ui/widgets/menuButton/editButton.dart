@@ -2,20 +2,20 @@ import 'dart:io';
 
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:image/image.dart' as imagelib;
-import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as path;
-import 'package:flutter/foundation.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as imagelib;
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 
 class EditButton extends StatefulWidget {
   final String? url;
   const EditButton({
     required this.url,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _EditButtonState createState() => _EditButtonState();
@@ -51,7 +51,7 @@ class _EditButtonState extends State<EditButton> {
             padding: const EdgeInsets.all(17),
             child: Icon(
               JamIcons.pencil,
-              color: Theme.of(context).accentColor,
+              color: Theme.of(context).colorScheme.secondary,
               size: 20,
             ),
           ),

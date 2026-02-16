@@ -1,5 +1,4 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class FavoriteIcon extends StatefulWidget {
@@ -8,12 +7,11 @@ class FavoriteIcon extends StatefulWidget {
     Color? iconColor,
     bool? isFavorite,
     required Function valueChanged,
-    Key? key,
+    super.key,
   })  : _iconSize = iconSize ?? 60.0,
         _iconColor = iconColor ?? Colors.red,
         _isFavorite = isFavorite ?? false,
-        _valueChanged = valueChanged,
-        super(key: key);
+        _valueChanged = valueChanged;
 
   final double _iconSize;
   final Color _iconColor;
@@ -49,8 +47,8 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
         : (widget._iconSize > 100.0)
             ? 100.0
             : widget._iconSize;
-    final double _sizeDifference = _maxIconSize * 0.30;
-    _minIconSize = _maxIconSize - _sizeDifference;
+    final double sizeDifference = _maxIconSize * 0.30;
+    _minIconSize = _maxIconSize - sizeDifference;
 
     _controller = AnimationController(
       vsync: this,
@@ -58,17 +56,17 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
     );
 
     _curve = CurvedAnimation(curve: Curves.slowMiddle, parent: _controller);
-    final Animation<Color?> _selectedColorAnimation = ColorTween(
+    final Animation<Color?> selectedColorAnimation = ColorTween(
       begin: widget._iconColor,
       end: widget._iconColor,
     ).animate(_curve);
 
-    final Animation<Color?> _deSelectedColorAnimation = ColorTween(
+    final Animation<Color?> deSelectedColorAnimation = ColorTween(
       begin: widget._iconColor,
       end: widget._iconColor,
     ).animate(_curve);
 
-    _colorAnimation = (_isFavorite == true) ? _selectedColorAnimation : _deSelectedColorAnimation;
+    _colorAnimation = (_isFavorite == true) ? selectedColorAnimation : deSelectedColorAnimation;
     _sizeAnimation = TweenSequence(
       <TweenSequenceItem<double>>[
         TweenSequenceItem<double>(

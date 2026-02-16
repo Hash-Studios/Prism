@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class UndefinedScreen extends StatelessWidget {
   final String? name;
-  const UndefinedScreen({Key? key, this.name}) : super(key: key);
+  const UndefinedScreen({super.key, this.name});
   @override
   Widget build(BuildContext context) {
     return Scaffold(

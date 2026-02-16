@@ -1,11 +1,11 @@
 import 'package:Prism/global/categoryMenu.dart';
-import 'package:Prism/ui/home/category_feed_legacy_bridge.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/home/category_feed_legacy_bridge.dart';
+import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
 import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
-import 'package:Prism/logger/logger.dart';
 
 void showCategories(BuildContext context, CategoryMenu initialValue) {
   final controller = ScrollController();
@@ -24,7 +24,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                 borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
                 color: Theme.of(context).primaryColor),
             child: Center(
-              child: Text("Categories", style: Theme.of(context).textTheme.headline2),
+              child: Text("Categories", style: Theme.of(context).textTheme.displayMedium),
             ),
           ),
           SizedBox(
@@ -33,7 +33,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
               radius: const Radius.circular(500),
               thickness: 5,
               controller: controller,
-              isAlwaysShown: true,
+              thumbVisibility: true,
               child: ListView.builder(
                 controller: controller,
                 itemCount: categoryChoices.length,
@@ -45,10 +45,10 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                       height: 100,
                       width: MediaQuery.of(context).size.width * .7,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).errorColor,
+                        color: Theme.of(context).colorScheme.error,
                         borderRadius: BorderRadius.circular(10),
                         image: DecorationImage(
-                          image: CachedNetworkImageProvider(choice.image as String),
+                          image: CachedNetworkImageProvider(choice.image!),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -76,15 +76,15 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   if (initialValue == choice)
-                                    Icon(JamIcons.check, color: Theme.of(context).accentColor)
+                                    Icon(JamIcons.check, color: Theme.of(context).colorScheme.secondary)
                                   else
                                     Container(),
                                   Text(
                                     choice.name.toString(),
                                     style: Theme.of(context)
                                         .textTheme
-                                        .headline4!
-                                        .copyWith(color: Theme.of(context).accentColor),
+                                        .headlineMedium!
+                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
                                   ),
                                 ],
                               ),
@@ -104,7 +104,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
     actions: [
       FlatButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: Theme.of(context).errorColor,
+        color: Theme.of(context).colorScheme.error,
         onPressed: () {
           Navigator.of(context).pop();
           logger.d('You have not chossed anything');
@@ -124,7 +124,6 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
   );
   showModal(
     context: context,
-    configuration: const FadeScaleTransitionConfiguration(),
     builder: (BuildContext context) => categoryPopUp,
   );
 }

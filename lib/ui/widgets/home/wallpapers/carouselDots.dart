@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 
 class CarouselDots extends StatelessWidget {
   const CarouselDots({
-    Key? key,
+    super.key,
     required int current,
-  })  : _current = current,
-        super(key: key);
+  }) : _current = current;
 
   final int _current;
 
@@ -25,12 +24,12 @@ class CarouselDots extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(500),
               color: _current == i
-                  ? Theme.of(context).errorColor == Colors.black
+                  ? Theme.of(context).colorScheme.error == Colors.black
                       ? Colors.white
-                      : Theme.of(context).errorColor
-                  : Theme.of(context).errorColor == Colors.black
+                      : Theme.of(context).colorScheme.error
+                  : Theme.of(context).colorScheme.error == Colors.black
                       ? Colors.white38
-                      : Theme.of(context).errorColor.withOpacity(0.38),
+                      : Theme.of(context).colorScheme.error.withOpacity(0.38),
             ),
           );
         }).toList(),

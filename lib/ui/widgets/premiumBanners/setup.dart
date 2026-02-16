@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:flutter/material.dart';
 
 class PremiumBannerSetup extends StatelessWidget {
   final bool? comparator;

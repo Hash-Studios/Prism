@@ -1,14 +1,14 @@
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/routes/router.dart';
+import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class FavouriteWallpaperButton extends StatefulWidget {
   final String id;
@@ -24,8 +24,8 @@ class FavouriteWallpaperButton extends StatefulWidget {
     this.wallhaven,
     this.pexels,
     this.prism,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _FavouriteWallpaperButtonState createState() => _FavouriteWallpaperButtonState();
@@ -68,7 +68,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
                   Navigator.pop(context);
                 }
               },
-              iconColor: Theme.of(context).accentColor,
+              iconColor: Theme.of(context).colorScheme.secondary,
               iconSize: 30,
               isFavorite: box.get(widget.id, defaultValue: false) as bool,
             )),

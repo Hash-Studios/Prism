@@ -1,9 +1,9 @@
+import 'package:Prism/global/globals.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 // import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart';
 
 void showNoLoadLinksPopUp(BuildContext context, Map link) {
   // List<LinksModel> links = [];
@@ -19,13 +19,13 @@ void showNoLoadLinksPopUp(BuildContext context, Map link) {
       style: TextStyle(
         fontWeight: FontWeight.w700,
         fontSize: 16,
-        color: Theme.of(context).accentColor,
+        color: Theme.of(context).colorScheme.secondary,
       ),
     ),
     actions: [
       FlatButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: Theme.of(context).errorColor,
+        color: Theme.of(context).colorScheme.error,
         onPressed: () {
           Navigator.of(context).pop();
         },
@@ -64,10 +64,7 @@ void showNoLoadLinksPopUp(BuildContext context, Map link) {
     backgroundColor: Theme.of(context).primaryColor,
     actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
   );
-  showModal(
-      context: context,
-      configuration: const FadeScaleTransitionConfiguration(),
-      builder: (BuildContext context) => linkPopUp);
+  showModal(context: context, builder: (BuildContext context) => linkPopUp);
 }
 
 Map<String, Map<String, dynamic>> linksData = {

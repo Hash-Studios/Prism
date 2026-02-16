@@ -1,15 +1,15 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/logger/logger.dart';
 
 class CollectionScreen extends StatefulWidget {
   const CollectionScreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _CollectionScreenState createState() => _CollectionScreenState();
@@ -48,9 +48,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     onRefresh: () async {
                       getCollections();
                     },
-                    child: Column(
+                    child: const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const <Widget>[
+                      children: <Widget>[
                         Spacer(),
                         Center(child: Text("Can't connect to the Servers!")),
                         Spacer(),

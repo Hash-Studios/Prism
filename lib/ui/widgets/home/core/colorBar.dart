@@ -1,13 +1,13 @@
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 class ColorBar extends StatelessWidget {
   const ColorBar({
-    Key? key,
+    super.key,
     required this.colors,
-  }) : super(key: key);
+  });
 
   final List<Color?>? colors;
 
@@ -40,7 +40,7 @@ class ColorBar extends StatelessWidget {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: colors == null ? Theme.of(context).accentColor.withOpacity(0.1) : colors![color],
+                  color: colors == null ? Theme.of(context).colorScheme.secondary.withOpacity(0.1) : colors![color],
                   shape: BoxShape.circle,
                 ),
                 height: MediaQuery.of(context).size.width / 8,

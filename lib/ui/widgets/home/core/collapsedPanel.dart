@@ -1,5 +1,4 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
@@ -7,10 +6,10 @@ class CollapsedPanel extends StatelessWidget {
   final bool? panelCollapsed;
   final PanelController panelController;
   const CollapsedPanel({
-    Key? key,
+    super.key,
     this.panelCollapsed,
     required this.panelController,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +35,7 @@ class CollapsedPanel extends StatelessWidget {
           child: IconButton(
             icon: Icon(
               JamIcons.chevron_up,
-              color: Theme.of(context).accentColor,
+              color: Theme.of(context).colorScheme.secondary,
             ),
             onPressed: () {
               panelController.open();

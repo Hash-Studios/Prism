@@ -1,10 +1,10 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share/share.dart';
-import 'package:Prism/logger/logger.dart';
 
 class ShareButton extends StatefulWidget {
   final String? id;
@@ -16,8 +16,8 @@ class ShareButton extends StatefulWidget {
     required this.provider,
     required this.url,
     required this.thumbUrl,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _ShareButtonState createState() => _ShareButtonState();
@@ -49,7 +49,7 @@ class _ShareButtonState extends State<ShareButton> {
             padding: const EdgeInsets.all(17),
             child: Icon(
               JamIcons.share_alt,
-              color: Theme.of(context).accentColor,
+              color: Theme.of(context).colorScheme.secondary,
               size: 20,
             ),
           ),
@@ -78,7 +78,7 @@ class _ShareButtonState extends State<ShareButton> {
         uriPrefix: 'https://prismwallpapers.page.link',
         link: Uri.parse(
             'http://prism.hash.com/share?id=${widget.id}&provider=${widget.provider}&url=${widget.url}&thumb=${widget.thumbUrl}'),
-        androidParameters: AndroidParameters(
+        androidParameters: const AndroidParameters(
           packageName: 'com.hash.prism',
           minimumVersion: 1,
         ),

@@ -8,13 +8,13 @@ class App {
   late double _heightPadding;
   late double _widthPadding;
 
-  App(BuildContext _context) {
-    this._context = _context;
-    final MediaQueryData _queryData = MediaQuery.of(this._context);
-    _height = _queryData.size.height / 100.0;
-    _width = _queryData.size.width / 100.0;
-    _heightPadding = _height - ((_queryData.padding.top + _queryData.padding.bottom) / 100.0);
-    _widthPadding = _width - (_queryData.padding.left + _queryData.padding.right) / 100.0;
+  App(BuildContext context) {
+    _context = context;
+    final MediaQueryData queryData = MediaQuery.of(_context);
+    _height = queryData.size.height / 100.0;
+    _width = queryData.size.width / 100.0;
+    _heightPadding = _height - ((queryData.padding.top + queryData.padding.bottom) / 100.0);
+    _widthPadding = _width - (queryData.padding.left + queryData.padding.right) / 100.0;
   }
 
   double appHeight(double v) {

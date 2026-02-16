@@ -19,7 +19,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
 // import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ProfileDrawer extends StatelessWidget {
   Widget createDrawerHeader(BuildContext context) {
@@ -42,7 +41,10 @@ class ProfileDrawer extends StatelessWidget {
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
                           globals.prismUser.premium == true ? "Prism Pro" : "Prism",
-                          style: Theme.of(context).textTheme.headline3!.copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context)
+                              .textTheme
+                              .displaySmall!
+                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                       ),
                       SizedBox(
@@ -51,7 +53,10 @@ class ProfileDrawer extends StatelessWidget {
                           globals.prismUser.premium == true
                               ? "Exclusive premium walls & setups!"
                               : "Exclusive wallpapers & setups!",
-                          style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium!
+                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                       ),
                     ],
@@ -69,12 +74,12 @@ class ProfileDrawer extends StatelessWidget {
       dense: true,
       trailing: Icon(
         JamIcons.chevron_right,
-        color: Theme.of(context).accentColor,
+        color: Theme.of(context).colorScheme.secondary,
       ),
       visualDensity: VisualDensity.adaptivePlatformDensity,
       leading: Icon(
         icon,
-        color: Theme.of(context).accentColor,
+        color: Theme.of(context).colorScheme.secondary,
       ),
       title: SizedBox(
         width: MediaQuery.of(context).size.width / 2,
@@ -82,8 +87,8 @@ class ProfileDrawer extends StatelessWidget {
           text,
           style: Theme.of(context)
               .textTheme
-              .caption!
-              .copyWith(fontFamily: "Proxima Nova", color: Theme.of(context).accentColor),
+              .bodySmall!
+              .copyWith(fontFamily: "Proxima Nova", color: Theme.of(context).colorScheme.secondary),
         ),
       ),
       onTap: onTap,
@@ -98,8 +103,8 @@ class ProfileDrawer extends StatelessWidget {
         child: Text(text,
             style: Theme.of(context)
                 .textTheme
-                .headline3!
-                .copyWith(fontSize: 12, color: Theme.of(context).accentColor.withOpacity(0.4))),
+                .displaySmall!
+                .copyWith(fontSize: 12, color: Theme.of(context).colorScheme.secondary.withOpacity(0.4))),
       ),
     );
   }
@@ -107,7 +112,7 @@ class ProfileDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Container(
+      child: ColoredBox(
         color: Theme.of(context).primaryColor,
         child: ListView(
           padding: EdgeInsets.zero,
@@ -185,7 +190,6 @@ class ProfileDrawer extends StatelessWidget {
                 Navigator.pop(context);
                 showModal(
                   context: context,
-                  configuration: const FadeScaleTransitionConfiguration(),
                   builder: (context) => AlertDialog(
                     shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.all(
@@ -198,7 +202,7 @@ class ProfileDrawer extends StatelessWidget {
                       child: Center(
                         child: Text(
                           "Do you want remove all your downloads?",
-                          style: Theme.of(context).textTheme.headline4,
+                          style: Theme.of(context).textTheme.headlineMedium,
                         ),
                       ),
                     ),
@@ -247,7 +251,7 @@ class ProfileDrawer extends StatelessWidget {
                           'YES',
                           style: TextStyle(
                             fontSize: 16.0,
-                            color: Theme.of(context).accentColor,
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                         ),
                       ),
@@ -255,7 +259,7 @@ class ProfileDrawer extends StatelessWidget {
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FlatButton(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                          color: Theme.of(context).errorColor,
+                          color: Theme.of(context).colorScheme.error,
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
@@ -308,11 +312,11 @@ class ProfileDrawer extends StatelessWidget {
                 context: context,
                 onTap: () {
                   createUserDynamicLink(
-                    globals.prismUser.name.toString(),
-                    globals.prismUser.username.toString(),
-                    globals.prismUser.email.toString(),
-                    globals.prismUser.bio.toString(),
-                    globals.prismUser.profilePhoto.toString(),
+                    globals.prismUser.name,
+                    globals.prismUser.username,
+                    globals.prismUser.email,
+                    globals.prismUser.bio,
+                    globals.prismUser.profilePhoto,
                   );
                 }),
             createDrawerBodyItem(
@@ -334,7 +338,7 @@ class ProfileDrawer extends StatelessWidget {
               onTap: () async {
                 Navigator.pop(context);
                 DefaultCacheManager().emptyCache();
-                PaintingBinding.instance!.imageCache!.clear();
+                PaintingBinding.instance.imageCache.clear();
                 await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
                 await Hive.openBox<InAppNotif>('inAppNotifs');
                 main.prefs.delete('lastFetchTime');

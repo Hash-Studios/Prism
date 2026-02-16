@@ -62,11 +62,11 @@ extension CategoryFeedLegacyBridgeX on BuildContext {
     final bloc = _categoryFeedBloc(false);
     final category = _toEntity(choice, bloc.state.categories);
     if (mode == 'r') {
-      bloc.add(CategoryFeedEvent.categorySelected(category: category, refresh: true));
+      bloc.add(CategoryFeedEvent.categorySelected(category: category));
     } else {
       final current = bloc.state.selectedCategory;
       if (current == null || current.name != category.name) {
-        bloc.add(CategoryFeedEvent.categorySelected(category: category, refresh: true));
+        bloc.add(CategoryFeedEvent.categorySelected(category: category));
       } else {
         bloc.add(const CategoryFeedEvent.fetchMoreRequested());
       }

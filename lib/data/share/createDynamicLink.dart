@@ -1,12 +1,12 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/popup/copyrightPopUp.dart';
 import 'package:animations/animations.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:share/share.dart';
 
 Future<String> createDynamicLink(String id, String provider, String? url, String thumbUrl) async {
@@ -19,7 +19,7 @@ Future<String> createDynamicLink(String id, String provider, String? url, String
           DynamicLinkParametersOptions(shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
       uriPrefix: 'https://prismwallpapers.page.link',
       link: Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider&url=$url&thumb=$thumbUrl'),
-      androidParameters: AndroidParameters(
+      androidParameters: const AndroidParameters(
         packageName: 'com.hash.prism',
         minimumVersion: 1,
       ),
@@ -30,7 +30,7 @@ Future<String> createDynamicLink(String id, String provider, String? url, String
       ));
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
-  Clipboard.setData(ClipboardData(text: "Hey check this out ➜ ${shortUrl.toString()}"));
+  Clipboard.setData(ClipboardData(text: "Hey check this out ➜ $shortUrl"));
   analytics.logShare(contentType: 'focussedMenu', itemId: id, method: 'link');
   toasts.codeSend("Sharing link copied!");
   logger.d(shortUrl.toString());
@@ -47,7 +47,7 @@ Future<void> createUserDynamicLink(String name, String username, String email, S
           DynamicLinkParametersOptions(shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
       uriPrefix: 'https://prismwallpapers.page.link',
       link: Uri.parse('http://prism.hash.com/user?email=$email'),
-      androidParameters: AndroidParameters(
+      androidParameters: const AndroidParameters(
         packageName: 'com.hash.prism',
         minimumVersion: 1,
       ),
@@ -75,7 +75,7 @@ Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) 
           DynamicLinkParametersOptions(shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
       uriPrefix: 'https://prismwallpapers.page.link',
       link: Uri.parse('http://prism.hash.com/setup?index=$index&name=$name&thumbUrl=$thumbUrl'),
-      androidParameters: AndroidParameters(
+      androidParameters: const AndroidParameters(
         packageName: 'com.hash.prism',
         minimumVersion: 1,
       ),
@@ -102,7 +102,7 @@ Future<String> createSharingPrismLink(String userID) async {
           DynamicLinkParametersOptions(shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
       uriPrefix: 'https://prismwallpapers.page.link',
       link: Uri.parse('http://prism.hash.com/refer?userID=$userID'),
-      androidParameters: AndroidParameters(
+      androidParameters: const AndroidParameters(
         packageName: 'com.hash.prism',
         minimumVersion: 1,
       ),
@@ -131,7 +131,7 @@ Future<String> createCopyrightLink(bool setup, BuildContext context,
             DynamicLinkParametersOptions(shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
         uriPrefix: 'https://prismwallpapers.page.link',
         link: Uri.parse('http://prism.hash.com/setup?index=$index&name=$name&thumbUrl=$thumbUrl'),
-        androidParameters: AndroidParameters(
+        androidParameters: const AndroidParameters(
           packageName: 'com.hash.prism',
           minimumVersion: 1,
         ),
@@ -154,7 +154,7 @@ Future<String> createCopyrightLink(bool setup, BuildContext context,
             DynamicLinkParametersOptions(shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
         uriPrefix: 'https://prismwallpapers.page.link',
         link: Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider&url=$url&thumb=$thumbUrl'),
-        androidParameters: AndroidParameters(
+        androidParameters: const AndroidParameters(
           packageName: 'com.hash.prism',
           minimumVersion: 1,
         ),
@@ -170,7 +170,6 @@ Future<String> createCopyrightLink(bool setup, BuildContext context,
   }
   showModal(
       context: context,
-      configuration: const FadeScaleTransitionConfiguration(),
       builder: (BuildContext context) => CopyrightPopUp(
             setup: setup,
             shortlink: shortUrl.toString(),

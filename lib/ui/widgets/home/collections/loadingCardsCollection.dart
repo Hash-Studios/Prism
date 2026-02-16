@@ -1,14 +1,12 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:provider/provider.dart';
-import 'package:Prism/logger/logger.dart';
 
 class LoadingCardsCollection extends StatefulWidget {
   const LoadingCardsCollection({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _LoadingCardsCollectionState createState() => _LoadingCardsCollectionState();

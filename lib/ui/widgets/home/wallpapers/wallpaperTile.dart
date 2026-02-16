@@ -1,22 +1,21 @@
 import 'dart:developer';
 
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
-import 'package:provider/provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class WallpaperTile extends StatelessWidget {
   const WallpaperTile({
-    Key? key,
+    super.key,
     required this.widget,
     required this.index,
-  }) : super(key: key);
+  });
 
   final WallpaperGrid widget;
   final int index;
@@ -55,8 +54,8 @@ class WallpaperTile extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              splashColor: Theme.of(context).accentColor.withOpacity(0.3),
-              highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
+              splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+              highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
               onTap: () {
                 if (Data.subPrismWalls == []) {
                 } else {

@@ -1,3 +1,4 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
@@ -5,7 +6,6 @@ import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
-import 'package:Prism/logger/logger.dart';
 
 void showContributorDetails(BuildContext context, String username) {
   Future<User?> getUser(String username) async {
@@ -26,10 +26,6 @@ void showContributorDetails(BuildContext context, String username) {
       child: FutureBuilder<User?>(
           future: getUser(username),
           builder: (context, snapshot) {
-            if (snapshot == null) {
-              logger.d("snapshot null");
-              return SizedBox(height: 300, child: Center(child: Loader()));
-            }
             if (snapshot.connectionState == ConnectionState.waiting ||
                 snapshot.connectionState == ConnectionState.none) {
               logger.d("snapshot none, waiting");
@@ -71,8 +67,8 @@ void showContributorDetails(BuildContext context, String username) {
                                 overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2!
-                                    .copyWith(color: Theme.of(context).accentColor, fontSize: 20),
+                                    .bodyMedium!
+                                    .copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 20),
                               ),
                             ),
                             SizedBox(
@@ -83,8 +79,8 @@ void showContributorDetails(BuildContext context, String username) {
                                   overflow: TextOverflow.ellipsis,
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2!
-                                      .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
+                                      .bodyMedium!
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
                                 )),
                             const SizedBox(
                               height: 5,
@@ -92,7 +88,8 @@ void showContributorDetails(BuildContext context, String username) {
                             if (snapshot.data!.location != null)
                               Row(
                                 children: [
-                                  Icon(JamIcons.map_marker, color: Theme.of(context).accentColor.withOpacity(0.5)),
+                                  Icon(JamIcons.map_marker,
+                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
                                   SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
@@ -101,8 +98,8 @@ void showContributorDetails(BuildContext context, String username) {
                                         overflow: TextOverflow.ellipsis,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .bodyText2!
-                                            .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
+                                            .bodyMedium!
+                                            .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
                                       )),
                                 ],
                               )
@@ -123,7 +120,7 @@ void showContributorDetails(BuildContext context, String username) {
                             snapshot.data!.bio!,
                             style: TextStyle(
                                 fontSize: 14,
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                                 fontFamily: "Proxima Nova",
                                 fontWeight: FontWeight.normal),
                           ),
@@ -156,8 +153,5 @@ void showContributorDetails(BuildContext context, String username) {
     backgroundColor: Theme.of(context).primaryColor,
     contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
   );
-  showModal(
-      context: context,
-      configuration: const FadeScaleTransitionConfiguration(),
-      builder: (BuildContext context) => userPopUp);
+  showModal(context: context, builder: (BuildContext context) => userPopUp);
 }

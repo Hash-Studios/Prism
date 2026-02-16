@@ -1,25 +1,24 @@
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
-import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:hive/hive.dart';
-import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
-import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
-import 'package:animations/animations.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
+import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
+import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:animations/animations.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:hive/hive.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
@@ -59,7 +58,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).errorColor == Colors.black ? Colors.grey : Theme.of(context).errorColor,
+                      color: Theme.of(context).colorScheme.error == Colors.black
+                          ? Colors.grey
+                          : Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ),
@@ -87,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: Text(
                       "Buy Premium",
                       style: TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                           fontWeight: FontWeight.w500,
                           fontFamily: "Proxima Nova"),
                     ),
@@ -107,7 +108,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).errorColor == Colors.black ? Colors.grey : Theme.of(context).errorColor,
+                    color: Theme.of(context).colorScheme.error == Colors.black
+                        ? Colors.grey
+                        : Theme.of(context).colorScheme.error,
                   ),
                 ),
               ),
@@ -136,7 +139,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   "Clear Cache",
                   style: TextStyle(
-                      color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Proxima Nova"),
                 ),
                 subtitle: const Text(
                   "Clear locally cached images",
@@ -144,7 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 onTap: () async {
                   DefaultCacheManager().emptyCache();
-                  PaintingBinding.instance!.imageCache!.clear();
+                  PaintingBinding.instance.imageCache.clear();
                   await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
                   await Hive.openBox<InAppNotif>('inAppNotifs');
                   main.prefs.delete('lastFetchTime');
@@ -181,7 +186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             //       main.prefs.put('optimisedWallpapers', value);
             //     }),
             SwitchListTile(
-                activeColor: Theme.of(context).errorColor,
+                activeThumbColor: Theme.of(context).colorScheme.error,
                 secondary: const Icon(
                   JamIcons.user_plus,
                 ),
@@ -189,7 +194,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   "Show Following Feed",
                   style: TextStyle(
-                      color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Proxima Nova"),
                 ),
                 subtitle: followers
                     ? const Text(
@@ -208,7 +215,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   main.prefs.put('followersTab', value);
                 }),
             SwitchListTile(
-                activeColor: Theme.of(context).errorColor,
+                activeThumbColor: Theme.of(context).colorScheme.error,
                 secondary: const Icon(
                   JamIcons.picture,
                 ),
@@ -216,7 +223,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   "Show Anime Wallpapers",
                   style: TextStyle(
-                      color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Proxima Nova"),
                 ),
                 subtitle: categories == 111
                     ? const Text(
@@ -241,7 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
                 }),
             SwitchListTile(
-                activeColor: Theme.of(context).errorColor,
+                activeThumbColor: Theme.of(context).colorScheme.error,
                 secondary: const Icon(
                   JamIcons.stop_sign,
                 ),
@@ -249,7 +258,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   "Show Sketchy Wallpapers",
                   style: TextStyle(
-                      color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Proxima Nova"),
                 ),
                 subtitle: purity == 110
                     ? const Text(
@@ -281,7 +292,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text(
                 "Restart App",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Force the application to restart",
@@ -297,7 +310,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).errorColor == Colors.black ? Colors.grey : Theme.of(context).errorColor,
+                    color: Theme.of(context).colorScheme.error == Colors.black
+                        ? Colors.grey
+                        : Theme.of(context).colorScheme.error,
                   ),
                 ),
               ),
@@ -341,7 +356,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   "Sign in",
                   style: TextStyle(
-                      color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Proxima Nova"),
                 ),
                 subtitle: const Text(
                   "Sign in to sync data across devices",
@@ -361,7 +378,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: Text(
                               "Clear favourite walls",
                               style: TextStyle(
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                   fontWeight: FontWeight.w500,
                                   fontFamily: "Proxima Nova"),
                             ),
@@ -372,7 +389,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onTap: () async {
                               showModal(
                                 context: context,
-                                configuration: const FadeScaleTransitionConfiguration(),
                                 builder: (context) => AlertDialog(
                                   shape: const RoundedRectangleBorder(
                                     borderRadius: BorderRadius.all(
@@ -385,7 +401,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: Center(
                                       child: Text(
                                         "Do you want remove all your favourite wallpapers?",
-                                        style: Theme.of(context).textTheme.headline4,
+                                        style: Theme.of(context).textTheme.headlineMedium,
                                       ),
                                     ),
                                   ),
@@ -401,7 +417,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         'YES',
                                         style: TextStyle(
                                           fontSize: 16.0,
-                                          color: Theme.of(context).errorColor,
+                                          color: Theme.of(context).colorScheme.error,
                                         ),
                                       ),
                                     ),
@@ -409,7 +425,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       padding: const EdgeInsets.only(right: 8.0),
                                       child: FlatButton(
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                        color: Theme.of(context).errorColor,
+                                        color: Theme.of(context).colorScheme.error,
                                         onPressed: () {
                                           Navigator.of(context).pop();
                                         },
@@ -434,7 +450,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: Text(
                               "Clear favourite setups",
                               style: TextStyle(
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                   fontWeight: FontWeight.w500,
                                   fontFamily: "Proxima Nova"),
                             ),
@@ -445,7 +461,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onTap: () async {
                               showModal(
                                 context: context,
-                                configuration: const FadeScaleTransitionConfiguration(),
                                 builder: (context) => AlertDialog(
                                   shape: const RoundedRectangleBorder(
                                     borderRadius: BorderRadius.all(
@@ -458,7 +473,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: Center(
                                       child: Text(
                                         "Do you want remove all your favourite setups?",
-                                        style: Theme.of(context).textTheme.headline4,
+                                        style: Theme.of(context).textTheme.headlineMedium,
                                       ),
                                     ),
                                   ),
@@ -474,7 +489,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         'YES',
                                         style: TextStyle(
                                           fontSize: 16.0,
-                                          color: Theme.of(context).errorColor,
+                                          color: Theme.of(context).colorScheme.error,
                                         ),
                                       ),
                                     ),
@@ -482,7 +497,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       padding: const EdgeInsets.only(right: 8.0),
                                       child: FlatButton(
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                        color: Theme.of(context).errorColor,
+                                        color: Theme.of(context).colorScheme.error,
                                         onPressed: () {
                                           Navigator.of(context).pop();
                                         },
@@ -507,7 +522,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: Text(
                               "Logout",
                               style: TextStyle(
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                   fontWeight: FontWeight.w500,
                                   fontFamily: "Proxima Nova"),
                             ),

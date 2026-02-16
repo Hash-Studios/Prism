@@ -1,20 +1,18 @@
-import 'dart:ui';
-
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:animations/animations.dart';
-import 'package:flutter/material.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/services.dart';
-import 'package:hive/hive.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/main.dart' as main;
-import 'package:intl/intl.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/routes/router.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
+import 'package:animations/animations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -87,9 +85,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         });
                       },
                       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
-                      secondaryBackground: Container(
+                      secondaryBackground: const ColoredBox(
                         color: Colors.red,
-                        child: const Align(
+                        child: Align(
                           alignment: Alignment.centerRight,
                           child: Padding(
                             padding: EdgeInsets.all(8.0),
@@ -97,9 +95,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           ),
                         ),
                       ),
-                      background: Container(
+                      background: const ColoredBox(
                         color: Colors.red,
-                        child: const Align(
+                        child: Align(
                           alignment: Alignment.centerLeft,
                           child: Padding(
                             padding: EdgeInsets.all(8.0),
@@ -112,9 +110,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     );
                   },
                 )
-              : Center(child: Text('No new notifications', style: TextStyle(color: Theme.of(context).accentColor))),
+              : Center(
+                  child:
+                      Text('No new notifications', style: TextStyle(color: Theme.of(context).colorScheme.secondary))),
         ),
-        floatingActionButton: notifications!.isNotEmpty
+        floatingActionButton: notifications.isNotEmpty
             ? FloatingActionButton(
                 mini: true,
                 tooltip: "Clear Notifications",
@@ -123,7 +123,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     title: Text(
                       'Clear all notifications?',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).accentColor),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                     ),
                     actions: [
                       FlatButton(
@@ -146,7 +147,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       ),
                       FlatButton(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                        color: Theme.of(context).errorColor,
+                        color: Theme.of(context).colorScheme.error,
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
@@ -163,10 +164,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                   );
 
-                  showModal(
-                      context: context,
-                      configuration: const FadeScaleTransitionConfiguration(),
-                      builder: (BuildContext context) => deleteNotificationsPopUp);
+                  showModal(context: context, builder: (BuildContext context) => deleteNotificationsPopUp);
                 },
                 child: const Icon(JamIcons.trash),
               )
@@ -216,11 +214,12 @@ class NotificationCard extends StatelessWidget {
       backgroundColor: Theme.of(context).primaryColor,
       title: Text(
         notification!.title!,
-        style: TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+        style: TextStyle(
+            color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
       ),
       subtitle: Text(
         notification!.body!,
-        style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
+        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
       ),
       children: <Widget>[
         InkWell(
@@ -343,13 +342,15 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).errorColor == Colors.black ? Colors.grey : Theme.of(context).errorColor,
+                    color: Theme.of(context).colorScheme.error == Colors.black
+                        ? Colors.grey
+                        : Theme.of(context).colorScheme.error,
                   ),
                 ),
               ),
             ),
             SwitchListTile(
-              activeColor: Theme.of(context).errorColor,
+              activeThumbColor: Theme.of(context).colorScheme.error,
               secondary: const Icon(
                 JamIcons.user_plus,
               ),
@@ -357,7 +358,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               title: Text(
                 "Followers",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Get notifications for new followers.",
@@ -370,9 +373,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                     followersSubscriber = value;
                   });
                   if (value) {
-                    home.f.subscribeToTopic(globals.prismUser.email.split("@")[0].toString());
+                    home.f.subscribeToTopic(globals.prismUser.email.split("@")[0]);
                   } else {
-                    home.f.unsubscribeFromTopic(globals.prismUser.email.split("@")[0].toString());
+                    home.f.unsubscribeFromTopic(globals.prismUser.email.split("@")[0]);
                     main.prefs.put("postsSubscriber", value);
                     setState(() {
                       postsSubscriber = value;
@@ -385,7 +388,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               },
             ),
             SwitchListTile(
-              activeColor: Theme.of(context).errorColor,
+              activeThumbColor: Theme.of(context).colorScheme.error,
               secondary: const Icon(
                 JamIcons.pictures,
               ),
@@ -393,7 +396,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               title: Text(
                 "Posts",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Get notifications for posts from the artists you follow.",
@@ -418,7 +423,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   : null,
             ),
             SwitchListTile(
-              activeColor: Theme.of(context).errorColor,
+              activeThumbColor: Theme.of(context).colorScheme.error,
               secondary: const Icon(
                 JamIcons.picture,
               ),
@@ -426,7 +431,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               title: Text(
                 "In-App",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Get in app notifications for giveaways, contests and reviews.",
@@ -440,13 +447,15 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               },
             ),
             SwitchListTile(
-              activeColor: Theme.of(context).errorColor,
+              activeThumbColor: Theme.of(context).colorScheme.error,
               secondary: const Icon(JamIcons.lightbulb),
               value: recommendationsSubscriber!,
               title: Text(
                 "Recommendations",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Get recommendations from Prism.",

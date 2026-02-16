@@ -1,6 +1,6 @@
-import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:animations/animations.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
@@ -35,12 +35,12 @@ void showChangelog(BuildContext context, Function func) {
               radius: const Radius.circular(500),
               thickness: 5,
               controller: controller,
-              isAlwaysShown: true,
+              thumbVisibility: true,
               child: SingleChildScrollView(
                 controller: controller,
-                child: Column(
+                child: const Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     ChangeVersion(number: 'v2.6.9'),
                     Change(icon: JamIcons.eye, text: "New splash screen animation."),
                     Change(icon: JamIcons.download, text: "Fix wallpaper download bugs."),
@@ -88,13 +88,13 @@ void showChangelog(BuildContext context, Function func) {
           'VIEW FULL',
           style: TextStyle(
             fontSize: 16.0,
-            color: Theme.of(context).errorColor,
+            color: Theme.of(context).colorScheme.error,
           ),
         ),
       ),
       FlatButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: Theme.of(context).errorColor,
+        color: Theme.of(context).colorScheme.error,
         onPressed: () {
           Navigator.of(context).pop();
           func();
@@ -112,10 +112,7 @@ void showChangelog(BuildContext context, Function func) {
     backgroundColor: Theme.of(context).primaryColor,
     actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
   );
-  showModal(
-      context: context,
-      configuration: const FadeScaleTransitionConfiguration(),
-      builder: (BuildContext context) => aboutPopUp);
+  showModal(context: context, builder: (BuildContext context) => aboutPopUp);
 }
 
 class ChangeVersion extends StatelessWidget {
@@ -133,7 +130,8 @@ class ChangeVersion extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
               child: Text(
                 number,
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).accentColor),
+                style: TextStyle(
+                    fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
               ),
             ),
           ],
@@ -165,10 +163,10 @@ class Change extends StatelessWidget {
               icon,
               size: 22,
               color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                  ? Theme.of(context).errorColor == Colors.black
-                      ? Theme.of(context).accentColor
-                      : Theme.of(context).errorColor
-                  : Theme.of(context).errorColor,
+                  ? Theme.of(context).colorScheme.error == Colors.black
+                      ? Theme.of(context).colorScheme.secondary
+                      : Theme.of(context).colorScheme.error
+                  : Theme.of(context).colorScheme.error,
             ),
             const SizedBox(
               width: 20,
@@ -177,7 +175,7 @@ class Change extends StatelessWidget {
               width: MediaQuery.of(context).size.width * 0.6,
               child: Text(
                 text,
-                style: Theme.of(context).textTheme.headline6!.copyWith(color: Theme.of(context).accentColor),
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
               ),
             ),
           ],

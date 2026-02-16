@@ -1,25 +1,24 @@
 import 'package:Prism/data/setups/provider/setupProvider.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
-import 'package:Prism/ui/widgets/premiumBanners/setupOld.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:Prism/ui/widgets/premiumBanners/setupOld.dart';
 import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _SetupScreenState createState() => _SetupScreenState();
@@ -62,10 +61,10 @@ class _SetupScreenState extends State<SetupScreen> {
 
 class SetupPage extends StatefulWidget {
   const SetupPage({
-    Key? key,
+    super.key,
     required this.future,
     required this.controller,
-  }) : super(key: key);
+  });
 
   final Future? future;
   final PageController controller;
@@ -106,7 +105,7 @@ class _SetupPageState extends State<SetupPage> {
             height: MediaQuery.of(context).size.height * 0.3,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Theme.of(context).errorColor, Theme.of(context).primaryColor],
+                colors: [Theme.of(context).colorScheme.error, Theme.of(context).primaryColor],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 stops: const [0, 1],
@@ -131,7 +130,7 @@ class _SetupPageState extends State<SetupPage> {
                                 .toUpperCase(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.headline1!.copyWith(fontSize: 30),
+                        style: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 30),
                       ),
                     ),
                   ],
@@ -145,10 +144,6 @@ class _SetupPageState extends State<SetupPage> {
           child: FutureBuilder(
               future: widget.future,
               builder: (context, snapshot) {
-                if (snapshot == null) {
-                  logger.d("snapshot null");
-                  return Center(child: Loader());
-                }
                 if (snapshot.connectionState == ConnectionState.waiting ||
                     snapshot.connectionState == ConnectionState.none) {
                   logger.d("snapshot none, waiting");
@@ -250,10 +245,10 @@ class _SetupPageState extends State<SetupPage> {
                                                 valueColor: AlwaysStoppedAnimation(
                                                   context.prismModeStyleForContext() == "Dark" &&
                                                           context.prismIsAmoledDark()
-                                                      ? Theme.of(context).errorColor == Colors.black
-                                                          ? Theme.of(context).accentColor
-                                                          : Theme.of(context).errorColor
-                                                      : Theme.of(context).errorColor,
+                                                      ? Theme.of(context).colorScheme.error == Colors.black
+                                                          ? Theme.of(context).colorScheme.secondary
+                                                          : Theme.of(context).colorScheme.error
+                                                      : Theme.of(context).colorScheme.error,
                                                 ),
                                                 value: downloadProgress.progress),
                                           ),
@@ -261,7 +256,7 @@ class _SetupPageState extends State<SetupPage> {
                                         errorWidget: (context, url, error) => Center(
                                           child: Icon(
                                             JamIcons.close_circle_f,
-                                            color: Theme.of(context).accentColor,
+                                            color: Theme.of(context).colorScheme.secondary,
                                           ),
                                         ),
                                       ),
@@ -287,10 +282,10 @@ class _SetupPageState extends State<SetupPage> {
               child: Icon(
                 JamIcons.chevron_left,
                 color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                    ? Theme.of(context).errorColor == Colors.black
-                        ? Theme.of(context).accentColor
-                        : Theme.of(context).errorColor
-                    : Theme.of(context).errorColor,
+                    ? Theme.of(context).colorScheme.error == Colors.black
+                        ? Theme.of(context).colorScheme.secondary
+                        : Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.error,
               ),
             ),
           ),
@@ -308,10 +303,10 @@ class _SetupPageState extends State<SetupPage> {
               child: Icon(
                 JamIcons.chevron_right,
                 color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                    ? Theme.of(context).errorColor == Colors.black
-                        ? Theme.of(context).accentColor
-                        : Theme.of(context).errorColor
-                    : Theme.of(context).errorColor,
+                    ? Theme.of(context).colorScheme.error == Colors.black
+                        ? Theme.of(context).colorScheme.secondary
+                        : Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.error,
               ),
             ),
           ),

@@ -1,6 +1,6 @@
 import 'package:Prism/auth/google_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:flutter/material.dart';
 
 final GoogleAuth gAuth = GoogleAuth();
 
@@ -10,8 +10,8 @@ class GoogleButton extends StatefulWidget {
   const GoogleButton({
     required this.login,
     required this.text,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _GoogleButtonState createState() => _GoogleButtonState();
@@ -71,8 +71,8 @@ class _GoogleButtonState extends State<GoogleButton> {
                     child: Text(widget.text,
                         textAlign: TextAlign.center,
                         style: widget.login
-                            ? Theme.of(context).textTheme.button!.copyWith(color: config.Colors().mainColor(1))
-                            : Theme.of(context).textTheme.button!.copyWith(color: Theme.of(context).primaryColor)),
+                            ? Theme.of(context).textTheme.labelLarge!.copyWith(color: config.Colors().mainColor(1))
+                            : Theme.of(context).textTheme.labelLarge!.copyWith(color: Theme.of(context).primaryColor)),
                   ),
                 ],
               ),

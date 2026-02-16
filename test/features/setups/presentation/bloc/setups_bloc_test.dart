@@ -47,7 +47,6 @@ void main() {
     act: (bloc) => bloc
       ..add(const SetupsEvent.started())
       ..add(const SetupsEvent.fetchMoreRequested()),
-    skip: 0,
     verify: (bloc) {
       expect(bloc.state.status, LoadStatus.success);
       expect(bloc.state.items.length, 2);

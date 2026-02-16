@@ -5,17 +5,17 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UserSearch extends StatefulWidget {
-  const UserSearch({Key? key}) : super(key: key);
+  const UserSearch({super.key});
 
   @override
   _UserSearchState createState() => _UserSearchState();
@@ -66,8 +66,11 @@ class _UserSearchState extends State<UserSearch> {
                   decoration:
                       BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                   child: TextField(
-                    cursorColor: Theme.of(context).errorColor,
-                    style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                    cursorColor: Theme.of(context).colorScheme.error,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall!
+                        .copyWith(color: Theme.of(context).colorScheme.secondary),
                     controller: searchController,
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -76,10 +79,13 @@ class _UserSearchState extends State<UserSearch> {
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       hintText: "Search",
-                      hintStyle: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                      hintStyle: Theme.of(context)
+                          .textTheme
+                          .headlineSmall!
+                          .copyWith(color: Theme.of(context).colorScheme.secondary),
                       suffixIcon: Icon(
                         JamIcons.search,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                     onSubmitted: (tex) {
@@ -100,14 +106,14 @@ class _UserSearchState extends State<UserSearch> {
             ),
           ),
         ),
-        body: UserSearchLoader(),
+        body: const UserSearchLoader(),
       ),
     );
   }
 }
 
 class UserSearchLoader extends StatelessWidget {
-  const UserSearchLoader({Key? key}) : super(key: key);
+  const UserSearchLoader({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +132,7 @@ class UserSearchLoader extends StatelessWidget {
 }
 
 class UsersResultList extends StatefulWidget {
-  const UsersResultList({required this.users, Key? key}) : super(key: key);
+  const UsersResultList({required this.users, super.key});
   final List<UserSearchUser> users;
 
   @override
@@ -161,7 +167,7 @@ class _UsersResultListState extends State<UsersResultList> {
       child: ExpansionPanelList(
         animationDuration: const Duration(milliseconds: 300),
         elevation: 0,
-        dividerColor: Theme.of(context).errorColor,
+        dividerColor: Theme.of(context).colorScheme.error,
         expansionCallback: (int index, bool isExpanded) {
           setState(() {
             _data[index] = !isExpanded;
@@ -170,8 +176,9 @@ class _UsersResultListState extends State<UsersResultList> {
         children: widget.users.map<ExpansionPanel>((UserSearchUser user) {
           return ExpansionPanel(
             canTapOnHeader: true,
-            backgroundColor:
-                _data[widget.users.indexOf(user)] ? Theme.of(context).errorColor : Theme.of(context).primaryColor,
+            backgroundColor: _data[widget.users.indexOf(user)]
+                ? Theme.of(context).colorScheme.error
+                : Theme.of(context).primaryColor,
             headerBuilder: (BuildContext context, bool isExpanded) {
               return ListTile(
                 title: Row(
@@ -180,25 +187,28 @@ class _UsersResultListState extends State<UsersResultList> {
                       padding: EdgeInsets.all(_data[widget.users.indexOf(user)] ? 2 : 8.0),
                       child: CircleAvatar(
                         foregroundImage: CachedNetworkImageProvider(
-                          user.profilePhoto ?? "".toString(),
+                          user.profilePhoto ?? "",
                         ),
                         radius: _data[widget.users.indexOf(user)] ? 0 : 16,
                       ),
                     ),
                     Text(
                       user.name,
-                      style: Theme.of(context).textTheme.headline5!.copyWith(
-                            color: Theme.of(context).accentColor,
+                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                     ),
                   ],
                 ),
-                tileColor:
-                    _data[widget.users.indexOf(user)] ? Theme.of(context).errorColor : Theme.of(context).primaryColor,
+                tileColor: _data[widget.users.indexOf(user)]
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).primaryColor,
               );
             },
-            body: Container(
-              color: _data[widget.users.indexOf(user)] ? Theme.of(context).errorColor : Theme.of(context).primaryColor,
+            body: ColoredBox(
+              color: _data[widget.users.indexOf(user)]
+                  ? Theme.of(context).colorScheme.error
+                  : Theme.of(context).primaryColor,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Card(
@@ -218,11 +228,11 @@ class _UsersResultListState extends State<UsersResultList> {
                                     defaultHeader
                                         .replaceAll(
                                           "#181818",
-                                          "#${Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2)}",
+                                          "#${Theme.of(context).primaryColor.value.toRadixString(16).substring(2)}",
                                         )
                                         .replaceAll(
                                           "#E77597",
-                                          "#${Theme.of(context).errorColor.value.toRadixString(16).toString().substring(2)}",
+                                          "#${Theme.of(context).colorScheme.error.value.toRadixString(16).substring(2)}",
                                         ),
                                     fit: BoxFit.cover,
                                     width: MediaQuery.of(context).size.width,
@@ -252,13 +262,13 @@ class _UsersResultListState extends State<UsersResultList> {
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width * 0.7,
                                   child: Text(
-                                    "${user.name}",
+                                    user.name,
                                     textAlign: TextAlign.center,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontFamily: "Proxima Nova",
-                                      color: Theme.of(context).accentColor,
+                                      color: Theme.of(context).colorScheme.secondary,
                                       fontSize: 22,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -276,7 +286,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontFamily: "Proxima Nova",
-                                      color: Theme.of(context).accentColor.withOpacity(0.6),
+                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                                       fontSize: 16,
                                       fontWeight: FontWeight.normal,
                                     ),
@@ -294,7 +304,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontFamily: "Proxima Nova",
-                                      color: Theme.of(context).accentColor.withOpacity(0.6),
+                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                                       fontSize: 14,
                                       fontWeight: FontWeight.normal,
                                     ),
@@ -313,7 +323,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                           text: "${(user.following ?? []).length}",
                                           style: TextStyle(
                                             fontFamily: "Proxima Nova",
-                                            color: Theme.of(context).accentColor.withOpacity(1),
+                                            color: Theme.of(context).colorScheme.secondary.withOpacity(1),
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -321,7 +331,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                             TextSpan(
                                               text: " Following",
                                               style: TextStyle(
-                                                color: Theme.of(context).accentColor.withOpacity(0.6),
+                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                                                 fontWeight: FontWeight.normal,
                                               ),
                                             ),
@@ -337,7 +347,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                           text: "${(user.followers ?? []).length}",
                                           style: TextStyle(
                                             fontFamily: "Proxima Nova",
-                                            color: Theme.of(context).accentColor.withOpacity(1),
+                                            color: Theme.of(context).colorScheme.secondary.withOpacity(1),
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -345,7 +355,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                             TextSpan(
                                               text: " Followers",
                                               style: TextStyle(
-                                                color: Theme.of(context).accentColor.withOpacity(0.6),
+                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                                                 fontWeight: FontWeight.normal,
                                               ),
                                             ),
@@ -376,22 +386,18 @@ class _UsersResultListState extends State<UsersResultList> {
                                                 padding: const EdgeInsets.all(6.0),
                                                 decoration: BoxDecoration(
                                                   shape: BoxShape.circle,
-                                                  color: Theme.of(context).accentColor.withOpacity(0.1),
+                                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                                                 ),
                                                 child: Icon(
                                                   linksData[e]!["icon"] as IconData,
                                                   size: 20,
-                                                  color: Theme.of(context).accentColor.withOpacity(0.8),
+                                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
                                                 ),
                                               ),
                                               onPressed: () {
-                                                if (user.links != null) {
-                                                  final links = user.links;
-                                                  if (links![e].toString().contains("@gmail.com")) {
-                                                    launch("mailto:${user.links[e].toString()}");
-                                                  }
-                                                } else {
-                                                  launch(user.links[e].toString() ?? "");
+                                                final links = user.links;
+                                                if (links[e].toString().contains("@gmail.com")) {
+                                                  launch("mailto:${user.links[e]}");
                                                 }
                                               }))
                                           .toList()
@@ -408,12 +414,12 @@ class _UsersResultListState extends State<UsersResultList> {
                                               padding: const EdgeInsets.all(6.0),
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                color: Theme.of(context).accentColor.withOpacity(0.1),
+                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                                               ),
                                               child: Icon(
                                                 JamIcons.more_horizontal,
                                                 size: 20,
-                                                color: Theme.of(context).accentColor.withOpacity(0.8),
+                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
                                               ),
                                             ),
                                             onPressed: () {
@@ -435,14 +441,14 @@ class _UsersResultListState extends State<UsersResultList> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Theme.of(context).errorColor,
+                                  color: Theme.of(context).colorScheme.error,
                                   width: 4,
                                 ),
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                               child: ClipOval(
                                 child: CachedNetworkImage(
-                                  imageUrl: user.profilePhoto ?? "".toString(),
+                                  imageUrl: user.profilePhoto ?? "",
                                   width: 78,
                                   height: 78,
                                   fit: BoxFit.cover,

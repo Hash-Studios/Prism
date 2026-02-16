@@ -71,7 +71,7 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
                 padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                 child: Icon(
                   JamIcons.more_horizontal,
-                  color: Theme.of(context).accentColor,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
               ),
             ),

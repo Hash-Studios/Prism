@@ -1,12 +1,13 @@
 import 'dart:io';
+
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class DownloadWallpaperScreen extends StatefulWidget {
   final List? arguments;
@@ -104,7 +105,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
                     logger.d(navStack.toString());
                     Navigator.pop(context);
                   },
-                  color: Theme.of(context).accentColor,
+                  color: Theme.of(context).colorScheme.secondary,
                   icon: const Icon(
                     JamIcons.chevron_left,
                   ),
@@ -121,7 +122,6 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
                     Navigator.push(
                         context,
                         PageRouteBuilder(
-                            transitionDuration: const Duration(milliseconds: 300),
                             pageBuilder: (context, animation, secondaryAnimation) {
                               animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                               return FadeTransition(
@@ -136,7 +136,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
                             fullscreenDialog: true,
                             opaque: false));
                   },
-                  color: Theme.of(context).accentColor,
+                  color: Theme.of(context).colorScheme.secondary,
                   icon: const Icon(
                     JamIcons.clock,
                   ),

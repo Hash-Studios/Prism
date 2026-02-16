@@ -1,9 +1,9 @@
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
-import 'package:Prism/routes/routing_constants.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 class PremiumList extends StatelessWidget {
   @override
@@ -31,7 +31,9 @@ class PremiumList extends StatelessWidget {
             title: Text(
               "Buy Premium",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Get unlimited setups and filters.",

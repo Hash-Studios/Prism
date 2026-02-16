@@ -1,10 +1,10 @@
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 
 class GeneralList extends StatefulWidget {
@@ -29,11 +29,12 @@ class _GeneralListState extends State<GeneralList> {
       ),
       title: Text(
         "General",
-        style: TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+        style: TextStyle(
+            color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
       ),
       subtitle: Text(
         "Change app look & settings",
-        style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
+        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
       ),
       children: [
         ListTile(
@@ -47,7 +48,9 @@ class _GeneralListState extends State<GeneralList> {
           title: Text(
             "Themes",
             style: TextStyle(
-                color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.w500,
+                fontFamily: "Proxima Nova"),
           ),
           subtitle: const Text(
             "Toggle app theme",
@@ -61,7 +64,9 @@ class _GeneralListState extends State<GeneralList> {
             title: Text(
               "Clear Cache",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Clear locally cached images",
@@ -69,7 +74,7 @@ class _GeneralListState extends State<GeneralList> {
             ),
             onTap: () async {
               DefaultCacheManager().emptyCache();
-              PaintingBinding.instance!.imageCache!.clear();
+              PaintingBinding.instance.imageCache.clear();
               await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
               await Hive.openBox<InAppNotif>('inAppNotifs');
               main.prefs.delete('lastFetchTime');
@@ -106,7 +111,7 @@ class _GeneralListState extends State<GeneralList> {
         //       main.prefs.put('optimisedWallpapers', value);
         //     }),
         SwitchListTile(
-            activeColor: Theme.of(context).errorColor,
+            activeThumbColor: Theme.of(context).colorScheme.error,
             secondary: const Icon(
               JamIcons.user_plus,
             ),
@@ -114,7 +119,9 @@ class _GeneralListState extends State<GeneralList> {
             title: Text(
               "Show Following Feed",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: followers
                 ? const Text(
@@ -133,7 +140,7 @@ class _GeneralListState extends State<GeneralList> {
               main.prefs.put('followersTab', value);
             }),
         SwitchListTile(
-            activeColor: Theme.of(context).errorColor,
+            activeThumbColor: Theme.of(context).colorScheme.error,
             secondary: const Icon(
               JamIcons.picture,
             ),
@@ -141,7 +148,9 @@ class _GeneralListState extends State<GeneralList> {
             title: Text(
               "Show Anime Wallpapers",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: categories == 111
                 ? const Text(
@@ -166,7 +175,7 @@ class _GeneralListState extends State<GeneralList> {
               }
             }),
         SwitchListTile(
-            activeColor: Theme.of(context).errorColor,
+            activeThumbColor: Theme.of(context).colorScheme.error,
             secondary: const Icon(
               JamIcons.stop_sign,
             ),
@@ -174,7 +183,9 @@ class _GeneralListState extends State<GeneralList> {
             title: Text(
               "Show Sketchy Wallpapers",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: purity == 110
                 ? const Text(
@@ -206,7 +217,9 @@ class _GeneralListState extends State<GeneralList> {
           title: Text(
             "Restart App",
             style: TextStyle(
-                color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.w500,
+                fontFamily: "Proxima Nova"),
           ),
           subtitle: const Text(
             "Force the application to restart",

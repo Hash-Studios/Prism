@@ -4,17 +4,17 @@ import 'dart:typed_data';
 
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:github/github.dart';
@@ -23,8 +23,8 @@ import 'package:path/path.dart' as Path;
 
 class EditProfilePanel extends StatefulWidget {
   const EditProfilePanel({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _EditProfilePanelState createState() => _EditProfilePanelState();
@@ -232,11 +232,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   void initState() {
     linkIcons.sort((a, b) => a['name'].toString().compareTo(b['name'].toString()));
     final links = globals.prismUser.links;
-    linkIcons.forEach((element) {
+    for (final element in linkIcons) {
       if (links[element['name']] != "" && links[element['name']] != null) {
         element['value'] = links[element['name']];
       }
-    });
+    }
     _link = linkIcons[3];
     bioController = TextEditingController(text: globals.prismUser.bio);
     usernameController = TextEditingController(text: globals.prismUser.username);
@@ -290,7 +290,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   Future uploadFile() async {
     try {
       final String base64Image = base64Encode(_compressedPFP);
-      final github = GitHub(auth: Authentication.withToken(token));
+      final github = GitHub(auth: const Authentication.withToken(token));
       await github.repositories
           .createFile(RepositorySlug(gitUserName, repoName),
               CreateFile(message: Path.basename(_pfp!.path), content: base64Image, path: Path.basename(_pfp!.path)))
@@ -314,7 +314,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   Future uploadFileCover() async {
     try {
       final String base64Image = base64Encode(_compressedCover);
-      final github = GitHub(auth: Authentication.withToken(token));
+      final github = GitHub(auth: const Authentication.withToken(token));
       await github.repositories
           .createFile(RepositorySlug(gitUserName, repoName),
               CreateFile(message: Path.basename(_cover!.path), content: base64Image, path: Path.basename(_cover!.path)))
@@ -346,7 +346,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       title: Text(
         'Delete the $removeWhat?',
-        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).accentColor),
+        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
       ),
       content: Text(
         "This is permanent, and this action can't be undone!",
@@ -354,7 +354,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             fontFamily: "Proxima Nova",
             fontWeight: FontWeight.normal,
             fontSize: 14,
-            color: Theme.of(context).accentColor),
+            color: Theme.of(context).colorScheme.secondary),
       ),
       actions: [
         FlatButton(
@@ -374,7 +374,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         ),
         FlatButton(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          color: Theme.of(context).errorColor,
+          color: Theme.of(context).colorScheme.error,
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -391,10 +391,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
     );
 
-    showModal(
-        context: context,
-        configuration: const FadeScaleTransitionConfiguration(),
-        builder: (BuildContext context) => deletePopUp);
+    showModal(context: context, builder: (BuildContext context) => deletePopUp);
   }
 
   @override
@@ -413,7 +410,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
               }),
           title: Text(
             "Edit Profile",
-            style: Theme.of(context).textTheme.headline3,
+            style: Theme.of(context).textTheme.displaySmall,
           ),
         ),
         backgroundColor: Theme.of(context).primaryColor,
@@ -450,11 +447,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   defaultHeader
                                       .replaceAll(
                                         "#181818",
-                                        "#${Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2)}",
+                                        "#${Theme.of(context).primaryColor.value.toRadixString(16).substring(2)}",
                                       )
                                       .replaceAll(
                                         "#E77597",
-                                        "#${Theme.of(context).errorColor.value.toRadixString(16).toString().substring(2)}",
+                                        "#${Theme.of(context).colorScheme.error.value.toRadixString(16).substring(2)}",
                                       ),
                                   fit: BoxFit.cover,
                                 )
@@ -475,7 +472,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             border: const Border.fromBorderSide(
                               BorderSide(color: Colors.white, width: 2),
                             ),
-                            color: Theme.of(context).errorColor.withOpacity(0.5),
+                            color: Theme.of(context).colorScheme.error.withOpacity(0.5),
                           ),
                           child: const Icon(
                             JamIcons.pencil,
@@ -540,7 +537,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               border: const Border.fromBorderSide(
                                 BorderSide(color: Colors.white, width: 2),
                               ),
-                              color: Theme.of(context).errorColor.withOpacity(0.5),
+                              color: Theme.of(context).colorScheme.error.withOpacity(0.5),
                             ),
                             child: const Icon(
                               JamIcons.pencil,
@@ -562,7 +559,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                       child: Center(
                         child: TextField(
                           cursorColor: const Color(0xFFE57697),
-                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Colors.white),
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.white),
                           controller: nameController,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -580,7 +577,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 borderSide: const BorderSide(color: Colors.white, width: 2)),
                             labelText: "Name",
                             labelStyle:
-                                Theme.of(context).textTheme.headline5!.copyWith(fontSize: 14, color: Colors.white),
+                                Theme.of(context).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
                             prefixIcon: const Padding(
                               padding: EdgeInsets.all(16.0),
                               child: Text(
@@ -613,7 +610,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                       child: Center(
                         child: TextField(
                           cursorColor: const Color(0xFFE57697),
-                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Colors.white),
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.white),
                           controller: usernameController,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -631,7 +628,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 borderSide: const BorderSide(color: Colors.white, width: 2)),
                             labelText: "username",
                             labelStyle:
-                                Theme.of(context).textTheme.headline5!.copyWith(fontSize: 14, color: Colors.white),
+                                Theme.of(context).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
                             prefixIcon: const Padding(
                               padding: EdgeInsets.all(16.0),
                               child: Text(
@@ -650,7 +647,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                       width: 16,
                                       height: 16,
                                       child: CircularProgressIndicator(
-                                        color: Theme.of(context).errorColor,
+                                        color: Theme.of(context).colorScheme.error,
                                       ),
                                     ),
                                   )
@@ -729,7 +726,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                       child: Center(
                         child: TextField(
                           cursorColor: const Color(0xFFE57697),
-                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Colors.white),
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.white),
                           controller: bioController,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -747,7 +744,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 borderSide: const BorderSide(color: Colors.white, width: 2)),
                             labelText: "Bio",
                             labelStyle:
-                                Theme.of(context).textTheme.headline5!.copyWith(fontSize: 14, color: Colors.white),
+                                Theme.of(context).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
                             prefixIcon: const Padding(
                               padding: EdgeInsets.all(16.0),
                               child: Text(
@@ -817,7 +814,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                           ),
                                           Text(
                                             link["name"].toString().inCaps,
-                                            style: Theme.of(context).textTheme.headline5!.copyWith(
+                                            style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                                                   color: Colors.white,
                                                   fontSize: 14,
                                                 ),
@@ -862,7 +859,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               child: Center(
                                 child: TextField(
                                   cursorColor: const Color(0xFFE57697),
-                                  style: Theme.of(context).textTheme.headline5!.copyWith(color: Colors.white),
+                                  style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.white),
                                   controller: linkController,
                                   decoration: InputDecoration(
                                     enabled: _link?["name"] != "Edit links...",
@@ -882,18 +879,18 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                     labelText: _link?["name"].toString().inCaps ?? "",
                                     labelStyle: Theme.of(context)
                                         .textTheme
-                                        .headline5!
+                                        .headlineSmall!
                                         .copyWith(fontSize: 14, color: Colors.white),
                                     hintText: _link?["link"].toString() ?? "",
                                     hintStyle: Theme.of(context)
                                         .textTheme
-                                        .headline5!
+                                        .headlineSmall!
                                         .copyWith(fontSize: 14, color: Colors.white),
                                     suffixIcon: IconButton(
                                       onPressed: () async {
                                         showRemoveAlertDialog(context, () async {
                                           linkController.text = "";
-                                          var links = globals.prismUser.links;
+                                          final links = globals.prismUser.links;
                                           links.remove(_link?["name"].toString());
                                           globals.prismUser.links = links;
                                           main.prefs.put(main.userHiveKey, globals.prismUser);
@@ -999,7 +996,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               });
                             }
                             if (linkEdit) {
-                              Map links = globals.prismUser.links;
+                              final Map links = globals.prismUser.links;
                               for (int p = 0; p < linkIcons.length; p++) {
                                 if (linkIcons[p]["value"] != "") {
                                   links[linkIcons[p]["name"]] = linkIcons[p]["value"];
@@ -1061,7 +1058,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   });
                                 }
                                 if (linkEdit) {
-                                  Map links = globals.prismUser.links;
+                                  final Map links = globals.prismUser.links;
                                   for (int p = 0; p < linkIcons.length; p++) {
                                     if (linkIcons[p]["value"] != "") {
                                       links[linkIcons[p]["name"]] = linkIcons[p]["value"];
@@ -1092,12 +1089,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           color: !((!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
                                   (usernameEdit && enabled))
                               ? Theme.of(context).primaryColor
-                              : Theme.of(context).errorColor.withOpacity(0.2),
+                              : Theme.of(context).colorScheme.error.withOpacity(0.2),
                           border: Border.all(
                               color: !((!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
                                       (usernameEdit && enabled))
-                                  ? Theme.of(context).accentColor.withOpacity(0.5)
-                                  : Theme.of(context).errorColor,
+                                  ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+                                  : Theme.of(context).colorScheme.error,
                               width: 3),
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -1111,8 +1108,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                       color: !((!usernameEdit &&
                                                   (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
                                               (usernameEdit && enabled))
-                                          ? Theme.of(context).accentColor.withOpacity(0.5)
-                                          : Theme.of(context).accentColor,
+                                          ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+                                          : Theme.of(context).colorScheme.secondary,
                                       fontWeight: FontWeight.bold),
                                 ),
                         ),
@@ -1130,7 +1127,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                   ),

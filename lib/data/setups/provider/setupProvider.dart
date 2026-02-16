@@ -103,7 +103,9 @@ Map? setup;
 Future<Map?> getSetupFromName(String? name) async {
   setup = {};
   await databaseReference.collection("setups").where("name", isEqualTo: name).get().then((value) {
-    value.docs.forEach((f) => setup = f.data());
+    for (final f in value.docs) {
+      setup = f.data();
+    }
     logger.d(setup.toString());
   }).catchError((e) {
     logger.d("data done with error");
