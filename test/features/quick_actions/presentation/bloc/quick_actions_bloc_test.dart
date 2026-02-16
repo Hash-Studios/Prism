@@ -45,7 +45,7 @@ void main() {
     'initializes shortcuts and captures quick action callbacks',
     build: () => QuickActionsBloc(initUseCase, setUseCase, observeUseCase),
     act: (bloc) async {
-      bloc.add(const QuickActionsEvent.started(setupShortcuts: true));
+      bloc.add(const QuickActionsEvent.started());
       await Future<void>.delayed(const Duration(milliseconds: 10));
       controller.add(
         const QuickActionEntity(

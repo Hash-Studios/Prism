@@ -1,16 +1,15 @@
-import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:Prism/ui/widgets/favourite/favLoader.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:Prism/logger/logger.dart';
 
 class FavouriteWallpaperScreen extends StatelessWidget {
   const FavouriteWallpaperScreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

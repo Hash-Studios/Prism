@@ -1,11 +1,11 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/data/links/model/linksModel.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:animations/animations.dart';
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:Prism/logger/logger.dart';
+import 'package:flutter/material.dart';
 
 void showLinksPopUp(BuildContext context, String id) {
   Future<List<LinksModel>> getLinks(String id) async {
@@ -27,10 +27,6 @@ void showLinksPopUp(BuildContext context, String id) {
       child: FutureBuilder<List<LinksModel>>(
           future: getLinks(id),
           builder: (context, snapshot) {
-            if (snapshot == null) {
-              logger.d("snapshot null");
-              return SizedBox(height: 300, child: Center(child: Loader()));
-            }
             if (snapshot.connectionState == ConnectionState.waiting ||
                 snapshot.connectionState == ConnectionState.none) {
               logger.d("snapshot none, waiting");
@@ -64,8 +60,5 @@ void showLinksPopUp(BuildContext context, String id) {
     backgroundColor: Theme.of(context).primaryColor,
     contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
   );
-  showModal(
-      context: context,
-      configuration: const FadeScaleTransitionConfiguration(),
-      builder: (BuildContext context) => linkPopUp);
+  showModal(context: context, builder: (BuildContext context) => linkPopUp);
 }

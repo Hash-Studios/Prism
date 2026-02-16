@@ -1,26 +1,24 @@
-import 'dart:ui';
-
-import 'package:Prism/routes/routing_constants.dart';
-import 'package:flutter/material.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/ui/widgets/animated/loader.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:photo_view/photo_view.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:gallery_saver/gallery_saver.dart';
-import 'package:device_info/device_info.dart';
-import 'package:flutter/services.dart';
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:animations/animations.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:animations/animations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info/device_info.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ReviewScreen extends StatefulWidget {
   @override
@@ -53,19 +51,19 @@ class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderSt
               children: [
                 Text(
                   "Review Status",
-                  style: Theme.of(context).textTheme.headline3,
+                  style: Theme.of(context).textTheme.displaySmall,
                 ),
                 Container(
                   margin: const EdgeInsets.only(left: 3, bottom: 5),
-                  decoration:
-                      BoxDecoration(color: Theme.of(context).errorColor, borderRadius: BorderRadius.circular(500)),
+                  decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(500)),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
                     child: Text(
                       "BETA",
                       style: TextStyle(
                         fontSize: 9,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                   ),
@@ -83,19 +81,25 @@ class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderSt
           ),
           bottom: TabBar(
               controller: tabController,
-              indicatorColor: Theme.of(context).accentColor,
+              indicatorColor: Theme.of(context).colorScheme.secondary,
               indicatorSize: TabBarIndicatorSize.label,
               tabs: [
                 Tab(
                   child: Text(
                     "Wallpapers",
-                    style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium!
+                        .copyWith(color: Theme.of(context).colorScheme.secondary),
                   ),
                 ),
                 Tab(
                   child: Text(
                     "Setups",
-                    style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium!
+                        .copyWith(color: Theme.of(context).colorScheme.secondary),
                   ),
                 )
               ]),
@@ -188,8 +192,8 @@ class WallTile extends StatelessWidget {
         color: Theme.of(context).primaryColor,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: Container(
-            color: Theme.of(context).accentColor.withOpacity(0.1),
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -198,14 +202,17 @@ class WallTile extends StatelessWidget {
                     children: [
                       Icon(
                         JamIcons.clock,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       const SizedBox(
                         width: 8,
                       ),
                       Text(
                         formatter.format((wallpaper.data()!["createdAt"] as Timestamp).toDate().toLocal()),
-                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                       ),
                     ],
                   ),
@@ -248,7 +255,7 @@ class WallTile extends StatelessWidget {
                               children: [
                                 Icon(
                                   JamIcons.id_card,
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                 ),
                                 const SizedBox(
                                   width: 8,
@@ -257,8 +264,8 @@ class WallTile extends StatelessWidget {
                                   "${wallpaper.data()!["id"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2!
-                                      .copyWith(color: Theme.of(context).accentColor),
+                                      .bodyMedium!
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ],
                             ),
@@ -269,7 +276,7 @@ class WallTile extends StatelessWidget {
                               children: [
                                 Icon(
                                   JamIcons.save,
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                 ),
                                 const SizedBox(
                                   width: 8,
@@ -278,8 +285,8 @@ class WallTile extends StatelessWidget {
                                   "${wallpaper.data()!["size"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2!
-                                      .copyWith(color: Theme.of(context).accentColor),
+                                      .bodyMedium!
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ],
                             ),
@@ -290,7 +297,7 @@ class WallTile extends StatelessWidget {
                               children: [
                                 Icon(
                                   JamIcons.set_square,
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                 ),
                                 const SizedBox(
                                   width: 8,
@@ -299,8 +306,8 @@ class WallTile extends StatelessWidget {
                                   "${wallpaper.data()!["resolution"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2!
-                                      .copyWith(color: Theme.of(context).accentColor),
+                                      .bodyMedium!
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ],
                             ),
@@ -316,7 +323,7 @@ class WallTile extends StatelessWidget {
                               onPressed: () {},
                               label: Text(
                                 "IN REVIEW",
-                                style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.black),
+                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.black),
                               ),
                             ),
                             const SizedBox(
@@ -326,7 +333,7 @@ class WallTile extends StatelessWidget {
                               children: [
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
@@ -385,7 +392,7 @@ class WallTile extends StatelessWidget {
                                           style: TextStyle(
                                               fontWeight: FontWeight.w700,
                                               fontSize: 16,
-                                              color: Theme.of(context).accentColor),
+                                              color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         content: Text(
                                           "This is permanent, and this action can't be undone!",
@@ -393,7 +400,7 @@ class WallTile extends StatelessWidget {
                                               fontFamily: "Proxima Nova",
                                               fontWeight: FontWeight.normal,
                                               fontSize: 14,
-                                              color: Theme.of(context).accentColor),
+                                              color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         actions: [
                                           FlatButton(
@@ -414,7 +421,7 @@ class WallTile extends StatelessWidget {
                                           ),
                                           FlatButton(
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                            color: Theme.of(context).errorColor,
+                                            color: Theme.of(context).colorScheme.error,
                                             onPressed: () {
                                               Navigator.of(context).pop();
                                             },
@@ -431,10 +438,7 @@ class WallTile extends StatelessWidget {
                                         actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                                       );
 
-                                      showModal(
-                                          context: context,
-                                          configuration: const FadeScaleTransitionConfiguration(),
-                                          builder: (BuildContext context) => deleteWallPopUp);
+                                      showModal(context: context, builder: (BuildContext context) => deleteWallPopUp);
                                     },
                                   ),
                                 ),
@@ -473,8 +477,8 @@ class RejectedWallTile extends StatelessWidget {
         color: Theme.of(context).primaryColor,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: Container(
-            color: Theme.of(context).accentColor.withOpacity(0.1),
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -483,14 +487,17 @@ class RejectedWallTile extends StatelessWidget {
                     children: [
                       Icon(
                         JamIcons.clock,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       const SizedBox(
                         width: 8,
                       ),
                       Text(
                         formatter.format((wallpaper.data()!["createdAt"] as Timestamp).toDate().toLocal()),
-                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                       ),
                     ],
                   ),
@@ -533,7 +540,7 @@ class RejectedWallTile extends StatelessWidget {
                               children: [
                                 Icon(
                                   JamIcons.id_card,
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                 ),
                                 const SizedBox(
                                   width: 8,
@@ -542,8 +549,8 @@ class RejectedWallTile extends StatelessWidget {
                                   "${wallpaper.data()!["id"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2!
-                                      .copyWith(color: Theme.of(context).accentColor),
+                                      .bodyMedium!
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ],
                             ),
@@ -554,7 +561,7 @@ class RejectedWallTile extends StatelessWidget {
                               children: [
                                 Icon(
                                   JamIcons.save,
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                 ),
                                 const SizedBox(
                                   width: 8,
@@ -563,8 +570,8 @@ class RejectedWallTile extends StatelessWidget {
                                   "${wallpaper.data()!["size"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2!
-                                      .copyWith(color: Theme.of(context).accentColor),
+                                      .bodyMedium!
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ],
                             ),
@@ -575,7 +582,7 @@ class RejectedWallTile extends StatelessWidget {
                               children: [
                                 Icon(
                                   JamIcons.set_square,
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                 ),
                                 const SizedBox(
                                   width: 8,
@@ -584,8 +591,8 @@ class RejectedWallTile extends StatelessWidget {
                                   "${wallpaper.data()!["resolution"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2!
-                                      .copyWith(color: Theme.of(context).accentColor),
+                                      .bodyMedium!
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ],
                             ),
@@ -601,7 +608,7 @@ class RejectedWallTile extends StatelessWidget {
                               onPressed: () {},
                               label: Text(
                                 "REJECTED",
-                                style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.white),
+                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
                               ),
                             ),
                             const SizedBox(
@@ -611,7 +618,7 @@ class RejectedWallTile extends StatelessWidget {
                               children: [
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
@@ -670,7 +677,7 @@ class RejectedWallTile extends StatelessWidget {
                                           style: TextStyle(
                                               fontWeight: FontWeight.w700,
                                               fontSize: 16,
-                                              color: Theme.of(context).accentColor),
+                                              color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         content: Text(
                                           "This is permanent, and this action can't be undone!",
@@ -678,7 +685,7 @@ class RejectedWallTile extends StatelessWidget {
                                               fontFamily: "Proxima Nova",
                                               fontWeight: FontWeight.normal,
                                               fontSize: 14,
-                                              color: Theme.of(context).accentColor),
+                                              color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         actions: [
                                           FlatButton(
@@ -699,7 +706,7 @@ class RejectedWallTile extends StatelessWidget {
                                           ),
                                           FlatButton(
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                            color: Theme.of(context).errorColor,
+                                            color: Theme.of(context).colorScheme.error,
                                             onPressed: () {
                                               Navigator.of(context).pop();
                                             },
@@ -716,10 +723,7 @@ class RejectedWallTile extends StatelessWidget {
                                         actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                                       );
 
-                                      showModal(
-                                          context: context,
-                                          configuration: const FadeScaleTransitionConfiguration(),
-                                          builder: (BuildContext context) => deleteWallPopUp);
+                                      showModal(context: context, builder: (BuildContext context) => deleteWallPopUp);
                                     },
                                   ),
                                 ),
@@ -734,7 +738,7 @@ class RejectedWallTile extends StatelessWidget {
                     children: [
                       Icon(
                         JamIcons.close,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       const SizedBox(
                         width: 8,
@@ -743,7 +747,10 @@ class RejectedWallTile extends StatelessWidget {
                         width: MediaQuery.of(context).size.width * 0.7,
                         child: Text(
                           "The wallpaper didn't meet our expectations. Please try uploading a good quality wallpaper.",
-                          style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium!
+                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                       ),
                     ],
@@ -827,8 +834,8 @@ class SetupTile extends StatelessWidget {
     return Container(
       width: MediaQuery.of(context).size.width,
       constraints: BoxConstraints(
-        minHeight: "${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null ? 420 : 390,
-        maxHeight: "${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null ? 470 : 440,
+        minHeight: "${wallpaper.data()!["widget2"]}" != "" ? 420 : 390,
+        maxHeight: "${wallpaper.data()!["widget2"]}" != "" ? 470 : 440,
       ),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
@@ -837,8 +844,8 @@ class SetupTile extends StatelessWidget {
         color: Theme.of(context).primaryColor,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: Container(
-            color: Theme.of(context).accentColor.withOpacity(0.1),
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -847,14 +854,17 @@ class SetupTile extends StatelessWidget {
                     children: [
                       Icon(
                         JamIcons.clock,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       const SizedBox(
                         width: 8,
                       ),
                       Text(
                         formatter.format((wallpaper.data()!["created_at"] as Timestamp).toDate().toLocal()),
-                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                       ),
                     ],
                   ),
@@ -903,18 +913,18 @@ class SetupTile extends StatelessWidget {
                                       text: "${wallpaper.data()!["name"]}" == ""
                                           ? "No name"
                                           : "${wallpaper.data()!["name"]}",
-                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           fontWeight: FontWeight.bold,
                                           decoration: TextDecoration.underline,
-                                          color: Theme.of(context).accentColor),
+                                          color: Theme.of(context).colorScheme.secondary),
                                       children: [
                                         TextSpan(
                                           text: "${wallpaper.data()!["desc"]}" == ""
                                               ? " - No desc"
                                               : " - ${wallpaper.data()!["desc"]}",
-                                          style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               decoration: TextDecoration.underline,
-                                              color: Theme.of(context).accentColor),
+                                              color: Theme.of(context).colorScheme.secondary),
                                         )
                                       ]),
                                   overflow: TextOverflow.ellipsis,
@@ -934,7 +944,7 @@ class SetupTile extends StatelessWidget {
                               children: [
                                 Icon(
                                   JamIcons.id_card,
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                 ),
                                 const SizedBox(
                                   width: 8,
@@ -945,8 +955,8 @@ class SetupTile extends StatelessWidget {
                                     "${wallpaper.data()!["id"]}",
                                     style: Theme.of(context)
                                         .textTheme
-                                        .bodyText2!
-                                        .copyWith(color: Theme.of(context).accentColor),
+                                        .bodyMedium!
+                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
                                   ),
                                 ),
                               ],
@@ -958,8 +968,7 @@ class SetupTile extends StatelessWidget {
                               onTap: () {
                                 if ("${wallpaper.data()!["wallpaper_url"]}" != "") {
                                   if ("${wallpaper.data()!["wallpaper_url"]}"[0] != "[") {
-                                    if ("${wallpaper.data()!["wall_id"]}" != "" &&
-                                        "${wallpaper.data()!["wall_id"]}" != null) {
+                                    if ("${wallpaper.data()!["wall_id"]}" != "") {
                                       Navigator.push(
                                           context,
                                           CupertinoPageRoute(
@@ -990,7 +999,7 @@ class SetupTile extends StatelessWidget {
                                 children: [
                                   Icon(
                                     JamIcons.picture,
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                   const SizedBox(
                                     width: 8,
@@ -1003,8 +1012,9 @@ class SetupTile extends StatelessWidget {
                                               ? "Wallpaper"
                                               : "${wallpaper.data()!["wallpaper_url"][0]} - ${wallpaper.data()!["wallpaper_url"][2]}"
                                           : "Wallpaper",
-                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                                          decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
+                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                          decoration: TextDecoration.underline,
+                                          color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ),
                                 ],
@@ -1027,7 +1037,7 @@ class SetupTile extends StatelessWidget {
                                 children: [
                                   Icon(
                                     JamIcons.google_play,
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                   const SizedBox(
                                     width: 8,
@@ -1036,20 +1046,21 @@ class SetupTile extends StatelessWidget {
                                     width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
                                       "${wallpaper.data()!["icon"]}" == "" ? "No icon" : "${wallpaper.data()!["icon"]}",
-                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                                          decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
+                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                          decoration: TextDecoration.underline,
+                                          color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            if ("${wallpaper.data()!["widget"]}" != "" && "${wallpaper.data()!["widget"]}" != null)
+                            if ("${wallpaper.data()!["widget"]}" != "")
                               const SizedBox(
                                 height: 16,
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget"]}" != "" && "${wallpaper.data()!["widget"]}" != null)
+                            if ("${wallpaper.data()!["widget"]}" != "")
                               GestureDetector(
                                 onTap: () {
                                   launch("${wallpaper.data()!["widget_url"]}").catchError((e) {
@@ -1060,7 +1071,7 @@ class SetupTile extends StatelessWidget {
                                   children: [
                                     Icon(
                                       JamIcons.google_play,
-                                      color: Theme.of(context).accentColor,
+                                      color: Theme.of(context).colorScheme.secondary,
                                     ),
                                     const SizedBox(
                                       width: 8,
@@ -1069,8 +1080,9 @@ class SetupTile extends StatelessWidget {
                                       width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
                                         "${wallpaper.data()!["widget"]}",
-                                        style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                                            decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
+                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                            decoration: TextDecoration.underline,
+                                            color: Theme.of(context).colorScheme.secondary),
                                       ),
                                     ),
                                   ],
@@ -1078,13 +1090,13 @@ class SetupTile extends StatelessWidget {
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null)
+                            if ("${wallpaper.data()!["widget2"]}" != "")
                               const SizedBox(
                                 height: 16,
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null)
+                            if ("${wallpaper.data()!["widget2"]}" != "")
                               GestureDetector(
                                 onTap: () {
                                   launch("${wallpaper.data()!["widget_url2"]}").catchError((e) {
@@ -1095,7 +1107,7 @@ class SetupTile extends StatelessWidget {
                                   children: [
                                     Icon(
                                       JamIcons.google_play,
-                                      color: Theme.of(context).accentColor,
+                                      color: Theme.of(context).colorScheme.secondary,
                                     ),
                                     const SizedBox(
                                       width: 8,
@@ -1104,8 +1116,9 @@ class SetupTile extends StatelessWidget {
                                       width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
                                         "${wallpaper.data()!["widget2"]}",
-                                        style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                                            decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
+                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                            decoration: TextDecoration.underline,
+                                            color: Theme.of(context).colorScheme.secondary),
                                       ),
                                     ),
                                   ],
@@ -1128,7 +1141,7 @@ class SetupTile extends StatelessWidget {
                                 onPressed: () {},
                                 label: Text(
                                   "IN REVIEW",
-                                  style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.black),
+                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.black),
                                 ),
                               ),
                             const SizedBox(
@@ -1138,7 +1151,7 @@ class SetupTile extends StatelessWidget {
                               children: [
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
@@ -1153,7 +1166,7 @@ class SetupTile extends StatelessWidget {
                                 ),
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
@@ -1204,7 +1217,7 @@ class SetupTile extends StatelessWidget {
                               ),
                               label: Text(
                                 "DELETE",
-                                style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.white),
+                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
                               ),
                               onPressed: () async {
                                 final AlertDialog deleteWallPopUp = AlertDialog(
@@ -1214,7 +1227,7 @@ class SetupTile extends StatelessWidget {
                                     style: TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 16,
-                                        color: Theme.of(context).accentColor),
+                                        color: Theme.of(context).colorScheme.secondary),
                                   ),
                                   content: Text(
                                     "This is permanent, and this action can't be undone!",
@@ -1222,7 +1235,7 @@ class SetupTile extends StatelessWidget {
                                         fontFamily: "Proxima Nova",
                                         fontWeight: FontWeight.normal,
                                         fontSize: 14,
-                                        color: Theme.of(context).accentColor),
+                                        color: Theme.of(context).colorScheme.secondary),
                                   ),
                                   actions: [
                                     FlatButton(
@@ -1248,7 +1261,7 @@ class SetupTile extends StatelessWidget {
                                     ),
                                     FlatButton(
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                      color: Theme.of(context).errorColor,
+                                      color: Theme.of(context).colorScheme.error,
                                       onPressed: () {
                                         Navigator.of(context).pop();
                                       },
@@ -1265,10 +1278,7 @@ class SetupTile extends StatelessWidget {
                                   actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                                 );
 
-                                showModal(
-                                    context: context,
-                                    configuration: const FadeScaleTransitionConfiguration(),
-                                    builder: (BuildContext context) => deleteWallPopUp);
+                                showModal(context: context, builder: (BuildContext context) => deleteWallPopUp);
                               },
                             ),
                           ],
@@ -1296,7 +1306,7 @@ class RejectedSetupTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: "${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null ? 460 : 430,
+      height: "${wallpaper.data()!["widget2"]}" != "" ? 460 : 430,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1304,8 +1314,8 @@ class RejectedSetupTile extends StatelessWidget {
         color: Theme.of(context).primaryColor,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: Container(
-            color: Theme.of(context).accentColor.withOpacity(0.1),
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -1314,14 +1324,17 @@ class RejectedSetupTile extends StatelessWidget {
                     children: [
                       Icon(
                         JamIcons.clock,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       const SizedBox(
                         width: 8,
                       ),
                       Text(
                         formatter.format((wallpaper.data()!["created_at"] as Timestamp).toDate().toLocal()),
-                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                       ),
                     ],
                   ),
@@ -1368,16 +1381,16 @@ class RejectedSetupTile extends StatelessWidget {
                                 child: RichText(
                                   text: TextSpan(
                                       text: "${wallpaper.data()!["name"]}",
-                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           fontWeight: FontWeight.bold,
                                           decoration: TextDecoration.underline,
-                                          color: Theme.of(context).accentColor),
+                                          color: Theme.of(context).colorScheme.secondary),
                                       children: [
                                         TextSpan(
                                           text: " - ${wallpaper.data()!["desc"]}",
-                                          style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               decoration: TextDecoration.underline,
-                                              color: Theme.of(context).accentColor),
+                                              color: Theme.of(context).colorScheme.secondary),
                                         )
                                       ]),
                                   overflow: TextOverflow.ellipsis,
@@ -1397,7 +1410,7 @@ class RejectedSetupTile extends StatelessWidget {
                               children: [
                                 Icon(
                                   JamIcons.id_card,
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                 ),
                                 const SizedBox(
                                   width: 8,
@@ -1408,8 +1421,8 @@ class RejectedSetupTile extends StatelessWidget {
                                     "${wallpaper.data()!["id"]}",
                                     style: Theme.of(context)
                                         .textTheme
-                                        .bodyText2!
-                                        .copyWith(color: Theme.of(context).accentColor),
+                                        .bodyMedium!
+                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
                                   ),
                                 ),
                               ],
@@ -1420,8 +1433,7 @@ class RejectedSetupTile extends StatelessWidget {
                             GestureDetector(
                               onTap: () {
                                 if ("${wallpaper.data()!["wallpaper_url"]}"[0] != "[") {
-                                  if ("${wallpaper.data()!["wall_id"]}" != "" &&
-                                      "${wallpaper.data()!["wall_id"]}" != null) {
+                                  if ("${wallpaper.data()!["wall_id"]}" != "") {
                                     Navigator.push(
                                         context,
                                         CupertinoPageRoute(
@@ -1449,7 +1461,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 children: [
                                   Icon(
                                     JamIcons.picture,
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                   const SizedBox(
                                     width: 8,
@@ -1460,8 +1472,9 @@ class RejectedSetupTile extends StatelessWidget {
                                       "${wallpaper.data()!["wallpaper_url"]}"[0] != "["
                                           ? "Wallpaper"
                                           : "${wallpaper.data()!["wallpaper_url"][0]} - ${wallpaper.data()!["wallpaper_url"][2]}",
-                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                                          decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
+                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                          decoration: TextDecoration.underline,
+                                          color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ),
                                 ],
@@ -1480,7 +1493,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 children: [
                                   Icon(
                                     JamIcons.google_play,
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                   const SizedBox(
                                     width: 8,
@@ -1489,20 +1502,21 @@ class RejectedSetupTile extends StatelessWidget {
                                     width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
                                       "${wallpaper.data()!["icon"]}",
-                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                                          decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
+                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                          decoration: TextDecoration.underline,
+                                          color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            if ("${wallpaper.data()!["widget"]}" != "" && "${wallpaper.data()!["widget"]}" != null)
+                            if ("${wallpaper.data()!["widget"]}" != "")
                               const SizedBox(
                                 height: 16,
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget"]}" != "" && "${wallpaper.data()!["widget"]}" != null)
+                            if ("${wallpaper.data()!["widget"]}" != "")
                               GestureDetector(
                                 onTap: () {
                                   launch("${wallpaper.data()!["widget_url"]}").catchError((e) {
@@ -1513,7 +1527,7 @@ class RejectedSetupTile extends StatelessWidget {
                                   children: [
                                     Icon(
                                       JamIcons.google_play,
-                                      color: Theme.of(context).accentColor,
+                                      color: Theme.of(context).colorScheme.secondary,
                                     ),
                                     const SizedBox(
                                       width: 8,
@@ -1522,8 +1536,9 @@ class RejectedSetupTile extends StatelessWidget {
                                       width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
                                         "${wallpaper.data()!["widget"]}",
-                                        style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                                            decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
+                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                            decoration: TextDecoration.underline,
+                                            color: Theme.of(context).colorScheme.secondary),
                                       ),
                                     ),
                                   ],
@@ -1531,13 +1546,13 @@ class RejectedSetupTile extends StatelessWidget {
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null)
+                            if ("${wallpaper.data()!["widget2"]}" != "")
                               const SizedBox(
                                 height: 16,
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null)
+                            if ("${wallpaper.data()!["widget2"]}" != "")
                               GestureDetector(
                                 onTap: () {
                                   launch("${wallpaper.data()!["widget_url2"]}").catchError((e) {
@@ -1548,7 +1563,7 @@ class RejectedSetupTile extends StatelessWidget {
                                   children: [
                                     Icon(
                                       JamIcons.google_play,
-                                      color: Theme.of(context).accentColor,
+                                      color: Theme.of(context).colorScheme.secondary,
                                     ),
                                     const SizedBox(
                                       width: 8,
@@ -1557,8 +1572,9 @@ class RejectedSetupTile extends StatelessWidget {
                                       width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
                                         "${wallpaper.data()!["widget2"]}",
-                                        style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                                            decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
+                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                            decoration: TextDecoration.underline,
+                                            color: Theme.of(context).colorScheme.secondary),
                                       ),
                                     ),
                                   ],
@@ -1578,7 +1594,7 @@ class RejectedSetupTile extends StatelessWidget {
                               onPressed: () {},
                               label: Text(
                                 "REJECTED",
-                                style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.white),
+                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
                               ),
                             ),
                             const SizedBox(
@@ -1588,7 +1604,7 @@ class RejectedSetupTile extends StatelessWidget {
                               children: [
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
@@ -1644,7 +1660,7 @@ class RejectedSetupTile extends StatelessWidget {
                                           style: TextStyle(
                                               fontWeight: FontWeight.w700,
                                               fontSize: 16,
-                                              color: Theme.of(context).accentColor),
+                                              color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         content: Text(
                                           "This is permanent, and this action can't be undone!",
@@ -1652,7 +1668,7 @@ class RejectedSetupTile extends StatelessWidget {
                                               fontFamily: "Proxima Nova",
                                               fontWeight: FontWeight.normal,
                                               fontSize: 14,
-                                              color: Theme.of(context).accentColor),
+                                              color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         actions: [
                                           FlatButton(
@@ -1673,7 +1689,7 @@ class RejectedSetupTile extends StatelessWidget {
                                           ),
                                           FlatButton(
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                            color: Theme.of(context).errorColor,
+                                            color: Theme.of(context).colorScheme.error,
                                             onPressed: () {
                                               Navigator.of(context).pop();
                                             },
@@ -1690,10 +1706,7 @@ class RejectedSetupTile extends StatelessWidget {
                                         actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                                       );
 
-                                      showModal(
-                                          context: context,
-                                          configuration: const FadeScaleTransitionConfiguration(),
-                                          builder: (BuildContext context) => deleteWallPopUp);
+                                      showModal(context: context, builder: (BuildContext context) => deleteWallPopUp);
                                     },
                                   ),
                                 ),
@@ -1708,7 +1721,7 @@ class RejectedSetupTile extends StatelessWidget {
                     children: [
                       Icon(
                         JamIcons.close,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       const SizedBox(
                         width: 8,
@@ -1717,7 +1730,10 @@ class RejectedSetupTile extends StatelessWidget {
                         width: MediaQuery.of(context).size.width * 0.7,
                         child: Text(
                           "The setup didn't meet our expectations. Please try uploading another setup.",
-                          style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium!
+                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                       ),
                     ],

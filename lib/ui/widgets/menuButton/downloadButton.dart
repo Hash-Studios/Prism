@@ -1,21 +1,18 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/features/ads/presentation/bloc/ads_bloc.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:animations/animations.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/services.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:gallery_saver/gallery_saver.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:Prism/logger/logger.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class DownloadButton extends StatefulWidget {
   final String? link;
@@ -24,8 +21,8 @@ class DownloadButton extends StatefulWidget {
   const DownloadButton({
     required this.link,
     required this.colorChanged,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _DownloadButtonState createState() => _DownloadButtonState();
@@ -77,7 +74,7 @@ class _DownloadButtonState extends State<DownloadButton> {
             padding: const EdgeInsets.all(17),
             child: Icon(
               JamIcons.download,
-              color: Theme.of(context).accentColor,
+              color: Theme.of(context).colorScheme.secondary,
               size: 20,
             ),
           ),
@@ -226,7 +223,6 @@ class _DownloadButtonState extends State<DownloadButton> {
 void showDownloadPopup(BuildContext context, Function rewardFunc) {
   showModal(
       context: context,
-      configuration: const FadeScaleTransitionConfiguration(),
       builder: (BuildContext context) => StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
             return Dialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -315,7 +311,10 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                         width: MediaQuery.of(context).size.width * 0.7,
                         child: Text(
                           "Watch a small video ad to download this wallpaper.",
-                          style: Theme.of(context).textTheme.headline6!.copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge!
+                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                       ),
                     ],
@@ -330,7 +329,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                 children: <Widget>[
                   FlatButton(
                     shape: const StadiumBorder(),
-                    color: Theme.of(context).errorColor,
+                    color: Theme.of(context).colorScheme.error,
                     onPressed: () {
                       if (globals.prismUser.loggedIn == false) {
                         googleSignInPopUp(context, () {
@@ -346,13 +345,13 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                       'BUY PREMIUM',
                       style: TextStyle(
                         fontSize: 16.0,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                   ),
                   FlatButton(
                     shape: const StadiumBorder(),
-                    color: Theme.of(context).accentColor.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
                     onPressed: () {
                       if (canWatchAd) {
                         context.read<AdsBloc>().add(const AdsEvent.watchAdRequested());
@@ -365,7 +364,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                             'WATCH AD',
                             style: TextStyle(
                               fontSize: 16.0,
-                              color: Theme.of(context).accentColor,
+                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           )
                         : Stack(
@@ -375,7 +374,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                                 'WATCH AD',
                                 style: TextStyle(
                                   fontSize: 16.0,
-                                  color: Theme.of(context).accentColor.withOpacity(0.3),
+                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
                                 ),
                               ),
                               const SizedBox(height: 16, width: 16, child: CircularProgressIndicator()),

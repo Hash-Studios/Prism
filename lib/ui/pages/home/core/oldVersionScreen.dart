@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OldVersion extends StatelessWidget {
@@ -13,7 +13,7 @@ class OldVersion extends StatelessWidget {
         centerTitle: true,
         title: Text(
           "Update",
-          style: Theme.of(context).textTheme.headline3!.copyWith(color: Theme.of(context).accentColor),
+          style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
         ),
       ),
       body: Column(
@@ -36,11 +36,11 @@ class OldVersion extends StatelessWidget {
               launch("https://play.google.com/store/apps/details?id=com.hash.prism");
             },
             style: ButtonStyle(
-              backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
+              backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
             ),
-            child: SizedBox(
+            child: const SizedBox(
               width: 60,
-              child: const Text(
+              child: Text(
                 'UPDATE',
                 textAlign: TextAlign.center,
                 style: TextStyle(

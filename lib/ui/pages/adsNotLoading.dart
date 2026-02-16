@@ -1,14 +1,14 @@
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
 
 class AdsNotLoading extends StatelessWidget {
-  const AdsNotLoading({Key? key}) : super(key: key);
+  const AdsNotLoading({super.key});
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
@@ -31,7 +31,7 @@ class AdsNotLoading extends StatelessWidget {
               }),
           title: Text(
             "Ads Error",
-            style: Theme.of(context).textTheme.headline3,
+            style: Theme.of(context).textTheme.displaySmall,
           ),
         ),
         backgroundColor: Theme.of(context).primaryColor,
@@ -53,8 +53,8 @@ class AdsNotLoading extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: Theme.of(context)
                       .textTheme
-                      .bodyText2!
-                      .copyWith(color: Theme.of(context).accentColor, fontSize: 24),
+                      .bodyMedium!
+                      .copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 24),
                 ),
                 const SizedBox(
                   height: 10,
@@ -69,7 +69,7 @@ class AdsNotLoading extends StatelessWidget {
                   child: Text(
                     "Possible Reasons",
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headline3,
+                    style: Theme.of(context).textTheme.displaySmall,
                   ),
                 ),
                 Column(
@@ -80,7 +80,10 @@ class AdsNotLoading extends StatelessWidget {
                       child: Text(
                         "➡️ Google has put ads on hold for us (common).",
                         textAlign: TextAlign.left,
-                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                       ),
                     ),
                     Padding(
@@ -88,7 +91,10 @@ class AdsNotLoading extends StatelessWidget {
                       child: Text(
                         "➡️ Your device's network connection is poor.",
                         textAlign: TextAlign.left,
-                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                       ),
                     ),
                     Padding(
@@ -96,7 +102,10 @@ class AdsNotLoading extends StatelessWidget {
                       child: Text(
                         "➡️ You're running an AdBlocker which is preventing us from loading ads.",
                         textAlign: TextAlign.left,
-                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                       ),
                     ),
                     const SizedBox(
@@ -107,7 +116,10 @@ class AdsNotLoading extends StatelessWidget {
                       child: Text(
                         "Please check your network settings and try again. We have although downloaded the wall for you, because we get it, that it's frustating when the ads don't laod.",
                         textAlign: TextAlign.left,
-                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                       ),
                     ),
                   ],
@@ -127,7 +139,7 @@ class AdsNotLoading extends StatelessWidget {
                   children: <Widget>[
                     FlatButton(
                       shape: const StadiumBorder(),
-                      color: Theme.of(context).errorColor,
+                      color: Theme.of(context).colorScheme.error,
                       onPressed: () {
                         if (globals.prismUser.loggedIn == false) {
                           googleSignInPopUp(context, () {
@@ -143,13 +155,13 @@ class AdsNotLoading extends StatelessWidget {
                         'BUY PREMIUM',
                         style: TextStyle(
                           fontSize: 16.0,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                     ),
                     FlatButton(
                       shape: const StadiumBorder(),
-                      color: Theme.of(context).errorColor,
+                      color: Theme.of(context).colorScheme.error,
                       onPressed: () {
                         main.RestartWidget.restartApp(context);
                       },
@@ -157,7 +169,7 @@ class AdsNotLoading extends StatelessWidget {
                         'RESTART APP',
                         style: TextStyle(
                           fontSize: 16.0,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                     ),

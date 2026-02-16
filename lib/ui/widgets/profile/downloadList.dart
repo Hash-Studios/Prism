@@ -1,11 +1,12 @@
 import 'dart:io';
+
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:Prism/logger/logger.dart';
 
 class DownloadList extends StatelessWidget {
   @override
@@ -16,12 +17,12 @@ class DownloadList extends StatelessWidget {
         ),
         title: Text(
           "Downloads",
-          style:
-              TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
         ),
         subtitle: Text(
           "View or clear downloads",
-          style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
+          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
         ),
         children: [
           ListTile(
@@ -32,7 +33,9 @@ class DownloadList extends StatelessWidget {
             title: Text(
               "My Downloads",
               style: TextStyle(
-                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "See all your downloaded wallpapers",
@@ -47,7 +50,9 @@ class DownloadList extends StatelessWidget {
               title: Text(
                 "Clear Downloads",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Clear downloaded wallpapers",
@@ -56,7 +61,6 @@ class DownloadList extends StatelessWidget {
               onTap: () async {
                 showModal(
                   context: context,
-                  configuration: const FadeScaleTransitionConfiguration(),
                   builder: (context) => AlertDialog(
                     shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.all(
@@ -69,7 +73,7 @@ class DownloadList extends StatelessWidget {
                       child: Center(
                         child: Text(
                           "Do you want remove all your downloads?",
-                          style: Theme.of(context).textTheme.headline4,
+                          style: Theme.of(context).textTheme.headlineMedium,
                         ),
                       ),
                     ),
@@ -118,7 +122,7 @@ class DownloadList extends StatelessWidget {
                           'YES',
                           style: TextStyle(
                             fontSize: 16.0,
-                            color: Theme.of(context).accentColor,
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                         ),
                       ),
@@ -126,7 +130,7 @@ class DownloadList extends StatelessWidget {
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FlatButton(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                          color: Theme.of(context).errorColor,
+                          color: Theme.of(context).colorScheme.error,
                           onPressed: () {
                             Navigator.of(context).pop();
                           },

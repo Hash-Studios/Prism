@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui';
+
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
@@ -9,14 +9,18 @@ import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as WData;
 import 'package:Prism/features/palette/presentation/bloc/palette_bloc.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
-import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/core/colorBar.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/editButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
@@ -29,13 +33,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/logger/logger.dart';
 
 class ShareWallpaperViewScreen extends StatefulWidget {
   final List? arguments;
@@ -274,7 +274,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                             },
                                             child: Icon(
                                               JamIcons.chevron_down,
-                                              color: Theme.of(context).accentColor,
+                                              color: Theme.of(context).colorScheme.secondary,
                                             ),
                                           ),
                                         ),
@@ -298,8 +298,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       id.toString().toUpperCase(),
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .bodyText1!
-                                                          .copyWith(color: Theme.of(context).accentColor),
+                                                          .bodyLarge!
+                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                     ),
                                                   ),
                                                   Row(
@@ -307,15 +307,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       Icon(
                                                         JamIcons.eye,
                                                         size: 20,
-                                                        color: Theme.of(context).accentColor.withOpacity(.7),
+                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
-                                                        "${WData.wall == null ? 0 : WData.wall.views.toString()}",
+                                                        WData.wall.views,
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText2!
-                                                            .copyWith(color: Theme.of(context).accentColor),
+                                                            .bodyMedium!
+                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                       ),
                                                     ],
                                                   ),
@@ -325,15 +325,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       Icon(
                                                         JamIcons.heart_f,
                                                         size: 20,
-                                                        color: Theme.of(context).accentColor.withOpacity(.7),
+                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
-                                                        "${WData.wall == null ? 0 : WData.wall.favourites.toString()}",
+                                                        WData.wall.favourites,
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText2!
-                                                            .copyWith(color: Theme.of(context).accentColor),
+                                                            .bodyMedium!
+                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                       ),
                                                     ],
                                                   ),
@@ -343,15 +343,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       Icon(
                                                         JamIcons.save,
                                                         size: 20,
-                                                        color: Theme.of(context).accentColor.withOpacity(.7),
+                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
-                                                        "${WData.wall == null ? 0 : (double.parse((double.parse(WData.wall.file_size.toString()) / 1000000).toString()).toStringAsFixed(2))} MB",
+                                                        "${double.parse((double.parse(WData.wall.file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText2!
-                                                            .copyWith(color: Theme.of(context).accentColor),
+                                                            .bodyMedium!
+                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                       ),
                                                     ],
                                                   ),
@@ -366,20 +366,19 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                     child: Row(
                                                       children: [
                                                         Text(
-                                                          WData.wall == null
-                                                              ? "General"
-                                                              : (WData.wall.category.toString()[0].toUpperCase() +
-                                                                  WData.wall.category.toString().substring(1)),
+                                                          WData.wall.category.toString()[0].toUpperCase() +
+                                                              WData.wall.category.toString().substring(1),
                                                           style: Theme.of(context)
                                                               .textTheme
-                                                              .bodyText2!
-                                                              .copyWith(color: Theme.of(context).accentColor),
+                                                              .bodyMedium!
+                                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                         ),
                                                         const SizedBox(width: 10),
                                                         Icon(
                                                           JamIcons.unordered_list,
                                                           size: 20,
-                                                          color: Theme.of(context).accentColor.withOpacity(.7),
+                                                          color:
+                                                              Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                         ),
                                                       ],
                                                     ),
@@ -388,17 +387,17 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        "${WData.wall == null ? 0x0 : WData.wall.resolution.toString()}",
+                                                        WData.wall.resolution,
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText2!
-                                                            .copyWith(color: Theme.of(context).accentColor),
+                                                            .bodyMedium!
+                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Icon(
                                                         JamIcons.set_square,
                                                         size: 20,
-                                                        color: Theme.of(context).accentColor.withOpacity(.7),
+                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                       ),
                                                     ],
                                                   ),
@@ -409,14 +408,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                         provider.toString(),
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText2!
-                                                            .copyWith(color: Theme.of(context).accentColor),
+                                                            .bodyMedium!
+                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Icon(
                                                         JamIcons.database,
                                                         size: 20,
-                                                        color: Theme.of(context).accentColor.withOpacity(.7),
+                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                       ),
                                                     ],
                                                   ),
@@ -433,34 +432,24 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                           children: <Widget>[
                                             DownloadButton(
                                                 colorChanged: colorChanged,
-                                                link: screenshotTaken
-                                                    ? _imageFile.path
-                                                    : WData.wall == null
-                                                        ? ""
-                                                        : WData.wall.path.toString()),
+                                                link: screenshotTaken ? _imageFile.path : WData.wall.path.toString()),
                                             SetWallpaperButton(
                                               colorChanged: colorChanged,
-                                              url: screenshotTaken
-                                                  ? _imageFile.path
-                                                  : WData.wall == null
-                                                      ? ""
-                                                      : WData.wall.path.toString(),
+                                              url: screenshotTaken ? _imageFile.path : WData.wall.path.toString(),
                                             ),
                                             FavouriteWallpaperButton(
-                                              id: WData.wall == null ? "" : WData.wall.id.toString(),
+                                              id: WData.wall.id.toString(),
                                               provider: "WallHaven",
                                               wallhaven: WData.wall ?? WallPaper(),
                                               trash: false,
                                             ),
                                             ShareButton(
-                                                id: WData.wall == null ? "" : WData.wall.id.toString(),
+                                                id: WData.wall.id.toString(),
                                                 provider: provider,
-                                                url: WData.wall == null ? "" : WData.wall.path.toString(),
-                                                thumbUrl: WData.wall == null
-                                                    ? ""
-                                                    : WData.wall.thumbs!["original"].toString()),
+                                                url: WData.wall.path.toString(),
+                                                thumbUrl: WData.wall.thumbs!["original"].toString()),
                                             EditButton(
-                                              url: WData.wall == null ? "" : WData.wall.path.toString(),
+                                              url: WData.wall.path.toString(),
                                             ),
                                           ],
                                         ),
@@ -522,7 +511,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                     Center(
                                       child: CircularProgressIndicator(
                                           valueColor: AlwaysStoppedAnimation(
-                                            Theme.of(context).errorColor,
+                                            Theme.of(context).colorScheme.error,
                                           ),
                                           value: downloadProgress.progress),
                                     ),
@@ -532,7 +521,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                   child: Icon(
                                     JamIcons.close_circle_f,
                                     color: paletteLoading
-                                        ? Theme.of(context).accentColor
+                                        ? Theme.of(context).colorScheme.secondary
                                         : accent!.computeLuminance() > 0.5
                                             ? Colors.black
                                             : Colors.white,
@@ -552,7 +541,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                               Navigator.pop(context);
                             },
                             color: paletteLoading
-                                ? Theme.of(context).accentColor
+                                ? Theme.of(context).colorScheme.secondary
                                 : accent!.computeLuminance() > 0.5
                                     ? Colors.black
                                     : Colors.white,
@@ -572,7 +561,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                               Navigator.push(
                                   context,
                                   PageRouteBuilder(
-                                      transitionDuration: const Duration(milliseconds: 300),
                                       pageBuilder: (context, animation, secondaryAnimation) {
                                         animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                         return FadeTransition(
@@ -588,7 +576,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                       opaque: false));
                             },
                             color: paletteLoading
-                                ? Theme.of(context).accentColor
+                                ? Theme.of(context).colorScheme.secondary
                                 : accent!.computeLuminance() > 0.5
                                     ? Colors.black
                                     : Colors.white,
@@ -714,7 +702,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                 },
                                                 child: Icon(
                                                   JamIcons.chevron_down,
-                                                  color: Theme.of(context).accentColor,
+                                                  color: Theme.of(context).colorScheme.secondary,
                                                 ),
                                               ),
                                             ),
@@ -732,7 +720,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                     mainAxisSize: MainAxisSize.min,
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: <Widget>[
-                                                      Container(
+                                                      SizedBox(
                                                         width: MediaQuery.of(context).size.width * 0.36,
                                                         child: Padding(
                                                           padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
@@ -740,16 +728,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                             children: [
                                                               Text(
                                                                 id.toString().toUpperCase(),
-                                                                style: Theme.of(context)
-                                                                    .textTheme
-                                                                    .bodyText1!
-                                                                    .copyWith(color: Theme.of(context).accentColor),
+                                                                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                    color: Theme.of(context).colorScheme.secondary),
                                                               ),
                                                               Padding(
                                                                 padding: const EdgeInsets.symmetric(horizontal: 6.0),
                                                                 child: Container(
                                                                   height: 20,
-                                                                  color: Theme.of(context).accentColor,
+                                                                  color: Theme.of(context).colorScheme.secondary,
                                                                   width: 2,
                                                                 ),
                                                               ),
@@ -762,9 +748,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                         "",
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .bodyText1!
+                                                                            .bodyLarge!
                                                                             .copyWith(
-                                                                                color: Theme.of(context).accentColor,
+                                                                                color: Theme.of(context)
+                                                                                    .colorScheme
+                                                                                    .secondary,
                                                                                 fontSize: 16),
                                                                       );
                                                                     case ConnectionState.none:
@@ -772,9 +760,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                         "",
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .bodyText1!
+                                                                            .bodyLarge!
                                                                             .copyWith(
-                                                                                color: Theme.of(context).accentColor,
+                                                                                color: Theme.of(context)
+                                                                                    .colorScheme
+                                                                                    .secondary,
                                                                                 fontSize: 16),
                                                                       );
                                                                     default:
@@ -783,9 +773,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                           "",
                                                                           style: Theme.of(context)
                                                                               .textTheme
-                                                                              .bodyText1!
+                                                                              .bodyLarge!
                                                                               .copyWith(
-                                                                                  color: Theme.of(context).accentColor,
+                                                                                  color: Theme.of(context)
+                                                                                      .colorScheme
+                                                                                      .secondary,
                                                                                   fontSize: 16),
                                                                         );
                                                                       } else {
@@ -795,9 +787,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                           softWrap: false,
                                                                           style: Theme.of(context)
                                                                               .textTheme
-                                                                              .bodyText1!
+                                                                              .bodyLarge!
                                                                               .copyWith(
-                                                                                  color: Theme.of(context).accentColor,
+                                                                                  color: Theme.of(context)
+                                                                                      .colorScheme
+                                                                                      .secondary,
                                                                                   fontSize: 16),
                                                                         );
                                                                       }
@@ -814,15 +808,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           Icon(
                                                             JamIcons.arrow_circle_right,
                                                             size: 20,
-                                                            color: Theme.of(context).accentColor.withOpacity(.7),
+                                                            color:
+                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
-                                                            "${Data.wall == null ? 0 : Data.wall["desc"].toString()}",
-                                                            style: Theme.of(context)
-                                                                .textTheme
-                                                                .bodyText2!
-                                                                .copyWith(color: Theme.of(context).accentColor),
+                                                            Data.wall["desc"],
+                                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary),
                                                           ),
                                                         ],
                                                       ),
@@ -832,15 +825,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           Icon(
                                                             JamIcons.save,
                                                             size: 20,
-                                                            color: Theme.of(context).accentColor.withOpacity(.7),
+                                                            color:
+                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
-                                                            "${Data.wall == null ? 0 : Data.wall["size"].toString()}",
-                                                            style: Theme.of(context)
-                                                                .textTheme
-                                                                .bodyText2!
-                                                                .copyWith(color: Theme.of(context).accentColor),
+                                                            Data.wall["size"],
+                                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary),
                                                           ),
                                                         ],
                                                       ),
@@ -859,15 +851,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                               Align(
                                                                 alignment: Alignment.topRight,
                                                                 child: ActionChip(
-                                                                  onPressed: Data.wall == null
-                                                                      ? () {}
-                                                                      : () {
-                                                                          Navigator.pushNamed(
-                                                                              context, followerProfileRoute,
-                                                                              arguments: [
-                                                                                Data.wall["email"],
-                                                                              ]);
-                                                                        },
+                                                                  onPressed: () {
+                                                                    Navigator.pushNamed(context, followerProfileRoute,
+                                                                        arguments: [
+                                                                          Data.wall["email"],
+                                                                        ]);
+                                                                  },
                                                                   padding: const EdgeInsets.symmetric(
                                                                       vertical: 5, horizontal: 5),
                                                                   avatar: CircleAvatar(
@@ -875,15 +864,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                         Data.wall["userPhoto"].toString()),
                                                                   ),
                                                                   labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
-                                                                  label: Text(
-                                                                      Data.wall == null
-                                                                          ? "Photographer"
-                                                                          : Data.wall["by"].toString(),
+                                                                  label: Text(Data.wall["by"].toString(),
                                                                       style: Theme.of(context)
                                                                           .textTheme
-                                                                          .bodyText2!
+                                                                          .bodyMedium!
                                                                           .copyWith(
-                                                                              color: Theme.of(context).accentColor)
+                                                                              color: Theme.of(context)
+                                                                                  .colorScheme
+                                                                                  .secondary)
                                                                           .copyWith(fontSize: 16),
                                                                       overflow: TextOverflow.fade),
                                                                 ),
@@ -897,10 +885,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                     height: 20,
                                                                     child: SvgPicture.string(verifiedIcon.replaceAll(
                                                                         "E57697",
-                                                                        Theme.of(context).errorColor == Colors.black
+                                                                        Theme.of(context).colorScheme.error ==
+                                                                                Colors.black
                                                                             ? "E57697"
                                                                             : Theme.of(context)
-                                                                                .errorColor
+                                                                                .colorScheme
+                                                                                .error
                                                                                 .toString()
                                                                                 .replaceAll("Color(0xff", "")
                                                                                 .replaceAll(")", ""))),
@@ -916,17 +906,16 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            "${Data.wall == null ? 0x0 : Data.wall["resolution"].toString()}",
-                                                            style: Theme.of(context)
-                                                                .textTheme
-                                                                .bodyText2!
-                                                                .copyWith(color: Theme.of(context).accentColor),
+                                                            Data.wall["resolution"],
+                                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Icon(
                                                             JamIcons.set_square,
                                                             size: 20,
-                                                            color: Theme.of(context).accentColor.withOpacity(.7),
+                                                            color:
+                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                           ),
                                                         ],
                                                       ),
@@ -935,7 +924,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                         onTap: () {
                                                           showModal(
                                                               context: context,
-                                                              configuration: const FadeScaleTransitionConfiguration(),
                                                               builder: (BuildContext context) => CopyrightPopUp(
                                                                     setup: false,
                                                                     shortlink: "Wallpaper ID - ${Data.wall["id"]}",
@@ -945,15 +933,18 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           children: [
                                                             Text(
                                                               "Report",
-                                                              style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                                   decoration: TextDecoration.underline,
-                                                                  color: Theme.of(context).accentColor),
+                                                                  color: Theme.of(context).colorScheme.secondary),
                                                             ),
                                                             const SizedBox(width: 10),
                                                             Icon(
                                                               JamIcons.info,
                                                               size: 20,
-                                                              color: Theme.of(context).accentColor.withOpacity(.7),
+                                                              color: Theme.of(context)
+                                                                  .colorScheme
+                                                                  .secondary
+                                                                  .withOpacity(.7),
                                                             ),
                                                           ],
                                                         ),
@@ -1001,7 +992,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                         children: [
                                                           Icon(
                                                             JamIcons.stop_sign,
-                                                            color: Theme.of(context).accentColor,
+                                                            color: Theme.of(context).colorScheme.secondary,
                                                             size: 30,
                                                           ),
                                                           const SizedBox(
@@ -1009,7 +1000,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           ),
                                                           Text(
                                                             "Premium Required",
-                                                            style: Theme.of(context).textTheme.headline4,
+                                                            style: Theme.of(context).textTheme.headlineMedium,
                                                           ),
                                                         ],
                                                       ),
@@ -1028,19 +1019,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       colorChanged: colorChanged,
                                                       link: screenshotTaken
                                                           ? _imageFile.path
-                                                          : Data.wall == null
-                                                              ? ""
-                                                              : Data.wall["wallpaper_url"].toString()),
+                                                          : Data.wall["wallpaper_url"].toString()),
                                                   SetWallpaperButton(
                                                     colorChanged: colorChanged,
                                                     url: screenshotTaken
                                                         ? _imageFile.path
-                                                        : Data.wall == null
-                                                            ? ""
-                                                            : Data.wall["wallpaper_url"].toString(),
+                                                        : Data.wall["wallpaper_url"].toString(),
                                                   ),
                                                   FavouriteWallpaperButton(
-                                                    id: Data.wall == null ? "" : Data.wall["id"].toString(),
+                                                    id: Data.wall["id"].toString(),
                                                     provider: "Prism",
                                                     prism: Data.wall ?? {},
                                                     trash: false,
@@ -1114,7 +1101,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                         Center(
                                           child: CircularProgressIndicator(
                                               valueColor: AlwaysStoppedAnimation(
-                                                Theme.of(context).errorColor,
+                                                Theme.of(context).colorScheme.error,
                                               ),
                                               value: downloadProgress.progress),
                                         ),
@@ -1124,7 +1111,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                       child: Icon(
                                         JamIcons.close_circle_f,
                                         color: paletteLoading
-                                            ? Theme.of(context).accentColor
+                                            ? Theme.of(context).colorScheme.secondary
                                             : accent!.computeLuminance() > 0.5
                                                 ? Colors.black
                                                 : Colors.white,
@@ -1144,7 +1131,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                   Navigator.pop(context);
                                 },
                                 color: paletteLoading
-                                    ? Theme.of(context).accentColor
+                                    ? Theme.of(context).colorScheme.secondary
                                     : accent!.computeLuminance() > 0.5
                                         ? Colors.black
                                         : Colors.white,
@@ -1164,7 +1151,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                   Navigator.push(
                                       context,
                                       PageRouteBuilder(
-                                          transitionDuration: const Duration(milliseconds: 300),
                                           pageBuilder: (context, animation, secondaryAnimation) {
                                             animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                             return FadeTransition(
@@ -1180,7 +1166,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                           opaque: false));
                                 },
                                 color: paletteLoading
-                                    ? Theme.of(context).accentColor
+                                    ? Theme.of(context).colorScheme.secondary
                                     : accent!.computeLuminance() > 0.5
                                         ? Colors.black
                                         : Colors.white,
@@ -1306,7 +1292,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       },
                                                       child: Icon(
                                                         JamIcons.chevron_down,
-                                                        color: Theme.of(context).accentColor,
+                                                        color: Theme.of(context).colorScheme.secondary,
                                                       ),
                                                     ),
                                                   ),
@@ -1373,10 +1359,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                               .replaceAll("-", " ")
                                                                               .replaceAll("/", "")
                                                                               .substring(1)),
-                                                              style: Theme.of(context)
-                                                                  .textTheme
-                                                                  .bodyText1!
-                                                                  .copyWith(color: Theme.of(context).accentColor),
+                                                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                  color: Theme.of(context).colorScheme.secondary),
                                                               overflow: TextOverflow.ellipsis,
                                                               maxLines: 1,
                                                             ),
@@ -1407,9 +1391,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                         textAlign: TextAlign.left,
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .bodyText2!
+                                                                            .bodyMedium!
                                                                             .copyWith(
-                                                                                color: Theme.of(context).accentColor),
+                                                                                color: Theme.of(context)
+                                                                                    .colorScheme
+                                                                                    .secondary),
                                                                       ),
                                                                     ),
                                                                   ],
@@ -1427,9 +1413,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                       "${PData.wall == null ? 0 : PData.wall!.width.toString()}x${PData.wall == null ? 0 : PData.wall!.height.toString()}",
                                                                       style: Theme.of(context)
                                                                           .textTheme
-                                                                          .bodyText2!
+                                                                          .bodyMedium!
                                                                           .copyWith(
-                                                                              color: Theme.of(context).accentColor),
+                                                                              color: Theme.of(context)
+                                                                                  .colorScheme
+                                                                                  .secondary),
                                                                     ),
                                                                   ],
                                                                 ),
@@ -1445,9 +1433,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                       id.toString(),
                                                                       style: Theme.of(context)
                                                                           .textTheme
-                                                                          .bodyText2!
+                                                                          .bodyMedium!
                                                                           .copyWith(
-                                                                              color: Theme.of(context).accentColor),
+                                                                              color: Theme.of(context)
+                                                                                  .colorScheme
+                                                                                  .secondary),
                                                                     ),
                                                                     const SizedBox(width: 10),
                                                                     const Icon(
@@ -1464,9 +1454,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                       provider.toString(),
                                                                       style: Theme.of(context)
                                                                           .textTheme
-                                                                          .bodyText2!
+                                                                          .bodyMedium!
                                                                           .copyWith(
-                                                                              color: Theme.of(context).accentColor),
+                                                                              color: Theme.of(context)
+                                                                                  .colorScheme
+                                                                                  .secondary),
                                                                     ),
                                                                     const SizedBox(width: 10),
                                                                     const Icon(
@@ -1576,7 +1568,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                             Center(
                                               child: CircularProgressIndicator(
                                                   valueColor: AlwaysStoppedAnimation(
-                                                    Theme.of(context).errorColor,
+                                                    Theme.of(context).colorScheme.error,
                                                   ),
                                                   value: downloadProgress.progress),
                                             ),
@@ -1586,7 +1578,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                           child: Icon(
                                             JamIcons.close_circle_f,
                                             color: paletteLoading
-                                                ? Theme.of(context).accentColor
+                                                ? Theme.of(context).colorScheme.secondary
                                                 : accent!.computeLuminance() > 0.5
                                                     ? Colors.black
                                                     : Colors.white,
@@ -1606,7 +1598,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                       Navigator.pop(context);
                                     },
                                     color: paletteLoading
-                                        ? Theme.of(context).accentColor
+                                        ? Theme.of(context).colorScheme.secondary
                                         : colors![0]!.computeLuminance() > 0.5
                                             ? Colors.black
                                             : Colors.white,
@@ -1626,7 +1618,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                       Navigator.push(
                                           context,
                                           PageRouteBuilder(
-                                              transitionDuration: const Duration(milliseconds: 300),
                                               pageBuilder: (context, animation, secondaryAnimation) {
                                                 animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                                 return FadeTransition(
@@ -1642,7 +1633,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                               opaque: false));
                                     },
                                     color: paletteLoading
-                                        ? Theme.of(context).accentColor
+                                        ? Theme.of(context).colorScheme.secondary
                                         : colors![0]!.computeLuminance() > 0.5
                                             ? Colors.black
                                             : Colors.white,

@@ -1,31 +1,30 @@
 import 'dart:ui';
 
-import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
 import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
+import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockSetupOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive/hive.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/ui/widgets/animated/showUp.dart';
-import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
-import 'package:hive/hive.dart';
-import 'package:Prism/logger/logger.dart';
 
 class FavSetupViewScreen extends StatefulWidget {
   final List? arguments;
@@ -184,7 +183,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                             },
                             child: Icon(
                               JamIcons.chevron_down,
-                              color: Theme.of(context).accentColor,
+                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                         ),
@@ -213,8 +212,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline1!
-                                            .copyWith(fontSize: 30, color: Theme.of(context).accentColor),
+                                            .displayLarge!
+                                            .copyWith(fontSize: 30, color: Theme.of(context).colorScheme.secondary),
                                       ),
                                     ),
                             ),
@@ -235,8 +234,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline6!
-                                            .copyWith(color: Theme.of(context).accentColor),
+                                            .titleLarge!
+                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                                       ),
                                     ),
                             ),
@@ -274,16 +273,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                         .toString()
                                                         .toUpperCase(),
                                                     overflow: TextOverflow.fade,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText1!
-                                                        .copyWith(color: Theme.of(context).accentColor, fontSize: 16),
+                                                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                        color: Theme.of(context).colorScheme.secondary, fontSize: 16),
                                                   ),
                                                   Padding(
                                                     padding: const EdgeInsets.symmetric(horizontal: 6.0),
                                                     child: Container(
                                                       height: 16,
-                                                      color: Theme.of(context).accentColor,
+                                                      color: Theme.of(context).colorScheme.secondary,
                                                       width: 2,
                                                     ),
                                                   ),
@@ -294,29 +291,33 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                         case ConnectionState.waiting:
                                                           return Text(
                                                             "",
-                                                            style: Theme.of(context).textTheme.bodyText1!.copyWith(
-                                                                color: Theme.of(context).accentColor, fontSize: 16),
+                                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary,
+                                                                fontSize: 16),
                                                           );
                                                         case ConnectionState.none:
                                                           return Text(
                                                             "",
-                                                            style: Theme.of(context).textTheme.bodyText1!.copyWith(
-                                                                color: Theme.of(context).accentColor, fontSize: 16),
+                                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary,
+                                                                fontSize: 16),
                                                           );
                                                         default:
                                                           if (snapshot.hasError) {
                                                             return Text(
                                                               "",
-                                                              style: Theme.of(context).textTheme.bodyText1!.copyWith(
-                                                                  color: Theme.of(context).accentColor, fontSize: 16),
+                                                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                  color: Theme.of(context).colorScheme.secondary,
+                                                                  fontSize: 16),
                                                             );
                                                           } else {
                                                             return Text(
                                                               "${snapshot.data} views",
                                                               overflow: TextOverflow.fade,
                                                               softWrap: false,
-                                                              style: Theme.of(context).textTheme.bodyText1!.copyWith(
-                                                                  color: Theme.of(context).accentColor, fontSize: 16),
+                                                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                  color: Theme.of(context).colorScheme.secondary,
+                                                                  fontSize: 16),
                                                             );
                                                           }
                                                       }
@@ -344,15 +345,15 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                 Icon(
                                                   JamIcons.info,
                                                   size: 20,
-                                                  color: Theme.of(context).accentColor.withOpacity(.7),
+                                                  color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
                                                   "Report",
                                                   overflow: TextOverflow.fade,
-                                                  style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       decoration: TextDecoration.underline,
-                                                      color: Theme.of(context).accentColor),
+                                                      color: Theme.of(context).colorScheme.secondary),
                                                 ),
                                               ],
                                             ),
@@ -380,8 +381,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                           overflow: TextOverflow.fade,
                                                           style: Theme.of(context)
                                                               .textTheme
-                                                              .bodyText2!
-                                                              .copyWith(color: Theme.of(context).accentColor),
+                                                              .bodyMedium!
+                                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                         ),
                                                         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                         avatar: CircleAvatar(
@@ -411,10 +412,11 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                         height: 20,
                                                         child: SvgPicture.string(verifiedIcon.replaceAll(
                                                             "E57697",
-                                                            Theme.of(context).errorColor == Colors.black
+                                                            Theme.of(context).colorScheme.error == Colors.black
                                                                 ? "E57697"
                                                                 : Theme.of(context)
-                                                                    .errorColor
+                                                                    .colorScheme
+                                                                    .error
                                                                     .toString()
                                                                     .replaceAll("Color(0xff", "")
                                                                     .replaceAll(")", ""))),
@@ -1005,7 +1007,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                             as Map);
                                   }
                                 },
-                                iconColor: Theme.of(context).accentColor,
+                                iconColor: Theme.of(context).colorScheme.secondary,
                                 iconSize: 30,
                                 isFavorite: box.get(
                                     context
@@ -1040,7 +1042,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                 padding: const EdgeInsets.all(17),
                                 child: Icon(
                                   JamIcons.share_alt,
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                   size: 20,
                                 ),
                               ),
@@ -1100,7 +1102,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                             )),
                             Center(
                               child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation(Theme.of(context).errorColor),
+                                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
                                   value: downloadProgress.progress),
                             ),
                           ],
@@ -1108,7 +1110,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                         errorWidget: (context, url, error) => Center(
                           child: Icon(
                             JamIcons.close_circle_f,
-                            color: Theme.of(context).accentColor,
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                         ),
                       ),
@@ -1124,7 +1126,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                       logger.d(navStack.toString());
                       Navigator.pop(context);
                     },
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                     icon: const Icon(
                       JamIcons.chevron_left,
                     ),
@@ -1140,7 +1142,6 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                       Navigator.push(
                           context,
                           PageRouteBuilder(
-                              transitionDuration: const Duration(milliseconds: 300),
                               pageBuilder: (context, animation, secondaryAnimation) {
                                 animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                 return FadeTransition(
@@ -1155,7 +1156,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                               fullscreenDialog: true,
                               opaque: false));
                     },
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                     icon: const Icon(
                       JamIcons.arrow_up_right,
                     ),
@@ -1178,14 +1179,14 @@ class SetupDetailsTile extends StatelessWidget {
   final Function onTap;
   final Future<bool> isInstalled;
   const SetupDetailsTile({
-    Key? key,
+    super.key,
     required this.delay,
     required this.tileText,
     required this.tileType,
     required this.onTap,
     required this.panelCollapsed,
     required this.isInstalled,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1212,7 +1213,7 @@ class SetupDetailsTile extends StatelessWidget {
                           overflow: TextOverflow.fade,
                           style: TextStyle(
                             fontSize: 140,
-                            color: Theme.of(context).accentColor.withOpacity(0.1),
+                            color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -1222,7 +1223,7 @@ class SetupDetailsTile extends StatelessWidget {
                         height: 80,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
-                          color: Theme.of(context).accentColor.withOpacity(0.1),
+                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -1235,7 +1236,7 @@ class SetupDetailsTile extends StatelessWidget {
                                     tileText,
                                     overflow: TextOverflow.fade,
                                     style: TextStyle(
-                                      color: Theme.of(context).accentColor,
+                                      color: Theme.of(context).colorScheme.secondary,
                                     ),
                                   )),
                               Expanded(
@@ -1246,12 +1247,12 @@ class SetupDetailsTile extends StatelessWidget {
                                     if (snapshot.data == true) {
                                       return Icon(
                                         JamIcons.check,
-                                        color: Theme.of(context).accentColor,
+                                        color: Theme.of(context).colorScheme.secondary,
                                       );
                                     }
                                     return Icon(
                                       JamIcons.chevron_right,
-                                      color: Theme.of(context).accentColor,
+                                      color: Theme.of(context).colorScheme.secondary,
                                     );
                                   },
                                 ),
@@ -1266,8 +1267,8 @@ class SetupDetailsTile extends StatelessWidget {
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              splashColor: Theme.of(context).accentColor.withOpacity(0.3),
-                              highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
+                              splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                              highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                               onTap: () {
                                 onTap();
                               },
@@ -1312,7 +1313,7 @@ class ModifiedDownloadButton extends StatelessWidget {
                   padding: const EdgeInsets.all(17),
                   child: Icon(
                     JamIcons.download,
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                     size: 20,
                   ),
                 ),
@@ -1331,7 +1332,7 @@ class ModifiedDownloadButton extends StatelessWidget {
               padding: const EdgeInsets.all(17),
               child: Icon(
                 JamIcons.download,
-                color: Theme.of(context).accentColor,
+                color: Theme.of(context).colorScheme.secondary,
                 size: 20,
               ),
             ),
@@ -1367,7 +1368,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                   padding: const EdgeInsets.all(17),
                   child: Icon(
                     JamIcons.picture,
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                     size: 20,
                   ),
                 ),
@@ -1386,7 +1387,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
               padding: const EdgeInsets.all(17),
               child: Icon(
                 JamIcons.picture,
-                color: Theme.of(context).accentColor,
+                color: Theme.of(context).colorScheme.secondary,
                 size: 20,
               ),
             ),

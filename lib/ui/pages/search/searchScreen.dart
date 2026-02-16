@@ -1,9 +1,10 @@
-import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
 import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
@@ -11,9 +12,6 @@ import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/search/searchGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/logger/logger.dart';
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -107,9 +105,11 @@ class _SearchScreenState extends State<SearchScreen> {
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                             child: TextField(
-                              cursorColor: Theme.of(context).errorColor,
-                              style:
-                                  Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
+                              cursorColor: Theme.of(context).colorScheme.error,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall!
+                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                               controller: searchController,
                               decoration: InputDecoration(
                                 contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -120,11 +120,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                 hintText: "Search",
                                 hintStyle: Theme.of(context)
                                     .textTheme
-                                    .headline5!
-                                    .copyWith(color: Theme.of(context).accentColor),
+                                    .headlineSmall!
+                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
                                 suffixIcon: Icon(
                                   JamIcons.search,
-                                  color: Theme.of(context).accentColor,
+                                  color: Theme.of(context).colorScheme.secondary,
                                 ),
                               ),
                               onSubmitted: (tex) {
@@ -151,7 +151,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   width: MediaQuery.of(context).size.width * 0.1,
                   child: PopupMenuButton(
                     offset: const Offset(5, 30),
-                    icon: Icon(JamIcons.more_vertical, color: Theme.of(context).accentColor),
+                    icon: Icon(JamIcons.more_vertical, color: Theme.of(context).colorScheme.secondary),
                     elevation: 4,
                     initialValue: selectedProviders,
                     onCanceled: () {
@@ -180,12 +180,14 @@ class _SearchScreenState extends State<SearchScreen> {
                     itemBuilder: (BuildContext context) {
                       return providers.map((choice) {
                         return PopupMenuItem(
-                          textStyle:
-                              Theme.of(context).textTheme.headline4!.copyWith(color: Theme.of(context).accentColor),
+                          textStyle: Theme.of(context)
+                              .textTheme
+                              .headlineMedium!
+                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                           value: choice,
                           child: Row(
                             children: <Widget>[
-                              Icon(choice.icon as IconData?, color: Theme.of(context).accentColor),
+                              Icon(choice.icon as IconData?, color: Theme.of(context).colorScheme.secondary),
                               const SizedBox(width: 10),
                               Text(choice.title.toString()),
                             ],
@@ -227,13 +229,13 @@ class _SearchScreenState extends State<SearchScreen> {
                                   pressElevation: 5,
                                   padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
                                   backgroundColor: searchController.text.toLowerCase() == tags[index].toLowerCase()
-                                      ? Theme.of(context).accentColor
+                                      ? Theme.of(context).colorScheme.secondary
                                       : Theme.of(context).hintColor,
                                   label: Text(tags[index],
-                                      style: Theme.of(context).textTheme.headline4!.copyWith(
+                                      style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                                           color: searchController.text.toLowerCase() == tags[index].toLowerCase()
                                               ? Theme.of(context).primaryColor
-                                              : Theme.of(context).accentColor)),
+                                              : Theme.of(context).colorScheme.secondary)),
                                   onPressed: () {
                                     setState(() {
                                       searchController.text = tags[index];
@@ -273,43 +275,45 @@ class _SearchScreenState extends State<SearchScreen> {
                         child: context.prismModeStyleForContext() == "Dark"
                             ? SvgPicture.string(
                                 loaderDark
-                                    .replaceAll("181818",
-                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll(
+                                        "181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
-                                            .errorColor
+                                            .colorScheme
+                                            .error
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
                                     .replaceAll("F0F0F0",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll("2F2E41",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll("3F3D56",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
-                                    .replaceAll("2F2F2F",
-                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
+                                    .replaceAll(
+                                        "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
                               )
                             : SvgPicture.string(
                                 loaderLight
-                                    .replaceAll("181818",
-                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll(
+                                        "181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
-                                            .errorColor
+                                            .colorScheme
+                                            .error
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
                                     .replaceAll("F0F0F0",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll("2F2E41",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll("3F3D56",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
-                                    .replaceAll("2F2F2F",
-                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
+                                    .replaceAll(
+                                        "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
                               ),
                       ),
                       SizedBox(
@@ -355,10 +359,6 @@ class _SearchLoaderState extends State<SearchLoader> {
     return FutureBuilder(
       future: _future,
       builder: (ctx, snapshot) {
-        if (snapshot == null) {
-          logger.d("snapshot null");
-          return const LoadingCards();
-        }
         if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
           logger.d("snapshot none, waiting");
           return const LoadingCards();

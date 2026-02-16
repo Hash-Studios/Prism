@@ -1,8 +1,12 @@
 import 'dart:io';
 
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/foundation.dart';
@@ -10,18 +14,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
 import 'package:intl/intl.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/logger/logger.dart';
 
 class BottomBar extends StatefulWidget {
   final Widget? child;
   const BottomBar({
     this.child,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _BottomBarState createState() => _BottomBarState();
@@ -123,7 +123,7 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
             right: 10,
             bottom: bottom,
             child: FloatingActionButton(
-              backgroundColor: Theme.of(context).accentColor,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
               mini: true,
               onPressed: () {
                 scrollBottomBarController
@@ -229,15 +229,15 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                     Container(
                       height: navStack.last == "Home" ? 9 : 0,
                     ),
-                    Icon(JamIcons.home_f, color: Theme.of(context).accentColor),
+                    Icon(JamIcons.home_f, color: Theme.of(context).colorScheme.secondary),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Home"
-                            ? Theme.of(context).errorColor == Colors.black
+                            ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
-                                : Theme.of(context).errorColor
-                            : Theme.of(context).accentColor,
+                                : Theme.of(context).colorScheme.error
+                            : Theme.of(context).colorScheme.secondary,
                       ),
                       margin: navStack.last == "Home" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
                       width: navStack.last == "Home" ? _paddingAnimation.value : 0,
@@ -273,15 +273,15 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                     Container(
                       height: navStack.last == "Search" ? 9 : 0,
                     ),
-                    Icon(JamIcons.search, color: Theme.of(context).accentColor),
+                    Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Search"
-                            ? Theme.of(context).errorColor == Colors.black
+                            ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
-                                : Theme.of(context).errorColor
-                            : Theme.of(context).accentColor,
+                                : Theme.of(context).colorScheme.error
+                            : Theme.of(context).colorScheme.secondary,
                       ),
                       margin: navStack.last == "Search" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
                       width: navStack.last == "Search" ? _paddingAnimation.value : 0,
@@ -308,14 +308,14 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                     width: 45,
                     decoration: BoxDecoration(
                         border: Border.all(
-                          color: Theme.of(context).errorColor == Colors.black
+                          color: Theme.of(context).colorScheme.error == Colors.black
                               ? Colors.black
-                              : Theme.of(context).errorColor,
-                          width: Theme.of(context).errorColor == Colors.black ? 1 : 0,
+                              : Theme.of(context).colorScheme.error,
+                          width: Theme.of(context).colorScheme.error == Colors.black ? 1 : 0,
                         ),
-                        color: Theme.of(context).errorColor == Colors.black
+                        color: Theme.of(context).colorScheme.error == Colors.black
                             ? Colors.white24
-                            : Theme.of(context).errorColor,
+                            : Theme.of(context).colorScheme.error,
                         borderRadius: BorderRadius.circular(500)),
                   ),
                   IconButton(
@@ -330,18 +330,18 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                         ),
                         Icon(
                           JamIcons.plus,
-                          color: Theme.of(context).errorColor == Colors.black
+                          color: Theme.of(context).colorScheme.error == Colors.black
                               ? Colors.white
-                              : Theme.of(context).accentColor,
+                              : Theme.of(context).colorScheme.secondary,
                         ),
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(500),
                             color: navStack.last == "Add"
-                                ? Theme.of(context).errorColor == Colors.black
+                                ? Theme.of(context).colorScheme.error == Colors.black
                                     ? Colors.white24
-                                    : Theme.of(context).errorColor
-                                : Theme.of(context).accentColor,
+                                    : Theme.of(context).colorScheme.error
+                                : Theme.of(context).colorScheme.secondary,
                           ),
                           margin: navStack.last == "Add" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
                           width: navStack.last == "Add" ? _paddingAnimation.value : 0,
@@ -374,15 +374,15 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                     Container(
                       height: navStack.last == "Setups" ? 9 : 0,
                     ),
-                    Icon(JamIcons.instant_picture_f, color: Theme.of(context).accentColor),
+                    Icon(JamIcons.instant_picture_f, color: Theme.of(context).colorScheme.secondary),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Setups"
-                            ? Theme.of(context).errorColor == Colors.black
+                            ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
-                                : Theme.of(context).errorColor
-                            : Theme.of(context).accentColor,
+                                : Theme.of(context).colorScheme.error
+                            : Theme.of(context).colorScheme.secondary,
                       ),
                       margin: navStack.last == "Setups" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
                       width: navStack.last == "Setups" ? _paddingAnimation.value : 0,
@@ -420,9 +420,10 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                           : Container(
                               padding: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(500), color: Theme.of(context).accentColor),
+                                  borderRadius: BorderRadius.circular(500),
+                                  color: Theme.of(context).colorScheme.secondary),
                               child: CircleAvatar(
-                                backgroundColor: Theme.of(context).accentColor,
+                                backgroundColor: Theme.of(context).colorScheme.secondary,
                                 radius: 11,
                                 backgroundImage: NetworkImage(
                                   globals.prismUser.profilePhoto,
@@ -437,16 +438,16 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                     else
                       Icon(
                         JamIcons.cog_f,
-                        color: Theme.of(context).accentColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Profile"
-                            ? Theme.of(context).errorColor == Colors.black
+                            ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
-                                : Theme.of(context).errorColor
-                            : Theme.of(context).accentColor,
+                                : Theme.of(context).colorScheme.error
+                            : Theme.of(context).colorScheme.secondary,
                       ),
                       margin: navStack.last == "Profile" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
                       width: navStack.last == "Profile" ? _paddingAnimation.value : 0,
@@ -488,8 +489,8 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
 
 class UploadBottomPanel extends StatefulWidget {
   const UploadBottomPanel({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _UploadBottomPanelState createState() => _UploadBottomPanelState();
@@ -547,7 +548,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
           const Spacer(),
           Text(
             "Upload",
-            style: Theme.of(context).textTheme.headline2,
+            style: Theme.of(context).textTheme.displayMedium,
           ),
           const Spacer(flex: 2),
           Row(
@@ -603,8 +604,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                               width: width / 2 - 14,
                               height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).errorColor.withOpacity(0.2),
-                                border: Border.all(color: Theme.of(context).errorColor, width: 3),
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                                border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: ClipRRect(
@@ -624,15 +625,15 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                        color: Theme.of(context).errorColor,
+                                        color: Theme.of(context).colorScheme.error,
                                       ),
-                                      color: Theme.of(context).errorColor.withOpacity(0.2),
+                                      color: Theme.of(context).colorScheme.error.withOpacity(0.2),
                                       shape: BoxShape.circle),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Icon(
                                       JamIcons.plus,
-                                      color: Theme.of(context).errorColor,
+                                      color: Theme.of(context).colorScheme.error,
                                       size: 40,
                                     ),
                                   ),
@@ -646,7 +647,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                   ),
                   Text(
                     "Wallpapers",
-                    style: TextStyle(fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: 16, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold),
                   )
                 ],
               ),
@@ -672,8 +674,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                               width: width / 2 - 14,
                               height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).errorColor.withOpacity(0.2),
-                                border: Border.all(color: Theme.of(context).errorColor, width: 3),
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                                border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: ClipRRect(
@@ -693,15 +695,15 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                        color: Theme.of(context).errorColor,
+                                        color: Theme.of(context).colorScheme.error,
                                       ),
-                                      color: Theme.of(context).errorColor.withOpacity(0.2),
+                                      color: Theme.of(context).colorScheme.error.withOpacity(0.2),
                                       shape: BoxShape.circle),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Icon(
                                       JamIcons.plus,
-                                      color: Theme.of(context).errorColor,
+                                      color: Theme.of(context).colorScheme.error,
                                       size: 40,
                                     ),
                                   ),
@@ -715,7 +717,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                   ),
                   Text(
                     "Setups",
-                    style: TextStyle(fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: 16, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold),
                   )
                 ],
               ),
@@ -731,7 +734,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Theme.of(context).accentColor,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
               ),
             ),
@@ -746,7 +749,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
 int adHeight = 80;
 
 class AdBannerWidget extends StatefulWidget {
-  const AdBannerWidget(this.bottom, {Key? key}) : super(key: key);
+  const AdBannerWidget(this.bottom, {super.key});
   static const AdRequest request = AdRequest(
     nonPersonalizedAds: false,
     keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
@@ -825,7 +828,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
           }
           return adHeight == 0
               ? Container(
-                  width: MediaQuery.of(context).size.width.toDouble(),
+                  width: MediaQuery.of(context).size.width,
                   height: 60,
                   color: Theme.of(context).primaryColor,
                 )
@@ -839,7 +842,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
                   ),
                   width: _anchoredBanner != null
                       ? _anchoredBanner!.size.width.toDouble()
-                      : MediaQuery.of(context).size.width.toDouble(),
+                      : MediaQuery.of(context).size.width,
                   height: adHeight * 1.0,
                   child: _anchoredBanner != null
                       ? Align(

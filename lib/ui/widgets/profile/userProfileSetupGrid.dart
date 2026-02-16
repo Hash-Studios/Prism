@@ -1,26 +1,25 @@
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
-import 'package:Prism/ui/widgets/premiumBanners/setupPhotographer.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:Prism/ui/widgets/premiumBanners/setupPhotographer.dart';
 import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class UserProfileSetupGrid extends StatefulWidget {
   final String? email;
   const UserProfileSetupGrid({
     this.email,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _UserProfileSetupGridState createState() => _UserProfileSetupGridState();
@@ -126,43 +125,45 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                         child: context.prismModeStyleForContext() == "Dark"
                             ? SvgPicture.string(
                                 postsDark
-                                    .replaceAll("181818",
-                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll(
+                                        "181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
-                                            .errorColor
+                                            .colorScheme
+                                            .error
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
                                     .replaceAll("F0F0F0",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll("2F2E41",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll("3F3D56",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
-                                    .replaceAll("2F2F2F",
-                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
+                                    .replaceAll(
+                                        "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
                               )
                             : SvgPicture.string(
                                 postsLight
-                                    .replaceAll("181818",
-                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll(
+                                        "181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
-                                            .errorColor
+                                            .colorScheme
+                                            .error
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
                                     .replaceAll("F0F0F0",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll("2F2E41",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll("3F3D56",
-                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
-                                    .replaceAll("2F2F2F",
-                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
+                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
+                                    .replaceAll(
+                                        "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
                               ),
                       ),
                       SizedBox(
@@ -222,8 +223,8 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  splashColor: Theme.of(context).accentColor.withOpacity(0.3),
-                                  highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
+                                  splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                                  highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                                   onTap: () {
                                     if (Provider.of<UserProfileProvider>(context, listen: false).userProfileSetups ==
                                         []) {

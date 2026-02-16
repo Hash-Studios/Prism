@@ -1,14 +1,13 @@
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/theme/theme_bloc_utils.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/twitterigPopUp.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 class OnboardingScreen extends StatefulWidget {
   @override
@@ -77,9 +76,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Padding(padding: const EdgeInsets.fromLTRB(0, 110, 0, 8), child: image1),
-                      Column(
+                      const Column(
                         mainAxisAlignment: MainAxisAlignment.end,
-                        children: const [
+                        children: [
                           ShowUpTransition(
                             forward: true,
                             slideSide: SlideFromSlide.bottom,
@@ -191,7 +190,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       "Light",
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .subtitle2!
+                                                          .titleSmall!
                                                           .copyWith(color: Colors.black),
                                                     ),
                                                   ),
@@ -206,9 +205,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                     color: Colors.black.withOpacity(0.5),
                                                     border: Border.all(color: Colors.black45),
                                                     borderRadius: BorderRadius.circular(5)),
-                                                child: Column(
+                                                child: const Column(
                                                   mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: const [
+                                                  children: [
                                                     Icon(
                                                       JamIcons.check,
                                                       color: Colors.white,
@@ -254,7 +253,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       "Dark",
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .subtitle2!
+                                                          .titleSmall!
                                                           .copyWith(color: Colors.white),
                                                     ),
                                                   ),
@@ -269,9 +268,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                     color: Colors.white.withOpacity(0.5),
                                                     border: Border.all(color: Colors.black45),
                                                     borderRadius: BorderRadius.circular(5)),
-                                                child: Column(
+                                                child: const Column(
                                                   mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: const [
+                                                  children: [
                                                     Icon(
                                                       JamIcons.check,
                                                       color: Colors.black,
@@ -318,7 +317,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                     padding: const EdgeInsets.all(4.0),
                                                     child: Text(
                                                       "System",
-                                                      style: Theme.of(context).textTheme.subtitle2!.copyWith(
+                                                      style: Theme.of(context).textTheme.titleSmall!.copyWith(
                                                           color: MediaQuery.of(context).platformBrightness ==
                                                                   Brightness.dark
                                                               ? Colors.white
@@ -394,9 +393,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Padding(padding: const EdgeInsets.fromLTRB(0, 110, 0, 8), child: image3),
-                      Column(
+                      const Column(
                         mainAxisAlignment: MainAxisAlignment.end,
-                        children: const [
+                        children: [
                           ShowUpTransition(
                             forward: true,
                             slideSide: SlideFromSlide.bottom,
@@ -457,9 +456,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             : () {
                                 main.prefs.put('onboarded_new', true);
                                 Navigator.pushReplacement(
-                                    context, MaterialPageRoute(builder: (context) => SplashWidget()));
+                                    context, MaterialPageRoute(builder: (context) => const SplashWidget()));
                               },
-                        style: ButtonStyle(overlayColor: MaterialStateColor.resolveWith((states) => Colors.white10)),
+                        style: ButtonStyle(overlayColor: WidgetStateColor.resolveWith((states) => Colors.white10)),
                         child: SizedBox(
                           width: 75,
                           child: Text(
@@ -522,7 +521,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         });
                                       },
                         style: ButtonStyle(
-                          backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
+                          backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
                         ),
                         child: SizedBox(
                           width: 60,
@@ -589,10 +588,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 class OBIndicator extends StatelessWidget {
   const OBIndicator({
-    Key? key,
+    super.key,
     required int? currentPage,
-  })  : _currentPage = currentPage,
-        super(key: key);
+  }) : _currentPage = currentPage;
 
   final int? _currentPage;
 

@@ -1,8 +1,9 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/category_feed/presentation/bloc/category_feed_bloc.dart';
-import 'package:Prism/ui/home/category_feed_legacy_bridge.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/ui/home/category_feed_legacy_bridge.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/pexelsGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallhavenGrid.dart';
@@ -11,14 +12,13 @@ import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:Prism/main.dart' as main;
 
 final FirebaseMessaging f = FirebaseMessaging.instance;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -87,9 +87,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 final choice = context.categorySelectedChoice(listen: false);
                 await context.categoryChangeWallpaperFuture(choice, "r");
               },
-              child: Column(
+              child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const <Widget>[
+                children: <Widget>[
                   Spacer(),
                   Center(child: Text("Can't connect to the Servers!")),
                   Spacer(),

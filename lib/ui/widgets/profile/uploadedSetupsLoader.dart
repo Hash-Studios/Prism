@@ -1,7 +1,7 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/profile/uploadedSetupsGrid.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/logger/logger.dart';
 
 class UploadedSetupsLoader extends StatefulWidget {
   final Future future;
@@ -26,12 +26,6 @@ class _UploadedSetupsLoaderState extends State<UploadedSetupsLoader> {
       child: FutureBuilder(
         future: _future,
         builder: (ctx, snapshot) {
-          if (snapshot == null) {
-            logger.d("snapshot null");
-            return Center(
-              child: Loader(),
-            );
-          }
           if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
             logger.d("snapshot none, waiting");
             logger.d(snapshot.data.toString());

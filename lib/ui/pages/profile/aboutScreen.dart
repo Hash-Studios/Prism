@@ -1,16 +1,14 @@
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/contriPopUp.dart';
 import 'package:Prism/ui/widgets/profile/prismList.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:github/github.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -45,7 +43,7 @@ class AboutScreen extends StatelessWidget {
               }),
           title: Text(
             "About",
-            style: Theme.of(context).textTheme.headline3,
+            style: Theme.of(context).textTheme.displaySmall,
           ),
         ),
         backgroundColor: Theme.of(context).primaryColor,
@@ -70,15 +68,16 @@ class AboutScreen extends StatelessWidget {
                 Text(
                   "Prism Wallpapers",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                  style:
+                      Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                 ),
                 Text(
                   "Version ${globals.currentAppVersion}+${globals.currentAppVersionCode}",
                   textAlign: TextAlign.center,
                   style: Theme.of(context)
                       .textTheme
-                      .bodyText2!
-                      .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
+                      .bodyMedium!
+                      .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
                 ),
                 const SizedBox(
                   height: 10,
@@ -88,15 +87,15 @@ class AboutScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: Theme.of(context)
                       .textTheme
-                      .bodyText2!
-                      .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
+                      .bodyMedium!
+                      .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
                 ),
                 const SizedBox(
                   height: 10,
                 ),
-                Wrap(
+                const Wrap(
                   alignment: WrapAlignment.center,
-                  children: const [
+                  children: [
                     ActionButton(
                       icon: JamIcons.github,
                       text: "GITHUB",
@@ -134,16 +133,12 @@ class AboutScreen extends StatelessWidget {
                   child: Text(
                     "The Team",
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headline3,
+                    style: Theme.of(context).textTheme.displaySmall,
                   ),
                 ),
                 FutureBuilder<List<Contributor>>(
                   future: printStream(),
                   builder: (context, snapshot) {
-                    if (snapshot == null) {
-                      logger.d("snapshot null");
-                      return SizedBox(height: 250, child: Center(child: Loader()));
-                    }
                     if (snapshot.connectionState == ConnectionState.waiting ||
                         snapshot.connectionState == ConnectionState.none) {
                       logger.d("snapshot none, waiting");
@@ -181,7 +176,7 @@ class AboutScreen extends StatelessWidget {
                           width: MediaQuery.of(context).size.width * 0.9,
                           child: Text(
                             "Other Contributors",
-                            style: Theme.of(context).textTheme.headline3,
+                            style: Theme.of(context).textTheme.displaySmall,
                           ),
                         ),
                       );
@@ -196,15 +191,17 @@ class AboutScreen extends StatelessWidget {
                             ),
                             title: Text(
                               c.login!,
-                              style:
-                                  Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium!
+                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                             ),
                             subtitle: Text(
                               c.contributions == 1 ? "${c.contributions} commit" : "${c.contributions} commits",
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodyText2!
-                                  .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
+                                  .bodyMedium!
+                                  .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
                             ),
                             onTap: () {
                               launch(c.htmlUrl!);
@@ -227,7 +224,7 @@ class AboutScreen extends StatelessWidget {
             child: Text(
               "Made with ❤ in India with Flutter!",
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
             ),
           ),
         ),
@@ -238,10 +235,10 @@ class AboutScreen extends StatelessWidget {
 
 class ContributorWidget extends StatelessWidget {
   const ContributorWidget({
-    Key? key,
+    super.key,
     required this.contributor,
     required this.radius,
-  }) : super(key: key);
+  });
   final Contributor contributor;
   final double radius;
 
@@ -266,7 +263,7 @@ class ContributorWidget extends StatelessWidget {
               contributor.login!,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
             ),
           ),
           SizedBox(
@@ -276,8 +273,8 @@ class ContributorWidget extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context)
                   .textTheme
-                  .bodyText2!
-                  .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
+                  .bodyMedium!
+                  .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
             ),
           ),
         ],
@@ -288,11 +285,11 @@ class ContributorWidget extends StatelessWidget {
 
 class ActionButton extends StatelessWidget {
   const ActionButton({
-    Key? key,
+    super.key,
     required this.icon,
     required this.link,
     required this.text,
-  }) : super(key: key);
+  });
   final IconData icon;
   final String text;
   final String link;
@@ -304,18 +301,18 @@ class ActionButton extends StatelessWidget {
           avatar: Icon(
             icon,
             color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                ? Theme.of(context).errorColor == Colors.black
-                    ? Theme.of(context).accentColor
-                    : Theme.of(context).errorColor
-                : Theme.of(context).errorColor,
+                ? Theme.of(context).colorScheme.error == Colors.black
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.error
+                : Theme.of(context).colorScheme.error,
           ),
           label: Text(
             text,
             textAlign: TextAlign.center,
             style: Theme.of(context)
                 .textTheme
-                .bodyText2!
-                .copyWith(color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
+                .bodyMedium!
+                .copyWith(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold),
           ),
           onPressed: () {
             if (link.contains("@gmail.com")) {

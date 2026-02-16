@@ -1,15 +1,14 @@
 import 'dart:io';
+
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:Prism/logger/logger.dart';
 
 class SetupGuidelinesScreen extends StatefulWidget {
   const SetupGuidelinesScreen();
@@ -52,7 +51,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
           appBar: AppBar(
             title: Text(
               "Upload Setup",
-              style: TextStyle(color: Theme.of(context).accentColor),
+              style: TextStyle(color: Theme.of(context).colorScheme.secondary),
             ),
             actions: [
               TextButton(
@@ -65,7 +64,9 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
                 child: Text(
                   "Drafts",
                   style: TextStyle(
-                    color: Theme.of(context).errorColor == Colors.black ? Colors.white : Theme.of(context).errorColor,
+                    color: Theme.of(context).colorScheme.error == Colors.black
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.error,
                     fontWeight: FontWeight.normal,
                   ),
                 ),
@@ -78,7 +79,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
                   child: Text(
                     "Continue",
                     style: TextStyle(
-                      color: Theme.of(context).errorColor,
+                      color: Theme.of(context).colorScheme.error,
                       fontWeight: FontWeight.normal,
                     ),
                   ),
@@ -93,43 +94,41 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
                 child: context.prismModeStyleForContext() == "Dark"
                     ? SvgPicture.string(
                         setupDark
-                            .replaceAll("181818",
-                                Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
+                            .replaceAll("181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
                             .replaceAll(
                                 "E57697",
                                 Theme.of(context)
-                                    .errorColor
+                                    .colorScheme
+                                    .error
                                     .toString()
                                     .replaceAll("Color(0xff", "")
                                     .replaceAll(")", ""))
                             .replaceAll(
-                                "F0F0F0", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                "F0F0F0", Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                             .replaceAll(
-                                "2F2E41", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                "2F2E41", Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                             .replaceAll(
-                                "3F3D56", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
-                            .replaceAll(
-                                "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
+                                "3F3D56", Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
+                            .replaceAll("2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
                       )
                     : SvgPicture.string(
                         setupLight
-                            .replaceAll("181818",
-                                Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
+                            .replaceAll("181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
                             .replaceAll(
                                 "E57697",
                                 Theme.of(context)
-                                    .errorColor
+                                    .colorScheme
+                                    .error
                                     .toString()
                                     .replaceAll("Color(0xff", "")
                                     .replaceAll(")", ""))
                             .replaceAll(
-                                "F0F0F0", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                "F0F0F0", Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                             .replaceAll(
-                                "2F2E41", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                "2F2E41", Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                             .replaceAll(
-                                "3F3D56", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
-                            .replaceAll(
-                                "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
+                                "3F3D56", Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
+                            .replaceAll("2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
                       ),
               ),
               const Spacer(),
@@ -142,7 +141,7 @@ Guidelines for uploading setups -""",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
                 ),
               ),
@@ -158,7 +157,7 @@ Guidelines for uploading setups -""",
                   textAlign: TextAlign.left,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
                 ),
               ),
@@ -169,15 +168,15 @@ Guidelines for uploading setups -""",
               ? Padding(
                   padding: const EdgeInsets.only(bottom: 50.0),
                   child: FloatingActionButton.extended(
-                    backgroundColor: Theme.of(context).errorColor,
+                    backgroundColor: Theme.of(context).colorScheme.error,
                     onPressed: () async => getSetup(),
                     label: Text(
                       "Continue",
-                      style: TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.normal),
+                      style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.normal),
                     ),
                     icon: Icon(
                       JamIcons.arrow_right,
-                      color: Theme.of(context).accentColor,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                 )

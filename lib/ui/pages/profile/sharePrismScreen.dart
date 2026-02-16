@@ -1,11 +1,11 @@
 import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:share/share.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class SharePrismScreen extends StatefulWidget {
   @override
@@ -23,7 +23,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   Future<void> getLink() async {
     if (globals.prismUser.id == "") {
     } else {
-      await createSharingPrismLink(globals.prismUser.id.toString()).then((value) => setState(() {
+      await createSharingPrismLink(globals.prismUser.id).then((value) => setState(() {
             link = value;
           }));
     }
@@ -43,7 +43,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
         appBar: AppBar(
           title: Text(
             "Share",
-            style: Theme.of(context).textTheme.headline3,
+            style: Theme.of(context).textTheme.displaySmall,
           ),
         ),
         backgroundColor: Theme.of(context).primaryColor,
@@ -91,8 +91,8 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                   textAlign: TextAlign.center,
                   style: Theme.of(context)
                       .textTheme
-                      .bodyText2!
-                      .copyWith(fontSize: 18, color: Theme.of(context).accentColor),
+                      .bodyMedium!
+                      .copyWith(fontSize: 18, color: Theme.of(context).colorScheme.secondary),
                 ),
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
@@ -101,8 +101,8 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                     textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme
-                        .bodyText2!
-                        .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
+                        .bodyMedium!
+                        .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
                   ),
                 ),
                 SizedBox(
@@ -112,17 +112,19 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                     textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme
-                        .bodyText2!
-                        .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
+                        .bodyMedium!
+                        .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
                   ),
                 ),
                 const SizedBox(
                   height: 10,
                 ),
                 FlatButton(
-                  disabledColor: Theme.of(context).accentColor.withOpacity(0.5),
+                  disabledColor: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
                   shape: const StadiumBorder(),
-                  color: link == "" ? Theme.of(context).accentColor.withOpacity(0.5) : Theme.of(context).errorColor,
+                  color: link == ""
+                      ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+                      : Theme.of(context).colorScheme.error,
                   onPressed: link == ""
                       ? () {
                           toasts.error(

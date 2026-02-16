@@ -1,22 +1,23 @@
 import 'dart:convert';
+
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/notifications/notifications.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/ui/pages/home/core/oldVersionScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/config.dart' as config;
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/logger/logger.dart';
 
 late RemoteConfig remoteConfig;
 
 class SplashWidget extends StatefulWidget {
   const SplashWidget({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _SplashWidgetState createState() => _SplashWidgetState();
@@ -34,7 +35,7 @@ class _SplashWidgetState extends State<SplashWidget> {
 
   Future<bool> loading() async {
     try {
-      remoteConfig = await RemoteConfig.instance;
+      remoteConfig = RemoteConfig.instance;
       await remoteConfig.setConfigSettings(RemoteConfigSettings());
       await remoteConfig.setDefaults(<String, dynamic>{
         'topImageLink':
@@ -43,8 +44,8 @@ class _SplashWidgetState extends State<SplashWidget> {
         'bannerTextOn': globals.bannerTextOn,
         'bannerURL': "https://t.me/PrismWallpapers",
         'latestCategories': categories.toString(),
-        'currentVersion': globals.currentAppVersion.toString(),
-        'obsoleteVersion': globals.obsoleteAppVersion.toString(),
+        'currentVersion': globals.currentAppVersion,
+        'obsoleteVersion': globals.obsoleteAppVersion,
         'versionDesc':
             "Prism Premium is here, for the personalisaton lords!^*^Setups are here! Change the way of personalisation.^*^Favourites moved to profile.",
         'topTitleText': '["TOP-RATED","BEST OF COMMUNITY","FAN-FAVOURITE","TRENDING",]',
@@ -81,7 +82,7 @@ class _SplashWidgetState extends State<SplashWidget> {
       tempVar = tempVar.sublist(0, tempVar.length - 1);
       categories = [];
       for (final element in tempVar) {
-        cList.add(element.split('"name": "')[1].split('",')[0].toString());
+        cList.add(element.split('"name": "')[1].split('",')[0]);
         categories.add(json.decode("$element}"));
       }
       categories.removeWhere((element) => element['name'] == "Trending");
@@ -130,12 +131,12 @@ class _SplashWidgetState extends State<SplashWidget> {
 
 class SecondarySplash extends StatelessWidget {
   const SecondarySplash({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final brightness = SchedulerBinding.instance!.window.platformBrightness;
+    final brightness = SchedulerBinding.instance.window.platformBrightness;
     final bool darkModeOn = brightness == Brightness.dark;
     return Container(
       width: MediaQuery.of(context).size.width,

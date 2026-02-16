@@ -1,14 +1,12 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/theme/theme_bloc_utils.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/routes/router.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/theme/theme_bloc_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 List<Color> accentColors = [
   const Color(0xFFE57697),
@@ -78,7 +76,7 @@ class _ThemeViewState extends State<ThemeView> {
                 icon: Icon(
                   JamIcons.check,
                   size: 30,
-                  color: Theme.of(context).accentColor,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
                 onPressed: () {
                   final accentColor = int.parse(selectedAccentColor
@@ -103,19 +101,20 @@ class _ThemeViewState extends State<ThemeView> {
             children: [
               Text(
                 "Theme Manager",
-                style: Theme.of(context).textTheme.headline3!.copyWith(color: Theme.of(context).accentColor),
+                style:
+                    Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
               ),
               Container(
                 margin: const EdgeInsets.only(left: 3, bottom: 5),
                 decoration:
-                    BoxDecoration(color: Theme.of(context).errorColor, borderRadius: BorderRadius.circular(500)),
+                    BoxDecoration(color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(500)),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
                   child: Text(
                     "BETA",
                     style: TextStyle(
                       fontSize: 9,
-                      color: Theme.of(context).accentColor,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                 ),
@@ -150,7 +149,9 @@ class _ThemeViewState extends State<ThemeView> {
               title: Text(
                 "Theme Preference",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
               ),
               subtitle: Text(
                 context.prismModeAbs(),
@@ -187,32 +188,23 @@ class _ThemeViewState extends State<ThemeView> {
                       ? SvgPicture.string(
                           themePicture
                               .replaceAll(
-                                  "181818",
-                                  context
-                                      .prismLightTheme()
-                                      .primaryColor
-                                      .value
-                                      .toRadixString(16)
-                                      .toString()
-                                      .substring(2))
-                              .replaceAll(
-                                  "E57697", selectedAccentColor!.value.toRadixString(16).toString().substring(2))
+                                  "181818", context.prismLightTheme().primaryColor.value.toRadixString(16).substring(2))
+                              .replaceAll("E57697", selectedAccentColor!.value.toRadixString(16).substring(2))
                               .replaceAll("F0F0F0",
-                                  context.prismLightTheme().accentColor.value.toRadixString(16).toString().substring(2))
-                              .replaceAll("2F2F2F",
-                                  context.prismLightTheme().hintColor.value.toRadixString(16).toString().substring(2)),
+                                  context.prismLightTheme().colorScheme.secondary.value.toRadixString(16).substring(2))
+                              .replaceAll(
+                                  "2F2F2F", context.prismLightTheme().hintColor.value.toRadixString(16).substring(2)),
                           fit: BoxFit.cover,
                         )
                       : SvgPicture.string(
                           themePicture
-                              .replaceAll("181818",
-                                  context.prismDarkTheme().primaryColor.value.toRadixString(16).toString().substring(2))
                               .replaceAll(
-                                  "E57697", selectedDarkAccentColor!.value.toRadixString(16).toString().substring(2))
+                                  "181818", context.prismDarkTheme().primaryColor.value.toRadixString(16).substring(2))
+                              .replaceAll("E57697", selectedDarkAccentColor!.value.toRadixString(16).substring(2))
                               .replaceAll("F0F0F0",
-                                  context.prismDarkTheme().accentColor.value.toRadixString(16).toString().substring(2))
-                              .replaceAll("2F2F2F",
-                                  context.prismDarkTheme().hintColor.value.toRadixString(16).toString().substring(2)),
+                                  context.prismDarkTheme().colorScheme.secondary.value.toRadixString(16).substring(2))
+                              .replaceAll(
+                                  "2F2F2F", context.prismDarkTheme().hintColor.value.toRadixString(16).substring(2)),
                           fit: BoxFit.cover,
                         ),
                 ),
@@ -225,7 +217,7 @@ class _ThemeViewState extends State<ThemeView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   "Light Themes",
-                  style: Theme.of(context).textTheme.headline4,
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
               )
             else
@@ -273,9 +265,10 @@ class _ThemeViewState extends State<ThemeView> {
                                       padding: const EdgeInsets.all(4.0),
                                       child: Text(
                                         prismLightThemes.keys.toList()[index].substring(2),
-                                        style: Theme.of(context).textTheme.subtitle2!.copyWith(
-                                              color:
-                                                  prismLightThemes[prismLightThemes.keys.toList()[index]]!.accentColor,
+                                        style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                                              color: prismLightThemes[prismLightThemes.keys.toList()[index]]!
+                                                  .colorScheme
+                                                  .secondary,
                                             ),
                                       ),
                                     ),
@@ -287,7 +280,7 @@ class _ThemeViewState extends State<ThemeView> {
                                   width: MediaQuery.of(context).size.width * 0.3,
                                   height: MediaQuery.of(context).size.height * 0.06,
                                   decoration: BoxDecoration(
-                                      color: Theme.of(context).accentColor.withOpacity(0.5),
+                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
                                       border: Border.all(color: Colors.black45),
                                       borderRadius: BorderRadius.circular(10)),
                                   child: Column(
@@ -318,7 +311,7 @@ class _ThemeViewState extends State<ThemeView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   "Dark Themes",
-                  style: Theme.of(context).textTheme.headline4,
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
               )
             else
@@ -366,8 +359,10 @@ class _ThemeViewState extends State<ThemeView> {
                                       padding: const EdgeInsets.all(4.0),
                                       child: Text(
                                         prismDarkThemes.keys.toList()[index].substring(2),
-                                        style: Theme.of(context).textTheme.subtitle2!.copyWith(
-                                              color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!.accentColor,
+                                        style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                                              color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!
+                                                  .colorScheme
+                                                  .secondary,
                                             ),
                                       ),
                                     ),
@@ -379,7 +374,7 @@ class _ThemeViewState extends State<ThemeView> {
                                   width: MediaQuery.of(context).size.width * 0.3,
                                   height: MediaQuery.of(context).size.height * 0.06,
                                   decoration: BoxDecoration(
-                                      color: Theme.of(context).accentColor.withOpacity(0.5),
+                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
                                       border: Border.all(color: Colors.black45),
                                       borderRadius: BorderRadius.circular(10)),
                                   child: Column(
@@ -411,7 +406,7 @@ class _ThemeViewState extends State<ThemeView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   "Light Accent Color",
-                  style: Theme.of(context).textTheme.headline4,
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
               )
             else
@@ -453,7 +448,7 @@ class _ThemeViewState extends State<ThemeView> {
                             Container(
                               margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).accentColor.withOpacity(0.6),
+                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                                 shape: BoxShape.circle,
                               ),
                               child: SizedBox(
@@ -481,7 +476,7 @@ class _ThemeViewState extends State<ThemeView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   "Dark Accent Color",
-                  style: Theme.of(context).textTheme.headline4,
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
               )
             else
@@ -523,7 +518,7 @@ class _ThemeViewState extends State<ThemeView> {
                             Container(
                               margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).accentColor.withOpacity(0.6),
+                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                                 shape: BoxShape.circle,
                               ),
                               child: SizedBox(
@@ -556,10 +551,10 @@ class PreferencePanel extends StatefulWidget {
   int? selectedValue;
   final Function(bool value)? func;
   PreferencePanel({
-    Key? key,
+    super.key,
     this.selectedValue,
     this.func,
-  }) : super(key: key);
+  });
 
   @override
   _PreferencePanelState createState() => _PreferencePanelState();
@@ -603,7 +598,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
           const Spacer(),
           Text(
             "Theme Preference",
-            style: Theme.of(context).textTheme.headline2,
+            style: Theme.of(context).textTheme.displayMedium,
           ),
           const Spacer(flex: 2),
           Column(
@@ -628,12 +623,12 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       height: 60,
                       decoration: BoxDecoration(
                         color: widget.selectedValue != 0
-                            ? Theme.of(context).accentColor.withOpacity(0.2)
-                            : Theme.of(context).errorColor.withOpacity(0.2),
+                            ? Theme.of(context).colorScheme.secondary.withOpacity(0.2)
+                            : Theme.of(context).colorScheme.error.withOpacity(0.2),
                         border: Border.all(
                             color: widget.selectedValue != 0
-                                ? Theme.of(context).accentColor
-                                : Theme.of(context).errorColor,
+                                ? Theme.of(context).colorScheme.secondary
+                                : Theme.of(context).colorScheme.error,
                             width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -641,7 +636,9 @@ class _PreferencePanelState extends State<PreferencePanel> {
                         child: Text(
                           "System",
                           style: TextStyle(
-                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -667,12 +664,12 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       height: 60,
                       decoration: BoxDecoration(
                         color: widget.selectedValue != 1
-                            ? Theme.of(context).accentColor.withOpacity(0.2)
-                            : Theme.of(context).errorColor.withOpacity(0.2),
+                            ? Theme.of(context).colorScheme.secondary.withOpacity(0.2)
+                            : Theme.of(context).colorScheme.error.withOpacity(0.2),
                         border: Border.all(
                             color: widget.selectedValue != 1
-                                ? Theme.of(context).accentColor
-                                : Theme.of(context).errorColor,
+                                ? Theme.of(context).colorScheme.secondary
+                                : Theme.of(context).colorScheme.error,
                             width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -680,7 +677,9 @@ class _PreferencePanelState extends State<PreferencePanel> {
                         child: Text(
                           "Light",
                           style: TextStyle(
-                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -706,12 +705,12 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       height: 60,
                       decoration: BoxDecoration(
                         color: widget.selectedValue != 2
-                            ? Theme.of(context).accentColor.withOpacity(0.2)
-                            : Theme.of(context).errorColor.withOpacity(0.2),
+                            ? Theme.of(context).colorScheme.secondary.withOpacity(0.2)
+                            : Theme.of(context).colorScheme.error.withOpacity(0.2),
                         border: Border.all(
                             color: widget.selectedValue != 2
-                                ? Theme.of(context).accentColor
-                                : Theme.of(context).errorColor,
+                                ? Theme.of(context).colorScheme.secondary
+                                : Theme.of(context).colorScheme.error,
                             width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -719,7 +718,9 @@ class _PreferencePanelState extends State<PreferencePanel> {
                         child: Text(
                           "Dark",
                           style: TextStyle(
-                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -738,7 +739,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Theme.of(context).accentColor,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
               ),
             ),

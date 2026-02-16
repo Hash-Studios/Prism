@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
@@ -10,7 +11,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:Prism/global/globals.dart' as globals;
 
 // class OptionalInfo extends StatefulWidget {
 //   final Image img;
@@ -628,7 +628,7 @@ class OptionalInfo3 extends StatefulWidget {
 class _OptionalInfo3State extends State<OptionalInfo3> {
   Image? image1;
   Future<bool> onWillPop(BuildContext ctx) async {
-    Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (context) => SplashWidget()));
+    Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (context) => const SplashWidget()));
     return false;
   }
 
@@ -757,9 +757,10 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                   children: [
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SplashWidget()));
+                        Navigator.pushReplacement(
+                            context, MaterialPageRoute(builder: (context) => const SplashWidget()));
                       },
-                      style: ButtonStyle(overlayColor: MaterialStateColor.resolveWith((states) => Colors.white10)),
+                      style: ButtonStyle(overlayColor: WidgetStateColor.resolveWith((states) => Colors.white10)),
                       child: SizedBox(
                         width: 75,
                         child: Text(
@@ -776,10 +777,11 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SplashWidget()));
+                        Navigator.pushReplacement(
+                            context, MaterialPageRoute(builder: (context) => const SplashWidget()));
                       },
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
+                        backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
                       ),
                       child: SizedBox(
                         width: 60,
@@ -803,10 +805,11 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SplashWidget()));
+                        Navigator.pushReplacement(
+                            context, MaterialPageRoute(builder: (context) => const SplashWidget()));
                       },
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
+                        backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
                       ),
                       child: const SizedBox(
                         width: 60,
@@ -838,7 +841,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
           elevation: 0,
           mini: true,
           onPressed: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SplashWidget()));
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SplashWidget()));
           },
           child: const Icon(
             JamIcons.close,
@@ -852,14 +855,14 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
 
 class FollowHeaderCard extends StatelessWidget {
   FollowHeaderCard({
-    Key? key,
+    super.key,
     required this.url,
     required this.email,
     required this.name,
     required this.img1,
     required this.img2,
     required this.img3,
-  }) : super(key: key);
+  });
 
   final String url;
   final String email;
@@ -920,9 +923,9 @@ class FollowHeaderCard extends StatelessWidget {
                             child: ElevatedButton(
                               onPressed: () {},
                               style: ButtonStyle(
-                                shape: MaterialStateProperty.resolveWith(
+                                shape: WidgetStateProperty.resolveWith(
                                     (states) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                                backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
+                                backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
                               ),
                               child: const SizedBox(
                                 width: 65,
@@ -941,7 +944,7 @@ class FollowHeaderCard extends StatelessWidget {
                                 following.add(email);
                                 snapshot.data!.docs[0].reference.update({'following': following});
                                 users.where("email", isEqualTo: email).get().then((value) {
-                                  if (value.docs.isEmpty || value.docs == null) {
+                                  if (value.docs.isEmpty) {
                                   } else {
                                     final List followers = value.docs[0].data()['followers'] as List? ?? [];
                                     followers.add(globals.prismUser.email);
@@ -980,9 +983,9 @@ class FollowHeaderCard extends StatelessWidget {
                                 toasts.codeSend("Followed $name!");
                               },
                               style: ButtonStyle(
-                                shape: MaterialStateProperty.resolveWith(
+                                shape: WidgetStateProperty.resolveWith(
                                     (states) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                                backgroundColor: MaterialStateColor.resolveWith((states) => const Color(0xFFE57697)),
+                                backgroundColor: WidgetStateColor.resolveWith((states) => const Color(0xFFE57697)),
                               ),
                               child: const SizedBox(
                                 width: 65,
@@ -1039,9 +1042,9 @@ class FollowHeaderCard extends StatelessWidget {
 
 class FollowImage extends StatelessWidget {
   const FollowImage({
-    Key? key,
+    super.key,
     required this.img1,
-  }) : super(key: key);
+  });
 
   final String img1;
 

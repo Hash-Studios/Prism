@@ -1,20 +1,21 @@
 import 'dart:io' show Platform;
+
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/logger/logger.dart';
 
 class SetWallpaperButton extends StatefulWidget {
   final String? url;
   final bool colorChanged;
   const SetWallpaperButton({
-    Key? key,
+    super.key,
     required this.url,
     required this.colorChanged,
-  }) : super(key: key);
+  });
 
   @override
   _SetWallpaperButtonState createState() => _SetWallpaperButtonState();
@@ -240,7 +241,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
             padding: const EdgeInsets.all(17),
             child: Icon(
               JamIcons.picture,
-              color: Theme.of(context).accentColor,
+              color: Theme.of(context).colorScheme.secondary,
               size: 20,
             ),
           ),
@@ -261,11 +262,11 @@ class SetOptionsPanel extends StatefulWidget {
   final Function? onTap2;
   final Function? onTap3;
   const SetOptionsPanel({
-    Key? key,
+    super.key,
     this.onTap1,
     this.onTap2,
     this.onTap3,
-  }) : super(key: key);
+  });
 
   @override
   _SetOptionsPanelState createState() => _SetOptionsPanelState();
@@ -309,7 +310,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
           const Spacer(),
           Text(
             "Set Wallpaper as",
-            style: Theme.of(context).textTheme.headline2,
+            style: Theme.of(context).textTheme.displayMedium,
           ),
           const Spacer(flex: 2),
           Column(
@@ -328,15 +329,17 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                       width: width - 14,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).errorColor.withOpacity(0.2),
-                        border: Border.all(color: Theme.of(context).errorColor, width: 3),
+                        color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                        border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
                         child: Text(
                           "Home Screen",
                           style: TextStyle(
-                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -356,15 +359,17 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                       width: width - 14,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).errorColor.withOpacity(0.2),
-                        border: Border.all(color: Theme.of(context).errorColor, width: 3),
+                        color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                        border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
                         child: Text(
                           "Lock Screen",
                           style: TextStyle(
-                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -384,15 +389,17 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                       width: width - 14,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).errorColor.withOpacity(0.2),
-                        border: Border.all(color: Theme.of(context).errorColor, width: 3),
+                        color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                        border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
                         child: Text(
                           "Both",
                           style: TextStyle(
-                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -411,7 +418,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Theme.of(context).accentColor,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
               ),
             ),

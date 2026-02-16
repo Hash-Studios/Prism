@@ -1,32 +1,33 @@
 import 'dart:io';
+
+import 'package:Prism/features/ads/presentation/bloc/ads_bloc.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/features/ads/presentation/bloc/ads_bloc.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
-import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/followingScreen.dart';
+import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:animations/animations.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:device_info/device_info.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:hive/hive.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:provider/provider.dart';
+import 'package:quick_actions/quick_actions.dart';
 // import 'package:rate_my_app/rate_my_app.dart';
 // import 'package:smooth_star_rating/smooth_star_rating.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:quick_actions/quick_actions.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 TabController? tabController;
 
@@ -90,10 +91,10 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
     super.initState();
     tabController = TabController(length: globals.followersTab ? 3 : 2, vsync: this);
     context.read<AdsBloc>().add(const AdsEvent.started());
-    final QuickActions quickActions = QuickActions();
+    const QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
       setState(() {
-        if (shortcutType != null) shortcut = shortcutType;
+        shortcut = shortcutType;
       });
       if (shortcutType == 'Follow_Feed') {
         logger.d('Follow_Feed');
@@ -148,9 +149,9 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
 
   Future<bool> initDynamicLinks(BuildContext context) async {
     final PendingDynamicLinkData data = await FirebaseDynamicLinks.instance.getInitialLink();
-    final Uri? deepLink = data?.link;
+    final Uri deepLink = data.link;
 
-    if (deepLink != null && linkOpened == 0) {
+    if (linkOpened == 0) {
       logger.d("opened while closed altogether via deep link");
       if (deepLink.pathSegments[0] == "share") {
         Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareRoute, arguments: [
@@ -181,30 +182,26 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
     FirebaseDynamicLinks.instance.onLink(onSuccess: (PendingDynamicLinkData dynamicLink) async {
       final Uri deepLink = dynamicLink.link;
 
-      if (deepLink != null) {
-        logger.d("opened while bg via deep link1");
-        if (deepLink.pathSegments[0] == "share") {
-          Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareRoute, arguments: [
-                deepLink.queryParameters["id"],
-                deepLink.queryParameters["provider"],
-                deepLink.queryParameters["url"],
-                deepLink.queryParameters["thumb"],
-              ]));
-        } else if (deepLink.pathSegments[0] == "user") {
-          Future.delayed(const Duration())
-              .then((value) => Navigator.pushNamed(context, followerProfileRoute, arguments: [
-                    deepLink.queryParameters["email"],
-                  ]));
-        } else if (deepLink.pathSegments[0] == "setup") {
-          Future.delayed(const Duration())
-              .then((value) => Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
-                    deepLink.queryParameters["name"],
-                    deepLink.queryParameters["thumbUrl"],
-                  ]));
-        } else {}
+      logger.d("opened while bg via deep link1");
+      if (deepLink.pathSegments[0] == "share") {
+        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareRoute, arguments: [
+              deepLink.queryParameters["id"],
+              deepLink.queryParameters["provider"],
+              deepLink.queryParameters["url"],
+              deepLink.queryParameters["thumb"],
+            ]));
+      } else if (deepLink.pathSegments[0] == "user") {
+        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, followerProfileRoute, arguments: [
+              deepLink.queryParameters["email"],
+            ]));
+      } else if (deepLink.pathSegments[0] == "setup") {
+        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
+              deepLink.queryParameters["name"],
+              deepLink.queryParameters["thumbUrl"],
+            ]));
+      } else {}
 
-        logger.d("opened while bg via deep link2345");
-      }
+      logger.d("opened while bg via deep link2345");
     }, onError: (OnLinkErrorException e) async {
       logger.d('onLinkError');
       logger.d(e.message);
@@ -234,26 +231,26 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
           ),
           bottom: TabBar(
               controller: tabController,
-              indicatorColor: Theme.of(context).accentColor,
+              indicatorColor: Theme.of(context).colorScheme.secondary,
               indicatorSize: TabBarIndicatorSize.label,
               tabs: globals.followersTab
                   ? [
                       Tab(
                         icon: Icon(
                           JamIcons.picture,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                       Tab(
                         icon: Icon(
                           JamIcons.user_square,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                       Tab(
                         icon: Icon(
                           JamIcons.pictures,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       )
                     ]
@@ -261,13 +258,13 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
                       Tab(
                         icon: Icon(
                           JamIcons.picture,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                       Tab(
                         icon: Icon(
                           JamIcons.pictures,
-                          color: Theme.of(context).accentColor,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       )
                     ]),
@@ -305,7 +302,7 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
                                 });
                               },
                               style: ButtonStyle(
-                                backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
+                                backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
                               ),
                               child: const SizedBox(
                                 width: 60,

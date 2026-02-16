@@ -1,13 +1,16 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui';
+
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as user_data;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
-import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/core/colorBar.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/editButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
@@ -20,9 +23,6 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class UserProfileWallViewScreen extends StatefulWidget {
   final List? arguments;
@@ -112,7 +112,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
     index = widget.arguments![0] as int;
     thumb = widget.arguments![1].toString();
     isLoading = true;
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       updateViews(Provider.of<user_data.UserProfileProvider>(context, listen: false)
           .userProfileWalls![index]
           .data()["id"]
@@ -246,7 +246,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                               },
                               child: Icon(
                                 JamIcons.chevron_down,
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                             ),
                           ),
@@ -278,14 +278,14 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                                   .toUpperCase(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText1!
-                                                  .copyWith(color: Theme.of(context).accentColor),
+                                                  .bodyLarge!
+                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                                             ),
                                             Padding(
                                               padding: const EdgeInsets.symmetric(horizontal: 6.0),
                                               child: Container(
                                                 height: 20,
-                                                color: Theme.of(context).accentColor,
+                                                color: Theme.of(context).colorScheme.secondary,
                                                 width: 2,
                                               ),
                                             ),
@@ -296,33 +296,31 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                                   case ConnectionState.waiting:
                                                     return Text(
                                                       "",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyText1!
-                                                          .copyWith(color: Theme.of(context).accentColor, fontSize: 16),
+                                                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                          color: Theme.of(context).colorScheme.secondary, fontSize: 16),
                                                     );
                                                   case ConnectionState.none:
                                                     return Text(
                                                       "",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyText1!
-                                                          .copyWith(color: Theme.of(context).accentColor, fontSize: 16),
+                                                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                          color: Theme.of(context).colorScheme.secondary, fontSize: 16),
                                                     );
                                                   default:
                                                     if (snapshot.hasError) {
                                                       return Text(
                                                         "",
-                                                        style: Theme.of(context).textTheme.bodyText1!.copyWith(
-                                                            color: Theme.of(context).accentColor, fontSize: 16),
+                                                        style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                            fontSize: 16),
                                                       );
                                                     } else {
                                                       return Text(
                                                         "${snapshot.data} views",
                                                         overflow: TextOverflow.fade,
                                                         softWrap: false,
-                                                        style: Theme.of(context).textTheme.bodyText1!.copyWith(
-                                                            color: Theme.of(context).accentColor, fontSize: 16),
+                                                        style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                            fontSize: 16),
                                                       );
                                                     }
                                                 }
@@ -337,7 +335,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                         Icon(
                                           JamIcons.upload,
                                           size: 20,
-                                          color: Theme.of(context).accentColor.withOpacity(.7),
+                                          color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
@@ -347,8 +345,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2!
-                                              .copyWith(color: Theme.of(context).accentColor),
+                                              .bodyMedium!
+                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                         ),
                                       ],
                                     ),
@@ -358,7 +356,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                         Icon(
                                           JamIcons.arrow_circle_right,
                                           size: 20,
-                                          color: Theme.of(context).accentColor.withOpacity(.7),
+                                          color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
@@ -368,8 +366,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2!
-                                              .copyWith(color: Theme.of(context).accentColor),
+                                              .bodyMedium!
+                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                         ),
                                       ],
                                     ),
@@ -379,7 +377,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                         Icon(
                                           JamIcons.save,
                                           size: 20,
-                                          color: Theme.of(context).accentColor.withOpacity(.7),
+                                          color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
@@ -389,8 +387,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2!
-                                              .copyWith(color: Theme.of(context).accentColor),
+                                              .bodyMedium!
+                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                         ),
                                       ],
                                     ),
@@ -409,14 +407,14 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2!
-                                              .copyWith(color: Theme.of(context).accentColor),
+                                              .bodyMedium!
+                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         const SizedBox(width: 10),
                                         Icon(
                                           JamIcons.set_square,
                                           size: 20,
-                                          color: Theme.of(context).accentColor.withOpacity(.7),
+                                          color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                         ),
                                       ],
                                     ),
@@ -430,14 +428,14 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2!
-                                              .copyWith(color: Theme.of(context).accentColor),
+                                              .bodyMedium!
+                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                         ),
                                         const SizedBox(width: 10),
                                         Icon(
                                           JamIcons.database,
                                           size: 20,
-                                          color: Theme.of(context).accentColor.withOpacity(.7),
+                                          color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                         ),
                                       ],
                                     ),
@@ -567,7 +565,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                               Center(
                                 child: CircularProgressIndicator(
                                     valueColor: AlwaysStoppedAnimation(
-                                      Theme.of(context).errorColor,
+                                      Theme.of(context).colorScheme.error,
                                     ),
                                     value: downloadProgress.progress),
                               ),
@@ -577,7 +575,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                             child: Icon(
                               JamIcons.close_circle_f,
                               color: isLoading
-                                  ? Theme.of(context).accentColor
+                                  ? Theme.of(context).colorScheme.secondary
                                   : accent!.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
@@ -597,7 +595,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                         Navigator.pop(context);
                       },
                       color: isLoading
-                          ? Theme.of(context).accentColor
+                          ? Theme.of(context).colorScheme.secondary
                           : accent!.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,
@@ -619,7 +617,6 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                         Navigator.push(
                             context,
                             PageRouteBuilder(
-                                transitionDuration: const Duration(milliseconds: 300),
                                 pageBuilder: (context, animation, secondaryAnimation) {
                                   animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                   return FadeTransition(
@@ -635,7 +632,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                 opaque: false));
                       },
                       color: isLoading
-                          ? Theme.of(context).accentColor
+                          ? Theme.of(context).colorScheme.secondary
                           : accent!.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,

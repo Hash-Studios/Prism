@@ -1,26 +1,26 @@
 import 'dart:async';
 
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/menuButton/favIconButton.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:Prism/ui/widgets/premiumBanners/followingFeed.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
-import 'package:timeago/timeago.dart' as timeago;
-import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
-import 'package:Prism/ui/widgets/menuButton/favIconButton.dart';
-import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/ui/widgets/premiumBanners/followingFeed.dart';
-import 'package:Prism/logger/logger.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class FollowingScreen extends StatefulWidget {
   const FollowingScreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _FollowingScreenState createState() => _FollowingScreenState();
@@ -93,7 +93,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
           gridDelegate: SliverStaggeredGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: 8,
-            staggeredTileCount: finalDocs != null ? finalDocs.length + 1 : 0,
+            staggeredTileCount: finalDocs.length + 1,
             staggeredTileBuilder: (index) {
               return StaggeredTile.fit(index == finalDocs.length ? 2 : 1);
             },
@@ -232,10 +232,11 @@ class _FollowingTileState extends State<FollowingTile> {
                               ),
                               child: SvgPicture.string(verifiedIcon.replaceAll(
                                   "E57697",
-                                  Theme.of(context).errorColor == Colors.black
+                                  Theme.of(context).colorScheme.error == Colors.black
                                       ? "E57697"
                                       : Theme.of(context)
-                                          .errorColor
+                                          .colorScheme
+                                          .error
                                           .toString()
                                           .replaceAll("Color(0xff", "")
                                           .replaceAll(")", ""))),
@@ -255,8 +256,10 @@ class _FollowingTileState extends State<FollowingTile> {
                               widget.finalDocs[widget.index]["by"].toString(),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
-                              style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                                  color: Theme.of(context).accentColor, fontWeight: FontWeight.bold, fontSize: 12),
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                  color: Theme.of(context).colorScheme.secondary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12),
                             ),
                           ),
                           SizedBox(
@@ -271,10 +274,8 @@ class _FollowingTileState extends State<FollowingTile> {
                               ),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyText2!
-                                  .copyWith(color: Theme.of(context).accentColor.withOpacity(0.8), fontSize: 10),
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.8), fontSize: 10),
                             ),
                           ),
                         ],

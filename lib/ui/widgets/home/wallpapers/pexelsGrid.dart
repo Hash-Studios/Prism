@@ -1,6 +1,7 @@
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
-import 'package:Prism/ui/home/category_feed_legacy_bridge.dart';
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/home/category_feed_legacy_bridge.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
@@ -8,10 +9,9 @@ import 'package:Prism/ui/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/pexelsTile.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:carousel_slider/carousel_slider.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 class PexelsGrid extends StatefulWidget {
   final String? provider;
@@ -98,7 +98,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                         maxLines: 1,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline2!
+                                            .displayMedium!
                                             .copyWith(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
                                       ),
                                     ),
@@ -147,7 +147,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                               "",
                                               textAlign: TextAlign.center,
                                               maxLines: 1,
-                                              style: Theme.of(context).textTheme.headline2!.copyWith(
+                                              style: Theme.of(context).textTheme.displayMedium!.copyWith(
                                                   color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                                             ),
                                           ),

@@ -35,7 +35,7 @@ void main() {
     imageUrl: 'img',
     arguments: <dynamic>[],
     url: '',
-    createdAt: DateTime(2024, 1, 1),
+    createdAt: DateTime(2024),
     read: false,
   );
 
@@ -46,7 +46,7 @@ void main() {
     imageUrl: 'img',
     arguments: <dynamic>[],
     url: '',
-    createdAt: DateTime(2024, 1, 1),
+    createdAt: DateTime(2024),
     read: true,
   );
 

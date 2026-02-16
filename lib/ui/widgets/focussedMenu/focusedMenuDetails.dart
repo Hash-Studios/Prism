@@ -1,13 +1,14 @@
-import 'dart:ui';
-import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
-import 'package:Prism/ui/profile/profile_walls_legacy_bridge.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as WData;
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
+import 'package:Prism/ui/profile/profile_walls_legacy_bridge.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
@@ -17,8 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class FocusedMenuDetails extends StatefulWidget {
   final String? provider;
@@ -30,7 +29,7 @@ class FocusedMenuDetails extends StatefulWidget {
   final Widget child;
 
   const FocusedMenuDetails({
-    Key? key,
+    super.key,
     required this.provider,
     required this.childOffset,
     required this.childSize,
@@ -38,7 +37,7 @@ class FocusedMenuDetails extends StatefulWidget {
     required this.index,
     required this.size,
     required this.orientation,
-  }) : super(key: key);
+  });
 
   @override
   _FocusedMenuDetailsState createState() => _FocusedMenuDetailsState();
@@ -185,7 +184,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     label: Text(
                                       WData.walls[widget.index].category.toString()[0].toUpperCase() +
                                           WData.walls[widget.index].category.toString().substring(1),
-                                      style: Theme.of(context).textTheme.headline4!.copyWith(
+                                      style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                                             color: HexColor(WData.walls[widget.index]
                                                             .colors![WData.walls[widget.index].colors!.length - 1]
                                                             .toString())
@@ -202,8 +201,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     WData.walls[widget.index].id.toString().toUpperCase(),
                                     style: Theme.of(context)
                                         .textTheme
-                                        .headline5!
-                                        .copyWith(color: Theme.of(context).accentColor),
+                                        .headlineSmall!
+                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
                                   ),
                                 ),
                                 Row(
@@ -211,15 +210,15 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     Icon(
                                       JamIcons.eye,
                                       size: 20,
-                                      color: Theme.of(context).accentColor,
+                                      color: Theme.of(context).colorScheme.secondary,
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      "Views: ${WData.walls[widget.index].views.toString()}",
+                                      "Views: ${WData.walls[widget.index].views}",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2!
-                                          .copyWith(color: Theme.of(context).accentColor),
+                                          .bodyMedium!
+                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ],
                                 ),
@@ -228,15 +227,15 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     Icon(
                                       JamIcons.set_square,
                                       size: 20,
-                                      color: Theme.of(context).accentColor,
+                                      color: Theme.of(context).colorScheme.secondary,
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
                                       WData.walls[widget.index].resolution.toString(),
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2!
-                                          .copyWith(color: Theme.of(context).accentColor),
+                                          .bodyMedium!
+                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ],
                                 ),
@@ -259,7 +258,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                   padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                   child: Icon(
                                     JamIcons.close,
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                 ),
                               ),
@@ -322,7 +321,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 label: Text(
                                                   Data.subPrismWalls![widget.index]["by"].toString()[0].toUpperCase() +
                                                       Data.subPrismWalls![widget.index]["by"].toString().substring(1),
-                                                  style: Theme.of(context).textTheme.headline4!.copyWith(
+                                                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                                                         color: Colors.white,
                                                       ),
                                                 ),
@@ -338,10 +337,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 height: 20,
                                                 child: SvgPicture.string(verifiedIcon.replaceAll(
                                                     "E57697",
-                                                    Theme.of(context).errorColor == Colors.black
+                                                    Theme.of(context).colorScheme.error == Colors.black
                                                         ? "E57697"
                                                         : Theme.of(context)
-                                                            .errorColor
+                                                            .colorScheme
+                                                            .error
                                                             .toString()
                                                             .replaceAll("Color(0xff", "")
                                                             .replaceAll(")", ""))),
@@ -355,8 +355,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           Data.subPrismWalls![widget.index]["id"].toString().toUpperCase(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .headline5!
-                                              .copyWith(color: Theme.of(context).accentColor),
+                                              .headlineSmall!
+                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                         ),
                                       ),
                                       Row(
@@ -364,15 +364,15 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           Icon(
                                             JamIcons.save,
                                             size: 20,
-                                            color: Theme.of(context).accentColor,
+                                            color: Theme.of(context).colorScheme.secondary,
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
                                             Data.subPrismWalls![widget.index]["size"].toString(),
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .bodyText2!
-                                                .copyWith(color: Theme.of(context).accentColor),
+                                                .bodyMedium!
+                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                                           ),
                                         ],
                                       ),
@@ -381,15 +381,15 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           Icon(
                                             JamIcons.set_square,
                                             size: 20,
-                                            color: Theme.of(context).accentColor,
+                                            color: Theme.of(context).colorScheme.secondary,
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
                                             Data.subPrismWalls![widget.index]["resolution"].toString(),
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .bodyText2!
-                                                .copyWith(color: Theme.of(context).accentColor),
+                                                .bodyMedium!
+                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                                           ),
                                         ],
                                       ),
@@ -412,7 +412,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                         child: Icon(
                                           JamIcons.close,
-                                          color: Theme.of(context).accentColor,
+                                          color: Theme.of(context).colorScheme.secondary,
                                         ),
                                       ),
                                     ),
@@ -476,7 +476,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         .data()["by"]
                                                         .toString()
                                                         .substring(1),
-                                                style: Theme.of(context).textTheme.headline4!.copyWith(
+                                                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                                                       color: Colors.white,
                                                     ),
                                               ),
@@ -491,8 +491,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   .toUpperCase(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .headline5!
-                                                  .copyWith(color: Theme.of(context).accentColor),
+                                                  .headlineSmall!
+                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                                             ),
                                           ),
                                           Row(
@@ -500,7 +500,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               Icon(
                                                 JamIcons.save,
                                                 size: 20,
-                                                color: Theme.of(context).accentColor,
+                                                color: Theme.of(context).colorScheme.secondary,
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -510,8 +510,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     .toString(),
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2!
-                                                    .copyWith(color: Theme.of(context).accentColor),
+                                                    .bodyMedium!
+                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
                                               ),
                                             ],
                                           ),
@@ -520,7 +520,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               Icon(
                                                 JamIcons.set_square,
                                                 size: 20,
-                                                color: Theme.of(context).accentColor,
+                                                color: Theme.of(context).colorScheme.secondary,
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -530,8 +530,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     .toString(),
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2!
-                                                    .copyWith(color: Theme.of(context).accentColor),
+                                                    .bodyMedium!
+                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
                                               ),
                                             ],
                                           ),
@@ -554,7 +554,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                             child: Icon(
                                               JamIcons.close,
-                                              color: Theme.of(context).accentColor,
+                                              color: Theme.of(context).colorScheme.secondary,
                                             ),
                                           ),
                                         ),
@@ -618,7 +618,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                             .data()["by"]
                                                             .toString()
                                                             .substring(1),
-                                                    style: Theme.of(context).textTheme.headline4!.copyWith(
+                                                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                                                           color: Colors.white,
                                                         ),
                                                   ),
@@ -633,8 +633,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                       .toUpperCase(),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .headline5!
-                                                      .copyWith(color: Theme.of(context).accentColor),
+                                                      .headlineSmall!
+                                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                 ),
                                               ),
                                               Row(
@@ -642,7 +642,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   Icon(
                                                     JamIcons.save,
                                                     size: 20,
-                                                    color: Theme.of(context).accentColor,
+                                                    color: Theme.of(context).colorScheme.secondary,
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
@@ -652,8 +652,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText2!
-                                                        .copyWith(color: Theme.of(context).accentColor),
+                                                        .bodyMedium!
+                                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                   ),
                                                 ],
                                               ),
@@ -662,7 +662,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   Icon(
                                                     JamIcons.set_square,
                                                     size: 20,
-                                                    color: Theme.of(context).accentColor,
+                                                    color: Theme.of(context).colorScheme.secondary,
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
@@ -672,8 +672,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText2!
-                                                        .copyWith(color: Theme.of(context).accentColor),
+                                                        .bodyMedium!
+                                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                   ),
                                                 ],
                                               ),
@@ -696,7 +696,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                                 child: Icon(
                                                   JamIcons.close,
-                                                  color: Theme.of(context).accentColor,
+                                                  color: Theme.of(context).colorScheme.secondary,
                                                 ),
                                               ),
                                             ),
@@ -748,7 +748,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                           const Icon(JamIcons.camera, color: Colors.white, size: 20),
                                                       label: Text(
                                                         PData.wallsP[widget.index].photographer.toString(),
-                                                        style: Theme.of(context).textTheme.headline4!.copyWith(
+                                                        style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                                                               color: Colors.white,
                                                             ),
                                                       ),
@@ -800,24 +800,24 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   .substring(1),
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .headline5!
-                                                          .copyWith(color: Theme.of(context).accentColor),
+                                                          .headlineSmall!
+                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                     ),
                                                   ),
                                                   Row(
                                                     children: [
                                                       Icon(
                                                         JamIcons.set_square,
-                                                        color: Theme.of(context).accentColor,
+                                                        color: Theme.of(context).colorScheme.secondary,
                                                         size: 20,
                                                       ),
                                                       const SizedBox(width: 5),
                                                       Text(
-                                                        "${PData.wallsP[widget.index].width.toString()}x${PData.wallsP[widget.index].height.toString()}",
+                                                        "${PData.wallsP[widget.index].width}x${PData.wallsP[widget.index].height}",
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .headline6!
-                                                            .copyWith(color: Theme.of(context).accentColor),
+                                                            .titleLarge!
+                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                       ),
                                                     ],
                                                   ),
@@ -841,7 +841,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                                     child: Icon(
                                                       JamIcons.close,
-                                                      color: Theme.of(context).accentColor,
+                                                      color: Theme.of(context).colorScheme.secondary,
                                                     ),
                                                   ),
                                                 ),
@@ -908,7 +908,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                         .liked![widget.index]["category"]
                                                                         .toString()
                                                                         .substring(1),
-                                                                style: Theme.of(context).textTheme.headline4!.copyWith(
+                                                                style: Theme.of(context)
+                                                                    .textTheme
+                                                                    .headlineMedium!
+                                                                    .copyWith(
                                                                       color: Colors.white,
                                                                     ),
                                                               ),
@@ -923,8 +926,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   .toUpperCase(),
                                                               style: Theme.of(context)
                                                                   .textTheme
-                                                                  .headline5!
-                                                                  .copyWith(color: Theme.of(context).accentColor),
+                                                                  .headlineSmall!
+                                                                  .copyWith(
+                                                                      color: Theme.of(context).colorScheme.secondary),
                                                             ),
                                                           ),
                                                           Row(
@@ -936,11 +940,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                               ),
                                                               const SizedBox(width: 10),
                                                               Text(
-                                                                "Views: ${context.favouriteWallsLegacyProvider(listen: false).liked![widget.index]["views"].toString()}",
-                                                                style: Theme.of(context)
-                                                                    .textTheme
-                                                                    .bodyText2!
-                                                                    .copyWith(color: Theme.of(context).accentColor),
+                                                                "Views: ${context.favouriteWallsLegacyProvider(listen: false).liked![widget.index]["views"]}",
+                                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                                    color: Theme.of(context).colorScheme.secondary),
                                                               ),
                                                             ],
                                                           ),
@@ -957,10 +959,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     .favouriteWallsLegacyProvider(listen: false)
                                                                     .liked![widget.index]["resolution"]
                                                                     .toString(),
-                                                                style: Theme.of(context)
-                                                                    .textTheme
-                                                                    .bodyText2!
-                                                                    .copyWith(color: Theme.of(context).accentColor),
+                                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                                    color: Theme.of(context).colorScheme.secondary),
                                                               ),
                                                             ],
                                                           ),
@@ -984,7 +984,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                             padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                                             child: Icon(
                                                               JamIcons.close,
-                                                              color: Theme.of(context).accentColor,
+                                                              color: Theme.of(context).colorScheme.secondary,
                                                             ),
                                                           ),
                                                         ),
@@ -1050,10 +1050,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             .liked![widget.index]["photographer"]
                                                                             .toString()
                                                                             .substring(1),
-                                                                    style:
-                                                                        Theme.of(context).textTheme.headline4!.copyWith(
-                                                                              color: Colors.white,
-                                                                            ),
+                                                                    style: Theme.of(context)
+                                                                        .textTheme
+                                                                        .headlineMedium!
+                                                                        .copyWith(
+                                                                          color: Colors.white,
+                                                                        ),
                                                                   ),
                                                                   onPressed: () {}),
                                                               Padding(
@@ -1066,8 +1068,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       .toUpperCase(),
                                                                   style: Theme.of(context)
                                                                       .textTheme
-                                                                      .headline5!
-                                                                      .copyWith(color: Theme.of(context).accentColor),
+                                                                      .headlineSmall!
+                                                                      .copyWith(
+                                                                          color:
+                                                                              Theme.of(context).colorScheme.secondary),
                                                                 ),
                                                               ),
                                                               Row(
@@ -1085,8 +1089,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                         .toString(),
                                                                     style: Theme.of(context)
                                                                         .textTheme
-                                                                        .bodyText2!
-                                                                        .copyWith(color: Theme.of(context).accentColor),
+                                                                        .bodyMedium!
+                                                                        .copyWith(
+                                                                            color: Theme.of(context)
+                                                                                .colorScheme
+                                                                                .secondary),
                                                                   ),
                                                                 ],
                                                               ),
@@ -1105,8 +1112,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                         .toString(),
                                                                     style: Theme.of(context)
                                                                         .textTheme
-                                                                        .bodyText2!
-                                                                        .copyWith(color: Theme.of(context).accentColor),
+                                                                        .bodyMedium!
+                                                                        .copyWith(
+                                                                            color: Theme.of(context)
+                                                                                .colorScheme
+                                                                                .secondary),
                                                                   ),
                                                                 ],
                                                               ),
@@ -1130,7 +1140,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                 padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                                                 child: Icon(
                                                                   JamIcons.close,
-                                                                  color: Theme.of(context).accentColor,
+                                                                  color: Theme.of(context).colorScheme.secondary,
                                                                 ),
                                                               ),
                                                             ),
@@ -1190,7 +1200,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             .toString(),
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .headline4!
+                                                                            .headlineMedium!
                                                                             .copyWith(
                                                                               color: Colors.white,
                                                                             ),
@@ -1200,7 +1210,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     children: [
                                                                       Icon(
                                                                         JamIcons.set_square,
-                                                                        color: Theme.of(context).accentColor,
+                                                                        color: Theme.of(context).colorScheme.secondary,
                                                                         size: 20,
                                                                       ),
                                                                       const SizedBox(width: 5),
@@ -1211,9 +1221,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             .toString(),
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .bodyText2!
+                                                                            .bodyMedium!
                                                                             .copyWith(
-                                                                                color: Theme.of(context).accentColor),
+                                                                                color: Theme.of(context)
+                                                                                    .colorScheme
+                                                                                    .secondary),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -1237,7 +1249,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                                                     child: Icon(
                                                                       JamIcons.close,
-                                                                      color: Theme.of(context).accentColor,
+                                                                      color: Theme.of(context).colorScheme.secondary,
                                                                     ),
                                                                   ),
                                                                 ),
@@ -1284,7 +1296,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     children: [
                                                                       Icon(
                                                                         JamIcons.heart_f,
-                                                                        color: Theme.of(context).accentColor,
+                                                                        color: Theme.of(context).colorScheme.secondary,
                                                                         size: 20,
                                                                       ),
                                                                       const SizedBox(width: 5),
@@ -1292,9 +1304,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                         "Likes: ${context.favouriteWallsLegacyProvider(listen: false).liked![widget.index]["fav"]}",
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .headline6!
+                                                                            .titleLarge!
                                                                             .copyWith(
-                                                                                color: Theme.of(context).accentColor),
+                                                                                color: Theme.of(context)
+                                                                                    .colorScheme
+                                                                                    .secondary),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -1302,7 +1316,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     children: [
                                                                       Icon(
                                                                         JamIcons.eye,
-                                                                        color: Theme.of(context).accentColor,
+                                                                        color: Theme.of(context).colorScheme.secondary,
                                                                         size: 20,
                                                                       ),
                                                                       const SizedBox(width: 5),
@@ -1310,9 +1324,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                         "Views: ${context.favouriteWallsLegacyProvider(listen: false).liked![widget.index]["views"]}",
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .headline6!
+                                                                            .titleLarge!
                                                                             .copyWith(
-                                                                                color: Theme.of(context).accentColor),
+                                                                                color: Theme.of(context)
+                                                                                    .colorScheme
+                                                                                    .secondary),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -1320,7 +1336,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     children: [
                                                                       Icon(
                                                                         JamIcons.set_square,
-                                                                        color: Theme.of(context).accentColor,
+                                                                        color: Theme.of(context).colorScheme.secondary,
                                                                         size: 20,
                                                                       ),
                                                                       const SizedBox(width: 5),
@@ -1331,9 +1347,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             .toString(),
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .headline6!
+                                                                            .titleLarge!
                                                                             .copyWith(
-                                                                                color: Theme.of(context).accentColor),
+                                                                                color: Theme.of(context)
+                                                                                    .colorScheme
+                                                                                    .secondary),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -1357,7 +1375,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                                                     child: Icon(
                                                                       JamIcons.close,
-                                                                      color: Theme.of(context).accentColor,
+                                                                      color: Theme.of(context).colorScheme.secondary,
                                                                     ),
                                                                   ),
                                                                 ),
@@ -1408,7 +1426,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                               color: Colors.white, size: 20),
                                                           label: Text(
                                                             PData.wallsC[widget.index].photographer.toString(),
-                                                            style: Theme.of(context).textTheme.headline4!.copyWith(
+                                                            style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                                                                   color: Colors.white,
                                                                 ),
                                                           ),
@@ -1459,8 +1477,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       .substring(1),
                                                           style: Theme.of(context)
                                                               .textTheme
-                                                              .headline5!
-                                                              .copyWith(color: Theme.of(context).accentColor),
+                                                              .headlineSmall!
+                                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                         ),
                                                       ),
                                                       Row(
@@ -1472,11 +1490,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                           ),
                                                           const SizedBox(width: 5),
                                                           Text(
-                                                            "${PData.wallsC[widget.index].width.toString()}x${PData.wallsC[widget.index].height.toString()}",
-                                                            style: Theme.of(context)
-                                                                .textTheme
-                                                                .headline6!
-                                                                .copyWith(color: Theme.of(context).accentColor),
+                                                            "${PData.wallsC[widget.index].width}x${PData.wallsC[widget.index].height}",
+                                                            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary),
                                                           ),
                                                         ],
                                                       ),
@@ -1500,7 +1516,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                                         child: Icon(
                                                           JamIcons.close,
-                                                          color: Theme.of(context).accentColor,
+                                                          color: Theme.of(context).colorScheme.secondary,
                                                         ),
                                                       ),
                                                     ),

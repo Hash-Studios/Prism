@@ -1,39 +1,32 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:Prism/auth/google_auth.dart';
+
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/animated/loader.dart';
-import 'package:Prism/ui/widgets/popup/editProfilePanel.dart';
-import 'package:Prism/ui/widgets/popup/linkPopUp.dart';
-import 'package:Prism/ui/widgets/popup/noLoadLinkPopUp.dart';
-import 'package:Prism/ui/widgets/profile/aboutList.dart';
-import 'package:Prism/ui/widgets/profile/drawerWidget.dart';
-import 'package:Prism/ui/widgets/profile/generalList.dart';
-import 'package:Prism/ui/widgets/profile/downloadList.dart';
-import 'package:Prism/ui/widgets/profile/premiumList.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
-import 'package:Prism/ui/widgets/profile/uploadedWallsLoader.dart';
-import 'package:Prism/ui/widgets/profile/uploadedSetupsLoader.dart';
+import 'package:Prism/ui/widgets/popup/noLoadLinkPopUp.dart';
+import 'package:Prism/ui/widgets/profile/aboutList.dart';
+import 'package:Prism/ui/widgets/profile/downloadList.dart';
+import 'package:Prism/ui/widgets/profile/drawerWidget.dart';
+import 'package:Prism/ui/widgets/profile/generalList.dart';
+import 'package:Prism/ui/widgets/profile/premiumList.dart';
 import 'package:Prism/ui/widgets/profile/userList.dart';
 import 'package:Prism/ui/widgets/profile/userProfileLoader.dart';
 import 'package:Prism/ui/widgets/profile/userProfileSetupLoader.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flare_flutter/flare_actor.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:Prism/global/svgAssets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flare_flutter/flare_actor.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -101,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                   if (snapshot.hasData && snapshot.data != null) {
                     if (snapshot.data!.docs.isEmpty) {
-                      return Container(
+                      return ColoredBox(
                         color: Theme.of(context).primaryColor,
                         child: Center(
                           child: SizedBox(
@@ -129,7 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       following: snapshot.data!.docs[0].data()["following"] as List,
                     );
                   }
-                  return Container(
+                  return ColoredBox(
                     color: Theme.of(context).primaryColor,
                     child: Center(
                       child: Loader(),
@@ -218,7 +211,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                         shape: BoxShape.circle,
                                         color: Theme.of(context).primaryColor.withOpacity(0.5),
                                       ),
-                                      child: Icon(JamIcons.chevron_left, color: Theme.of(context).accentColor),
+                                      child:
+                                          Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
                                     ),
                                     onPressed: () async {
                                       Navigator.pop(context);
@@ -242,7 +236,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                         shape: BoxShape.circle,
                                         color: Theme.of(context).primaryColor.withOpacity(0.5),
                                       ),
-                                      child: Icon(JamIcons.pencil, color: Theme.of(context).accentColor),
+                                      child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
                                     ),
                                     onPressed: () async {
                                       Navigator.pushNamed(context, editProfileRoute);
@@ -271,7 +265,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 shape: BoxShape.circle,
                                                 color: Theme.of(context).primaryColor.withOpacity(0.5),
                                               ),
-                                              child: Icon(JamIcons.user_remove, color: Theme.of(context).accentColor),
+                                              child: Icon(JamIcons.user_remove,
+                                                  color: Theme.of(context).colorScheme.secondary),
                                             ),
                                             onPressed: () {
                                               unfollow(widget.email!, widget.id!);
@@ -286,7 +281,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 shape: BoxShape.circle,
                                                 color: Theme.of(context).primaryColor.withOpacity(0.5),
                                               ),
-                                              child: Icon(JamIcons.user_plus, color: Theme.of(context).accentColor),
+                                              child: Icon(JamIcons.user_plus,
+                                                  color: Theme.of(context).colorScheme.secondary),
                                             ),
                                             onPressed: () {
                                               follow(widget.email!, widget.id!);
@@ -335,7 +331,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                           shape: BoxShape.circle,
                                           color: Theme.of(context).primaryColor.withOpacity(0.5),
                                         ),
-                                        child: Icon(JamIcons.menu, color: Theme.of(context).accentColor),
+                                        child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
                                       ),
                                       onPressed: () {
                                         scaffoldKey.currentState!.openEndDrawer();
@@ -358,11 +354,11 @@ class _ProfileChildState extends State<ProfileChild> {
                                         defaultHeader
                                             .replaceAll(
                                               "#181818",
-                                              "#${Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2)}",
+                                              "#${Theme.of(context).primaryColor.value.toRadixString(16).substring(2)}",
                                             )
                                             .replaceAll(
                                               "#E77597",
-                                              "#${Theme.of(context).errorColor.value.toRadixString(16).toString().substring(2)}",
+                                              "#${Theme.of(context).colorScheme.error.value.toRadixString(16).substring(2)}",
                                             ),
                                         fit: BoxFit.cover,
                                         width: MediaQuery.of(context).size.width,
@@ -398,7 +394,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontFamily: "Proxima Nova",
-                                                color: Theme.of(context).accentColor,
+                                                color: Theme.of(context).colorScheme.secondary,
                                                 fontSize: 22,
                                                 fontWeight: FontWeight.w500,
                                               ),
@@ -416,7 +412,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontFamily: "Proxima Nova",
-                                                color: Theme.of(context).accentColor.withOpacity(0.6),
+                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.normal,
                                               ),
@@ -434,7 +430,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontFamily: "Proxima Nova",
-                                                color: Theme.of(context).accentColor.withOpacity(0.6),
+                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.normal,
                                               ),
@@ -453,7 +449,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                     text: "${(widget.following ?? []).length}",
                                                     style: TextStyle(
                                                       fontFamily: "Proxima Nova",
-                                                      color: Theme.of(context).accentColor.withOpacity(1),
+                                                      color: Theme.of(context).colorScheme.secondary.withOpacity(1),
                                                       fontSize: 16,
                                                       fontWeight: FontWeight.bold,
                                                     ),
@@ -461,7 +457,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       TextSpan(
                                                         text: " Following",
                                                         style: TextStyle(
-                                                          color: Theme.of(context).accentColor.withOpacity(0.6),
+                                                          color:
+                                                              Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                                                           fontWeight: FontWeight.normal,
                                                         ),
                                                       ),
@@ -477,7 +474,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                     text: "${(widget.followers ?? []).length}",
                                                     style: TextStyle(
                                                       fontFamily: "Proxima Nova",
-                                                      color: Theme.of(context).accentColor.withOpacity(1),
+                                                      color: Theme.of(context).colorScheme.secondary.withOpacity(1),
                                                       fontSize: 16,
                                                       fontWeight: FontWeight.bold,
                                                     ),
@@ -485,7 +482,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       TextSpan(
                                                         text: " Followers",
                                                         style: TextStyle(
-                                                          color: Theme.of(context).accentColor.withOpacity(0.6),
+                                                          color:
+                                                              Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                                                           fontWeight: FontWeight.normal,
                                                         ),
                                                       ),
@@ -516,17 +514,23 @@ class _ProfileChildState extends State<ProfileChild> {
                                                           padding: const EdgeInsets.all(6.0),
                                                           decoration: BoxDecoration(
                                                             shape: BoxShape.circle,
-                                                            color: Theme.of(context).accentColor.withOpacity(0.1),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withOpacity(0.1),
                                                           ),
                                                           child: Icon(
                                                             linksData[e]!["icon"] as IconData,
                                                             size: 20,
-                                                            color: Theme.of(context).accentColor.withOpacity(0.8),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withOpacity(0.8),
                                                           ),
                                                         ),
                                                         onPressed: () {
                                                           if (widget.links![e].toString().contains("@gmail.com")) {
-                                                            launch("mailto:${widget.links![e].toString()}");
+                                                            launch("mailto:${widget.links![e]}");
                                                           } else {
                                                             launch(widget.links![e].toString());
                                                           }
@@ -545,12 +549,14 @@ class _ProfileChildState extends State<ProfileChild> {
                                                         padding: const EdgeInsets.all(6.0),
                                                         decoration: BoxDecoration(
                                                           shape: BoxShape.circle,
-                                                          color: Theme.of(context).accentColor.withOpacity(0.1),
+                                                          color:
+                                                              Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                                                         ),
                                                         child: Icon(
                                                           JamIcons.more_horizontal,
                                                           size: 20,
-                                                          color: Theme.of(context).accentColor.withOpacity(0.8),
+                                                          color:
+                                                              Theme.of(context).colorScheme.secondary.withOpacity(0.8),
                                                         ),
                                                       ),
                                                       onPressed: () {
@@ -571,14 +577,14 @@ class _ProfileChildState extends State<ProfileChild> {
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             border: Border.all(
-                                              color: Theme.of(context).errorColor,
+                                              color: Theme.of(context).colorScheme.error,
                                               width: 4,
                                             ),
-                                            color: Theme.of(context).accentColor,
+                                            color: Theme.of(context).colorScheme.secondary,
                                           ),
                                           child: ClipOval(
                                             child: CachedNetworkImage(
-                                              imageUrl: widget.userPhoto ?? "".toString(),
+                                              imageUrl: widget.userPhoto ?? "",
                                               width: 78,
                                               height: 78,
                                               fit: BoxFit.cover,
@@ -1033,11 +1039,11 @@ class _ProfileChildState extends State<ProfileChild> {
                         title: SizedBox(
                           width: MediaQuery.of(context).size.width,
                           height: 57,
-                          child: Container(
+                          child: ColoredBox(
                             color: Theme.of(context).primaryColor,
                             child: SizedBox.expand(
                               child: TabBar(
-                                  indicatorColor: Theme.of(context).accentColor,
+                                  indicatorColor: Theme.of(context).colorScheme.secondary,
                                   indicatorSize: TabBarIndicatorSize.label,
                                   unselectedLabelColor: const Color(0xFFFFFFFF).withOpacity(0.5),
                                   labelColor: const Color(0xFFFFFFFF),
@@ -1046,15 +1052,15 @@ class _ProfileChildState extends State<ProfileChild> {
                                       "Wallpapers",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2!
-                                          .copyWith(color: Theme.of(context).accentColor),
+                                          .bodyMedium!
+                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                     Text(
                                       "Setups",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2!
-                                          .copyWith(color: Theme.of(context).accentColor),
+                                          .bodyMedium!
+                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ]),
                             ),
@@ -1084,7 +1090,7 @@ class _ProfileChildState extends State<ProfileChild> {
             backgroundColor: Theme.of(context).primaryColor,
             body: CustomScrollView(controller: controller, slivers: <Widget>[
               SliverAppBar(
-                backgroundColor: Theme.of(context).errorColor,
+                backgroundColor: Theme.of(context).colorScheme.error,
                 automaticallyImplyLeading: false,
                 expandedHeight: 280.0,
                 flexibleSpace: FlexibleSpaceBar(
@@ -1094,7 +1100,7 @@ class _ProfileChildState extends State<ProfileChild> {
                       Stack(
                         children: <Widget>[
                           Container(
-                            color: Theme.of(context).errorColor,
+                            color: Theme.of(context).colorScheme.error,
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
@@ -1124,7 +1130,7 @@ class _ProfileChildState extends State<ProfileChild> {
                 const GeneralList(
                   expanded: false,
                 ),
-                UserList(
+                const UserList(
                   expanded: false,
                 ),
                 AboutList(),

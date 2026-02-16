@@ -1,21 +1,20 @@
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/ui/widgets/premiumBanners/wallsCarousel.dart';
-import 'package:Prism/ui/widgets/premiumBanners/walls.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperTile.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:Prism/ui/widgets/premiumBanners/walls.dart';
+import 'package:Prism/ui/widgets/premiumBanners/wallsCarousel.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/logger/logger.dart';
 
 class WallpaperGrid extends StatefulWidget {
   final String? provider;
@@ -112,7 +111,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                         maxLines: 1,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline2!
+                                            .displayMedium!
                                             .copyWith(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
                                       ),
                                     ),
@@ -177,7 +176,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                                 "",
                                                 textAlign: TextAlign.center,
                                                 maxLines: 1,
-                                                style: Theme.of(context).textTheme.headline2!.copyWith(
+                                                style: Theme.of(context).textTheme.displayMedium!.copyWith(
                                                     color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                                               ),
                                             ),

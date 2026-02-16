@@ -1,7 +1,5 @@
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
-import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class Loader extends StatefulWidget {
   @override
@@ -70,10 +68,10 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                ? Theme.of(context).errorColor == Colors.black
-                    ? Theme.of(context).accentColor
-                    : Theme.of(context).errorColor
-                : Theme.of(context).errorColor,
+                ? Theme.of(context).colorScheme.error == Colors.black
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.error
+                : Theme.of(context).colorScheme.error,
           ),
           child: const SizedBox(
             width: 45,

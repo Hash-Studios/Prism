@@ -1,11 +1,11 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/logger/logger.dart';
 
 class HeadingChipBar extends StatefulWidget {
   final String current;
-  const HeadingChipBar({Key? key, required this.current}) : super(key: key);
+  const HeadingChipBar({super.key, required this.current});
 
   @override
   _HeadingChipBarState createState() => _HeadingChipBarState();
@@ -18,7 +18,7 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
       automaticallyImplyLeading: false,
       titleSpacing: 0,
       leading: IconButton(
-          icon: Icon(JamIcons.chevron_left, color: Theme.of(context).accentColor),
+          icon: Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
           onPressed: () {
             Navigator.pop(context);
             if (navStack.length > 1) {
@@ -32,7 +32,7 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
           }),
       title: Text(
         widget.current,
-        style: Theme.of(context).textTheme.headline3!.copyWith(color: Theme.of(context).accentColor),
+        style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
       ),
     );
   }

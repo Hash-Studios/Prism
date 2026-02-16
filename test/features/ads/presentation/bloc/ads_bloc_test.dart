@@ -77,7 +77,7 @@ void main() {
     build: buildBloc,
     act: (bloc) => bloc
       ..add(const AdsEvent.started())
-      ..add(const AdsEvent.rewardEarned(rewardAmount: 10, unlockThreshold: 10)),
+      ..add(const AdsEvent.rewardEarned(rewardAmount: 10)),
     expect: () => <AdsState>[
       AdsState.initial().copyWith(
         status: LoadStatus.loading,

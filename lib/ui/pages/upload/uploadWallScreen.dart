@@ -2,22 +2,23 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:flare_flutter/flare_actor.dart';
-import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as Path;
-import 'package:Prism/routes/router.dart';
-import 'package:flutter/material.dart';
-import 'package:github/github.dart';
-import 'package:Prism/gitkey.dart';
-import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flare_flutter/flare_actor.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:github/github.dart';
+import 'package:path/path.dart' as Path;
+import 'package:photo_view/photo_view.dart';
 
 class UploadWallScreen extends StatefulWidget {
   final List? arguments;
@@ -73,7 +74,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         tempid = tempid! + ran.toString();
       } else {
         final ran = r.nextInt(26);
-        tempid = tempid! + alp[ran].toString();
+        tempid = tempid! + alp[ran];
       }
     }
     setState(() {
@@ -115,7 +116,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future deleteFile() async {
-    final github = GitHub(auth: Authentication.withToken(token));
+    final github = GitHub(auth: const Authentication.withToken(token));
     await github.repositories
         .deleteFile(RepositorySlug(gitUserName, repoName), wallpaperPath, wallpaperPath, wallpaperSha, "master");
     await github.repositories
@@ -131,7 +132,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     try {
       final String base64Image = base64Encode(imageBytes);
       final String base64ImageThumb = base64Encode(imageBytesThumb);
-      final github = GitHub(auth: Authentication.withToken(token));
+      final github = GitHub(auth: const Authentication.withToken(token));
       await github.repositories
           .createFile(RepositorySlug(gitUserName, repoName),
               CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)))
@@ -181,7 +182,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         appBar: AppBar(
           title: Text(
             "Upload Wallpaper",
-            style: TextStyle(color: Theme.of(context).accentColor),
+            style: TextStyle(color: Theme.of(context).colorScheme.secondary),
           ),
         ),
         body: Column(
@@ -218,7 +219,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
                 ),
               )
@@ -232,7 +233,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Theme.of(context).accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
                 ),
               )
@@ -245,7 +246,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       borderRadius: BorderRadius.circular(500),
                       child: LinearProgressIndicator(
                         backgroundColor: Theme.of(context).hintColor,
-                        valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).errorColor),
+                        valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
                       )))
             else
               Container(),
@@ -259,7 +260,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                     child: Center(
                       child: Icon(
                         JamIcons.info,
-                        color: Theme.of(context).accentColor.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                       ),
                     ),
                   ),
@@ -275,7 +276,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 10,
-                            color: Theme.of(context).accentColor.withOpacity(0.6),
+                            color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
                           ),
                         ),
                       ),
@@ -287,7 +288,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: !isProcessing && !isUploading ? Theme.of(context).errorColor : Theme.of(context).hintColor,
+          backgroundColor:
+              !isProcessing && !isUploading ? Theme.of(context).colorScheme.error : Theme.of(context).hintColor,
           disabledElevation: 0,
           onPressed: !isProcessing && !isUploading
               ? () async {

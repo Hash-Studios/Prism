@@ -1,13 +1,16 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui';
+
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
-import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/core/colorBar.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/editButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
@@ -17,12 +20,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 
 class SearchWallpaperScreen extends StatefulWidget {
   final List? arguments;
@@ -238,7 +238,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                   },
                                   child: Icon(
                                     JamIcons.chevron_down,
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                 ),
                               ),
@@ -262,8 +262,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                             wdata.wallsS[index].id.toString().toUpperCase(),
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .bodyText1!
-                                                .copyWith(color: Theme.of(context).accentColor),
+                                                .bodyLarge!
+                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
                                           ),
                                         ),
                                         Row(
@@ -271,15 +271,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                             Icon(
                                               JamIcons.eye,
                                               size: 20,
-                                              color: Theme.of(context).accentColor.withOpacity(.7),
+                                              color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
                                               wdata.wallsS[index].views.toString(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2!
-                                                  .copyWith(color: Theme.of(context).accentColor),
+                                                  .bodyMedium!
+                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                                             ),
                                           ],
                                         ),
@@ -289,15 +289,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                             Icon(
                                               JamIcons.heart_f,
                                               size: 20,
-                                              color: Theme.of(context).accentColor.withOpacity(.7),
+                                              color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
                                               wdata.wallsS[index].favourites.toString(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2!
-                                                  .copyWith(color: Theme.of(context).accentColor),
+                                                  .bodyMedium!
+                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                                             ),
                                           ],
                                         ),
@@ -307,15 +307,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                             Icon(
                                               JamIcons.save,
                                               size: 20,
-                                              color: Theme.of(context).accentColor.withOpacity(.7),
+                                              color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
                                               "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2!
-                                                  .copyWith(color: Theme.of(context).accentColor),
+                                                  .bodyMedium!
+                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                                             ),
                                           ],
                                         ),
@@ -334,14 +334,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                     wdata.wallsS[index].category.toString().substring(1),
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2!
-                                                    .copyWith(color: Theme.of(context).accentColor),
+                                                    .bodyMedium!
+                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
                                               ),
                                               const SizedBox(width: 10),
                                               Icon(
                                                 JamIcons.unordered_list,
                                                 size: 20,
-                                                color: Theme.of(context).accentColor.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                               ),
                                             ],
                                           ),
@@ -353,14 +353,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               wdata.wallsS[index].resolution.toString(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2!
-                                                  .copyWith(color: Theme.of(context).accentColor),
+                                                  .bodyMedium!
+                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
                                               JamIcons.set_square,
                                               size: 20,
-                                              color: Theme.of(context).accentColor.withOpacity(.7),
+                                              color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                             ),
                                           ],
                                         ),
@@ -371,14 +371,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               query.toString()[0].toUpperCase() + query.toString().substring(1),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2!
-                                                  .copyWith(color: Theme.of(context).accentColor),
+                                                  .bodyMedium!
+                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
                                               JamIcons.search,
                                               size: 20,
-                                              color: Theme.of(context).accentColor.withOpacity(.7),
+                                              color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                             ),
                                           ],
                                         ),
@@ -472,7 +472,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                   Center(
                                     child: CircularProgressIndicator(
                                         valueColor: AlwaysStoppedAnimation(
-                                          Theme.of(context).errorColor,
+                                          Theme.of(context).colorScheme.error,
                                         ),
                                         value: downloadProgress.progress),
                                   ),
@@ -482,7 +482,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                 child: Icon(
                                   JamIcons.close_circle_f,
                                   color: isLoading
-                                      ? Theme.of(context).accentColor
+                                      ? Theme.of(context).colorScheme.secondary
                                       : accent!.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
@@ -502,7 +502,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                             Navigator.pop(context);
                           },
                           color: isLoading
-                              ? Theme.of(context).accentColor
+                              ? Theme.of(context).colorScheme.secondary
                               : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
@@ -522,7 +522,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                    transitionDuration: const Duration(milliseconds: 300),
                                     pageBuilder: (context, animation, secondaryAnimation) {
                                       animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                       return FadeTransition(
@@ -538,7 +537,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                     opaque: false));
                           },
                           color: isLoading
-                              ? Theme.of(context).accentColor
+                              ? Theme.of(context).colorScheme.secondary
                               : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
@@ -656,7 +655,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                   },
                                   child: Icon(
                                     JamIcons.chevron_down,
-                                    color: Theme.of(context).accentColor,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                 ),
                               ),
@@ -716,8 +715,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                       .substring(1),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText1!
-                                              .copyWith(color: Theme.of(context).accentColor),
+                                              .bodyLarge!
+                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                           overflow: TextOverflow.ellipsis,
                                           maxLines: 1,
                                         ),
@@ -736,15 +735,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                 Icon(
                                                   JamIcons.info,
                                                   size: 20,
-                                                  color: Theme.of(context).accentColor.withOpacity(.7),
+                                                  color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
                                                   pdata.wallsPS[index].id.toString(),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2!
-                                                      .copyWith(color: Theme.of(context).accentColor),
+                                                      .bodyMedium!
+                                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                 ),
                                               ],
                                             ),
@@ -754,15 +753,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                 Icon(
                                                   JamIcons.set_square,
                                                   size: 20,
-                                                  color: Theme.of(context).accentColor.withOpacity(.7),
+                                                  color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
-                                                  "${pdata.wallsPS[index].width.toString()}x${pdata.wallsPS[index].height.toString()}",
+                                                  "${pdata.wallsPS[index].width}x${pdata.wallsPS[index].height}",
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2!
-                                                      .copyWith(color: Theme.of(context).accentColor),
+                                                      .bodyMedium!
+                                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                 ),
                                               ],
                                             ),
@@ -781,14 +780,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                     launch(pdata.wallsPS[index].url!);
                                                   },
                                                   padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                                                  avatar: Icon(JamIcons.camera, color: Theme.of(context).accentColor),
+                                                  avatar: Icon(JamIcons.camera,
+                                                      color: Theme.of(context).colorScheme.secondary),
                                                   labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                   label: Text(
                                                     pdata.wallsPS[index].photographer.toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText2!
-                                                        .copyWith(color: Theme.of(context).accentColor)
+                                                        .bodyMedium!
+                                                        .copyWith(color: Theme.of(context).colorScheme.secondary)
                                                         .copyWith(fontSize: 16),
                                                     overflow: TextOverflow.fade,
                                                   ),
@@ -801,14 +801,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                   query.toString(),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2!
-                                                      .copyWith(color: Theme.of(context).accentColor),
+                                                      .bodyMedium!
+                                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Icon(
                                                   JamIcons.database,
                                                   size: 20,
-                                                  color: Theme.of(context).accentColor.withOpacity(.7),
+                                                  color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
                                                 ),
                                               ],
                                             ),
@@ -907,7 +907,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                   Center(
                                     child: CircularProgressIndicator(
                                         valueColor: AlwaysStoppedAnimation(
-                                          Theme.of(context).errorColor,
+                                          Theme.of(context).colorScheme.error,
                                         ),
                                         value: downloadProgress.progress),
                                   ),
@@ -917,7 +917,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                 child: Icon(
                                   JamIcons.close_circle_f,
                                   color: isLoading
-                                      ? Theme.of(context).accentColor
+                                      ? Theme.of(context).colorScheme.secondary
                                       : accent!.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
@@ -937,7 +937,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                             Navigator.pop(context);
                           },
                           color: isLoading
-                              ? Theme.of(context).accentColor
+                              ? Theme.of(context).colorScheme.secondary
                               : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
@@ -957,7 +957,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                    transitionDuration: const Duration(milliseconds: 300),
                                     pageBuilder: (context, animation, secondaryAnimation) {
                                       animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                       return FadeTransition(
@@ -973,7 +972,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                     opaque: false));
                           },
                           color: isLoading
-                              ? Theme.of(context).accentColor
+                              ? Theme.of(context).colorScheme.secondary
                               : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,

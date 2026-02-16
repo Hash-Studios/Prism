@@ -1,17 +1,16 @@
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/pexelsGrid.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
-import 'package:provider/provider.dart';
 
 class PexelsTile extends StatelessWidget {
   const PexelsTile({
-    Key? key,
+    super.key,
     required this.widget,
     required this.index,
-  }) : super(key: key);
+  });
 
   final PexelsGrid widget;
   final int index;
@@ -38,8 +37,8 @@ class PexelsTile extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              splashColor: Theme.of(context).accentColor.withOpacity(0.3),
-              highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
+              splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+              highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
               onTap: () {
                 if (PData.wallsP == []) {
                 } else {
