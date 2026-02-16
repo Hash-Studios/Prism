@@ -305,16 +305,15 @@ class _EditWallScreenState extends State<EditWallScreen> {
             Icons.crop,
             color: Theme.of(context).colorScheme.secondary,
           ),
-          label:
-            cropRatio == 1 / 2
-                ? "9:18"
-                : cropRatio == 9 / 16
-                    ? "9:16"
-                    : cropRatio == 9 / 21
-                        ? "9:21"
-                        : cropRatio == 9 / 19.5
-                            ? "9:19.5"
-                            : "9:18",
+          label: cropRatio == 1 / 2
+              ? "9:18"
+              : cropRatio == 9 / 16
+                  ? "9:16"
+                  : cropRatio == 9 / 21
+                      ? "9:21"
+                      : cropRatio == 9 / 19.5
+                          ? "9:19.5"
+                          : "9:18",
         ),
       ],
       onTap: (int index) {
@@ -353,7 +352,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     final ImageEditorOption option = ImageEditorOption();
 
     option.addOption(ClipOption.fromRect(rect));
-    option.addOption(FlipOption(horizontal: flipHorizontal, vertical: flipVertical));
+    option.addOption(FlipOption(horizontal: flipHorizontal));
     if (action.rotateRadians != 0) {
       option.addOption(RotateOption(radian.toInt()));
     }

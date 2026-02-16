@@ -64,7 +64,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         .where("email", isEqualTo: globals.prismUser.email)
         .get()
         .then((value) {
-      following = (value.docs[0].data() as Map<String, dynamic>)["following"] as List? ?? [];
+      following = value.docs[0].data()["following"] as List? ?? [];
     });
     databaseReference
         .collection("walls")

@@ -56,7 +56,7 @@ class LogOutputPrinter extends PrettyPrinter {
     final logLvl = event.level;
     final logStrace = event.stackTrace;
     final logError = event.error;
-    final color = levelColors?[logLvl] ?? AnsiColor.none();
+    final color = levelColors?[logLvl] ?? const AnsiColor.none();
     final prefix = SimplePrinter.levelPrefixes[logLvl];
     final str =
         "---------------------------------------------------------------------------\nLEVEL : $logLvl\nMESSAGE : ${DateTime.now().toString().substring(11, 22)} :: $logMsg\nERROR : $logError\nSTACKTRACE : $logStrace";
@@ -65,7 +65,7 @@ class LogOutputPrinter extends PrettyPrinter {
     if (logStrace != null) {
       // print(color!('$timeStr $prefix - $logMsg \n$logStrace'));
       developer.log(
-        color('$logMsg \n$logStrace').toString(),
+        color('$logMsg \n$logStrace'),
         name: "$timeStr :: ${prefix!.replaceAll("[", "").replaceAll("]", "")}",
         stackTrace: logStrace,
         level: 2000,
@@ -73,7 +73,7 @@ class LogOutputPrinter extends PrettyPrinter {
     } else {
       // print(color!('$timeStr $prefix - $logMsg'));
       developer.log(
-        color('$logMsg').toString(),
+        color('$logMsg'),
         name: "$timeStr :: ${prefix!.replaceAll("[", "").replaceAll("]", "")}",
       );
     }

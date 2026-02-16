@@ -3,7 +3,6 @@ import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart' hide Badge;
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
 

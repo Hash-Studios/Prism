@@ -61,7 +61,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
   bool secondWidgetAdded = false;
 
   Map<String, dynamic> _setupData(DocumentSnapshot<Object?> doc) =>
-      (doc.data() as Map<String, dynamic>? ?? const <String, dynamic>{});
+      doc.data() as Map<String, dynamic>? ?? const <String, dynamic>{};
 
   @override
   void initState() {
