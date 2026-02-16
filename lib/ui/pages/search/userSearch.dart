@@ -1,6 +1,6 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
-import 'package:Prism/features/user_search/presentation/bloc/user_search_bloc.dart';
+import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';

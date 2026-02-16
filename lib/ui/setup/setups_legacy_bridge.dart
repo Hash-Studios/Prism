@@ -1,5 +1,5 @@
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/features/setups/presentation/bloc/setups_bloc.dart';
+import 'package:Prism/features/setups/setups.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/widgets.dart';

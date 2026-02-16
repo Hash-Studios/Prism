@@ -1,6 +1,6 @@
-import 'package:Prism/features/theme_dark/presentation/bloc/theme_dark_bloc.dart';
-import 'package:Prism/features/theme_light/presentation/bloc/theme_light_bloc.dart';
-import 'package:Prism/features/theme_mode/presentation/bloc/theme_mode_bloc.dart';
+import 'package:Prism/features/theme_dark/theme_dark.dart';
+import 'package:Prism/features/theme_light/theme_light.dart';
+import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

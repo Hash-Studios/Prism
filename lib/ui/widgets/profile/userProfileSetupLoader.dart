@@ -1,5 +1,5 @@
-import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 import 'package:Prism/ui/widgets/profile/userProfileSetupGrid.dart';
 import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:flutter/material.dart';

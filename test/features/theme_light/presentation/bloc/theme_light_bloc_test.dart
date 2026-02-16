@@ -1,9 +1,9 @@
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/theme_light/biz/bloc/theme_light_bloc.j.dart';
 import 'package:Prism/features/theme_light/domain/entities/theme_light.dart';
 import 'package:Prism/features/theme_light/domain/usecases/theme_light_usecases.dart';
-import 'package:Prism/features/theme_light/presentation/bloc/theme_light_bloc.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

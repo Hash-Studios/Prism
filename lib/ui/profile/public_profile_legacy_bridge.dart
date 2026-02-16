@@ -1,5 +1,5 @@
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/features/public_profile/presentation/bloc/public_profile_bloc.dart';
+import 'package:Prism/features/public_profile/public_profile.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

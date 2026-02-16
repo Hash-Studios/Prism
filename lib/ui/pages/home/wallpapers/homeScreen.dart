@@ -1,5 +1,5 @@
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/features/category_feed/presentation/bloc/category_feed_bloc.dart';
+import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
