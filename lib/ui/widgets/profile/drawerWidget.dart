@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-// import 'package:Prism/data/setups/provider/setupProvider.dart';
+// import 'package:Prism/ui/setup/setups_legacy_bridge.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
@@ -156,7 +156,7 @@ class ProfileDrawer extends StatelessWidget {
             //     text: 'Get Icons from setups',
             //     onTap: () async {
             //       final List iconLinks =
-            //           await Provider.of<SetupProvider>(context, listen: false)
+            //           await context.setupsLegacyProvider(listen: false)
             //               .getAllSetups();
             //       logger.d(iconLinks);
             //       showModalBottomSheet(

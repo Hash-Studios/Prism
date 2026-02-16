@@ -117,10 +117,10 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
           parallaxOffset: 0.00,
           color: Colors.transparent,
           maxHeight:
-              // Provider.of<SetupProvider>(context, listen: false)
+              // context.setupsLegacyProvider(listen: false)
               //                 .setups[index]["widget2"] ==
               //             "" ||
-              //         Provider.of<SetupProvider>(context, listen: false)
+              //         context.setupsLegacyProvider(listen: false)
               //                 .setups[index]["widget2"] ==
               //             null
               // ?
@@ -143,10 +143,10 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
             height:
-                // Provider.of<SetupProvider>(context, listen: false)
+                // context.setupsLegacyProvider(listen: false)
                 //                 .setups[index]["widget2"] ==
                 //             "" ||
-                //         Provider.of<SetupProvider>(context, listen: false)
+                //         context.setupsLegacyProvider(listen: false)
                 //                 .setups[index]["widget2"] ==
                 //             null
                 // ?

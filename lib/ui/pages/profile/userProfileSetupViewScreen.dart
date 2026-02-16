@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as user_data;
+import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
@@ -24,7 +24,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
-import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -58,14 +57,10 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments![0] as int;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      updateViewsSetup(Provider.of<user_data.UserProfileProvider>(context, listen: false)
-          .userProfileSetups![index!]["id"]
-          .toString()
-          .toUpperCase());
-      _futureView = getViewsSetup(Provider.of<user_data.UserProfileProvider>(context, listen: false)
-          .userProfileSetups![index!]["id"]
-          .toString()
-          .toUpperCase());
+      updateViewsSetup(
+          context.publicProfileLegacyProvider(listen: false).userProfileSetups![index!]["id"].toString().toUpperCase());
+      _futureView = getViewsSetup(
+          context.publicProfileLegacyProvider(listen: false).userProfileSetups![index!]["id"].toString().toUpperCase());
     });
     isLoading = true;
     box = Hive.box('localFav');
@@ -184,7 +179,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                       forward: true,
                                       slideSide: SlideFromSlide.bottom,
                                       child: Text(
-                                        Provider.of<user_data.UserProfileProvider>(context)
+                                        context
+                                            .publicProfileLegacyProvider()
                                             .userProfileSetups![index!]
                                             .data()["name"]
                                             .toString()
@@ -207,7 +203,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                       slideSide: SlideFromSlide.bottom,
                                       delay: const Duration(milliseconds: 50),
                                       child: Text(
-                                        Provider.of<user_data.UserProfileProvider>(context)
+                                        context
+                                            .publicProfileLegacyProvider()
                                             .userProfileSetups![index!]
                                             .data()["desc"]
                                             .toString(),
@@ -248,7 +245,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               child: Row(
                                                 children: [
                                                   Text(
-                                                    Provider.of<user_data.UserProfileProvider>(context)
+                                                    context
+                                                        .publicProfileLegacyProvider()
                                                         .userProfileSetups![index!]
                                                         .data()["id"]
                                                         .toString()
@@ -312,16 +310,16 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                             onTap: () async {
                                               await createCopyrightLink(true, context,
                                                   index: index.toString(),
-                                                  name:
-                                                      Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                          .userProfileSetups![index!]
-                                                          .data()["name"]
-                                                          .toString(),
-                                                  thumbUrl:
-                                                      Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                          .userProfileSetups![index!]
-                                                          .data()["image"]
-                                                          .toString());
+                                                  name: context
+                                                      .publicProfileLegacyProvider(listen: false)
+                                                      .userProfileSetups![index!]
+                                                      .data()["name"]
+                                                      .toString(),
+                                                  thumbUrl: context
+                                                      .publicProfileLegacyProvider(listen: false)
+                                                      .userProfileSetups![index!]
+                                                      .data()["image"]
+                                                      .toString());
                                             },
                                             child: Row(
                                               children: [
@@ -357,7 +355,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                     alignment: Alignment.topRight,
                                                     child: ActionChip(
                                                         label: Text(
-                                                          Provider.of<user_data.UserProfileProvider>(context)
+                                                          context
+                                                              .publicProfileLegacyProvider()
                                                               .userProfileSetups![index!]
                                                               .data()["by"]
                                                               .toString(),
@@ -369,28 +368,28 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                         ),
                                                         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                         avatar: CircleAvatar(
-                                                          backgroundImage: CachedNetworkImageProvider(
-                                                              Provider.of<user_data.UserProfileProvider>(context)
-                                                                  .userProfileSetups![index!]
-                                                                  .data()["userPhoto"]
-                                                                  .toString()),
+                                                          backgroundImage: CachedNetworkImageProvider(context
+                                                              .publicProfileLegacyProvider()
+                                                              .userProfileSetups![index!]
+                                                              .data()["userPhoto"]
+                                                              .toString()),
                                                         ),
                                                         labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                         onPressed: () {
                                                           Navigator.pushNamed(context, followerProfileRoute,
                                                               arguments: [
-                                                                Provider.of<user_data.UserProfileProvider>(context,
-                                                                        listen: false)
+                                                                context
+                                                                    .publicProfileLegacyProvider(listen: false)
                                                                     .userProfileSetups![index!]
                                                                     .data()["email"],
                                                               ]);
                                                         }),
                                                   ),
-                                                  if (globals.verifiedUsers.contains(
-                                                      Provider.of<user_data.UserProfileProvider>(context)
-                                                          .userProfileSetups![index!]
-                                                          .data()["email"]
-                                                          .toString()))
+                                                  if (globals.verifiedUsers.contains(context
+                                                      .publicProfileLegacyProvider()
+                                                      .userProfileSetups![index!]
+                                                      .data()["email"]
+                                                      .toString()))
                                                     Align(
                                                       alignment: Alignment.topRight,
                                                       child: SizedBox(
@@ -425,13 +424,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                         flex: 16,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                          child: Provider.of<user_data.UserProfileProvider>(context)
-                                          .userProfileSetups![index!]
-                                          .data()["widget"] ==
+                          child: context.publicProfileLegacyProvider().userProfileSetups![index!].data()["widget"] ==
                                       "" ||
-                                  Provider.of<user_data.UserProfileProvider>(context)
-                                          .userProfileSetups![index!]
-                                          .data()["widget"] ==
+                                  context.publicProfileLegacyProvider().userProfileSetups![index!].data()["widget"] ==
                                       null
                               ? Column(
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -440,115 +435,133 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        if (Provider.of<user_data.UserProfileProvider>(context)
+                                        if (context
+                                                .publicProfileLegacyProvider()
                                                 .userProfileSetups![index!]
                                                 .data()["wallpaper_url"]
                                                 .toString()[0] !=
                                             "[") {
-                                          if (Provider.of<user_data.UserProfileProvider>(context)
+                                          if (context
+                                                      .publicProfileLegacyProvider()
                                                       .userProfileSetups![index!]
                                                       .data()["wall_id"] ==
                                                   null ||
-                                              Provider.of<user_data.UserProfileProvider>(context)
+                                              context
+                                                      .publicProfileLegacyProvider()
                                                       .userProfileSetups![index!]
                                                       .data()["wall_id"] ==
                                                   "") {
                                             logger.d("Id Not Found!");
-                                            launch(Provider.of<user_data.UserProfileProvider>(context)
+                                            launch(context
+                                                .publicProfileLegacyProvider()
                                                 .userProfileSetups![index!]
                                                 .data()["wallpaper_url"]
                                                 .toString());
                                           } else {
                                             Navigator.pushNamed(context, shareRoute, arguments: [
-                                              Provider.of<user_data.UserProfileProvider>(context)
+                                              context
+                                                  .publicProfileLegacyProvider()
                                                   .userProfileSetups![index!]
                                                   .data()["wall_id"]
                                                   .toString(),
-                                              Provider.of<user_data.UserProfileProvider>(context)
+                                              context
+                                                  .publicProfileLegacyProvider()
                                                   .userProfileSetups![index!]
                                                   .data()["wallpaper_provider"]
                                                   .toString(),
-                                              Provider.of<user_data.UserProfileProvider>(context)
+                                              context
+                                                  .publicProfileLegacyProvider()
                                                   .userProfileSetups![index!]
                                                   .data()["wallpaper_url"]
                                                   .toString(),
-                                              Provider.of<user_data.UserProfileProvider>(context)
+                                              context
+                                                  .publicProfileLegacyProvider()
                                                   .userProfileSetups![index!]
                                                   .data()["wallpaper_url"]
                                                   .toString(),
                                             ]);
                                           }
                                         } else {
-                                          launch(Provider.of<user_data.UserProfileProvider>(context)
+                                          launch(context
+                                              .publicProfileLegacyProvider()
                                               .userProfileSetups![index!]
                                               .data()["wallpaper_url"][1]
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<user_data.UserProfileProvider>(context)
+                                      tileText: context
+                                                  .publicProfileLegacyProvider()
                                                   .userProfileSetups![index!]
                                                   .data()["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
-                                          ? (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                          ? (context
+                                                          .publicProfileLegacyProvider(listen: false)
                                                           .userProfileSetups![index!]["wall_id"] ==
                                                       null ||
-                                                  Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                  context
+                                                          .publicProfileLegacyProvider(listen: false)
                                                           .userProfileSetups![index!]["wall_id"] ==
                                                       "")
                                               ? "Wall Link"
-                                              : "Prism (${Provider.of<user_data.UserProfileProvider>(context, listen: false).userProfileSetups![index!]["wall_id"]})"
-                                          : "${Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
+                                              : "Prism (${context.publicProfileLegacyProvider(listen: false).userProfileSetups![index!]["wall_id"]})"
+                                          : "${context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled: Provider.of<user_data.UserProfileProvider>(context)
+                                      isInstalled: context
+                                              .publicProfileLegacyProvider()
                                               .userProfileSetups![index!]
                                               .data()["icon_url"]
                                               .toString()
                                               .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
-                                              Provider.of<user_data.UserProfileProvider>(context)
-                                                  .userProfileSetups![index!]
-                                                  .data()["icon_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0])
+                                          ? DeviceApps.isAppInstalled(context
+                                              .publicProfileLegacyProvider()
+                                              .userProfileSetups![index!]
+                                              .data()["icon_url"]
+                                              .toString()
+                                              .split("details?id=")[1]
+                                              .split("&")[0])
                                           : Future.value(false),
                                       onTap: () async {
-                                        if (Provider.of<user_data.UserProfileProvider>(context)
+                                        if (context
+                                            .publicProfileLegacyProvider()
                                             .userProfileSetups![index!]
                                             .data()["icon_url"]
                                             .toString()
                                             .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                              Provider.of<user_data.UserProfileProvider>(context)
-                                                  .userProfileSetups![index!]
-                                                  .data()["icon_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0]);
+                                          final isInstalled = await DeviceApps.isAppInstalled(context
+                                              .publicProfileLegacyProvider()
+                                              .userProfileSetups![index!]
+                                              .data()["icon_url"]
+                                              .toString()
+                                              .split("details?id=")[1]
+                                              .split("&")[0]);
                                           isInstalled
-                                              ? DeviceApps.openApp(Provider.of<user_data.UserProfileProvider>(context)
+                                              ? DeviceApps.openApp(context
+                                                  .publicProfileLegacyProvider()
                                                   .userProfileSetups![index!]
                                                   .data()["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0])
-                                              : launch(Provider.of<user_data.UserProfileProvider>(context)
+                                              : launch(context
+                                                  .publicProfileLegacyProvider()
                                                   .userProfileSetups![index!]
                                                   .data()["icon_url"]
                                                   .toString());
                                         } else {
-                                          launch(Provider.of<user_data.UserProfileProvider>(context)
+                                          launch(context
+                                              .publicProfileLegacyProvider()
                                               .userProfileSetups![index!]
                                               .data()["icon_url"]
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<user_data.UserProfileProvider>(context)
+                                      tileText: context
+                                          .publicProfileLegacyProvider()
                                           .userProfileSetups![index!]
                                           .data()["icon"]
                                           .toString(),
@@ -558,11 +571,10 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                     ),
                                   ],
                                 )
-                              : Provider.of<user_data.UserProfileProvider>(context)
-                                              .userProfileSetups![index!]
-                                              .data()["widget2"] ==
+                              : context.publicProfileLegacyProvider().userProfileSetups![index!].data()["widget2"] ==
                                           "" ||
-                                      Provider.of<user_data.UserProfileProvider>(context)
+                                      context
+                                              .publicProfileLegacyProvider()
                                               .userProfileSetups![index!]
                                               .data()["widget2"] ==
                                           null
@@ -573,118 +585,133 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                         SetupDetailsTile(
                                           isInstalled: Future.value(false),
                                           onTap: () async {
-                                            if (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                            if (context
+                                                    .publicProfileLegacyProvider(listen: false)
                                                     .userProfileSetups![index!]
                                                     .data()["wallpaper_url"]
                                                     .toString()[0] !=
                                                 "[") {
-                                              if (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                              if (context
+                                                          .publicProfileLegacyProvider(listen: false)
                                                           .userProfileSetups![index!]
                                                           .data()["wall_id"] ==
                                                       null ||
-                                                  Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                  context
+                                                          .publicProfileLegacyProvider(listen: false)
                                                           .userProfileSetups![index!]
                                                           .data()["wall_id"] ==
                                                       "") {
                                                 logger.d("Id Not Found!");
-                                                launch(
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                        .userProfileSetups![index!]
-                                                        .data()["wallpaper_url"]
-                                                        .toString());
+                                                launch(context
+                                                    .publicProfileLegacyProvider(listen: false)
+                                                    .userProfileSetups![index!]
+                                                    .data()["wallpaper_url"]
+                                                    .toString());
                                               } else {
                                                 Navigator.pushNamed(context, shareRoute, arguments: [
-                                                  Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                  context
+                                                      .publicProfileLegacyProvider(listen: false)
                                                       .userProfileSetups![index!]
                                                       .data()["wall_id"]
                                                       .toString(),
-                                                  Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                  context
+                                                      .publicProfileLegacyProvider(listen: false)
                                                       .userProfileSetups![index!]
                                                       .data()["wallpaper_provider"]
                                                       .toString(),
-                                                  Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                  context
+                                                      .publicProfileLegacyProvider(listen: false)
                                                       .userProfileSetups![index!]
                                                       .data()["wallpaper_url"]
                                                       .toString(),
-                                                  Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                  context
+                                                      .publicProfileLegacyProvider(listen: false)
                                                       .userProfileSetups![index!]
                                                       .data()["wallpaper_url"]
                                                       .toString(),
                                                 ]);
                                               }
                                             } else {
-                                              launch(Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                              launch(context
+                                                  .publicProfileLegacyProvider(listen: false)
                                                   .userProfileSetups![index!]
                                                   .data()["wallpaper_url"][1]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                          tileText: context
+                                                      .publicProfileLegacyProvider(listen: false)
                                                       .userProfileSetups![index!]
                                                       .data()["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
-                                              ? (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                              ? (context
+                                                              .publicProfileLegacyProvider(listen: false)
                                                               .userProfileSetups![index!]["wall_id"] ==
                                                           null ||
-                                                      Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                      context
+                                                              .publicProfileLegacyProvider(listen: false)
                                                               .userProfileSetups![index!]["wall_id"] ==
                                                           "")
                                                   ? "Wall Link"
-                                                  : "Prism (${Provider.of<user_data.UserProfileProvider>(context, listen: false).userProfileSetups![index!]["wall_id"]})"
-                                              : "${Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
+                                                  : "Prism (${context.publicProfileLegacyProvider(listen: false).userProfileSetups![index!]["wall_id"]})"
+                                              : "${context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay: const Duration(milliseconds: 150),
                                         ),
                                         SetupDetailsTile(
-                                          isInstalled: Provider.of<user_data.UserProfileProvider>(context)
+                                          isInstalled: context
+                                                  .publicProfileLegacyProvider()
                                                   .userProfileSetups![index!]
                                                   .data()["icon_url"]
                                                   .toString()
                                                   .contains('play.google.com/store/apps/details?id=')
-                                              ? DeviceApps.isAppInstalled(
-                                                  Provider.of<user_data.UserProfileProvider>(context)
+                                              ? DeviceApps.isAppInstalled(context
+                                                  .publicProfileLegacyProvider()
+                                                  .userProfileSetups![index!]
+                                                  .data()["icon_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0])
+                                              : Future.value(false),
+                                          onTap: () async {
+                                            if (context
+                                                .publicProfileLegacyProvider(listen: false)
+                                                .userProfileSetups![index!]
+                                                .data()["icon_url"]
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(context
+                                                  .publicProfileLegacyProvider(listen: false)
+                                                  .userProfileSetups![index!]
+                                                  .data()["icon_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(context
+                                                      .publicProfileLegacyProvider(listen: false)
                                                       .userProfileSetups![index!]
                                                       .data()["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
-                                              : Future.value(false),
-                                          onTap: () async {
-                                            if (Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                .userProfileSetups![index!]
-                                                .data()["icon_url"]
-                                                .toString()
-                                                .contains('play.google.com/store/apps/details?id=')) {
-                                              final isInstalled = await DeviceApps.isAppInstalled(
-                                                  Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                  : launch(context
+                                                      .publicProfileLegacyProvider(listen: false)
                                                       .userProfileSetups![index!]
                                                       .data()["icon_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(
-                                                      Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                          .userProfileSetups![index!]
-                                                          .data()["icon_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0])
-                                                  : launch(
-                                                      Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                          .userProfileSetups![index!]
-                                                          .data()["icon_url"]
-                                                          .toString());
+                                                      .toString());
                                             } else {
-                                              launch(Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                              launch(context
+                                                  .publicProfileLegacyProvider(listen: false)
                                                   .userProfileSetups![index!]
                                                   .data()["icon_url"]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                          tileText: context
+                                              .publicProfileLegacyProvider(listen: false)
                                               .userProfileSetups![index!]
                                               .data()["icon"]
                                               .toString(),
@@ -693,54 +720,57 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           delay: const Duration(milliseconds: 200),
                                         ),
                                         SetupDetailsTile(
-                                          isInstalled:
-                                              Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                      .userProfileSetups![index!]
-                                                      .data()["widget_url"]
-                                                      .toString()
-                                                      .contains('play.google.com/store/apps/details?id=')
-                                                  ? DeviceApps.isAppInstalled(
-                                                      Provider.of<user_data.UserProfileProvider>(context)
-                                                          .userProfileSetups![index!]
-                                                          .data()["widget_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0])
-                                                  : Future.value(false),
+                                          isInstalled: context
+                                                  .publicProfileLegacyProvider(listen: false)
+                                                  .userProfileSetups![index!]
+                                                  .data()["widget_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')
+                                              ? DeviceApps.isAppInstalled(context
+                                                  .publicProfileLegacyProvider()
+                                                  .userProfileSetups![index!]
+                                                  .data()["widget_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0])
+                                              : Future.value(false),
                                           onTap: () async {
-                                            if (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                            if (context
+                                                .publicProfileLegacyProvider(listen: false)
                                                 .userProfileSetups![index!]
                                                 .data()["widget_url"]
                                                 .toString()
                                                 .contains('play.google.com/store/apps/details?id=')) {
-                                              final isInstalled = await DeviceApps.isAppInstalled(
-                                                  Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                              final isInstalled = await DeviceApps.isAppInstalled(context
+                                                  .publicProfileLegacyProvider(listen: false)
+                                                  .userProfileSetups![index!]
+                                                  .data()["widget_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(context
+                                                      .publicProfileLegacyProvider(listen: false)
                                                       .userProfileSetups![index!]
                                                       .data()["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
-                                                      .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(
-                                                      Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                          .userProfileSetups![index!]
-                                                          .data()["widget_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0])
-                                                  : launch(
-                                                      Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                          .userProfileSetups![index!]
-                                                          .data()["widget_url"]
-                                                          .toString());
+                                                      .split("&")[0])
+                                                  : launch(context
+                                                      .publicProfileLegacyProvider(listen: false)
+                                                      .userProfileSetups![index!]
+                                                      .data()["widget_url"]
+                                                      .toString());
                                             } else {
-                                              launch(Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                              launch(context
+                                                  .publicProfileLegacyProvider(listen: false)
                                                   .userProfileSetups![index!]
                                                   .data()["widget_url"]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<user_data.UserProfileProvider>(context)
+                                          tileText: context
+                                              .publicProfileLegacyProvider()
                                               .userProfileSetups![index!]
                                               .data()["widget"]
                                               .toString(),
@@ -758,121 +788,133 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           SetupDetailsTile(
                                             isInstalled: Future.value(false),
                                             onTap: () async {
-                                              if (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                              if (context
+                                                      .publicProfileLegacyProvider(listen: false)
                                                       .userProfileSetups![index!]
                                                       .data()["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "[") {
-                                                if (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                if (context
+                                                            .publicProfileLegacyProvider(listen: false)
                                                             .userProfileSetups![index!]
                                                             .data()["wall_id"] ==
                                                         null ||
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                    context
+                                                            .publicProfileLegacyProvider(listen: false)
                                                             .userProfileSetups![index!]
                                                             .data()["wall_id"] ==
                                                         "") {
                                                   logger.d("Id Not Found!");
-                                                  launch(
-                                                      Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                          .userProfileSetups![index!]
-                                                          .data()["wallpaper_url"]
-                                                          .toString());
+                                                  launch(context
+                                                      .publicProfileLegacyProvider(listen: false)
+                                                      .userProfileSetups![index!]
+                                                      .data()["wallpaper_url"]
+                                                      .toString());
                                                 } else {
                                                   Navigator.pushNamed(context, shareRoute, arguments: [
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                    context
+                                                        .publicProfileLegacyProvider(listen: false)
                                                         .userProfileSetups![index!]
                                                         .data()["wall_id"]
                                                         .toString(),
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                    context
+                                                        .publicProfileLegacyProvider(listen: false)
                                                         .userProfileSetups![index!]
                                                         .data()["wallpaper_provider"]
                                                         .toString(),
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                    context
+                                                        .publicProfileLegacyProvider(listen: false)
                                                         .userProfileSetups![index!]
                                                         .data()["wallpaper_url"]
                                                         .toString(),
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                    context
+                                                        .publicProfileLegacyProvider(listen: false)
                                                         .userProfileSetups![index!]
                                                         .data()["wallpaper_url"]
                                                         .toString(),
                                                   ]);
                                                 }
                                               } else {
-                                                launch(Provider.of<user_data.UserProfileProvider>(context)
+                                                launch(context
+                                                    .publicProfileLegacyProvider()
                                                     .userProfileSetups![index!]
                                                     .data()["wallpaper_url"][1]
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<user_data.UserProfileProvider>(context)
+                                            tileText: context
+                                                        .publicProfileLegacyProvider()
                                                         .userProfileSetups![index!]
                                                         .data()["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
-                                                ? (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                                ? (context
+                                                                .publicProfileLegacyProvider(listen: false)
                                                                 .userProfileSetups![index!]["wall_id"] ==
                                                             null ||
-                                                        Provider.of<user_data.UserProfileProvider>(context,
-                                                                    listen: false)
+                                                        context
+                                                                .publicProfileLegacyProvider(listen: false)
                                                                 .userProfileSetups![index!]["wall_id"] ==
                                                             "")
                                                     ? "Wall Link"
-                                                    : "Prism (${Provider.of<user_data.UserProfileProvider>(context, listen: false).userProfileSetups![index!]["wall_id"]})"
-                                                : "${Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
+                                                    : "Prism (${context.publicProfileLegacyProvider(listen: false).userProfileSetups![index!]["wall_id"]})"
+                                                : "${context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"][0]} - ${(context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"] as List).length > 2 ? context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(milliseconds: 150),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<user_data.UserProfileProvider>(context)
+                                            isInstalled: context
+                                                    .publicProfileLegacyProvider()
                                                     .userProfileSetups![index!]
                                                     .data()["icon_url"]
                                                     .toString()
                                                     .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(
-                                                    Provider.of<user_data.UserProfileProvider>(context)
-                                                        .userProfileSetups![index!]
-                                                        .data()["icon_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0])
+                                                ? DeviceApps.isAppInstalled(context
+                                                    .publicProfileLegacyProvider()
+                                                    .userProfileSetups![index!]
+                                                    .data()["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
-                                              if (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                              if (context
+                                                  .publicProfileLegacyProvider(listen: false)
                                                   .userProfileSetups![index!]
                                                   .data()["icon_url"]
                                                   .toString()
                                                   .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                        .userProfileSetups![index!]
-                                                        .data()["icon_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0]);
+                                                final isInstalled = await DeviceApps.isAppInstalled(context
+                                                    .publicProfileLegacyProvider(listen: false)
+                                                    .userProfileSetups![index!]
+                                                    .data()["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0]);
                                                 isInstalled
-                                                    ? DeviceApps.openApp(Provider.of<user_data.UserProfileProvider>(
-                                                            context,
-                                                            listen: false)
+                                                    ? DeviceApps.openApp(context
+                                                        .publicProfileLegacyProvider(listen: false)
                                                         .userProfileSetups![index!]
                                                         .data()["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                    : launch(Provider.of<user_data.UserProfileProvider>(context,
-                                                            listen: false)
+                                                    : launch(context
+                                                        .publicProfileLegacyProvider(listen: false)
                                                         .userProfileSetups![index!]
                                                         .data()["icon_url"]
                                                         .toString());
                                               } else {
-                                                launch(
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                        .userProfileSetups![index!]
-                                                        .data()["icon_url"]
-                                                        .toString());
+                                                launch(context
+                                                    .publicProfileLegacyProvider(listen: false)
+                                                    .userProfileSetups![index!]
+                                                    .data()["icon_url"]
+                                                    .toString());
                                               }
                                             },
-                                            tileText: Provider.of<user_data.UserProfileProvider>(context)
+                                            tileText: context
+                                                .publicProfileLegacyProvider()
                                                 .userProfileSetups![index!]
                                                 .data()["icon"]
                                                 .toString(),
@@ -881,55 +923,57 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                             delay: const Duration(milliseconds: 200),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<user_data.UserProfileProvider>(context)
+                                            isInstalled: context
+                                                    .publicProfileLegacyProvider()
                                                     .userProfileSetups![index!]
                                                     .data()["widget_url"]
                                                     .toString()
                                                     .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(
-                                                    Provider.of<user_data.UserProfileProvider>(context)
-                                                        .userProfileSetups![index!]
-                                                        .data()["widget_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0])
+                                                ? DeviceApps.isAppInstalled(context
+                                                    .publicProfileLegacyProvider()
+                                                    .userProfileSetups![index!]
+                                                    .data()["widget_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
-                                              if (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                              if (context
+                                                  .publicProfileLegacyProvider(listen: false)
                                                   .userProfileSetups![index!]
                                                   .data()["widget_url"]
                                                   .toString()
                                                   .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                        .userProfileSetups![index!]
-                                                        .data()["widget_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0]);
+                                                final isInstalled = await DeviceApps.isAppInstalled(context
+                                                    .publicProfileLegacyProvider(listen: false)
+                                                    .userProfileSetups![index!]
+                                                    .data()["widget_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0]);
                                                 isInstalled
-                                                    ? DeviceApps.openApp(Provider.of<user_data.UserProfileProvider>(
-                                                            context,
-                                                            listen: false)
+                                                    ? DeviceApps.openApp(context
+                                                        .publicProfileLegacyProvider(listen: false)
                                                         .userProfileSetups![index!]
                                                         .data()["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                    : launch(Provider.of<user_data.UserProfileProvider>(context,
-                                                            listen: false)
+                                                    : launch(context
+                                                        .publicProfileLegacyProvider(listen: false)
                                                         .userProfileSetups![index!]
                                                         .data()["widget_url"]
                                                         .toString());
                                               } else {
-                                                launch(
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                        .userProfileSetups![index!]
-                                                        .data()["widget_url"]
-                                                        .toString());
+                                                launch(context
+                                                    .publicProfileLegacyProvider(listen: false)
+                                                    .userProfileSetups![index!]
+                                                    .data()["widget_url"]
+                                                    .toString());
                                               }
                                             },
-                                            tileText: Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                            tileText: context
+                                                .publicProfileLegacyProvider(listen: false)
                                                 .userProfileSetups![index!]
                                                 .data()["widget"]
                                                 .toString(),
@@ -938,55 +982,57 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                             delay: const Duration(milliseconds: 250),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<user_data.UserProfileProvider>(context)
+                                            isInstalled: context
+                                                    .publicProfileLegacyProvider()
                                                     .userProfileSetups![index!]
                                                     .data()["widget_url2"]
                                                     .toString()
                                                     .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(
-                                                    Provider.of<user_data.UserProfileProvider>(context)
-                                                        .userProfileSetups![index!]
-                                                        .data()["widget_url2"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0])
+                                                ? DeviceApps.isAppInstalled(context
+                                                    .publicProfileLegacyProvider()
+                                                    .userProfileSetups![index!]
+                                                    .data()["widget_url2"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
-                                              if (Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                              if (context
+                                                  .publicProfileLegacyProvider(listen: false)
                                                   .userProfileSetups![index!]
                                                   .data()["widget_url2"]
                                                   .toString()
                                                   .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                        .userProfileSetups![index!]
-                                                        .data()["widget_url2"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0]);
+                                                final isInstalled = await DeviceApps.isAppInstalled(context
+                                                    .publicProfileLegacyProvider(listen: false)
+                                                    .userProfileSetups![index!]
+                                                    .data()["widget_url2"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0]);
                                                 isInstalled
-                                                    ? DeviceApps.openApp(Provider.of<user_data.UserProfileProvider>(
-                                                            context,
-                                                            listen: false)
+                                                    ? DeviceApps.openApp(context
+                                                        .publicProfileLegacyProvider(listen: false)
                                                         .userProfileSetups![index!]
                                                         .data()["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                    : launch(Provider.of<user_data.UserProfileProvider>(context,
-                                                            listen: false)
+                                                    : launch(context
+                                                        .publicProfileLegacyProvider(listen: false)
                                                         .userProfileSetups![index!]
                                                         .data()["widget_url2"]
                                                         .toString());
                                               } else {
-                                                launch(
-                                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
-                                                        .userProfileSetups![index!]
-                                                        .data()["widget_url2"]
-                                                        .toString());
+                                                launch(context
+                                                    .publicProfileLegacyProvider(listen: false)
+                                                    .userProfileSetups![index!]
+                                                    .data()["widget_url2"]
+                                                    .toString());
                                               }
                                             },
-                                            tileText: Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                            tileText: context
+                                                .publicProfileLegacyProvider(listen: false)
                                                 .userProfileSetups![index!]
                                                 .data()["widget2"]
                                                 .toString(),
@@ -1021,21 +1067,25 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                   if (globals.prismUser.loggedIn == false) {
                                     googleSignInPopUp(context, () {
                                       onFavSetup(
-                                          Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                          context
+                                              .publicProfileLegacyProvider(listen: false)
                                               .userProfileSetups![index!]
                                               .data()["id"]
                                               .toString(),
-                                          Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                          context
+                                              .publicProfileLegacyProvider(listen: false)
                                               .userProfileSetups![index!]
                                               .data());
                                     });
                                   } else {
                                     onFavSetup(
-                                        Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                        context
+                                            .publicProfileLegacyProvider(listen: false)
                                             .userProfileSetups![index!]
                                             .data()["id"]
                                             .toString(),
-                                        Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                        context
+                                            .publicProfileLegacyProvider(listen: false)
                                             .userProfileSetups![index!]
                                             .data());
                                   }
@@ -1043,7 +1093,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                 iconColor: Theme.of(context).colorScheme.secondary,
                                 iconSize: 30,
                                 isFavorite: box.get(
-                                    Provider.of<user_data.UserProfileProvider>(context)
+                                    context
+                                        .publicProfileLegacyProvider()
                                         .userProfileSetups![index!]
                                         .data()["id"]
                                         .toString(),
@@ -1054,11 +1105,13 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                               onTap: () {
                                 createSetupDynamicLink(
                                     index.toString(),
-                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                    context
+                                        .publicProfileLegacyProvider(listen: false)
                                         .userProfileSetups![index!]
                                         .data()["name"]
                                         .toString(),
-                                    Provider.of<user_data.UserProfileProvider>(context, listen: false)
+                                    context
+                                        .publicProfileLegacyProvider(listen: false)
                                         .userProfileSetups![index!]
                                         .data()["image"]
                                         .toString());
@@ -1112,10 +1165,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                         shakeController.forward(from: 0.0);
                       },
                       child: CachedNetworkImage(
-                        imageUrl: Provider.of<user_data.UserProfileProvider>(context)
-                            .userProfileSetups![index!]
-                            .data()["image"]
-                            .toString(),
+                        imageUrl:
+                            context.publicProfileLegacyProvider().userProfileSetups![index!].data()["image"].toString(),
                         imageBuilder: (context, imageProvider) => Container(
                           margin: EdgeInsets.symmetric(
                               vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
@@ -1183,7 +1234,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                 return FadeTransition(
                                     opacity: animation,
                                     child: SetupOverlay(
-                                      link: Provider.of<user_data.UserProfileProvider>(context)
+                                      link: context
+                                          .publicProfileLegacyProvider()
                                           .userProfileSetups![index!]
                                           .data()["image"]
                                           .toString(),
@@ -1326,23 +1378,18 @@ class ModifiedDownloadButton extends StatelessWidget {
   const ModifiedDownloadButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return Provider.of<user_data.UserProfileProvider>(context)
-                .userProfileSetups![index!]
-                .data()["wallpaper_url"]
-                .toString()[0] !=
-            "["
-        ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wall_id"] != null &&
-                Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wall_id"] != ""
+    return context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"].toString()[0] != "["
+        ? context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wall_id"] != null &&
+                context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wall_id"] != ""
             ? DownloadButton(
-                link: Provider.of<user_data.UserProfileProvider>(context)
-                    .userProfileSetups![index!]
-                    .data()["wallpaper_url"]
-                    .toString(),
+                link:
+                    context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"].toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(Provider.of<user_data.UserProfileProvider>(context)
+                  launch(context
+                      .publicProfileLegacyProvider()
                       .userProfileSetups![index!]
                       .data()["wallpaper_url"]
                       .toString());
@@ -1365,7 +1412,8 @@ class ModifiedDownloadButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(Provider.of<user_data.UserProfileProvider>(context, listen: false)
+              launch(context
+                  .publicProfileLegacyProvider(listen: false)
                   .userProfileSetups![index!]
                   .data()["wallpaper_url"][1]
                   .toString());
@@ -1392,23 +1440,18 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return Provider.of<user_data.UserProfileProvider>(context)
-                .userProfileSetups![index!]
-                .data()["wallpaper_url"]
-                .toString()[0] !=
-            "["
-        ? Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wall_id"] != null &&
-                Provider.of<user_data.UserProfileProvider>(context).userProfileSetups![index!].data()["wall_id"] != ""
+    return context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"].toString()[0] != "["
+        ? context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wall_id"] != null &&
+                context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wall_id"] != ""
             ? SetWallpaperButton(
-                url: Provider.of<user_data.UserProfileProvider>(context)
-                    .userProfileSetups![index!]
-                    .data()["wallpaper_url"]
-                    .toString(),
+                url:
+                    context.publicProfileLegacyProvider().userProfileSetups![index!].data()["wallpaper_url"].toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(Provider.of<user_data.UserProfileProvider>(context)
+                  launch(context
+                      .publicProfileLegacyProvider()
                       .userProfileSetups![index!]
                       .data()["wallpaper_url"]
                       .toString());
@@ -1431,7 +1474,8 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(Provider.of<user_data.UserProfileProvider>(context, listen: false)
+              launch(context
+                  .publicProfileLegacyProvider(listen: false)
                   .userProfileSetups![index!]
                   .data()["wallpaper_url"][1]
                   .toString());

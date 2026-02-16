@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
-import 'package:Prism/data/setups/provider/setupProvider.dart' as sdata;
+import 'package:Prism/ui/setup/setups_legacy_bridge.dart' as sdata;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';

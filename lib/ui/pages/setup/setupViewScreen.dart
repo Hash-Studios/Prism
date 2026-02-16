@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
-import 'package:Prism/data/setups/provider/setupProvider.dart';
+import 'package:Prism/ui/setup/setups_legacy_bridge.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
@@ -24,7 +24,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
-import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -58,9 +57,9 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments![0] as int;
     isLoading = true;
-    updateViewsSetup(Provider.of<SetupProvider>(context, listen: false).setups![index!]["id"].toString().toUpperCase());
-    _futureView = getViewsSetup(
-        Provider.of<SetupProvider>(context, listen: false).setups![index!]["id"].toString().toUpperCase());
+    updateViewsSetup(context.setupsLegacyProvider(listen: false).setups![index!]["id"].toString().toUpperCase());
+    _futureView =
+        getViewsSetup(context.setupsLegacyProvider(listen: false).setups![index!]["id"].toString().toUpperCase());
     box = Hive.box('localFav');
     super.initState();
   }
@@ -177,7 +176,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                       forward: true,
                                       slideSide: SlideFromSlide.bottom,
                                       child: Text(
-                                        Provider.of<SetupProvider>(context, listen: false)
+                                        context
+                                            .setupsLegacyProvider(listen: false)
                                             .setups![index!]["name"]
                                             .toString()
                                             .toUpperCase(),
@@ -199,9 +199,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                       slideSide: SlideFromSlide.bottom,
                                       delay: const Duration(milliseconds: 50),
                                       child: Text(
-                                        Provider.of<SetupProvider>(context, listen: false)
-                                            .setups![index!]["desc"]
-                                            .toString(),
+                                        context.setupsLegacyProvider(listen: false).setups![index!]["desc"].toString(),
                                         maxLines: 2,
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
@@ -239,7 +237,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                               child: Row(
                                                 children: [
                                                   Text(
-                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                    context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["id"]
                                                         .toString()
                                                         .toUpperCase(),
@@ -302,10 +301,12 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                             onTap: () async {
                                               await createCopyrightLink(true, context,
                                                   index: index.toString(),
-                                                  name: Provider.of<SetupProvider>(context, listen: false)
+                                                  name: context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["name"]
                                                       .toString(),
-                                                  thumbUrl: Provider.of<SetupProvider>(context, listen: false)
+                                                  thumbUrl: context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["image"]
                                                       .toString());
                                             },
@@ -343,7 +344,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                     alignment: Alignment.topRight,
                                                     child: ActionChip(
                                                         label: Text(
-                                                          Provider.of<SetupProvider>(context, listen: false)
+                                                          context
+                                                              .setupsLegacyProvider(listen: false)
                                                               .setups![index!]["by"]
                                                               .toString(),
                                                           overflow: TextOverflow.fade,
@@ -354,24 +356,25 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                         ),
                                                         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                         avatar: CircleAvatar(
-                                                          backgroundImage: CachedNetworkImageProvider(
-                                                              Provider.of<SetupProvider>(context, listen: false)
-                                                                  .setups![index!]["userPhoto"]
-                                                                  .toString()),
+                                                          backgroundImage: CachedNetworkImageProvider(context
+                                                              .setupsLegacyProvider(listen: false)
+                                                              .setups![index!]["userPhoto"]
+                                                              .toString()),
                                                         ),
                                                         labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                         onPressed: () {
                                                           Navigator.pushNamed(context, followerProfileRoute,
                                                               arguments: [
-                                                                Provider.of<SetupProvider>(context, listen: false)
+                                                                context
+                                                                    .setupsLegacyProvider(listen: false)
                                                                     .setups![index!]["email"],
                                                               ]);
                                                         }),
                                                   ),
-                                                  if (globals.verifiedUsers.contains(
-                                                      Provider.of<SetupProvider>(context, listen: false)
-                                                          .setups![index!]["email"]
-                                                          .toString()))
+                                                  if (globals.verifiedUsers.contains(context
+                                                      .setupsLegacyProvider(listen: false)
+                                                      .setups![index!]["email"]
+                                                      .toString()))
                                                     Align(
                                                       alignment: Alignment.topRight,
                                                       child: SizedBox(
@@ -406,8 +409,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                         flex: 16,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                          child: Provider.of<SetupProvider>(context, listen: false).setups![index!]["widget"] == "" ||
-                                  Provider.of<SetupProvider>(context, listen: false).setups![index!]["widget"] == null
+                          child: context.setupsLegacyProvider(listen: false).setups![index!]["widget"] == "" ||
+                                  context.setupsLegacyProvider(listen: false).setups![index!]["widget"] == null
                               ? Column(
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   mainAxisSize: MainAxisSize.min,
@@ -415,97 +418,109 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        if (Provider.of<SetupProvider>(context, listen: false)
+                                        if (context
+                                                .setupsLegacyProvider(listen: false)
                                                 .setups![index!]["wallpaper_url"]
                                                 .toString()[0] !=
                                             "[") {
-                                          if (Provider.of<SetupProvider>(context, listen: false).setups![index!]
-                                                      ["wall_id"] ==
+                                          if (context.setupsLegacyProvider(listen: false).setups![index!]["wall_id"] ==
                                                   null ||
-                                              Provider.of<SetupProvider>(context, listen: false).setups![index!]
-                                                      ["wall_id"] ==
+                                              context.setupsLegacyProvider(listen: false).setups![index!]["wall_id"] ==
                                                   "") {
                                             logger.d("Id Not Found!");
-                                            launch(Provider.of<SetupProvider>(context, listen: false)
+                                            launch(context
+                                                .setupsLegacyProvider(listen: false)
                                                 .setups![index!]["wallpaper_url"]
                                                 .toString());
                                           } else {
                                             Navigator.pushNamed(context, shareRoute, arguments: [
-                                              Provider.of<SetupProvider>(context, listen: false)
+                                              context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["wall_id"]
                                                   .toString(),
-                                              Provider.of<SetupProvider>(context, listen: false)
+                                              context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["wallpaper_provider"]
                                                   .toString(),
-                                              Provider.of<SetupProvider>(context, listen: false)
+                                              context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["wallpaper_url"]
                                                   .toString(),
-                                              Provider.of<SetupProvider>(context, listen: false)
+                                              context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["wallpaper_url"]
                                                   .toString(),
                                             ]);
                                           }
                                         } else {
-                                          launch(Provider.of<SetupProvider>(context, listen: false)
+                                          launch(context
+                                              .setupsLegacyProvider(listen: false)
                                               .setups![index!]["wallpaper_url"][1]
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<SetupProvider>(context, listen: false)
+                                      tileText: context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
-                                          ? (Provider.of<SetupProvider>(context, listen: false).setups![index!]
-                                                          ["wall_id"] ==
+                                          ? (context.setupsLegacyProvider(listen: false).setups![index!]["wall_id"] ==
                                                       null ||
-                                                  Provider.of<SetupProvider>(context, listen: false).setups![index!]
+                                                  context.setupsLegacyProvider(listen: false).setups![index!]
                                                           ["wall_id"] ==
                                                       "")
                                               ? "Wall Link"
-                                              : "Prism (${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"]})"
-                                          : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
+                                              : "Prism (${context.setupsLegacyProvider(listen: false).setups![index!]["wall_id"]})"
+                                          : "${context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled: Provider.of<SetupProvider>(context, listen: false)
+                                      isInstalled: context
+                                              .setupsLegacyProvider(listen: false)
                                               .setups![index!]["icon_url"]
                                               .toString()
                                               .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(Provider.of<SetupProvider>(context, listen: false)
+                                          ? DeviceApps.isAppInstalled(context
+                                              .setupsLegacyProvider(listen: false)
                                               .setups![index!]["icon_url"]
                                               .toString()
                                               .split("details?id=")[1]
                                               .split("&")[0])
                                           : Future.value(false),
                                       onTap: () async {
-                                        if (Provider.of<SetupProvider>(context, listen: false)
+                                        if (context
+                                            .setupsLegacyProvider(listen: false)
                                             .setups![index!]["icon_url"]
                                             .toString()
                                             .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                              Provider.of<SetupProvider>(context, listen: false)
-                                                  .setups![index!]["icon_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0]);
+                                          final isInstalled = await DeviceApps.isAppInstalled(context
+                                              .setupsLegacyProvider(listen: false)
+                                              .setups![index!]["icon_url"]
+                                              .toString()
+                                              .split("details?id=")[1]
+                                              .split("&")[0]);
                                           isInstalled
-                                              ? DeviceApps.openApp(Provider.of<SetupProvider>(context, listen: false)
+                                              ? DeviceApps.openApp(context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0])
-                                              : launch(Provider.of<SetupProvider>(context, listen: false)
+                                              : launch(context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["icon_url"]
                                                   .toString());
                                         } else {
-                                          launch(Provider.of<SetupProvider>(context, listen: false)
+                                          launch(context
+                                              .setupsLegacyProvider(listen: false)
                                               .setups![index!]["icon_url"]
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<SetupProvider>(context, listen: false)
+                                      tileText: context
+                                          .setupsLegacyProvider(listen: false)
                                           .setups![index!]["icon"]
                                           .toString(),
                                       tileType: "Icons",
@@ -514,9 +529,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                     ),
                                   ],
                                 )
-                              : Provider.of<SetupProvider>(context, listen: false).setups![index!]["widget2"] == "" ||
-                                      Provider.of<SetupProvider>(context, listen: false).setups![index!]["widget2"] ==
-                                          null
+                              : context.setupsLegacyProvider(listen: false).setups![index!]["widget2"] == "" ||
+                                      context.setupsLegacyProvider(listen: false).setups![index!]["widget2"] == null
                                   ? Column(
                                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                       mainAxisSize: MainAxisSize.min,
@@ -524,99 +538,112 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                         SetupDetailsTile(
                                           isInstalled: Future.value(false),
                                           onTap: () async {
-                                            if (Provider.of<SetupProvider>(context, listen: false)
+                                            if (context
+                                                    .setupsLegacyProvider(listen: false)
                                                     .setups![index!]["wallpaper_url"]
                                                     .toString()[0] !=
                                                 "[") {
-                                              if (Provider.of<SetupProvider>(context, listen: false).setups![index!]
+                                              if (context.setupsLegacyProvider(listen: false).setups![index!]
                                                           ["wall_id"] ==
                                                       null ||
-                                                  Provider.of<SetupProvider>(context, listen: false).setups![index!]
+                                                  context.setupsLegacyProvider(listen: false).setups![index!]
                                                           ["wall_id"] ==
                                                       "") {
                                                 logger.d("Id Not Found!");
-                                                launch(Provider.of<SetupProvider>(context, listen: false)
+                                                launch(context
+                                                    .setupsLegacyProvider(listen: false)
                                                     .setups![index!]["wallpaper_url"]
                                                     .toString());
                                               } else {
                                                 Navigator.pushNamed(context, shareRoute, arguments: [
-                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                  context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["wall_id"]
                                                       .toString(),
-                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                  context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["wallpaper_provider"]
                                                       .toString(),
-                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                  context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["wallpaper_url"]
                                                       .toString(),
-                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                  context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["wallpaper_url"]
                                                       .toString(),
                                                 ]);
                                               }
                                             } else {
-                                              launch(Provider.of<SetupProvider>(context, listen: false)
+                                              launch(context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["wallpaper_url"][1]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<SetupProvider>(context, listen: false)
+                                          tileText: context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
-                                              ? (Provider.of<SetupProvider>(context, listen: false).setups![index!]
+                                              ? (context.setupsLegacyProvider(listen: false).setups![index!]
                                                               ["wall_id"] ==
                                                           null ||
-                                                      Provider.of<SetupProvider>(context, listen: false).setups![index!]
+                                                      context.setupsLegacyProvider(listen: false).setups![index!]
                                                               ["wall_id"] ==
                                                           "")
                                                   ? "Wall Link"
-                                                  : "Prism (${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"]})"
-                                              : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
+                                                  : "Prism (${context.setupsLegacyProvider(listen: false).setups![index!]["wall_id"]})"
+                                              : "${context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay: const Duration(milliseconds: 150),
                                         ),
                                         SetupDetailsTile(
-                                          isInstalled: Provider.of<SetupProvider>(context, listen: false)
+                                          isInstalled: context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["icon_url"]
                                                   .toString()
                                                   .contains('play.google.com/store/apps/details?id=')
-                                              ? DeviceApps.isAppInstalled(
-                                                  Provider.of<SetupProvider>(context, listen: false)
+                                              ? DeviceApps.isAppInstalled(context
+                                                  .setupsLegacyProvider(listen: false)
+                                                  .setups![index!]["icon_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0])
+                                              : Future.value(false),
+                                          onTap: () async {
+                                            if (context
+                                                .setupsLegacyProvider(listen: false)
+                                                .setups![index!]["icon_url"]
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(context
+                                                  .setupsLegacyProvider(listen: false)
+                                                  .setups![index!]["icon_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
-                                              : Future.value(false),
-                                          onTap: () async {
-                                            if (Provider.of<SetupProvider>(context, listen: false)
-                                                .setups![index!]["icon_url"]
-                                                .toString()
-                                                .contains('play.google.com/store/apps/details?id=')) {
-                                              final isInstalled = await DeviceApps.isAppInstalled(
-                                                  Provider.of<SetupProvider>(context, listen: false)
-                                                      .setups![index!]["icon_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(
-                                                      Provider.of<SetupProvider>(context, listen: false)
-                                                          .setups![index!]["icon_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0])
-                                                  : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                  : launch(context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["icon_url"]
                                                       .toString());
                                             } else {
-                                              launch(Provider.of<SetupProvider>(context, listen: false)
+                                              launch(context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["icon_url"]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<SetupProvider>(context, listen: false)
+                                          tileText: context
+                                              .setupsLegacyProvider(listen: false)
                                               .setups![index!]["icon"]
                                               .toString(),
                                           tileType: "Icons",
@@ -624,45 +651,50 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                           delay: const Duration(milliseconds: 200),
                                         ),
                                         SetupDetailsTile(
-                                          isInstalled: Provider.of<SetupProvider>(context, listen: false)
+                                          isInstalled: context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["widget_url"]
                                                   .toString()
                                                   .contains('play.google.com/store/apps/details?id=')
-                                              ? DeviceApps.isAppInstalled(
-                                                  Provider.of<SetupProvider>(context, listen: false)
+                                              ? DeviceApps.isAppInstalled(context
+                                                  .setupsLegacyProvider(listen: false)
+                                                  .setups![index!]["widget_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0])
+                                              : Future.value(false),
+                                          onTap: () async {
+                                            if (context
+                                                .setupsLegacyProvider(listen: false)
+                                                .setups![index!]["widget_url"]
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(context
+                                                  .setupsLegacyProvider(listen: false)
+                                                  .setups![index!]["widget_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
-                                              : Future.value(false),
-                                          onTap: () async {
-                                            if (Provider.of<SetupProvider>(context, listen: false)
-                                                .setups![index!]["widget_url"]
-                                                .toString()
-                                                .contains('play.google.com/store/apps/details?id=')) {
-                                              final isInstalled = await DeviceApps.isAppInstalled(
-                                                  Provider.of<SetupProvider>(context, listen: false)
-                                                      .setups![index!]["widget_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(
-                                                      Provider.of<SetupProvider>(context, listen: false)
-                                                          .setups![index!]["widget_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0])
-                                                  : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                  : launch(context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["widget_url"]
                                                       .toString());
                                             } else {
-                                              launch(Provider.of<SetupProvider>(context, listen: false)
+                                              launch(context
+                                                  .setupsLegacyProvider(listen: false)
                                                   .setups![index!]["widget_url"]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<SetupProvider>(context, listen: false)
+                                          tileText: context
+                                              .setupsLegacyProvider(listen: false)
                                               .setups![index!]["widget"]
                                               .toString(),
                                           tileType: "Widget",
@@ -679,99 +711,112 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                           SetupDetailsTile(
                                             isInstalled: Future.value(false),
                                             onTap: () async {
-                                              if (Provider.of<SetupProvider>(context, listen: false)
+                                              if (context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "[") {
-                                                if (Provider.of<SetupProvider>(context, listen: false).setups![index!]
+                                                if (context.setupsLegacyProvider(listen: false).setups![index!]
                                                             ["wall_id"] ==
                                                         null ||
-                                                    Provider.of<SetupProvider>(context, listen: false).setups![index!]
+                                                    context.setupsLegacyProvider(listen: false).setups![index!]
                                                             ["wall_id"] ==
                                                         "") {
                                                   logger.d("Id Not Found!");
-                                                  launch(Provider.of<SetupProvider>(context, listen: false)
+                                                  launch(context
+                                                      .setupsLegacyProvider(listen: false)
                                                       .setups![index!]["wallpaper_url"]
                                                       .toString());
                                                 } else {
                                                   Navigator.pushNamed(context, shareRoute, arguments: [
-                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                    context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["wall_id"]
                                                         .toString(),
-                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                    context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["wallpaper_provider"]
                                                         .toString(),
-                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                    context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["wallpaper_url"]
                                                         .toString(),
-                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                    context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["wallpaper_url"]
                                                         .toString(),
                                                   ]);
                                                 }
                                               } else {
-                                                launch(Provider.of<SetupProvider>(context, listen: false)
+                                                launch(context
+                                                    .setupsLegacyProvider(listen: false)
                                                     .setups![index!]["wallpaper_url"][1]
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<SetupProvider>(context, listen: false)
+                                            tileText: context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
-                                                ? (Provider.of<SetupProvider>(context, listen: false).setups![index!]
+                                                ? (context.setupsLegacyProvider(listen: false).setups![index!]
                                                                 ["wall_id"] ==
                                                             null ||
-                                                        Provider.of<SetupProvider>(context, listen: false)
-                                                                .setups![index!]["wall_id"] ==
+                                                        context.setupsLegacyProvider(listen: false).setups![index!]
+                                                                ["wall_id"] ==
                                                             "")
                                                     ? "Wall Link"
-                                                    : "Prism (${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"]})"
-                                                : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
+                                                    : "Prism (${context.setupsLegacyProvider(listen: false).setups![index!]["wall_id"]})"
+                                                : "${context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(milliseconds: 150),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<SetupProvider>(context, listen: false)
+                                            isInstalled: context
+                                                    .setupsLegacyProvider(listen: false)
                                                     .setups![index!]["icon_url"]
                                                     .toString()
                                                     .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(
-                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                ? DeviceApps.isAppInstalled(context
+                                                    .setupsLegacyProvider(listen: false)
+                                                    .setups![index!]["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
+                                                : Future.value(false),
+                                            onTap: () async {
+                                              if (context
+                                                  .setupsLegacyProvider(listen: false)
+                                                  .setups![index!]["icon_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps.isAppInstalled(context
+                                                    .setupsLegacyProvider(listen: false)
+                                                    .setups![index!]["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                : Future.value(false),
-                                            onTap: () async {
-                                              if (Provider.of<SetupProvider>(context, listen: false)
-                                                  .setups![index!]["icon_url"]
-                                                  .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(
-                                                    Provider.of<SetupProvider>(context, listen: false)
-                                                        .setups![index!]["icon_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(
-                                                        Provider.of<SetupProvider>(context, listen: false)
-                                                            .setups![index!]["icon_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0])
-                                                    : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                    : launch(context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["icon_url"]
                                                         .toString());
                                               } else {
-                                                launch(Provider.of<SetupProvider>(context, listen: false)
+                                                launch(context
+                                                    .setupsLegacyProvider(listen: false)
                                                     .setups![index!]["icon_url"]
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<SetupProvider>(context, listen: false)
+                                            tileText: context
+                                                .setupsLegacyProvider(listen: false)
                                                 .setups![index!]["icon"]
                                                 .toString(),
                                             tileType: "Icons",
@@ -779,45 +824,50 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                             delay: const Duration(milliseconds: 200),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<SetupProvider>(context, listen: false)
+                                            isInstalled: context
+                                                    .setupsLegacyProvider(listen: false)
                                                     .setups![index!]["widget_url"]
                                                     .toString()
                                                     .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(
-                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                ? DeviceApps.isAppInstalled(context
+                                                    .setupsLegacyProvider(listen: false)
+                                                    .setups![index!]["widget_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
+                                                : Future.value(false),
+                                            onTap: () async {
+                                              if (context
+                                                  .setupsLegacyProvider(listen: false)
+                                                  .setups![index!]["widget_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps.isAppInstalled(context
+                                                    .setupsLegacyProvider(listen: false)
+                                                    .setups![index!]["widget_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                : Future.value(false),
-                                            onTap: () async {
-                                              if (Provider.of<SetupProvider>(context, listen: false)
-                                                  .setups![index!]["widget_url"]
-                                                  .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(
-                                                    Provider.of<SetupProvider>(context, listen: false)
-                                                        .setups![index!]["widget_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(
-                                                        Provider.of<SetupProvider>(context, listen: false)
-                                                            .setups![index!]["widget_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0])
-                                                    : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                    : launch(context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["widget_url"]
                                                         .toString());
                                               } else {
-                                                launch(Provider.of<SetupProvider>(context, listen: false)
+                                                launch(context
+                                                    .setupsLegacyProvider(listen: false)
                                                     .setups![index!]["widget_url"]
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<SetupProvider>(context, listen: false)
+                                            tileText: context
+                                                .setupsLegacyProvider(listen: false)
                                                 .setups![index!]["widget"]
                                                 .toString(),
                                             tileType: "Widget",
@@ -825,45 +875,50 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                             delay: const Duration(milliseconds: 250),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<SetupProvider>(context, listen: false)
+                                            isInstalled: context
+                                                    .setupsLegacyProvider(listen: false)
                                                     .setups![index!]["widget_url2"]
                                                     .toString()
                                                     .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(
-                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                ? DeviceApps.isAppInstalled(context
+                                                    .setupsLegacyProvider(listen: false)
+                                                    .setups![index!]["widget_url2"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
+                                                : Future.value(false),
+                                            onTap: () async {
+                                              if (context
+                                                  .setupsLegacyProvider(listen: false)
+                                                  .setups![index!]["widget_url2"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps.isAppInstalled(context
+                                                    .setupsLegacyProvider(listen: false)
+                                                    .setups![index!]["widget_url2"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                : Future.value(false),
-                                            onTap: () async {
-                                              if (Provider.of<SetupProvider>(context, listen: false)
-                                                  .setups![index!]["widget_url2"]
-                                                  .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(
-                                                    Provider.of<SetupProvider>(context, listen: false)
-                                                        .setups![index!]["widget_url2"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(
-                                                        Provider.of<SetupProvider>(context, listen: false)
-                                                            .setups![index!]["widget_url2"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0])
-                                                    : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                    : launch(context
+                                                        .setupsLegacyProvider(listen: false)
                                                         .setups![index!]["widget_url2"]
                                                         .toString());
                                               } else {
-                                                launch(Provider.of<SetupProvider>(context, listen: false)
+                                                launch(context
+                                                    .setupsLegacyProvider(listen: false)
                                                     .setups![index!]["widget_url2"]
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<SetupProvider>(context, listen: false)
+                                            tileText: context
+                                                .setupsLegacyProvider(listen: false)
                                                 .setups![index!]["widget2"]
                                                 .toString(),
                                             tileType: "Widget",
@@ -897,25 +952,27 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                   if (globals.prismUser.loggedIn == false) {
                                     googleSignInPopUp(context, () {
                                       onFavSetup(
-                                          Provider.of<SetupProvider>(context, listen: false)
+                                          context
+                                              .setupsLegacyProvider(listen: false)
                                               .setups![index!]
                                               .data()["id"]
                                               .toString(),
-                                          Provider.of<SetupProvider>(context, listen: false).setups![index!].data());
+                                          context.setupsLegacyProvider(listen: false).setups![index!].data());
                                     });
                                   } else {
                                     onFavSetup(
-                                        Provider.of<SetupProvider>(context, listen: false)
+                                        context
+                                            .setupsLegacyProvider(listen: false)
                                             .setups![index!]
                                             .data()["id"]
                                             .toString(),
-                                        Provider.of<SetupProvider>(context, listen: false).setups![index!].data());
+                                        context.setupsLegacyProvider(listen: false).setups![index!].data());
                                   }
                                 },
                                 iconColor: Theme.of(context).colorScheme.secondary,
                                 iconSize: 30,
                                 isFavorite: box.get(
-                                    Provider.of<SetupProvider>(context, listen: false).setups![index!]["id"].toString(),
+                                    context.setupsLegacyProvider(listen: false).setups![index!]["id"].toString(),
                                     defaultValue: false) as bool,
                               ),
                             ),
@@ -923,12 +980,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                               onTap: () {
                                 createSetupDynamicLink(
                                     index.toString(),
-                                    Provider.of<SetupProvider>(context, listen: false)
-                                        .setups![index!]["name"]
-                                        .toString(),
-                                    Provider.of<SetupProvider>(context, listen: false)
-                                        .setups![index!]["image"]
-                                        .toString());
+                                    context.setupsLegacyProvider(listen: false).setups![index!]["name"].toString(),
+                                    context.setupsLegacyProvider(listen: false).setups![index!]["image"].toString());
                               },
                               child: Container(
                                 decoration: BoxDecoration(
@@ -979,8 +1032,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                         shakeController.forward(from: 0.0);
                       },
                       child: CachedNetworkImage(
-                        imageUrl:
-                            Provider.of<SetupProvider>(context, listen: false).setups![index!]["image"].toString(),
+                        imageUrl: context.setupsLegacyProvider(listen: false).setups![index!]["image"].toString(),
                         imageBuilder: (context, imageProvider) => Container(
                           margin: EdgeInsets.symmetric(
                               vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
@@ -1048,7 +1100,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                 return FadeTransition(
                                     opacity: animation,
                                     child: SetupOverlay(
-                                      link: Provider.of<SetupProvider>(context, listen: false)
+                                      link: context
+                                          .setupsLegacyProvider(listen: false)
                                           .setups![index!]["image"]
                                           .toString(),
                                     ));
@@ -1190,17 +1243,16 @@ class ModifiedDownloadButton extends StatelessWidget {
   const ModifiedDownloadButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString()[0] != "["
-        ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"] != null &&
-                Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"] != ""
+    return context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"].toString()[0] != "["
+        ? context.setupsLegacyProvider(listen: false).setups![index!]["wall_id"] != null &&
+                context.setupsLegacyProvider(listen: false).setups![index!]["wall_id"] != ""
             ? DownloadButton(
-                link: Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString(),
+                link: context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"].toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(
-                      Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString());
+                  launch(context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"].toString());
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -1220,7 +1272,7 @@ class ModifiedDownloadButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][1].toString());
+              launch(context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"][1].toString());
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1244,17 +1296,16 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString()[0] != "["
-        ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"] != null &&
-                Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"] != ""
+    return context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"].toString()[0] != "["
+        ? context.setupsLegacyProvider(listen: false).setups![index!]["wall_id"] != null &&
+                context.setupsLegacyProvider(listen: false).setups![index!]["wall_id"] != ""
             ? SetWallpaperButton(
-                url: Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString(),
+                url: context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"].toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(
-                      Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString());
+                  launch(context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"].toString());
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -1274,7 +1325,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][1].toString());
+              launch(context.setupsLegacyProvider(listen: false).setups![index!]["wallpaper_url"][1].toString());
             },
             child: Container(
               decoration: BoxDecoration(

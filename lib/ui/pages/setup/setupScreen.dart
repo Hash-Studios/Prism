@@ -1,4 +1,4 @@
-import 'package:Prism/data/setups/provider/setupProvider.dart';
+import 'package:Prism/ui/setup/setups_legacy_bridge.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
@@ -13,7 +13,6 @@ import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({
@@ -38,7 +37,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
   @override
   void initState() {
-    future = Provider.of<SetupProvider>(context, listen: false).getSetups();
+    future = context.setupsLegacyProvider(listen: false).getSetups();
     super.initState();
   }
 
@@ -122,9 +121,10 @@ class _SetupPageState extends State<SetupPage> {
                     SizedBox(
                       width: MediaQuery.of(context).size.width * 0.8,
                       child: Text(
-                        Provider.of<SetupProvider>(context, listen: false).setups!.isEmpty
+                        context.setupsLegacyProvider(listen: false).setups!.isEmpty
                             ? ""
-                            : Provider.of<SetupProvider>(context, listen: false)
+                            : context
+                                .setupsLegacyProvider(listen: false)
                                 .setups![pageNumber]['name']
                                 .toString()
                                 .toUpperCase(),
@@ -158,111 +158,109 @@ class _SetupPageState extends State<SetupPage> {
                         setState(() {
                           pageNumber = value;
                         });
-                        if (pageNumber + 1 == Provider.of<SetupProvider>(context, listen: false).setups!.length) {
-                          Provider.of<SetupProvider>(context, listen: false).seeMoreSetups();
+                        if (pageNumber + 1 == context.setupsLegacyProvider(listen: false).setups!.length) {
+                          context.setupsLegacyProvider(listen: false).seeMoreSetups();
                         }
                       },
                       controller: widget.controller,
-                      itemCount: Provider.of<SetupProvider>(context, listen: false).setups!.isEmpty
+                      itemCount: context.setupsLegacyProvider(listen: false).setups!.isEmpty
                           ? 1
-                          : Provider.of<SetupProvider>(context, listen: false).setups!.length,
-                      itemBuilder: (context, index) =>
-                          Provider.of<SetupProvider>(context, listen: false).setups!.isEmpty
-                              ? Loader()
-                              : GestureDetector(
-                                  onTap: () {
-                                    if (pageNumber >= 5) {
-                                      showPremiumPopUp(() {
-                                        Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
-                                      });
-                                    } else {
-                                      Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
-                                    }
-                                  },
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    padding: EdgeInsets.only(
-                                      top: pageNumber == index + 1 || pageNumber == index - 1
-                                          ? MediaQuery.of(context).size.height * 0.12
-                                          : MediaQuery.of(context).size.height * 0.0499,
-                                    ),
-                                    child: Align(
-                                      alignment: Alignment.topCenter,
-                                      child: CachedNetworkImage(
-                                        imageUrl: Provider.of<SetupProvider>(context, listen: false)
-                                            .setups![index]['image']
-                                            .toString(),
-                                        imageBuilder: (context, imageProvider) => Container(
-                                          width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
-                                          height: MediaQuery.of(context).size.height * 0.7,
-                                          decoration: BoxDecoration(
-                                            boxShadow: pageNumber == index
-                                                ? context.prismModeStyleForContext() == "Light"
-                                                    ? [
-                                                        BoxShadow(
-                                                          color: Colors.black.withOpacity(.15),
-                                                          blurRadius: 38,
-                                                          offset: const Offset(0, 19),
-                                                        ),
-                                                        BoxShadow(
-                                                          color: Colors.black.withOpacity(.10),
-                                                          blurRadius: 12,
-                                                          offset: const Offset(0, 15),
-                                                        )
-                                                      ]
-                                                    : [
-                                                        BoxShadow(
-                                                          color: Colors.black.withOpacity(.7),
-                                                          blurRadius: 38,
-                                                          offset: const Offset(0, 19),
-                                                        ),
-                                                        BoxShadow(
-                                                          color: Colors.black.withOpacity(.6),
-                                                          blurRadius: 12,
-                                                          offset: const Offset(0, 15),
-                                                        )
-                                                      ]
-                                                : [],
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: PremiumBannerSetupOld(
-                                            comparator: index < 5,
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(10),
-                                              child: SizedBox(
-                                                width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
-                                                height: MediaQuery.of(context).size.height * 0.7,
-                                                child: Image(image: imageProvider, fit: BoxFit.fill),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        progressIndicatorBuilder: (context, url, downloadProgress) => SizedBox(
-                                          width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
-                                          height: MediaQuery.of(context).size.height * 0.7,
-                                          child: Center(
-                                            child: CircularProgressIndicator(
-                                                valueColor: AlwaysStoppedAnimation(
-                                                  context.prismModeStyleForContext() == "Dark" &&
-                                                          context.prismIsAmoledDark()
-                                                      ? Theme.of(context).colorScheme.error == Colors.black
-                                                          ? Theme.of(context).colorScheme.secondary
-                                                          : Theme.of(context).colorScheme.error
-                                                      : Theme.of(context).colorScheme.error,
-                                                ),
-                                                value: downloadProgress.progress),
-                                          ),
-                                        ),
-                                        errorWidget: (context, url, error) => Center(
-                                          child: Icon(
-                                            JamIcons.close_circle_f,
-                                            color: Theme.of(context).colorScheme.secondary,
+                          : context.setupsLegacyProvider(listen: false).setups!.length,
+                      itemBuilder: (context, index) => context.setupsLegacyProvider(listen: false).setups!.isEmpty
+                          ? Loader()
+                          : GestureDetector(
+                              onTap: () {
+                                if (pageNumber >= 5) {
+                                  showPremiumPopUp(() {
+                                    Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
+                                  });
+                                } else {
+                                  Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
+                                }
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: EdgeInsets.only(
+                                  top: pageNumber == index + 1 || pageNumber == index - 1
+                                      ? MediaQuery.of(context).size.height * 0.12
+                                      : MediaQuery.of(context).size.height * 0.0499,
+                                ),
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  child: CachedNetworkImage(
+                                    imageUrl:
+                                        context.setupsLegacyProvider(listen: false).setups![index]['image'].toString(),
+                                    imageBuilder: (context, imageProvider) => Container(
+                                      width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
+                                      height: MediaQuery.of(context).size.height * 0.7,
+                                      decoration: BoxDecoration(
+                                        boxShadow: pageNumber == index
+                                            ? context.prismModeStyleForContext() == "Light"
+                                                ? [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(.15),
+                                                      blurRadius: 38,
+                                                      offset: const Offset(0, 19),
+                                                    ),
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(.10),
+                                                      blurRadius: 12,
+                                                      offset: const Offset(0, 15),
+                                                    )
+                                                  ]
+                                                : [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(.7),
+                                                      blurRadius: 38,
+                                                      offset: const Offset(0, 19),
+                                                    ),
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(.6),
+                                                      blurRadius: 12,
+                                                      offset: const Offset(0, 15),
+                                                    )
+                                                  ]
+                                            : [],
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: PremiumBannerSetupOld(
+                                        comparator: index < 5,
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: SizedBox(
+                                            width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
+                                            height: MediaQuery.of(context).size.height * 0.7,
+                                            child: Image(image: imageProvider, fit: BoxFit.fill),
                                           ),
                                         ),
                                       ),
                                     ),
+                                    progressIndicatorBuilder: (context, url, downloadProgress) => SizedBox(
+                                      width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
+                                      height: MediaQuery.of(context).size.height * 0.7,
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                            valueColor: AlwaysStoppedAnimation(
+                                              context.prismModeStyleForContext() == "Dark" &&
+                                                      context.prismIsAmoledDark()
+                                                  ? Theme.of(context).colorScheme.error == Colors.black
+                                                      ? Theme.of(context).colorScheme.secondary
+                                                      : Theme.of(context).colorScheme.error
+                                                  : Theme.of(context).colorScheme.error,
+                                            ),
+                                            value: downloadProgress.progress),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) => Center(
+                                      child: Icon(
+                                        JamIcons.close_circle_f,
+                                        color: Theme.of(context).colorScheme.secondary,
+                                      ),
+                                    ),
                                   ),
                                 ),
+                              ),
+                            ),
                     ),
                   );
                 }
@@ -289,7 +287,7 @@ class _SetupPageState extends State<SetupPage> {
               ),
             ),
           ),
-        if (pageNumber == Provider.of<SetupProvider>(context, listen: false).setups!.length - 1)
+        if (pageNumber == context.setupsLegacyProvider(listen: false).setups!.length - 1)
           Container()
         else
           Align(
