@@ -23,10 +23,9 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   Future<void> getLink() async {
     if (globals.prismUser.id == "") {
     } else {
-      await createSharingPrismLink(globals.prismUser.id.toString())
-          .then((value) => setState(() {
-                link = value;
-              }));
+      await createSharingPrismLink(globals.prismUser.id.toString()).then((value) => setState(() {
+            link = value;
+          }));
     }
   }
 
@@ -90,16 +89,20 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                 Text(
                   "Share Prism with friends",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                      fontSize: 18, color: Theme.of(context).accentColor),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyText2!
+                      .copyWith(fontSize: 18, color: Theme.of(context).accentColor),
                 ),
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "Get 50 coins when your friend launches the app from the link!",
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                        color: Theme.of(context).accentColor.withOpacity(0.5)),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyText2!
+                        .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
                   ),
                 ),
                 SizedBox(
@@ -107,8 +110,10 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                   child: Text(
                     "They also get 50 coins, which you can spend on exclusives.",
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                        color: Theme.of(context).accentColor.withOpacity(0.5)),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyText2!
+                        .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
                   ),
                 ),
                 const SizedBox(
@@ -117,9 +122,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                 FlatButton(
                   disabledColor: Theme.of(context).accentColor.withOpacity(0.5),
                   shape: const StadiumBorder(),
-                  color: link == ""
-                      ? Theme.of(context).accentColor.withOpacity(0.5)
-                      : Theme.of(context).errorColor,
+                  color: link == "" ? Theme.of(context).accentColor.withOpacity(0.5) : Theme.of(context).errorColor,
                   onPressed: link == ""
                       ? () {
                           toasts.error(

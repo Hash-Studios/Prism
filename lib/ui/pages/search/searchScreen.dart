@@ -1,5 +1,4 @@
-import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as wdata;
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -76,9 +75,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     isSubmitted = false;
 
-    selectedProvider = main.prefs
-        .get('selectedSearchProvider', defaultValue: "WallHaven")
-        .toString();
+    selectedProvider = main.prefs.get('selectedSearchProvider', defaultValue: "WallHaven").toString();
     selectedProviders = selectedProvider == "WallHaven"
         ? providers[0] as SearchProviderMenuItem
         : providers[1] as SearchProviderMenuItem;
@@ -108,19 +105,14 @@ class _SearchScreenState extends State<SearchScreen> {
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).hintColor),
+                                borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                             child: TextField(
                               cursorColor: Theme.of(context).errorColor,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline5!
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
+                              style:
+                                  Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                               controller: searchController,
                               decoration: InputDecoration(
-                                contentPadding:
-                                    const EdgeInsets.only(left: 30, top: 15),
+                                contentPadding: const EdgeInsets.only(left: 30, top: 15),
                                 border: InputBorder.none,
                                 disabledBorder: InputBorder.none,
                                 enabledBorder: InputBorder.none,
@@ -129,8 +121,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 hintStyle: Theme.of(context)
                                     .textTheme
                                     .headline5!
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
+                                    .copyWith(color: Theme.of(context).accentColor),
                                 suffixIcon: Icon(
                                   JamIcons.search,
                                   color: Theme.of(context).accentColor,
@@ -141,9 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                   isSubmitted = true;
                                   if (selectedProvider == "WallHaven") {
                                     wdata.wallsS = [];
-                                    _future = wdata.getWallsbyQuery(
-                                        tex,
-                                        main.prefs.get('WHcategories') as int?,
+                                    _future = wdata.getWallsbyQuery(tex, main.prefs.get('WHcategories') as int?,
                                         main.prefs.get('WHpurity') as int?);
                                   } else if (selectedProvider == "Pexels") {
                                     pdata.wallsPS = [];
@@ -162,8 +151,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   width: MediaQuery.of(context).size.width * 0.1,
                   child: PopupMenuButton(
                     offset: const Offset(5, 30),
-                    icon: Icon(JamIcons.more_vertical,
-                        color: Theme.of(context).accentColor),
+                    icon: Icon(JamIcons.more_vertical, color: Theme.of(context).accentColor),
                     elevation: 4,
                     initialValue: selectedProviders,
                     onCanceled: () {
@@ -175,20 +163,16 @@ class _SearchScreenState extends State<SearchScreen> {
                       setState(() {
                         selectedProviders = choice as SearchProviderMenuItem;
                         selectedProvider = choice.title.toString();
-                        main.prefs
-                            .put('selectedSearchProvider', selectedProvider);
+                        main.prefs.put('selectedSearchProvider', selectedProvider);
                         if (searchController.text != "") {
                           isSubmitted = true;
                           if (choice.title == "WallHaven") {
                             wdata.wallsS = [];
-                            _future = wdata.getWallsbyQuery(
-                                searchController.text,
-                                main.prefs.get('WHcategories') as int?,
-                                main.prefs.get('WHpurity') as int?);
+                            _future = wdata.getWallsbyQuery(searchController.text,
+                                main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
                           } else if (choice.title == "Pexels") {
                             pdata.wallsPS = [];
-                            _future =
-                                pdata.getWallsPbyQuery(searchController.text);
+                            _future = pdata.getWallsPbyQuery(searchController.text);
                           }
                         }
                       });
@@ -196,15 +180,12 @@ class _SearchScreenState extends State<SearchScreen> {
                     itemBuilder: (BuildContext context) {
                       return providers.map((choice) {
                         return PopupMenuItem(
-                          textStyle: Theme.of(context)
-                              .textTheme
-                              .headline4!
-                              .copyWith(color: Theme.of(context).accentColor),
+                          textStyle:
+                              Theme.of(context).textTheme.headline4!.copyWith(color: Theme.of(context).accentColor),
                           value: choice,
                           child: Row(
                             children: <Widget>[
-                              Icon(choice.icon as IconData?,
-                                  color: Theme.of(context).accentColor),
+                              Icon(choice.icon as IconData?, color: Theme.of(context).accentColor),
                               const SizedBox(width: 10),
                               Text(choice.title.toString()),
                             ],
@@ -244,40 +225,26 @@ class _SearchScreenState extends State<SearchScreen> {
                               padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
                               child: ActionChip(
                                   pressElevation: 5,
-                                  padding:
-                                      const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                  backgroundColor:
-                                      searchController.text.toLowerCase() ==
-                                              tags[index].toLowerCase()
-                                          ? Theme.of(context).accentColor
-                                          : Theme.of(context).hintColor,
+                                  padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                  backgroundColor: searchController.text.toLowerCase() == tags[index].toLowerCase()
+                                      ? Theme.of(context).accentColor
+                                      : Theme.of(context).hintColor,
                                   label: Text(tags[index],
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headline4!
-                                          .copyWith(
-                                              color: searchController.text
-                                                          .toLowerCase() ==
-                                                      tags[index].toLowerCase()
-                                                  ? Theme.of(context)
-                                                      .primaryColor
-                                                  : Theme.of(context)
-                                                      .accentColor)),
+                                      style: Theme.of(context).textTheme.headline4!.copyWith(
+                                          color: searchController.text.toLowerCase() == tags[index].toLowerCase()
+                                              ? Theme.of(context).primaryColor
+                                              : Theme.of(context).accentColor)),
                                   onPressed: () {
                                     setState(() {
                                       searchController.text = tags[index];
                                       isSubmitted = true;
                                       if (selectedProvider == "WallHaven") {
                                         wdata.wallsS = [];
-                                        _future = wdata.getWallsbyQuery(
-                                            tags[index],
-                                            main.prefs.get('WHcategories')
-                                                as int?,
-                                            main.prefs.get('WHpurity') as int?);
+                                        _future = wdata.getWallsbyQuery(tags[index],
+                                            main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
                                       } else if (selectedProvider == "Pexels") {
                                         pdata.wallsPS = [];
-                                        _future =
-                                            pdata.getWallsPbyQuery(tags[index]);
+                                        _future = pdata.getWallsPbyQuery(tags[index]);
                                       }
                                     });
                                   }),
@@ -304,19 +271,12 @@ class _SearchScreenState extends State<SearchScreen> {
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
                         child: Provider.of<ThemeModeExtended>(context)
-                                    .getCurrentModeStyle(MediaQuery.of(context)
-                                        .platformBrightness) ==
+                                    .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                 "Dark"
                             ? SvgPicture.string(
                                 loaderDark
-                                    .replaceAll(
-                                        "181818",
-                                        Theme.of(context)
-                                            .primaryColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -324,49 +284,19 @@ class _SearchScreenState extends State<SearchScreen> {
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2F2F",
-                                        Theme.of(context)
-                                            .hintColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2)),
+                                    .replaceAll("F0F0F0",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2E41",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("3F3D56",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
                               )
                             : SvgPicture.string(
                                 loaderLight
-                                    .replaceAll(
-                                        "181818",
-                                        Theme.of(context)
-                                            .primaryColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -374,38 +304,14 @@ class _SearchScreenState extends State<SearchScreen> {
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2F2F",
-                                        Theme.of(context)
-                                            .hintColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2)),
+                                    .replaceAll("F0F0F0",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2E41",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("3F3D56",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
                               ),
                       ),
                       SizedBox(
@@ -423,10 +329,7 @@ class SearchLoader extends StatefulWidget {
   final Future? future;
   final String query;
   final String? selectedProvider;
-  const SearchLoader(
-      {required this.future,
-      required this.query,
-      required this.selectedProvider});
+  const SearchLoader({required this.future, required this.query, required this.selectedProvider});
   @override
   _SearchLoaderState createState() => _SearchLoaderState();
 }
@@ -458,8 +361,7 @@ class _SearchLoaderState extends State<SearchLoader> {
           logger.d("snapshot null");
           return const LoadingCards();
         }
-        if (snapshot.connectionState == ConnectionState.waiting ||
-            snapshot.connectionState == ConnectionState.none) {
+        if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
           logger.d("snapshot none, waiting");
           return const LoadingCards();
         } else {

@@ -74,20 +74,15 @@ class PrismUsersV2 {
     logger.d("Default constructor !!!!");
   }
 
-  factory PrismUsersV2.fromJson(Map<String, dynamic> json) =>
-      _$PrismUsersV2FromJson(json);
-  factory PrismUsersV2.fromDocumentSnapshot(DocumentSnapshot doc, User user) =>
-      PrismUsersV2(
+  factory PrismUsersV2.fromJson(Map<String, dynamic> json) => _$PrismUsersV2FromJson(json);
+  factory PrismUsersV2.fromDocumentSnapshot(DocumentSnapshot doc, User user) => PrismUsersV2(
         name: (doc.data()!["name"] ?? user.displayName).toString(),
-        username: (doc.data()!["username"] ?? user.displayName)
-            .toString()
-            .replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
+        username: (doc.data()!["username"] ?? user.displayName).toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
         email: (doc.data()!["email"] ?? user.email).toString(),
         id: doc.data()!["id"].toString(),
         createdAt: doc.data()!["createdAt"].toString(),
         premium: doc.data()!["premium"] as bool,
-        lastLoginAt: doc.data()!["lastLoginAt"]?.toString() ??
-            DateTime.now().toUtc().toIso8601String(),
+        lastLoginAt: doc.data()!["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
         links: doc.data()!["links"] as Map<String, dynamic> ?? {},
         followers: doc.data()!["followers"] as List ?? [],
         following: doc.data()!["following"] as List ?? [],
@@ -105,20 +100,14 @@ class PrismUsersV2 {
         coverPhoto: doc.data()!["coverPhoto"]?.toString(),
       );
 
-  factory PrismUsersV2.fromDocumentSnapshotWithoutUser(DocumentSnapshot doc) =>
-      PrismUsersV2(
+  factory PrismUsersV2.fromDocumentSnapshotWithoutUser(DocumentSnapshot doc) => PrismUsersV2(
         name: (doc.data()!["name"] ?? "").toString(),
-        username: (doc.data()!["username"] ?? "")
-            .toString()
-            .replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
+        username: (doc.data()!["username"] ?? "").toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
         email: (doc.data()!["email"] ?? "").toString(),
         id: doc.data()!["id"].toString(),
-        createdAt: DateTime.parse(doc.data()!["createdAt"] as String)
-            .toUtc()
-            .toIso8601String(),
+        createdAt: DateTime.parse(doc.data()!["createdAt"] as String).toUtc().toIso8601String(),
         premium: doc.data()!["premium"] as bool,
-        lastLoginAt: doc.data()!["lastLoginAt"]?.toString() ??
-            DateTime.now().toUtc().toIso8601String(),
+        lastLoginAt: doc.data()!["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
         links: doc.data()!["links"] as Map<String, dynamic> ?? {},
         followers: doc.data()!["followers"] as List ?? [],
         following: doc.data()!["following"] as List ?? [],

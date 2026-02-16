@@ -25,8 +25,7 @@ class WallpaperGrid extends StatefulWidget {
 }
 
 class _WallpaperGridState extends State<WallpaperGrid> {
-  GlobalKey<RefreshIndicatorState> refreshHomeKey =
-      GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
   int _current = 0;
   bool seeMoreLoader = false;
   @override
@@ -52,8 +51,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller =
-        InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     final CarouselController carouselController = CarouselController();
     return Padding(
       padding: const EdgeInsets.only(top: 5.0),
@@ -94,19 +92,14 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Provider.of<ThemeModeExtended>(
-                                                    context)
-                                                .getCurrentModeStyle(
-                                                    MediaQuery.of(context)
-                                                        .platformBrightness) ==
+                                    color: Provider.of<ThemeModeExtended>(context)
+                                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                             "Dark"
                                         ? Colors.white10
                                         : Colors.black.withOpacity(.1),
                                     borderRadius: BorderRadius.circular(20),
                                     image: DecorationImage(
-                                        image: CachedNetworkImageProvider(
-                                            globals.topImageLink),
-                                        fit: BoxFit.cover)),
+                                        image: CachedNetworkImageProvider(globals.topImageLink), fit: BoxFit.cover)),
                                 child: Center(
                                   child: Container(
                                     width: MediaQuery.of(context).size.width,
@@ -116,18 +109,13 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Text(
-                                        globals.bannerTextOn == "true"
-                                            ? globals.bannerText.toUpperCase()
-                                            : "",
+                                        globals.bannerTextOn == "true" ? globals.bannerText.toUpperCase() : "",
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         style: Theme.of(context)
                                             .textTheme
                                             .headline2!
-                                            .copyWith(
-                                                fontSize: 20,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
+                                            .copyWith(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ),
@@ -142,12 +130,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                               onTap: () {
                                 if (Data.subPrismWalls == []) {
                                 } else {
-                                  globals.isPremiumWall(
-                                                  globals.premiumCollections,
-                                                  Data.subPrismWalls![i]
-                                                              ["collections"]
-                                                          as List? ??
-                                                      []) ==
+                                  globals.isPremiumWall(globals.premiumCollections,
+                                                  Data.subPrismWalls![i]["collections"] as List? ?? []) ==
                                               true &&
                                           globals.prismUser.premium != true
                                       ? showGooglePopUp(context, () {
@@ -156,24 +140,18 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                             premiumRoute,
                                           );
                                         })
-                                      : Navigator.pushNamed(
-                                          context, wallpaperRoute,
-                                          arguments: [
-                                              widget.provider,
-                                              i,
-                                              Data.subPrismWalls![i]
-                                                  ["wallpaper_thumb"],
-                                            ]);
+                                      : Navigator.pushNamed(context, wallpaperRoute, arguments: [
+                                          widget.provider,
+                                          i,
+                                          Data.subPrismWalls![i]["wallpaper_thumb"],
+                                        ]);
                                 }
                               },
                               child: Data.subPrismWalls!.isEmpty
                                   ? Container(
                                       decoration: BoxDecoration(
-                                        color: Provider.of<ThemeModeExtended>(
-                                                        context)
-                                                    .getCurrentModeStyle(
-                                                        MediaQuery.of(context)
-                                                            .platformBrightness) ==
+                                        color: Provider.of<ThemeModeExtended>(context)
+                                                    .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                                 "Dark"
                                             ? Colors.white10
                                             : Colors.black.withOpacity(.1),
@@ -181,50 +159,32 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                       ),
                                     )
                                   : PremiumBannerWallsCarousel(
-                                      comparator: !globals.isPremiumWall(
-                                          globals.premiumCollections,
-                                          Data.subPrismWalls![i]["collections"]
-                                                  as List? ??
-                                              []),
+                                      comparator: !globals.isPremiumWall(globals.premiumCollections,
+                                          Data.subPrismWalls![i]["collections"] as List? ?? []),
                                       child: Container(
                                         decoration: BoxDecoration(
-                                            color: Provider.of<ThemeModeExtended>(
-                                                            context)
-                                                        .getCurrentModeStyle(
-                                                            MediaQuery.of(context)
-                                                                .platformBrightness) ==
+                                            color: Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
+                                                        MediaQuery.of(context).platformBrightness) ==
                                                     "Dark"
                                                 ? Colors.white10
                                                 : Colors.black.withOpacity(.1),
-                                            borderRadius:
-                                                BorderRadius.circular(20),
+                                            borderRadius: BorderRadius.circular(20),
                                             image: DecorationImage(
                                                 image: CachedNetworkImageProvider(
-                                                    Data.subPrismWalls![i]
-                                                            ["wallpaper_thumb"]
-                                                        .toString()),
+                                                    Data.subPrismWalls![i]["wallpaper_thumb"].toString()),
                                                 fit: BoxFit.cover)),
                                         child: Center(
                                           child: Container(
-                                            width: MediaQuery.of(context)
-                                                .size
-                                                .width,
+                                            width: MediaQuery.of(context).size.width,
                                             color: Colors.transparent,
                                             child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
+                                              padding: const EdgeInsets.all(8.0),
                                               child: Text(
                                                 "",
                                                 textAlign: TextAlign.center,
                                                 maxLines: 1,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline2!
-                                                    .copyWith(
-                                                        color: Colors.white,
-                                                        fontSize: 20,
-                                                        fontWeight:
-                                                            FontWeight.bold),
+                                                style: Theme.of(context).textTheme.headline2!.copyWith(
+                                                    color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                                               ),
                                             ),
                                           ),
@@ -246,16 +206,14 @@ class _WallpaperGridState extends State<WallpaperGrid> {
           onRefresh: refreshList,
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
-              if (scrollInfo.metrics.pixels ==
-                  scrollInfo.metrics.maxScrollExtent) {
+              if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
                 if (!seeMoreLoader) {
                   setState(() {
                     seeMoreLoader = true;
                   });
                   Data.seeMorePrism();
                   setState(() {
-                    Future.delayed(const Duration(seconds: 1))
-                        .then((value) => seeMoreLoader = false);
+                    Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
                   });
                 }
               }
@@ -264,15 +222,10 @@ class _WallpaperGridState extends State<WallpaperGrid> {
             child: GridView.builder(
               physics: const ScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-              itemCount: Data.subPrismWalls!.isEmpty
-                  ? 20
-                  : Data.subPrismWalls!.length - 4,
+              itemCount: Data.subPrismWalls!.isEmpty ? 20 : Data.subPrismWalls!.length - 4,
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent:
-                      MediaQuery.of(context).orientation == Orientation.portrait
-                          ? 300
-                          : 250,
+                  maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                   childAspectRatio: 0.6625,
                   mainAxisSpacing: 8,
                   crossAxisSpacing: 8),
@@ -288,8 +241,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                         });
                         Data.seeMorePrism();
                         setState(() {
-                          Future.delayed(const Duration(seconds: 1))
-                              .then((value) => seeMoreLoader = false);
+                          Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
                         });
                       }
                     },
@@ -306,9 +258,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             globals.premiumCollections,
                             Data.subPrismWalls!.isEmpty
                                 ? []
-                                : Data.subPrismWalls![index]["collections"]
-                                        as List? ??
-                                    []),
+                                : Data.subPrismWalls![index]["collections"] as List? ?? []),
                         defaultChild: FocusedMenuHolder(
                           provider: widget.provider,
                           index: index,

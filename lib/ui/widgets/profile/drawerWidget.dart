@@ -41,13 +41,8 @@ class ProfileDrawer extends StatelessWidget {
                       SizedBox(
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
-                          globals.prismUser.premium == true
-                              ? "Prism Pro"
-                              : "Prism",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline3!
-                              .copyWith(color: Theme.of(context).accentColor),
+                          globals.prismUser.premium == true ? "Prism Pro" : "Prism",
+                          style: Theme.of(context).textTheme.headline3!.copyWith(color: Theme.of(context).accentColor),
                         ),
                       ),
                       SizedBox(
@@ -56,10 +51,7 @@ class ProfileDrawer extends StatelessWidget {
                           globals.prismUser.premium == true
                               ? "Exclusive premium walls & setups!"
                               : "Exclusive wallpapers & setups!",
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyText2!
-                              .copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                         ),
                       ),
                     ],
@@ -72,10 +64,7 @@ class ProfileDrawer extends StatelessWidget {
   }
 
   Widget createDrawerBodyItem(
-      {IconData? icon,
-      required String text,
-      GestureTapCallback? onTap,
-      required BuildContext context}) {
+      {IconData? icon, required String text, GestureTapCallback? onTap, required BuildContext context}) {
     return ListTile(
       dense: true,
       trailing: Icon(
@@ -91,24 +80,26 @@ class ProfileDrawer extends StatelessWidget {
         width: MediaQuery.of(context).size.width / 2,
         child: Text(
           text,
-          style: Theme.of(context).textTheme.caption!.copyWith(
-              fontFamily: "Proxima Nova", color: Theme.of(context).accentColor),
+          style: Theme.of(context)
+              .textTheme
+              .caption!
+              .copyWith(fontFamily: "Proxima Nova", color: Theme.of(context).accentColor),
         ),
       ),
       onTap: onTap,
     );
   }
 
-  Widget createDrawerBodyHeader(
-      {required String text, required BuildContext context}) {
+  Widget createDrawerBodyHeader({required String text, required BuildContext context}) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
       child: SizedBox(
         width: MediaQuery.of(context).size.width / 2,
         child: Text(text,
-            style: Theme.of(context).textTheme.headline3!.copyWith(
-                fontSize: 12,
-                color: Theme.of(context).accentColor.withOpacity(0.4))),
+            style: Theme.of(context)
+                .textTheme
+                .headline3!
+                .copyWith(fontSize: 12, color: Theme.of(context).accentColor.withOpacity(0.4))),
       ),
     );
   }
@@ -137,10 +128,7 @@ class ProfileDrawer extends StatelessWidget {
                     Navigator.pushNamed(context, premiumRoute);
                   },
                   context: context),
-            if (globals.prismUser.premium == true)
-              Container()
-            else
-              const Divider(),
+            if (globals.prismUser.premium == true) Container() else const Divider(),
             createDrawerBodyHeader(text: "FAVOURITES", context: context),
             createDrawerBodyItem(
                 icon: JamIcons.picture,
@@ -216,13 +204,11 @@ class ProfileDrawer extends StatelessWidget {
                     ),
                     actions: <Widget>[
                       FlatButton(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                         onPressed: () async {
                           Navigator.of(context).pop();
                           final dir = Directory("storage/emulated/0/Prism/");
-                          final dir2 =
-                              Directory("storage/emulated/0/Pictures/Prism/");
+                          final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
                           final status = await Permission.storage.status;
                           if (!status.isGranted) {
                             await Permission.storage.request();
@@ -268,8 +254,7 @@ class ProfileDrawer extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FlatButton(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                           color: Theme.of(context).errorColor,
                           onPressed: () {
                             Navigator.of(context).pop();
@@ -390,8 +375,7 @@ class ProfileDrawer extends StatelessWidget {
                     final sdkInt = androidInfo.version.sdkInt;
                     final manufacturer = androidInfo.manufacturer;
                     final model = androidInfo.model;
-                    logger.d(
-                        'Android $release (SDK $sdkInt), $manufacturer $model');
+                    logger.d('Android $release (SDK $sdkInt), $manufacturer $model');
                     final String zipPath = await zipLogs();
                     final String encryptedZipPath = zipPath.split("::::").last;
                     final String encryptedZipKey = zipPath.split("::::").first;
@@ -406,8 +390,7 @@ class ProfileDrawer extends StatelessWidget {
                       ],
                       appSchema: 'com.google.android.gm',
                     );
-                    final MailerResponse response =
-                        await FlutterMailer.send(mailOptions);
+                    final MailerResponse response = await FlutterMailer.send(mailOptions);
                     if (response != MailerResponse.android) {
                       final MailOptions mailOptions = MailOptions(
                         body:

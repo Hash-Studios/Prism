@@ -12,12 +12,10 @@ class DownloadWallpaperScreen extends StatefulWidget {
   final List? arguments;
   const DownloadWallpaperScreen({required this.arguments});
   @override
-  _DownloadWallpaperScreenState createState() =>
-      _DownloadWallpaperScreenState();
+  _DownloadWallpaperScreenState createState() => _DownloadWallpaperScreenState();
 }
 
-class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
-    with SingleTickerProviderStateMixin {
+class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     logger.d(navStack.toString());
@@ -31,8 +29,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
 
   @override
   void initState() {
-    shakeController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
+    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
     provider = widget.arguments![0] as String;
     file = widget.arguments![1] as File;
@@ -46,9 +43,8 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(shakeController)
+    final Animation<double> offsetAnimation =
+        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
           ..addStatusListener((status) {
             if (status == AnimationStatus.completed) {
               shakeController.reverse();
@@ -78,11 +74,9 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                     },
                     child: Container(
                       margin: EdgeInsets.symmetric(
-                          vertical: offsetAnimation.value * 1.25,
-                          horizontal: offsetAnimation.value / 2),
+                          vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
                       decoration: BoxDecoration(
-                        borderRadius:
-                            BorderRadius.circular(offsetAnimation.value),
+                        borderRadius: BorderRadius.circular(offsetAnimation.value),
                         image: DecorationImage(
                           image: FileImage(file),
                           fit: BoxFit.cover,
@@ -127,12 +121,9 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                     Navigator.push(
                         context,
                         PageRouteBuilder(
-                            transitionDuration:
-                                const Duration(milliseconds: 300),
-                            pageBuilder:
-                                (context, animation, secondaryAnimation) {
-                              animation = Tween(begin: 0.0, end: 1.0)
-                                  .animate(animation);
+                            transitionDuration: const Duration(milliseconds: 300),
+                            pageBuilder: (context, animation, secondaryAnimation) {
+                              animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                               return FadeTransition(
                                   opacity: animation,
                                   child: ClockOverlay(

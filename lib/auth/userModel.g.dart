@@ -86,9 +86,7 @@ class PrismUsersV2Adapter extends TypeAdapter<PrismUsersV2> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is PrismUsersV2Adapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
+      other is PrismUsersV2Adapter && runtimeType == other.runtimeType && typeId == other.typeId;
 }
 
 // **************************************************************************
@@ -109,9 +107,7 @@ PrismUsersV2 _$PrismUsersV2FromJson(Map<String, dynamic> json) {
     profilePhoto: json['profilePhoto'] as String,
     bio: json['bio'] as String,
     loggedIn: json['loggedIn'] as bool,
-    badges: (json['badges'] as List<dynamic>)
-        .map((e) => Badge.fromJson(e as Map<String, dynamic>))
-        .toList(),
+    badges: (json['badges'] as List<dynamic>).map((e) => Badge.fromJson(e as Map<String, dynamic>)).toList(),
     subPrisms: json['subPrisms'] as List<dynamic>,
     coins: json['coins'] as int,
     transactions: (json['transactions'] as List<dynamic>)
@@ -122,8 +118,7 @@ PrismUsersV2 _$PrismUsersV2FromJson(Map<String, dynamic> json) {
   );
 }
 
-Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) => <String, dynamic>{
       'username': instance.username,
       'email': instance.email,
       'id': instance.id,

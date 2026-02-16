@@ -17,8 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 class AboutScreen extends StatelessWidget {
   Future<List<Contributor>> printStream() async {
     final github = GitHub();
-    final Stream<Contributor> contri = github.repositories
-        .listContributors(RepositorySlug("Hash-Studios", "Prism"));
+    final Stream<Contributor> contri = github.repositories.listContributors(RepositorySlug("Hash-Studios", "Prism"));
     final List<Contributor> listContri = [];
     await for (final value in contri) {
       listContri.add(value);
@@ -72,16 +71,15 @@ class AboutScreen extends StatelessWidget {
                 Text(
                   "Prism Wallpapers",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyText2!
-                      .copyWith(color: Theme.of(context).accentColor),
+                  style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                 ),
                 Text(
                   "Version ${globals.currentAppVersion}+${globals.currentAppVersionCode}",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                      color: Theme.of(context).accentColor.withOpacity(0.5)),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyText2!
+                      .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
                 ),
                 const SizedBox(
                   height: 10,
@@ -89,8 +87,10 @@ class AboutScreen extends StatelessWidget {
                 Text(
                   "A feature-rich wallpaper and setup manager for Android.",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                      color: Theme.of(context).accentColor.withOpacity(0.5)),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyText2!
+                      .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
                 ),
                 const SizedBox(
                   height: 10,
@@ -106,8 +106,7 @@ class AboutScreen extends StatelessWidget {
                     ActionButton(
                       icon: JamIcons.star_full,
                       text: "RATE",
-                      link:
-                          "https://play.google.com/store/apps/details?id=com.hash.prism",
+                      link: "https://play.google.com/store/apps/details?id=com.hash.prism",
                     ),
                     ActionButton(
                       icon: JamIcons.twitter,
@@ -144,14 +143,12 @@ class AboutScreen extends StatelessWidget {
                   builder: (context, snapshot) {
                     if (snapshot == null) {
                       logger.d("snapshot null");
-                      return SizedBox(
-                          height: 250, child: Center(child: Loader()));
+                      return SizedBox(height: 250, child: Center(child: Loader()));
                     }
                     if (snapshot.connectionState == ConnectionState.waiting ||
                         snapshot.connectionState == ConnectionState.none) {
                       logger.d("snapshot none, waiting");
-                      return SizedBox(
-                          height: 250, child: Center(child: Loader()));
+                      return SizedBox(height: 250, child: Center(child: Loader()));
                     } else {
                       final List<Widget> tiles = [];
                       tiles.add(Row(
@@ -196,28 +193,19 @@ class AboutScreen extends StatelessWidget {
                         } else {
                           tiles.add(ListTile(
                             leading: CircleAvatar(
-                              backgroundImage:
-                                  CachedNetworkImageProvider(c.avatarUrl!),
+                              backgroundImage: CachedNetworkImageProvider(c.avatarUrl!),
                             ),
                             title: Text(
                               c.login!,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyText2!
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
+                              style:
+                                  Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                             ),
                             subtitle: Text(
-                              c.contributions == 1
-                                  ? "${c.contributions} commit"
-                                  : "${c.contributions} commits",
+                              c.contributions == 1 ? "${c.contributions} commit" : "${c.contributions} commits",
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyText2!
-                                  .copyWith(
-                                      color: Theme.of(context)
-                                          .accentColor
-                                          .withOpacity(0.5)),
+                                  .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
                             ),
                             onTap: () {
                               launch(c.htmlUrl!);
@@ -240,10 +228,7 @@ class AboutScreen extends StatelessWidget {
             child: Text(
               "Made with ❤ in India with Flutter!",
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyText2!
-                  .copyWith(color: Theme.of(context).accentColor),
+              style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
             ),
           ),
         ),
@@ -270,8 +255,7 @@ class ContributorWidget extends StatelessWidget {
       child: Column(
         children: [
           CircleAvatar(
-            backgroundImage:
-                CachedNetworkImageProvider(contributor.avatarUrl ?? ""),
+            backgroundImage: CachedNetworkImageProvider(contributor.avatarUrl ?? ""),
             radius: radius,
           ),
           const SizedBox(
@@ -283,10 +267,7 @@ class ContributorWidget extends StatelessWidget {
               contributor.login!,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyText2!
-                  .copyWith(color: Theme.of(context).accentColor),
+              style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
             ),
           ),
           SizedBox(
@@ -294,8 +275,10 @@ class ContributorWidget extends StatelessWidget {
             child: Text(
               "${contributor.contributions} commits",
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                  color: Theme.of(context).accentColor.withOpacity(0.5)),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyText2!
+                  .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
             ),
           ),
         ],
@@ -321,11 +304,10 @@ class ActionButton extends StatelessWidget {
       child: ActionChip(
           avatar: Icon(
             icon,
-            color: Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
-                            MediaQuery.of(context).platformBrightness) ==
+            color: Provider.of<ThemeModeExtended>(context)
+                            .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                         "Dark" &&
-                    Provider.of<DarkThemeModel>(context).currentTheme ==
-                        kDarkTheme2
+                    Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
                 ? Theme.of(context).errorColor == Colors.black
                     ? Theme.of(context).accentColor
                     : Theme.of(context).errorColor
@@ -334,9 +316,10 @@ class ActionButton extends StatelessWidget {
           label: Text(
             text,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                color: Theme.of(context).accentColor,
-                fontWeight: FontWeight.bold),
+            style: Theme.of(context)
+                .textTheme
+                .bodyText2!
+                .copyWith(color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
           ),
           onPressed: () {
             if (link.contains("@gmail.com")) {

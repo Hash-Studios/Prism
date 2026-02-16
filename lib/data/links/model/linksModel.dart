@@ -16,8 +16,7 @@ class LinksModel {
 
   factory LinksModel.fromLinkAndKey(String names, String links) {
     if (names.toLowerCase() == "twitter") {
-      final RegExp twitterUser = RegExp(
-          r"(?:(?:http|https):\/\/)?(?:www.)?(?:twitter.com)\/(?:@)?([A-Za-z0-9-_]+)");
+      final RegExp twitterUser = RegExp(r"(?:(?:http|https):\/\/)?(?:www.)?(?:twitter.com)\/(?:@)?([A-Za-z0-9-_]+)");
       return LinksModel(
         username: twitterUser.firstMatch(links)!.group(1)!,
         name: "Twitter",
@@ -25,8 +24,8 @@ class LinksModel {
         icon: JamIcons.twitter,
       );
     } else if (names.toLowerCase() == "instagram") {
-      final RegExp instagramUser = RegExp(
-          r"(?:(?:http|https):\/\/)?(?:www.)?(?:instagram.com|instagr.am)\/(?:@)?([A-Za-z0-9-_]+)");
+      final RegExp instagramUser =
+          RegExp(r"(?:(?:http|https):\/\/)?(?:www.)?(?:instagram.com|instagr.am)\/(?:@)?([A-Za-z0-9-_]+)");
       return LinksModel(
         username: instagramUser.firstMatch(links)!.group(1)!,
         name: "Instagram",
@@ -34,8 +33,7 @@ class LinksModel {
         icon: JamIcons.instagram,
       );
     } else if (names.toLowerCase() == "telegram") {
-      final RegExp telegramUser = RegExp(
-          r"(?:(?:http|https):\/\/)?(?:www.)?(?:t.me)\/(?:@)?([A-Za-z0-9-_]+)");
+      final RegExp telegramUser = RegExp(r"(?:(?:http|https):\/\/)?(?:www.)?(?:t.me)\/(?:@)?([A-Za-z0-9-_]+)");
       return LinksModel(
         username: telegramUser.firstMatch(links)!.group(1)!,
         name: "Telegram",
@@ -43,8 +41,7 @@ class LinksModel {
         icon: JamIcons.paper_plane_f,
       );
     }
-    return LinksModel(
-        username: "", name: "", link: "", icon: Icons.link_rounded);
+    return LinksModel(username: "", name: "", link: "", icon: Icons.link_rounded);
   }
 }
 

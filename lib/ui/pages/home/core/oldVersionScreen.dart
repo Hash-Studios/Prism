@@ -13,10 +13,7 @@ class OldVersion extends StatelessWidget {
         centerTitle: true,
         title: Text(
           "Update",
-          style: Theme.of(context)
-              .textTheme
-              .headline3!
-              .copyWith(color: Theme.of(context).accentColor),
+          style: Theme.of(context).textTheme.headline3!.copyWith(color: Theme.of(context).accentColor),
         ),
       ),
       body: Column(
@@ -36,12 +33,10 @@ class OldVersion extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              launch(
-                  "https://play.google.com/store/apps/details?id=com.hash.prism");
+              launch("https://play.google.com/store/apps/details?id=com.hash.prism");
             },
             style: ButtonStyle(
-              backgroundColor:
-                  MaterialStateColor.resolveWith((states) => Colors.white),
+              backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
             ),
             child: SizedBox(
               width: 60,

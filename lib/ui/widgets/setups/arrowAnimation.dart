@@ -10,8 +10,7 @@ class ArrowBounceAnimation extends StatefulWidget {
   _ArrowBounceAnimationState createState() => _ArrowBounceAnimationState();
 }
 
-class _ArrowBounceAnimationState extends State<ArrowBounceAnimation>
-    with SingleTickerProviderStateMixin {
+class _ArrowBounceAnimationState extends State<ArrowBounceAnimation> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> animation;
 
@@ -25,9 +24,7 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation>
     )..addListener(() {
         if (mounted) setState(() {});
       });
-    animation = Tween(begin: 0.0, end: 0.3)
-        .chain(CurveTween(curve: Curves.easeInCubic))
-        .animate(_controller);
+    animation = Tween(begin: 0.0, end: 0.3).chain(CurveTween(curve: Curves.easeInCubic)).animate(_controller);
     super.initState();
     _controller.repeat();
   }
@@ -46,11 +43,7 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation>
       scale: scale,
       child: GestureDetector(
         onTap: _onTap,
-        child: Container(
-            color: Colors.transparent,
-            height: 250,
-            width: 40,
-            child: widget.child),
+        child: Container(color: Colors.transparent, height: 250, width: 40, child: widget.child),
       ),
     );
   }

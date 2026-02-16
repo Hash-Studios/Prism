@@ -45,12 +45,7 @@ class _EditButtonState extends State<EditButton> {
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withOpacity(.25),
-                    blurRadius: 4,
-                    offset: const Offset(0, 4))
-              ],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
@@ -65,8 +60,7 @@ class _EditButtonState extends State<EditButton> {
               left: 0,
               height: 53,
               width: 53,
-              child:
-                  isLoading ? const CircularProgressIndicator() : Container())
+              child: isLoading ? const CircularProgressIndicator() : Container())
         ],
       ),
     );
@@ -81,14 +75,12 @@ class _EditButtonState extends State<EditButton> {
     final documentDirectory = await getApplicationDocumentsDirectory();
     final firstPath = "${documentDirectory.path}/images";
     final filePathAndName = "${documentDirectory.path}/images/pic.jpg";
-    final filePathAndNameThumb =
-        "${documentDirectory.path}/images/picThumb.jpg";
+    final filePathAndNameThumb = "${documentDirectory.path}/images/picThumb.jpg";
     await Directory(firstPath).create(recursive: true);
     final File file2 = File(filePathAndName);
     file2.writeAsBytesSync(response.bodyBytes);
     final File file3 = File(filePathAndNameThumb);
-    final List<int> imageBytesThumb =
-        await compute<File, List<int>>(_resizeImage, file2);
+    final List<int> imageBytesThumb = await compute<File, List<int>>(_resizeImage, file2);
     file3.writeAsBytesSync(imageBytesThumb);
     setState(() {
       imageData = filePathAndName;

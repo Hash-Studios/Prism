@@ -29,8 +29,7 @@ class _WallpaperLoaderState extends State<WallpaperLoader> {
           logger.d("snapshot null");
           return const LoadingCards();
         }
-        if (snapshot.connectionState == ConnectionState.waiting ||
-            snapshot.connectionState == ConnectionState.none) {
+        if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
           logger.d("snapshot none, waiting");
           return const LoadingCards();
         } else {

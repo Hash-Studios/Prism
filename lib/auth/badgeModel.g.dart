@@ -52,10 +52,7 @@ class BadgeAdapter extends TypeAdapter<Badge> {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is BadgeAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
+      identical(this, other) || other is BadgeAdapter && runtimeType == other.runtimeType && typeId == other.typeId;
 }
 
 // **************************************************************************

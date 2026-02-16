@@ -1,3 +1,6 @@
+// LEGACY SNAPSHOT (Phase-2 cutover): Ads notifier/provider -> AdsBloc.
+// This file is intentionally commented out for traceability.
+/*
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -87,3 +90,4 @@ class AdsNotifier extends ChangeNotifier {
     notifyListeners();
   }
 }
+*/

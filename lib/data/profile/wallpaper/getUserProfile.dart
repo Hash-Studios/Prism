@@ -96,10 +96,7 @@ Stream<QuerySnapshot> getUserProfile(String email) {
       .snapshots()
       .asyncMap((event) {
     if (event.docs.isEmpty) {
-      return databaseReference
-          .collection(USER_OLD_COLLECTION)
-          .where('email', isEqualTo: email)
-          .get();
+      return databaseReference.collection(USER_OLD_COLLECTION).where('email', isEqualTo: email).get();
     } else {
       return event;
     }
@@ -107,10 +104,7 @@ Stream<QuerySnapshot> getUserProfile(String email) {
 }
 
 Future<void> follow(String email, String id) async {
-  await databaseReference
-      .collection(USER_NEW_COLLECTION)
-      .doc(globals.prismUser.id)
-      .update({
+  await databaseReference.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
     'following': FieldValue.arrayUnion([email]),
   });
   await databaseReference.collection(USER_NEW_COLLECTION).doc(id).update({
@@ -119,10 +113,7 @@ Future<void> follow(String email, String id) async {
 }
 
 Future<void> unfollow(String email, String id) async {
-  await databaseReference
-      .collection(USER_NEW_COLLECTION)
-      .doc(globals.prismUser.id)
-      .update({
+  await databaseReference.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
     'following': FieldValue.arrayRemove([email]),
   });
   await databaseReference.collection(USER_NEW_COLLECTION).doc(id).update({
@@ -149,8 +140,5 @@ Future setUserLinks(List<LinksModel> linklist, String id) async {
   linklist.forEach((element) {
     updateLink[element.name] = element.link;
   });
-  await databaseReference
-      .collection(USER_NEW_COLLECTION)
-      .doc(id)
-      .update({"links": updateLink});
+  await databaseReference.collection(USER_NEW_COLLECTION).doc(id).update({"links": updateLink});
 }

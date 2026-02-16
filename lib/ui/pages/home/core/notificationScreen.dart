@@ -59,9 +59,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 icon: const Icon(JamIcons.settings_alt),
                 onPressed: () {
                   showModalBottomSheet(
-                      isScrollControlled: true,
-                      context: context,
-                      builder: (context) => NotificationSettingsSheet());
+                      isScrollControlled: true, context: context, builder: (context) => NotificationSettingsSheet());
                 })
           ],
         ),
@@ -88,10 +86,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           box.deleteAt(index);
                         });
                       },
-                      dismissThresholds: const {
-                        DismissDirection.startToEnd: 0.5,
-                        DismissDirection.endToStart: 0.5
-                      },
+                      dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
                       secondaryBackground: Container(
                         color: Colors.red,
                         child: const Align(
@@ -113,14 +108,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         ),
                       ),
                       key: UniqueKey(),
-                      child:
-                          NotificationCard(notification: notifications[index]),
+                      child: NotificationCard(notification: notifications[index]),
                     );
                   },
                 )
-              : Center(
-                  child: Text('No new notifications',
-                      style: TextStyle(color: Theme.of(context).accentColor))),
+              : Center(child: Text('No new notifications', style: TextStyle(color: Theme.of(context).accentColor))),
         ),
         floatingActionButton: notifications!.isNotEmpty
             ? FloatingActionButton(
@@ -128,19 +120,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 tooltip: "Clear Notifications",
                 onPressed: () {
                   final AlertDialog deleteNotificationsPopUp = AlertDialog(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     title: Text(
                       'Clear all notifications?',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: Theme.of(context).accentColor),
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).accentColor),
                     ),
                     actions: [
                       FlatButton(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                         color: Theme.of(context).hintColor,
                         onPressed: () {
                           Navigator.of(context).pop();
@@ -158,8 +145,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         ),
                       ),
                       FlatButton(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                         color: Theme.of(context).errorColor,
                         onPressed: () {
                           Navigator.of(context).pop();
@@ -180,8 +166,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   showModal(
                       context: context,
                       configuration: const FadeScaleTransitionConfiguration(),
-                      builder: (BuildContext context) =>
-                          deleteNotificationsPopUp);
+                      builder: (BuildContext context) => deleteNotificationsPopUp);
                 },
                 child: const Icon(JamIcons.trash),
               )
@@ -206,8 +191,7 @@ class NotificationCard extends StatelessWidget {
     if (now.day == dtInLocal.day) {
       final todayFormat = DateFormat("h:mm a");
       dateString += todayFormat.format(dtInLocal);
-    } else if ((diff.inDays) == 1 ||
-        (diff.inSeconds < 86400 && now.day != dtInLocal.day)) {
+    } else if ((diff.inDays) == 1 || (diff.inSeconds < 86400 && now.day != dtInLocal.day)) {
       final yesterdayFormat = DateFormat("h:mm a");
       dateString += "Yesterday, ${yesterdayFormat.format(dtInLocal)}";
     } else if (now.year == dtInLocal.year && diff.inDays > 1) {
@@ -232,10 +216,7 @@ class NotificationCard extends StatelessWidget {
       backgroundColor: Theme.of(context).primaryColor,
       title: Text(
         notification!.title!,
-        style: TextStyle(
-            color: Theme.of(context).accentColor,
-            fontWeight: FontWeight.w500,
-            fontFamily: "Proxima Nova"),
+        style: TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
       ),
       subtitle: Text(
         notification!.body!,
@@ -246,8 +227,7 @@ class NotificationCard extends StatelessWidget {
           onTap: () {
             if (notification!.url == "") {
               if (notification!.pageName != null) {
-                Navigator.pushNamed(context, notification!.pageName!,
-                    arguments: notification!.arguments);
+                Navigator.pushNamed(context, notification!.pageName!, arguments: notification!.arguments);
               }
             } else {
               launch(notification!.url!);
@@ -260,14 +240,12 @@ class NotificationCard extends StatelessWidget {
             child: Stack(
               children: [
                 ColorFiltered(
-                  colorFilter: const ColorFilter.mode(
-                      Colors.black, BlendMode.saturation),
+                  colorFilter: const ColorFilter.mode(Colors.black, BlendMode.saturation),
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.width * 9 / 16,
                     child: CachedNetworkImage(
-                      imageUrl: notification!.imageUrl ??
-                          "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
+                      imageUrl: notification!.imageUrl ?? "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -276,8 +254,7 @@ class NotificationCard extends StatelessWidget {
                   width: MediaQuery.of(context).size.width,
                   height: MediaQuery.of(context).size.width * 9 / 16,
                   child: CachedNetworkImage(
-                    imageUrl: notification!.imageUrl ??
-                        "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
+                    imageUrl: notification!.imageUrl ?? "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
                     fit: BoxFit.contain,
                   ),
                 ),
@@ -306,8 +283,7 @@ class NotificationCard extends StatelessWidget {
 
 class NotificationSettingsSheet extends StatefulWidget {
   @override
-  _NotificationSettingsSheetState createState() =>
-      _NotificationSettingsSheetState();
+  _NotificationSettingsSheetState createState() => _NotificationSettingsSheetState();
 }
 
 class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
@@ -318,14 +294,10 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   @override
   void initState() {
     super.initState();
-    followersSubscriber =
-        main.prefs.get("followersSubscriber", defaultValue: true) as bool?;
-    postsSubscriber =
-        main.prefs.get("postsSubscriber", defaultValue: true) as bool?;
-    inappSubscriber =
-        main.prefs.get("inappSubscriber", defaultValue: true) as bool?;
-    recommendationsSubscriber = main.prefs
-        .get("recommendationsSubscriber", defaultValue: true) as bool?;
+    followersSubscriber = main.prefs.get("followersSubscriber", defaultValue: true) as bool?;
+    postsSubscriber = main.prefs.get("postsSubscriber", defaultValue: true) as bool?;
+    inappSubscriber = main.prefs.get("inappSubscriber", defaultValue: true) as bool?;
+    recommendationsSubscriber = main.prefs.get("recommendationsSubscriber", defaultValue: true) as bool?;
   }
 
   @override
@@ -336,9 +308,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
         topRight: Radius.circular(20),
       ),
       child: Container(
-        height: MediaQuery.of(context).size.height / 2.3 > 380
-            ? MediaQuery.of(context).size.height / 2.3
-            : 380,
+        height: MediaQuery.of(context).size.height / 2.3 > 380 ? MediaQuery.of(context).size.height / 2.3 : 380,
         decoration: BoxDecoration(
           color: Theme.of(context).primaryColor,
           borderRadius: const BorderRadius.only(
@@ -358,9 +328,8 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   child: Container(
                     height: 5,
                     width: 30,
-                    decoration: BoxDecoration(
-                        color: Theme.of(context).hintColor,
-                        borderRadius: BorderRadius.circular(500)),
+                    decoration:
+                        BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(500)),
                   ),
                 )
               ],
@@ -374,9 +343,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).errorColor == Colors.black
-                        ? Colors.grey
-                        : Theme.of(context).errorColor,
+                    color: Theme.of(context).errorColor == Colors.black ? Colors.grey : Theme.of(context).errorColor,
                   ),
                 ),
               ),
@@ -390,9 +357,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               title: Text(
                 "Followers",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Get notifications for new followers.",
@@ -405,11 +370,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                     followersSubscriber = value;
                   });
                   if (value) {
-                    home.f.subscribeToTopic(
-                        globals.prismUser.email.split("@")[0].toString());
+                    home.f.subscribeToTopic(globals.prismUser.email.split("@")[0].toString());
                   } else {
-                    home.f.unsubscribeFromTopic(
-                        globals.prismUser.email.split("@")[0].toString());
+                    home.f.unsubscribeFromTopic(globals.prismUser.email.split("@")[0].toString());
                     main.prefs.put("postsSubscriber", value);
                     setState(() {
                       postsSubscriber = value;
@@ -430,9 +393,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               title: Text(
                 "Posts",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Get notifications for posts from the artists you follow.",
@@ -465,9 +426,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               title: Text(
                 "In-App",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Get in app notifications for giveaways, contests and reviews.",
@@ -487,9 +446,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               title: Text(
                 "Recommendations",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Get recommendations from Prism.",

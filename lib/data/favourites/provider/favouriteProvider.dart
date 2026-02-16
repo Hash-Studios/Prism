@@ -13,21 +13,14 @@ class FavouriteProvider extends ChangeNotifier {
   Future<List?> getDataBase() async {
     final String uid = globals.prismUser.id;
     liked = [];
-    await databaseReference
-        .collection(USER_NEW_COLLECTION)
-        .doc(uid)
-        .collection("images")
-        .get()
-        .then((value) {
+    await databaseReference.collection(USER_NEW_COLLECTION).doc(uid).collection("images").get().then((value) {
       liked = [];
       for (final f in value.docs) {
         liked!.add(f.data());
       }
       liked!.sort((a, b) {
         if (a["createdAt"] != null && b["createdAt"] != null) {
-          return (a["createdAt"] as Timestamp)
-              .toDate()
-              .compareTo((b["createdAt"] as Timestamp).toDate());
+          return (a["createdAt"] as Timestamp).toDate().compareTo((b["createdAt"] as Timestamp).toDate());
         } else {
           return 0;
         }
@@ -44,12 +37,7 @@ class FavouriteProvider extends ChangeNotifier {
   Future<bool> deleteDataByID(String id) async {
     final String uid = globals.prismUser.id;
     try {
-      await databaseReference
-          .collection(USER_NEW_COLLECTION)
-          .doc(uid)
-          .collection("images")
-          .doc(id)
-          .delete();
+      await databaseReference.collection(USER_NEW_COLLECTION).doc(uid).collection("images").doc(id).delete();
     } catch (e) {
       logger.d(e.toString());
     }
@@ -57,8 +45,7 @@ class FavouriteProvider extends ChangeNotifier {
     return true;
   }
 
-  Future<bool> createDataByWall(String provider, WallPaper? wallhaven,
-      WallPaperP? pexels, Map? prism) async {
+  Future<bool> createDataByWall(String provider, WallPaper? wallhaven, WallPaperP? pexels, Map? prism) async {
     final String uid = globals.prismUser.id;
     if (provider == "WallHaven") {
       await databaseReference
@@ -121,8 +108,7 @@ class FavouriteProvider extends ChangeNotifier {
     return true;
   }
 
-  Future favCheck(String? id, String provider, WallPaper? wallhaven,
-      WallPaperP? pexels, Map? prism) async {
+  Future favCheck(String? id, String provider, WallPaper? wallhaven, WallPaperP? pexels, Map? prism) async {
     int? index;
     await getDataBase().then(
       (value) {
@@ -144,8 +130,7 @@ class FavouriteProvider extends ChangeNotifier {
     );
   }
 
-  bool localFavSave(
-      String provider, WallPaper? wallhaven, WallPaperP? pexels, Map? prism) {
+  bool localFavSave(String provider, WallPaper? wallhaven, WallPaperP? pexels, Map? prism) {
     if (provider == "WallHaven") {
       final Box box = Hive.box('localFav');
       box.put(wallhaven!.id.toString(), true);
@@ -181,12 +166,7 @@ class FavouriteProvider extends ChangeNotifier {
   Future<bool> deleteData() async {
     final String uid = globals.prismUser.id;
     try {
-      await databaseReference
-          .collection(USER_NEW_COLLECTION)
-          .doc(uid)
-          .collection("images")
-          .get()
-          .then((snapshot) {
+      await databaseReference.collection(USER_NEW_COLLECTION).doc(uid).collection("images").get().then((snapshot) {
         for (final DocumentSnapshot ds in snapshot.docs) {
           ds.reference.delete();
         }

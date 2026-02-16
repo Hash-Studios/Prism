@@ -38,8 +38,7 @@ class WallpaperTile extends StatelessWidget {
           decoration: Data.subPrismWalls!.isEmpty
               ? BoxDecoration(
                   color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
+                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),
@@ -47,8 +46,7 @@ class WallpaperTile extends StatelessWidget {
                 )
               : BoxDecoration(
                   color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
+                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),
@@ -71,18 +69,12 @@ class WallpaperTile extends StatelessWidget {
                 if (Data.subPrismWalls == []) {
                 } else {
                   log((globals.isPremiumWall(
-                              globals.premiumCollections,
-                              Data.subPrismWalls![index]["collections"]
-                                      as List? ??
-                                  []) ==
+                              globals.premiumCollections, Data.subPrismWalls![index]["collections"] as List? ?? []) ==
                           true)
                       .toString());
                   log(globals.prismUser.premium.toString());
-                  globals.isPremiumWall(
-                                  globals.premiumCollections,
-                                  Data.subPrismWalls![index]["collections"]
-                                          as List? ??
-                                      []) ==
+                  globals.isPremiumWall(globals.premiumCollections,
+                                  Data.subPrismWalls![index]["collections"] as List? ?? []) ==
                               true &&
                           globals.prismUser.premium != true
                       ? showGooglePopUp(context, () {

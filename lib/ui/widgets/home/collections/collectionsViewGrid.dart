@@ -17,28 +17,24 @@ class CollectionViewGrid extends StatefulWidget {
   _CollectionViewGridState createState() => _CollectionViewGridState();
 }
 
-class _CollectionViewGridState extends State<CollectionViewGrid>
-    with TickerProviderStateMixin {
+class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProviderStateMixin {
   AnimationController? _controller;
   late AnimationController shakeController;
   late Animation<Color?> animation;
   int? longTapIndex;
-  GlobalKey<RefreshIndicatorState> refreshHomeKey =
-      GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
   @override
   void initState() {
     super.initState();
-    shakeController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
+    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(
-                    SchedulerBinding.instance!.window.platformBrightness) ==
+                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color?>(
             [
@@ -91,32 +87,26 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 8.0)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(shakeController)
+    final Animation<double> offsetAnimation =
+        Tween(begin: 0.0, end: 8.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
           ..addStatusListener((status) {
             if (status == AnimationStatus.completed) {
               shakeController.reverse();
             }
           });
-    final ScrollController? controller =
-        InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     return GridView.builder(
       controller: controller,
       padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
       itemCount: anyCollectionWalls!.length,
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent:
-              MediaQuery.of(context).orientation == Orientation.portrait
-                  ? 300
-                  : 250,
+          maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
           childAspectRatio: 0.6625,
           mainAxisSpacing: 8,
           crossAxisSpacing: 8),
       itemBuilder: (context, index) {
-        if (index == anyCollectionWalls!.length - 1 &&
-            !(anyCollectionWalls!.length < 24)) {
+        if (index == anyCollectionWalls!.length - 1 && !(anyCollectionWalls!.length < 24)) {
           return SeeMoreButton(
             seeMoreLoader: seeMoreLoader,
             func: () {
@@ -126,8 +116,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                 });
                 seeMoreCollectionWithName();
                 setState(() {
-                  Future.delayed(const Duration(seconds: 1))
-                      .then((value) => seeMoreLoader = false);
+                  Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
                 });
               }
             },
@@ -141,9 +130,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
               }
               return Padding(
                 padding: index == longTapIndex
-                    ? EdgeInsets.symmetric(
-                        vertical: offsetAnimation.value / 2,
-                        horizontal: offsetAnimation.value)
+                    ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
                     : const EdgeInsets.all(0),
                 child: Stack(
                   children: [
@@ -152,9 +139,8 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                           color: animation.value,
                           borderRadius: BorderRadius.circular(20),
                           image: DecorationImage(
-                              image: CachedNetworkImageProvider(
-                                  anyCollectionWalls![index]["wallpaper_thumb"]
-                                      .toString()),
+                              image:
+                                  CachedNetworkImageProvider(anyCollectionWalls![index]["wallpaper_thumb"].toString()),
                               fit: BoxFit.cover)),
                     ),
                     ClipRRect(
@@ -162,19 +148,15 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          splashColor:
-                              Theme.of(context).accentColor.withOpacity(0.3),
-                          highlightColor:
-                              Theme.of(context).accentColor.withOpacity(0.1),
+                          splashColor: Theme.of(context).accentColor.withOpacity(0.3),
+                          highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
                           onTap: () {
-                            Navigator.pushNamed(context, shareRoute,
-                                arguments: [
-                                  anyCollectionWalls![index]["id"],
-                                  anyCollectionWalls![index]
-                                      ["wallpaper_provider"],
-                                  anyCollectionWalls![index]["wallpaper_url"],
-                                  anyCollectionWalls![index]["wallpaper_thumb"]
-                                ]);
+                            Navigator.pushNamed(context, shareRoute, arguments: [
+                              anyCollectionWalls![index]["id"],
+                              anyCollectionWalls![index]["wallpaper_provider"],
+                              anyCollectionWalls![index]["wallpaper_url"],
+                              anyCollectionWalls![index]["wallpaper_thumb"]
+                            ]);
                           },
                           onLongPress: () {
                             setState(() {
@@ -184,12 +166,9 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                             HapticFeedback.vibrate();
                             createDynamicLink(
                                 anyCollectionWalls![index]["id"].toString(),
-                                anyCollectionWalls![index]["wallpaper_provider"]
-                                    .toString(),
-                                anyCollectionWalls![index]["wallpaper_url"]
-                                    .toString(),
-                                anyCollectionWalls![index]["wallpaper_thumb"]
-                                    .toString());
+                                anyCollectionWalls![index]["wallpaper_provider"].toString(),
+                                anyCollectionWalls![index]["wallpaper_url"].toString(),
+                                anyCollectionWalls![index]["wallpaper_thumb"].toString());
                           },
                         ),
                       ),

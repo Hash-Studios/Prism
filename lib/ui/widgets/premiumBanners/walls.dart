@@ -5,8 +5,7 @@ class PremiumBannerWalls extends StatelessWidget {
   final bool? comparator;
   final Widget? defaultChild;
   final Widget? trueChild;
-  const PremiumBannerWalls(
-      {this.comparator, this.defaultChild, this.trueChild});
+  const PremiumBannerWalls({this.comparator, this.defaultChild, this.trueChild});
   @override
   Widget build(BuildContext context) {
     return comparator!
@@ -20,9 +19,7 @@ class PremiumBannerWalls extends StatelessWidget {
                 child: Container(
                   decoration: const BoxDecoration(
                       color: Color(0xFFFFB800),
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20))),
+                      borderRadius: BorderRadius.only(topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
                   padding: const EdgeInsets.all(0),
                   child: const Padding(
                     padding: EdgeInsets.fromLTRB(10, 5, 10, 5),

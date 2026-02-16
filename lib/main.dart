@@ -6,12 +6,12 @@ import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/data/ads/adsNotifier.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/features/ads/presentation/bloc/ads_bloc.dart';
 import 'package:Prism/features/palette/presentation/bloc/palette_bloc.dart';
 import 'package:Prism/features/user_search/presentation/bloc/user_search_bloc.dart';
 import 'package:Prism/global/categoryProvider.dart';
@@ -130,9 +130,6 @@ Future<void> main() async {
                 RestartWidget(
                   child: MultiProvider(
                     providers: [
-                      ChangeNotifierProvider<AdsNotifier>(
-                        create: (context) => AdsNotifier(),
-                      ),
                       ChangeNotifierProvider<UserProfileProvider>(
                         create: (context) => UserProfileProvider(),
                       ),
@@ -166,6 +163,9 @@ Future<void> main() async {
                     ],
                     child: MultiBlocProvider(
                       providers: [
+                        BlocProvider<AdsBloc>(
+                          create: (_) => getIt<AdsBloc>(),
+                        ),
                         BlocProvider<PaletteBloc>(
                           create: (_) => getIt<PaletteBloc>(),
                         ),

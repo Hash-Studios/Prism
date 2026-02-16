@@ -107,10 +107,7 @@ class _SetupPageState extends State<SetupPage> {
             height: MediaQuery.of(context).size.height * 0.3,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).errorColor,
-                  Theme.of(context).primaryColor
-                ],
+                colors: [Theme.of(context).errorColor, Theme.of(context).primaryColor],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 stops: const [0, 1],
@@ -127,9 +124,7 @@ class _SetupPageState extends State<SetupPage> {
                     SizedBox(
                       width: MediaQuery.of(context).size.width * 0.8,
                       child: Text(
-                        Provider.of<SetupProvider>(context, listen: false)
-                                .setups!
-                                .isEmpty
+                        Provider.of<SetupProvider>(context, listen: false).setups!.isEmpty
                             ? ""
                             : Provider.of<SetupProvider>(context, listen: false)
                                 .setups![pageNumber]['name']
@@ -137,10 +132,7 @@ class _SetupPageState extends State<SetupPage> {
                                 .toUpperCase(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline1!
-                            .copyWith(fontSize: 30),
+                        style: Theme.of(context).textTheme.headline1!.copyWith(fontSize: 30),
                       ),
                     ),
                   ],
@@ -150,8 +142,7 @@ class _SetupPageState extends State<SetupPage> {
           ),
         ),
         Padding(
-          padding:
-              EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.12),
+          padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.12),
           child: FutureBuilder(
               future: widget.future,
               builder: (context, snapshot) {
@@ -164,8 +155,7 @@ class _SetupPageState extends State<SetupPage> {
                   logger.d("snapshot none, waiting");
                   return Center(child: Loader());
                 } else {
-                  Future.delayed(const Duration())
-                      .then((value) => setState(() {}));
+                  Future.delayed(const Duration()).then((value) => setState(() {}));
                   return SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height * 0.9,
@@ -174,25 +164,15 @@ class _SetupPageState extends State<SetupPage> {
                         setState(() {
                           pageNumber = value;
                         });
-                        if (pageNumber + 1 ==
-                            Provider.of<SetupProvider>(context, listen: false)
-                                .setups!
-                                .length) {
-                          Provider.of<SetupProvider>(context, listen: false)
-                              .seeMoreSetups();
+                        if (pageNumber + 1 == Provider.of<SetupProvider>(context, listen: false).setups!.length) {
+                          Provider.of<SetupProvider>(context, listen: false).seeMoreSetups();
                         }
                       },
                       controller: widget.controller,
-                      itemCount: Provider.of<SetupProvider>(context,
-                                  listen: false)
-                              .setups!
-                              .isEmpty
+                      itemCount: Provider.of<SetupProvider>(context, listen: false).setups!.isEmpty
                           ? 1
-                          : Provider.of<SetupProvider>(context, listen: false)
-                              .setups!
-                              .length,
-                      itemBuilder: (context, index) => Provider.of<
-                                  SetupProvider>(context, listen: false)
+                          : Provider.of<SetupProvider>(context, listen: false).setups!.length,
+                      itemBuilder: (context, index) => Provider.of<SetupProvider>(context, listen: false)
                               .setups!
                               .isEmpty
                           ? Loader()
@@ -200,80 +180,55 @@ class _SetupPageState extends State<SetupPage> {
                               onTap: () {
                                 if (pageNumber >= 5) {
                                   showPremiumPopUp(() {
-                                    Navigator.pushNamed(context, setupViewRoute,
-                                        arguments: [pageNumber]);
+                                    Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
                                   });
                                 } else {
-                                  Navigator.pushNamed(context, setupViewRoute,
-                                      arguments: [pageNumber]);
+                                  Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
                                 }
                               },
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: EdgeInsets.only(
-                                  top: pageNumber == index + 1 ||
-                                          pageNumber == index - 1
-                                      ? MediaQuery.of(context).size.height *
-                                          0.12
-                                      : MediaQuery.of(context).size.height *
-                                          0.0499,
+                                  top: pageNumber == index + 1 || pageNumber == index - 1
+                                      ? MediaQuery.of(context).size.height * 0.12
+                                      : MediaQuery.of(context).size.height * 0.0499,
                                 ),
                                 child: Align(
                                   alignment: Alignment.topCenter,
                                   child: CachedNetworkImage(
-                                    imageUrl: Provider.of<SetupProvider>(
-                                            context,
-                                            listen: false)
+                                    imageUrl: Provider.of<SetupProvider>(context, listen: false)
                                         .setups![index]['image']
                                         .toString(),
-                                    imageBuilder: (context, imageProvider) =>
-                                        Container(
-                                      width:
-                                          MediaQuery.of(context).size.height *
-                                              0.7 *
-                                              (9 / 19.5),
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.7,
+                                    imageBuilder: (context, imageProvider) => Container(
+                                      width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
+                                      height: MediaQuery.of(context).size.height * 0.7,
                                       decoration: BoxDecoration(
                                         boxShadow: pageNumber == index
-                                            ? Provider.of<ThemeModeExtended>(
-                                                            context)
-                                                        .getCurrentModeStyle(
-                                                            MediaQuery.of(
-                                                                    context)
-                                                                .platformBrightness) ==
+                                            ? Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
+                                                        MediaQuery.of(context).platformBrightness) ==
                                                     "Light"
                                                 ? [
                                                     BoxShadow(
-                                                      color: Colors.black
-                                                          .withOpacity(.15),
+                                                      color: Colors.black.withOpacity(.15),
                                                       blurRadius: 38,
-                                                      offset:
-                                                          const Offset(0, 19),
+                                                      offset: const Offset(0, 19),
                                                     ),
                                                     BoxShadow(
-                                                      color: Colors.black
-                                                          .withOpacity(.10),
+                                                      color: Colors.black.withOpacity(.10),
                                                       blurRadius: 12,
-                                                      offset:
-                                                          const Offset(0, 15),
+                                                      offset: const Offset(0, 15),
                                                     )
                                                   ]
                                                 : [
                                                     BoxShadow(
-                                                      color: Colors.black
-                                                          .withOpacity(.7),
+                                                      color: Colors.black.withOpacity(.7),
                                                       blurRadius: 38,
-                                                      offset:
-                                                          const Offset(0, 19),
+                                                      offset: const Offset(0, 19),
                                                     ),
                                                     BoxShadow(
-                                                      color: Colors.black
-                                                          .withOpacity(.6),
+                                                      color: Colors.black.withOpacity(.6),
                                                       blurRadius: 12,
-                                                      offset:
-                                                          const Offset(0, 15),
+                                                      offset: const Offset(0, 15),
                                                     )
                                                   ]
                                             : [],
@@ -282,64 +237,34 @@ class _SetupPageState extends State<SetupPage> {
                                       child: PremiumBannerSetupOld(
                                         comparator: index < 5,
                                         child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(10),
                                           child: SizedBox(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.7 *
-                                                (9 / 19.5),
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.7,
-                                            child: Image(
-                                                image: imageProvider,
-                                                fit: BoxFit.fill),
+                                            width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
+                                            height: MediaQuery.of(context).size.height * 0.7,
+                                            child: Image(image: imageProvider, fit: BoxFit.fill),
                                           ),
                                         ),
                                       ),
                                     ),
-                                    progressIndicatorBuilder:
-                                        (context, url, downloadProgress) =>
-                                            SizedBox(
-                                      width:
-                                          MediaQuery.of(context).size.height *
-                                              0.7 *
-                                              (9 / 19.5),
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.7,
+                                    progressIndicatorBuilder: (context, url, downloadProgress) => SizedBox(
+                                      width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
+                                      height: MediaQuery.of(context).size.height * 0.7,
                                       child: Center(
                                         child: CircularProgressIndicator(
                                             valueColor: AlwaysStoppedAnimation(
-                                              Provider.of<ThemeModeExtended>(
-                                                                  context)
-                                                              .getCurrentModeStyle(
-                                                                  MediaQuery.of(
-                                                                          context)
-                                                                      .platformBrightness) ==
+                                              Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
+                                                              MediaQuery.of(context).platformBrightness) ==
                                                           "Dark" &&
-                                                      Provider.of<DarkThemeModel>(
-                                                                  context)
-                                                              .currentTheme ==
-                                                          kDarkTheme2
-                                                  ? Theme.of(context)
-                                                              .errorColor ==
-                                                          Colors.black
-                                                      ? Theme.of(context)
-                                                          .accentColor
-                                                      : Theme.of(context)
-                                                          .errorColor
-                                                  : Theme.of(context)
-                                                      .errorColor,
+                                                      Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
+                                                  ? Theme.of(context).errorColor == Colors.black
+                                                      ? Theme.of(context).accentColor
+                                                      : Theme.of(context).errorColor
+                                                  : Theme.of(context).errorColor,
                                             ),
                                             value: downloadProgress.progress),
                                       ),
                                     ),
-                                    errorWidget: (context, url, error) =>
-                                        Center(
+                                    errorWidget: (context, url, error) => Center(
                                       child: Icon(
                                         JamIcons.close_circle_f,
                                         color: Theme.of(context).accentColor,
@@ -361,20 +286,16 @@ class _SetupPageState extends State<SetupPage> {
             alignment: Alignment.centerLeft,
             child: ArrowBounceAnimation(
               onTap: () {
-                widget.controller.animateToPage(
-                    widget.controller.page!.toInt() - 1,
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.fastOutSlowIn);
+                widget.controller.animateToPage(widget.controller.page!.toInt() - 1,
+                    duration: const Duration(milliseconds: 200), curve: Curves.fastOutSlowIn);
                 HapticFeedback.vibrate();
               },
               child: Icon(
                 JamIcons.chevron_left,
                 color: Provider.of<ThemeModeExtended>(context)
-                                .getCurrentModeStyle(MediaQuery.of(context)
-                                    .platformBrightness) ==
+                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                             "Dark" &&
-                        Provider.of<DarkThemeModel>(context).currentTheme ==
-                            kDarkTheme2
+                        Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
                     ? Theme.of(context).errorColor == Colors.black
                         ? Theme.of(context).accentColor
                         : Theme.of(context).errorColor
@@ -382,29 +303,23 @@ class _SetupPageState extends State<SetupPage> {
               ),
             ),
           ),
-        if (pageNumber ==
-            Provider.of<SetupProvider>(context, listen: false).setups!.length -
-                1)
+        if (pageNumber == Provider.of<SetupProvider>(context, listen: false).setups!.length - 1)
           Container()
         else
           Align(
             alignment: Alignment.centerRight,
             child: ArrowBounceAnimation(
               onTap: () {
-                widget.controller.animateToPage(
-                    widget.controller.page!.toInt() + 1,
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.fastOutSlowIn);
+                widget.controller.animateToPage(widget.controller.page!.toInt() + 1,
+                    duration: const Duration(milliseconds: 200), curve: Curves.fastOutSlowIn);
                 HapticFeedback.vibrate();
               },
               child: Icon(
                 JamIcons.chevron_right,
                 color: Provider.of<ThemeModeExtended>(context)
-                                .getCurrentModeStyle(MediaQuery.of(context)
-                                    .platformBrightness) ==
+                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                             "Dark" &&
-                        Provider.of<DarkThemeModel>(context).currentTheme ==
-                            kDarkTheme2
+                        Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
                     ? Theme.of(context).errorColor == Colors.black
                         ? Theme.of(context).accentColor
                         : Theme.of(context).errorColor

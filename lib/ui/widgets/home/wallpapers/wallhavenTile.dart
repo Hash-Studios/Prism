@@ -3,8 +3,7 @@ import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallhavenGrid.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as wData;
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
 import 'package:provider/provider.dart';
 
 class WallhavenTile extends StatelessWidget {
@@ -25,8 +24,7 @@ class WallhavenTile extends StatelessWidget {
           decoration: wData.walls.isEmpty
               ? BoxDecoration(
                   color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
+                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),
@@ -34,8 +32,7 @@ class WallhavenTile extends StatelessWidget {
                 )
               : BoxDecoration(
                   color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
+                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),

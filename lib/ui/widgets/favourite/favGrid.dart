@@ -20,12 +20,10 @@ class FavouriteGrid extends StatefulWidget {
   _FavouriteGridState createState() => _FavouriteGridState();
 }
 
-class _FavouriteGridState extends State<FavouriteGrid>
-    with SingleTickerProviderStateMixin {
+class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProviderStateMixin {
   AnimationController? _controller;
   late Animation<Color?> animation;
-  GlobalKey<RefreshIndicatorState> refreshFavKey =
-      GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshFavKey = GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -35,8 +33,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
       vsync: this,
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(
-                    SchedulerBinding.instance!.window.platformBrightness) ==
+                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color?>(
             [
@@ -93,36 +90,25 @@ class _FavouriteGridState extends State<FavouriteGrid>
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller =
-        InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     return RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshFavKey,
         onRefresh: refreshList,
-        child: Provider.of<FavouriteProvider>(context, listen: false).liked !=
-                null
-            ? Provider.of<FavouriteProvider>(context, listen: false)
-                    .liked!
-                    .isEmpty
+        child: Provider.of<FavouriteProvider>(context, listen: false).liked != null
+            ? Provider.of<FavouriteProvider>(context, listen: false).liked!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
                         child: Provider.of<ThemeModeExtended>(context)
-                                    .getCurrentModeStyle(MediaQuery.of(context)
-                                        .platformBrightness) ==
+                                    .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                 "Dark"
                             ? SvgPicture.string(
                                 favouritesDark
-                                    .replaceAll(
-                                        "181818",
-                                        Theme.of(context)
-                                            .primaryColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -130,49 +116,19 @@ class _FavouriteGridState extends State<FavouriteGrid>
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2F2F",
-                                        Theme.of(context)
-                                            .hintColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2)),
+                                    .replaceAll("F0F0F0",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2E41",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("3F3D56",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
                               )
                             : SvgPicture.string(
                                 favouritesLight
-                                    .replaceAll(
-                                        "181818",
-                                        Theme.of(context)
-                                            .primaryColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -180,38 +136,14 @@ class _FavouriteGridState extends State<FavouriteGrid>
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2F2F",
-                                        Theme.of(context)
-                                            .hintColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2)),
+                                    .replaceAll("F0F0F0",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2E41",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("3F3D56",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
                               ),
                       ),
                       SizedBox(
@@ -225,14 +157,9 @@ class _FavouriteGridState extends State<FavouriteGrid>
                     cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
                     controller: controller,
-                    itemCount:
-                        Provider.of<FavouriteProvider>(context).liked!.length,
+                    itemCount: Provider.of<FavouriteProvider>(context).liked!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent:
-                            MediaQuery.of(context).orientation ==
-                                    Orientation.portrait
-                                ? 300
-                                : 250,
+                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                         childAspectRatio: 0.6625,
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
@@ -248,9 +175,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        Provider.of<FavouriteProvider>(context)
-                                            .liked![index]["thumb"]
-                                            .toString(),
+                                        Provider.of<FavouriteProvider>(context).liked![index]["thumb"].toString(),
                                       ),
                                       fit: BoxFit.cover)),
                             ),
@@ -259,27 +184,15 @@ class _FavouriteGridState extends State<FavouriteGrid>
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  splashColor: Theme.of(context)
-                                      .accentColor
-                                      .withOpacity(0.3),
-                                  highlightColor: Theme.of(context)
-                                      .accentColor
-                                      .withOpacity(0.1),
+                                  splashColor: Theme.of(context).accentColor.withOpacity(0.3),
+                                  highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
                                   onTap: () {
-                                    if (Provider.of<FavouriteProvider>(context,
-                                                listen: false)
-                                            .liked ==
-                                        []) {
+                                    if (Provider.of<FavouriteProvider>(context, listen: false).liked == []) {
                                     } else {
-                                      Navigator.pushNamed(
-                                          context, favWallViewRoute,
-                                          arguments: [
-                                            index,
-                                            Provider.of<FavouriteProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .liked![index]["thumb"],
-                                          ]);
+                                      Navigator.pushNamed(context, favWallViewRoute, arguments: [
+                                        index,
+                                        Provider.of<FavouriteProvider>(context, listen: false).liked![index]["thumb"],
+                                      ]);
                                     }
                                   },
                                 ),

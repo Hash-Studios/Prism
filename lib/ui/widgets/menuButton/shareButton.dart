@@ -43,12 +43,7 @@ class _ShareButtonState extends State<ShareButton> {
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withOpacity(.25),
-                    blurRadius: 4,
-                    offset: const Offset(0, 4))
-              ],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
@@ -63,8 +58,7 @@ class _ShareButtonState extends State<ShareButton> {
               left: 0,
               height: 53,
               width: 53,
-              child:
-                  isLoading ? const CircularProgressIndicator() : Container())
+              child: isLoading ? const CircularProgressIndicator() : Container())
         ],
       ),
     );
@@ -78,10 +72,9 @@ class _ShareButtonState extends State<ShareButton> {
         socialMetaTagParameters: SocialMetaTagParameters(
             title: "Prism Wallpapers - ${widget.id}",
             imageUrl: Uri.parse(widget.thumbUrl),
-            description:
-                "Check out this amazing wallpaper I got, from Prism Wallpapers App."),
-        dynamicLinkParametersOptions: DynamicLinkParametersOptions(
-            shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
+            description: "Check out this amazing wallpaper I got, from Prism Wallpapers App."),
+        dynamicLinkParametersOptions:
+            DynamicLinkParametersOptions(shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
         uriPrefix: 'https://prismwallpapers.page.link',
         link: Uri.parse(
             'http://prism.hash.com/share?id=${widget.id}&provider=${widget.provider}&url=${widget.url}&thumb=${widget.thumbUrl}'),
@@ -99,8 +92,7 @@ class _ShareButtonState extends State<ShareButton> {
     Clipboard.setData(ClipboardData(text: shortUrl.toString()));
     Share.share("🔥Check this out ➜ $shortUrl");
     logger.d(shortUrl.toString());
-    analytics.logShare(
-        contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
+    analytics.logShare(contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
     setState(() {
       isLoading = false;
     });

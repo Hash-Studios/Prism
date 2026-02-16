@@ -122,8 +122,7 @@ class PrismUsers {
     });
   }
 
-  factory PrismUsers.fromDocumentSnapshot(DocumentSnapshot doc, User user) =>
-      PrismUsers.withoutSave(
+  factory PrismUsers.fromDocumentSnapshot(DocumentSnapshot doc, User user) => PrismUsers.withoutSave(
         bio: (doc.data()!["bio"] ?? "").toString(),
         createdAt: doc.data()!["createdAt"].toString(),
         email: doc.data()!["email"].toString(),
@@ -131,8 +130,7 @@ class PrismUsers {
         followers: doc.data()!["followers"] as List ?? [],
         following: doc.data()!["following"] as List ?? [],
         id: doc.data()!["id"].toString(),
-        lastLogin: ((doc.data()!["lastLogin"] as Timestamp?) ?? Timestamp.now())
-            .toDate(),
+        lastLogin: ((doc.data()!["lastLogin"] as Timestamp?) ?? Timestamp.now()).toDate(),
         links: doc.data()!["links"] as Map ?? {},
         premium: doc.data()!["premium"] as bool,
         loggedIn: true,

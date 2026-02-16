@@ -24,22 +24,19 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
   late AnimationController shakeController;
   late Animation<Color?> animation;
   int? longTapIndex;
-  GlobalKey<RefreshIndicatorState> refreshHomeKey =
-      GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
   @override
   void initState() {
     super.initState();
-    shakeController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
+    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(
-                    SchedulerBinding.instance!.window.platformBrightness) ==
+                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color?>(
             [
@@ -98,16 +95,14 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 8.0)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(shakeController)
+    final Animation<double> offsetAnimation =
+        Tween(begin: 0.0, end: 8.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
           ..addStatusListener((status) {
             if (status == AnimationStatus.completed) {
               shakeController.reverse();
             }
           });
-    final ScrollController? controller =
-        InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshHomeKey,
@@ -119,8 +114,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               PData.getWallsPbyColorPage(widget.provider.substring(9));
               setState(() {
                 seeMoreLoader = true;
-                Future.delayed(const Duration(seconds: 2))
-                    .then((value) => seeMoreLoader = false);
+                Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
               });
             }
           }
@@ -131,10 +125,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
           itemCount: PData.wallsC.isEmpty ? 24 : PData.wallsC.length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent:
-                  MediaQuery.of(context).orientation == Orientation.portrait
-                      ? 300
-                      : 250,
+              maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
               childAspectRatio: 0.6625,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8),
@@ -142,20 +133,17 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
             if (index == PData.wallsC.length - 1) {
               return FlatButton(
                   color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
+                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   onPressed: () {
                     if (!seeMoreLoader) {
                       PData.getWallsPbyColorPage(widget.provider.substring(9));
                       setState(() {
                         seeMoreLoader = true;
-                        Future.delayed(const Duration(seconds: 2))
-                            .then((value) => seeMoreLoader = false);
+                        Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
                       });
                     }
                   },
@@ -174,8 +162,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                       return Padding(
                         padding: index == longTapIndex
                             ? EdgeInsets.symmetric(
-                                vertical: offsetAnimation.value / 2,
-                                horizontal: offsetAnimation.value)
+                                vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
                             : const EdgeInsets.all(0),
                         child: Stack(
                           children: [
@@ -189,9 +176,8 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                       color: animation.value,
                                       borderRadius: BorderRadius.circular(20),
                                       image: DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                              PData.wallsC[index].src!["medium"]
-                                                  .toString()),
+                                          image:
+                                              CachedNetworkImageProvider(PData.wallsC[index].src!["medium"].toString()),
                                           fit: BoxFit.cover)),
                             ),
                             ClipRRect(
@@ -199,21 +185,13 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  splashColor: Theme.of(context)
-                                      .accentColor
-                                      .withOpacity(0.3),
-                                  highlightColor: Theme.of(context)
-                                      .accentColor
-                                      .withOpacity(0.1),
+                                  splashColor: Theme.of(context).accentColor.withOpacity(0.3),
+                                  highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
                                   onTap: () {
                                     if (PData.wallsC == []) {
                                     } else {
-                                      Navigator.pushNamed(
-                                          context, wallpaperRoute, arguments: [
-                                        widget.provider,
-                                        index,
-                                        PData.wallsC[index].src!["small"]
-                                      ]);
+                                      Navigator.pushNamed(context, wallpaperRoute,
+                                          arguments: [widget.provider, index, PData.wallsC[index].src!["small"]]);
                                     }
                                   },
                                   onLongPress: () {
@@ -227,10 +205,8 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                       createDynamicLink(
                                           PData.wallsC[index].id!,
                                           "Pexels",
-                                          PData.wallsC[index].src!["original"]
-                                              .toString(),
-                                          PData.wallsC[index].src!["medium"]
-                                              .toString());
+                                          PData.wallsC[index].src!["original"].toString(),
+                                          PData.wallsC[index].src!["medium"].toString());
                                     }
                                   },
                                 ),

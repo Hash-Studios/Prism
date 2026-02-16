@@ -14,8 +14,7 @@ class LoadingCardsCollection extends StatefulWidget {
   _LoadingCardsCollectionState createState() => _LoadingCardsCollectionState();
 }
 
-class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
-    with SingleTickerProviderStateMixin {
+class _LoadingCardsCollectionState extends State<LoadingCardsCollection> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Color?> animation;
 
@@ -27,8 +26,7 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
       vsync: this,
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(
-                    SchedulerBinding.instance!.window.platformBrightness) ==
+                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color?>(
             [
@@ -94,10 +92,7 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
             itemCount: 11,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent:
-                    MediaQuery.of(context).orientation == Orientation.portrait
-                        ? 20000
-                        : 20000,
+                maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 20000 : 20000,
                 childAspectRatio: 1 / 0.6625,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8),
@@ -115,10 +110,7 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent:
-                    MediaQuery.of(context).orientation == Orientation.portrait
-                        ? 20000
-                        : 20000,
+                maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 20000 : 20000,
                 childAspectRatio: 1 / 0.6625,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8),

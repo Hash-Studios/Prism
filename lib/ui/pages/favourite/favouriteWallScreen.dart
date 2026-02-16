@@ -31,8 +31,7 @@ class FavouriteWallpaperScreen extends StatelessWidget {
           ),
           body: BottomBar(
             child: FavLoader(
-              future: Provider.of<FavouriteProvider>(context, listen: false)
-                  .getDataBase(),
+              future: Provider.of<FavouriteProvider>(context, listen: false).getDataBase(),
             ),
           )),
     );

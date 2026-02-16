@@ -38,8 +38,8 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
       Navigator.pop(context);
       if (navStack.length > 1) navStack.removeLast();
       logger.d(navStack.toString());
-      Future.delayed(const Duration()).then((value) =>
-          Navigator.pushNamed(context, uploadSetupRoute, arguments: [_setup]));
+      Future.delayed(const Duration())
+          .then((value) => Navigator.pushNamed(context, uploadSetupRoute, arguments: [_setup]));
     }
   }
 
@@ -65,9 +65,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
                 child: Text(
                   "Drafts",
                   style: TextStyle(
-                    color: Theme.of(context).errorColor == Colors.black
-                        ? Colors.white
-                        : Theme.of(context).errorColor,
+                    color: Theme.of(context).errorColor == Colors.black ? Colors.white : Theme.of(context).errorColor,
                     fontWeight: FontWeight.normal,
                   ),
                 ),
@@ -93,19 +91,12 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 child: Provider.of<ThemeModeExtended>(context)
-                            .getCurrentModeStyle(
-                                MediaQuery.of(context).platformBrightness) ==
+                            .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                         "Dark"
                     ? SvgPicture.string(
                         setupDark
-                            .replaceAll(
-                                "181818",
-                                Theme.of(context)
-                                    .primaryColor
-                                    .value
-                                    .toRadixString(16)
-                                    .toString()
-                                    .substring(2))
+                            .replaceAll("181818",
+                                Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
                             .replaceAll(
                                 "E57697",
                                 Theme.of(context)
@@ -114,48 +105,18 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
                                     .replaceAll("Color(0xff", "")
                                     .replaceAll(")", ""))
                             .replaceAll(
-                                "F0F0F0",
-                                Theme.of(context)
-                                    .accentColor
-                                    .value
-                                    .toRadixString(16)
-                                    .toString()
-                                    .substring(2))
+                                "F0F0F0", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
                             .replaceAll(
-                                "2F2E41",
-                                Theme.of(context)
-                                    .accentColor
-                                    .value
-                                    .toRadixString(16)
-                                    .toString()
-                                    .substring(2))
+                                "2F2E41", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
                             .replaceAll(
-                                "3F3D56",
-                                Theme.of(context)
-                                    .accentColor
-                                    .value
-                                    .toRadixString(16)
-                                    .toString()
-                                    .substring(2))
+                                "3F3D56", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
                             .replaceAll(
-                                "2F2F2F",
-                                Theme.of(context)
-                                    .hintColor
-                                    .value
-                                    .toRadixString(16)
-                                    .toString()
-                                    .substring(2)),
+                                "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
                       )
                     : SvgPicture.string(
                         setupLight
-                            .replaceAll(
-                                "181818",
-                                Theme.of(context)
-                                    .primaryColor
-                                    .value
-                                    .toRadixString(16)
-                                    .toString()
-                                    .substring(2))
+                            .replaceAll("181818",
+                                Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
                             .replaceAll(
                                 "E57697",
                                 Theme.of(context)
@@ -164,37 +125,13 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
                                     .replaceAll("Color(0xff", "")
                                     .replaceAll(")", ""))
                             .replaceAll(
-                                "F0F0F0",
-                                Theme.of(context)
-                                    .accentColor
-                                    .value
-                                    .toRadixString(16)
-                                    .toString()
-                                    .substring(2))
+                                "F0F0F0", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
                             .replaceAll(
-                                "2F2E41",
-                                Theme.of(context)
-                                    .accentColor
-                                    .value
-                                    .toRadixString(16)
-                                    .toString()
-                                    .substring(2))
+                                "2F2E41", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
                             .replaceAll(
-                                "3F3D56",
-                                Theme.of(context)
-                                    .accentColor
-                                    .value
-                                    .toRadixString(16)
-                                    .toString()
-                                    .substring(2))
+                                "3F3D56", Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
                             .replaceAll(
-                                "2F2F2F",
-                                Theme.of(context)
-                                    .hintColor
-                                    .value
-                                    .toRadixString(16)
-                                    .toString()
-                                    .substring(2)),
+                                "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
                       ),
               ),
               const Spacer(),
@@ -238,9 +175,7 @@ Guidelines for uploading setups -""",
                     onPressed: () async => getSetup(),
                     label: Text(
                       "Continue",
-                      style: TextStyle(
-                          color: Theme.of(context).accentColor,
-                          fontWeight: FontWeight.normal),
+                      style: TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.normal),
                     ),
                     icon: Icon(
                       JamIcons.arrow_right,
@@ -249,8 +184,7 @@ Guidelines for uploading setups -""",
                   ),
                 )
               : Container(),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerFloat),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat),
     );
   }
 }

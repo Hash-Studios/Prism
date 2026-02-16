@@ -32,8 +32,7 @@ class ProfileWallViewScreen extends StatefulWidget {
   _ProfileWallViewScreenState createState() => _ProfileWallViewScreenState();
 }
 
-class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
-    with SingleTickerProviderStateMixin {
+class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     logger.d(navStack.toString());
@@ -79,11 +78,11 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
       accent = colors![0];
     });
     if (accent!.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.dark));
+      SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
     } else {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.light));
+      SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
     }
   }
 
@@ -97,19 +96,18 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
         colorChanged = true;
       });
       if (accent!.computeLuminance() > 0.5) {
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-            .copyWith(statusBarIconBrightness: Brightness.dark));
+        SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
       } else {
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-            .copyWith(statusBarIconBrightness: Brightness.light));
+        SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
       }
     }
   }
 
   @override
   void initState() {
-    shakeController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
+    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments![0] as int;
     thumb = widget.arguments![1].toString();
     isLoading = true;
@@ -118,12 +116,11 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
         .data()["id"]
         .toString()
         .toUpperCase());
-    _futureView = getViews(
-        Provider.of<ProfileWallProvider>(context, listen: false)
-            .profileWalls![index]
-            .data()["id"]
-            .toString()
-            .toUpperCase());
+    _futureView = getViews(Provider.of<ProfileWallProvider>(context, listen: false)
+        .profileWalls![index]
+        .data()["id"]
+        .toString()
+        .toUpperCase());
     _updatePaletteGenerator();
     super.initState();
   }
@@ -136,9 +133,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(shakeController)
+    final Animation<double> offsetAnimation =
+        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
           ..addStatusListener((status) {
             if (status == AnimationStatus.completed) {
               shakeController.reverse();
@@ -267,17 +263,13 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.36,
+                                      width: MediaQuery.of(context).size.width * 0.36,
                                       child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            0, 5, 0, 10),
+                                        padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Row(
                                           children: [
                                             Text(
-                                              Provider.of<ProfileWallProvider>(
-                                                      context,
-                                                      listen: false)
+                                              Provider.of<ProfileWallProvider>(context, listen: false)
                                                   .profileWalls![index]
                                                   .data()["id"]
                                                   .toString()
@@ -285,37 +277,27 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText1!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 6.0),
+                                              padding: const EdgeInsets.symmetric(horizontal: 6.0),
                                               child: Container(
                                                 height: 20,
-                                                color: Theme.of(context)
-                                                    .accentColor,
+                                                color: Theme.of(context).accentColor,
                                                 width: 2,
                                               ),
                                             ),
                                             FutureBuilder(
                                               future: _futureView,
                                               builder: (context, snapshot) {
-                                                switch (
-                                                    snapshot.connectionState) {
+                                                switch (snapshot.connectionState) {
                                                   case ConnectionState.waiting:
                                                     return Text(
                                                       "",
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .bodyText1!
-                                                          .copyWith(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor,
-                                                              fontSize: 16),
+                                                          .copyWith(color: Theme.of(context).accentColor, fontSize: 16),
                                                     );
                                                   case ConnectionState.none:
                                                     return Text(
@@ -323,39 +305,22 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .bodyText1!
-                                                          .copyWith(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor,
-                                                              fontSize: 16),
+                                                          .copyWith(color: Theme.of(context).accentColor, fontSize: 16),
                                                     );
                                                   default:
                                                     if (snapshot.hasError) {
                                                       return Text(
                                                         "",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyText1!
-                                                            .copyWith(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor,
-                                                                fontSize: 16),
+                                                        style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                                                            color: Theme.of(context).accentColor, fontSize: 16),
                                                       );
                                                     } else {
                                                       return Text(
                                                         "${snapshot.data} views",
-                                                        overflow:
-                                                            TextOverflow.fade,
+                                                        overflow: TextOverflow.fade,
                                                         softWrap: false,
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyText1!
-                                                            .copyWith(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor,
-                                                                fontSize: 16),
+                                                        style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                                                            color: Theme.of(context).accentColor, fontSize: 16),
                                                       );
                                                     }
                                                 }
@@ -370,24 +335,18 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                         Icon(
                                           JamIcons.camera,
                                           size: 20,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(.7),
+                                          color: Theme.of(context).accentColor.withOpacity(.7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          Provider.of<ProfileWallProvider>(
-                                                  context,
-                                                  listen: false)
+                                          Provider.of<ProfileWallProvider>(context, listen: false)
                                               .profileWalls![index]
                                               .data()["by"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                         ),
                                       ],
                                     ),
@@ -397,24 +356,18 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                         Icon(
                                           JamIcons.arrow_circle_right,
                                           size: 20,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(.7),
+                                          color: Theme.of(context).accentColor.withOpacity(.7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          Provider.of<ProfileWallProvider>(
-                                                  context,
-                                                  listen: false)
+                                          Provider.of<ProfileWallProvider>(context, listen: false)
                                               .profileWalls![index]
                                               .data()["desc"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                         ),
                                       ],
                                     ),
@@ -424,24 +377,18 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                         Icon(
                                           JamIcons.save,
                                           size: 20,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(.7),
+                                          color: Theme.of(context).accentColor.withOpacity(.7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          Provider.of<ProfileWallProvider>(
-                                                  context,
-                                                  listen: false)
+                                          Provider.of<ProfileWallProvider>(context, listen: false)
                                               .profileWalls![index]
                                               .data()["size"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                         ),
                                       ],
                                     ),
@@ -454,26 +401,20 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                     Row(
                                       children: [
                                         Text(
-                                          Provider.of<ProfileWallProvider>(
-                                                  context,
-                                                  listen: false)
+                                          Provider.of<ProfileWallProvider>(context, listen: false)
                                               .profileWalls![index]
                                               .data()["resolution"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                         ),
                                         const SizedBox(width: 10),
                                         Icon(
                                           JamIcons.set_square,
                                           size: 20,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(.7),
+                                          color: Theme.of(context).accentColor.withOpacity(.7),
                                         ),
                                       ],
                                     ),
@@ -481,26 +422,20 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                     Row(
                                       children: [
                                         Text(
-                                          Provider.of<ProfileWallProvider>(
-                                                  context,
-                                                  listen: false)
+                                          Provider.of<ProfileWallProvider>(context, listen: false)
                                               .profileWalls![index]
                                               .data()["wallpaper_provider"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                         ),
                                         const SizedBox(width: 10),
                                         Icon(
                                           JamIcons.database,
                                           size: 20,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(.7),
+                                          color: Theme.of(context).accentColor.withOpacity(.7),
                                         ),
                                       ],
                                     ),
@@ -519,8 +454,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                 colorChanged: colorChanged,
                                 link: screenshotTaken
                                     ? _imageFile.path
-                                    : Provider.of<ProfileWallProvider>(context,
-                                            listen: false)
+                                    : Provider.of<ProfileWallProvider>(context, listen: false)
                                         .profileWalls![index]
                                         .data()["wallpaper_url"]
                                         .toString(),
@@ -529,56 +463,44 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                 colorChanged: colorChanged,
                                 url: screenshotTaken
                                     ? _imageFile.path
-                                    : Provider.of<ProfileWallProvider>(context,
-                                            listen: false)
+                                    : Provider.of<ProfileWallProvider>(context, listen: false)
                                         .profileWalls![index]
                                         .data()["wallpaper_url"]
                                         .toString(),
                               ),
                               FavouriteWallpaperButton(
-                                id: Provider.of<ProfileWallProvider>(context,
-                                        listen: false)
+                                id: Provider.of<ProfileWallProvider>(context, listen: false)
                                     .profileWalls![index]
                                     .data()["id"]
                                     .toString(),
-                                provider: Provider.of<ProfileWallProvider>(
-                                        context,
-                                        listen: false)
+                                provider: Provider.of<ProfileWallProvider>(context, listen: false)
                                     .profileWalls![index]
                                     .data()["wallpaper_provider"]
                                     .toString(),
-                                prism: Provider.of<ProfileWallProvider>(context,
-                                        listen: false)
+                                prism: Provider.of<ProfileWallProvider>(context, listen: false)
                                     .profileWalls![index]
                                     .data(),
                                 trash: false,
                               ),
                               ShareButton(
-                                  id: Provider.of<ProfileWallProvider>(context,
-                                          listen: false)
+                                  id: Provider.of<ProfileWallProvider>(context, listen: false)
                                       .profileWalls![index]
                                       .data()["id"]
                                       .toString(),
-                                  provider: Provider.of<ProfileWallProvider>(
-                                          context,
-                                          listen: false)
+                                  provider: Provider.of<ProfileWallProvider>(context, listen: false)
                                       .profileWalls![index]
                                       .data()["wallpaper_provider"]
                                       .toString(),
-                                  url: Provider.of<ProfileWallProvider>(context,
-                                          listen: false)
+                                  url: Provider.of<ProfileWallProvider>(context, listen: false)
                                       .profileWalls![index]
                                       .data()["wallpaper_url"]
                                       .toString(),
-                                  thumbUrl: Provider.of<ProfileWallProvider>(
-                                          context,
-                                          listen: false)
+                                  thumbUrl: Provider.of<ProfileWallProvider>(context, listen: false)
                                       .profileWalls![index]
                                       .data()["wallpaper_thumb"]
                                       .toString()),
                               EditButton(
-                                url: Provider.of<ProfileWallProvider>(context,
-                                        listen: false)
+                                url: Provider.of<ProfileWallProvider>(context, listen: false)
                                     .profileWalls![index]
                                     .data()["wallpaper_url"]
                                     .toString(),
@@ -619,8 +541,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                           shakeController.forward(from: 0.0);
                         },
                         child: CachedNetworkImage(
-                          imageUrl: Provider.of<ProfileWallProvider>(context,
-                                  listen: false)
+                          imageUrl: Provider.of<ProfileWallProvider>(context, listen: false)
                               .profileWalls![index]
                               .data()["wallpaper_url"]
                               .toString(),
@@ -628,29 +549,23 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                             controller: screenshotController,
                             child: Container(
                               margin: EdgeInsets.symmetric(
-                                  vertical: offsetAnimation.value * 1.25,
-                                  horizontal: offsetAnimation.value / 2),
+                                  vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                    offsetAnimation.value),
+                                borderRadius: BorderRadius.circular(offsetAnimation.value),
                                 image: DecorationImage(
-                                  colorFilter: colorChanged
-                                      ? ColorFilter.mode(accent!, BlendMode.hue)
-                                      : null,
+                                  colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
                                   image: imageProvider,
                                   fit: BoxFit.cover,
                                 ),
                               ),
                             ),
                           ),
-                          progressIndicatorBuilder:
-                              (context, url, downloadProgress) => Stack(
+                          progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
                             children: <Widget>[
                               const SizedBox.expand(child: Text("")),
                               Center(
                                 child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation(
-                                        Theme.of(context).errorColor),
+                                    valueColor: AlwaysStoppedAnimation(Theme.of(context).errorColor),
                                     value: downloadProgress.progress),
                               ),
                             ],
@@ -671,8 +586,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                 Align(
                   alignment: Alignment.topLeft,
                   child: Padding(
-                    padding:
-                        EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                    padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                     child: IconButton(
                       onPressed: () {
                         navStack.removeLast();
@@ -693,23 +607,18 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                 Align(
                   alignment: Alignment.topRight,
                   child: Padding(
-                    padding:
-                        EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                    padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                     child: IconButton(
                       onPressed: () {
-                        final link = Provider.of<ProfileWallProvider>(context,
-                                listen: false)
+                        final link = Provider.of<ProfileWallProvider>(context, listen: false)
                             .profileWalls![index]
                             .data()["wallpaper_url"];
                         Navigator.push(
                             context,
                             PageRouteBuilder(
-                                transitionDuration:
-                                    const Duration(milliseconds: 300),
-                                pageBuilder:
-                                    (context, animation, secondaryAnimation) {
-                                  animation = Tween(begin: 0.0, end: 1.0)
-                                      .animate(animation);
+                                transitionDuration: const Duration(milliseconds: 300),
+                                pageBuilder: (context, animation, secondaryAnimation) {
+                                  animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                   return FadeTransition(
                                       opacity: animation,
                                       child: ClockOverlay(

@@ -11,9 +11,7 @@ Future<Map?> getMapFromGitHub() async {
   Map? jsonMap;
   await github.repositories
       .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
-      .then((value) => jsonMap = json.decode(
-              stringToBase64.decode(value.file!.content!.replaceAll("\n", "")))
-          as Map?);
+      .then((value) => jsonMap = json.decode(stringToBase64.decode(value.file!.content!.replaceAll("\n", ""))) as Map?);
   return jsonMap;
 }
 
@@ -25,11 +23,8 @@ Future<String> getViews(String id) async {
   await github.repositories
       .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
       .then((value) => repoContents = value);
-  jsonMap = json.decode(stringToBase64
-      .decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
-  return jsonMap!["wallpapers"][id] != null
-      ? jsonMap["wallpapers"][id]["views"].toString()
-      : "0";
+  jsonMap = json.decode(stringToBase64.decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
+  return jsonMap!["wallpapers"][id] != null ? jsonMap["wallpapers"][id]["views"].toString() : "0";
 }
 
 Future<void> updateViews(String id) async {
@@ -40,12 +35,10 @@ Future<void> updateViews(String id) async {
   await github.repositories
       .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
       .then((value) => repoContents = value);
-  jsonMap = json.decode(stringToBase64
-      .decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
+  jsonMap = json.decode(stringToBase64.decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
   jsonMap!["wallpapers"][id] = {
     "views": jsonMap["wallpapers"][id] != null
-        ? (int.parse(jsonMap["wallpapers"][id]["views"].toString()) + 1)
-            .toString()
+        ? (int.parse(jsonMap["wallpapers"][id]["views"].toString()) + 1).toString()
         : "1"
   };
   await github.repositories.updateFile(
@@ -66,12 +59,10 @@ Future<void> updateDownloads(String id) async {
   await github.repositories
       .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
       .then((value) => repoContents = value);
-  jsonMap = json.decode(stringToBase64
-      .decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
+  jsonMap = json.decode(stringToBase64.decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
   jsonMap!["wallpapers"][id] = {
     "downloads": jsonMap["wallpapers"][id] != null
-        ? (int.parse(jsonMap["wallpapers"][id]["downloads"].toString()) + 1)
-            .toString()
+        ? (int.parse(jsonMap["wallpapers"][id]["downloads"].toString()) + 1).toString()
         : "1"
   };
   await github.repositories.updateFile(
@@ -92,12 +83,10 @@ Future<void> updateFavorites(String id) async {
   await github.repositories
       .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
       .then((value) => repoContents = value);
-  jsonMap = json.decode(stringToBase64
-      .decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
+  jsonMap = json.decode(stringToBase64.decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
   jsonMap!["wallpapers"][id] = {
     "favorites": jsonMap["wallpapers"][id] != null
-        ? (int.parse(jsonMap["wallpapers"][id]["favorites"].toString()) + 1)
-            .toString()
+        ? (int.parse(jsonMap["wallpapers"][id]["favorites"].toString()) + 1).toString()
         : "1"
   };
   await github.repositories.updateFile(
@@ -118,11 +107,8 @@ Future<String> getViewsSetup(String id) async {
   await github.repositories
       .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
       .then((value) => repoContents = value);
-  jsonMap = json.decode(stringToBase64
-      .decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
-  return jsonMap!["setups"][id] != null
-      ? jsonMap["setups"][id]["views"].toString()
-      : "0";
+  jsonMap = json.decode(stringToBase64.decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
+  return jsonMap!["setups"][id] != null ? jsonMap["setups"][id]["views"].toString() : "0";
 }
 
 Future<void> updateViewsSetup(String id) async {
@@ -133,12 +119,9 @@ Future<void> updateViewsSetup(String id) async {
   await github.repositories
       .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
       .then((value) => repoContents = value);
-  jsonMap = json.decode(stringToBase64
-      .decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
+  jsonMap = json.decode(stringToBase64.decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
   jsonMap!["setups"][id] = {
-    "views": jsonMap["setups"][id] != null
-        ? (int.parse(jsonMap["setups"][id]["views"].toString()) + 1).toString()
-        : "1"
+    "views": jsonMap["setups"][id] != null ? (int.parse(jsonMap["setups"][id]["views"].toString()) + 1).toString() : "1"
   };
   await github.repositories.updateFile(
     RepositorySlug(gitUserName, repoName3),
@@ -158,13 +141,10 @@ Future<void> updateDownloadsSetup(String id) async {
   await github.repositories
       .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
       .then((value) => repoContents = value);
-  jsonMap = json.decode(stringToBase64
-      .decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
+  jsonMap = json.decode(stringToBase64.decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
   jsonMap!["setups"][id] = {
-    "downloads": jsonMap["setups"][id] != null
-        ? (int.parse(jsonMap["setups"][id]["downloads"].toString()) + 1)
-            .toString()
-        : "1"
+    "downloads":
+        jsonMap["setups"][id] != null ? (int.parse(jsonMap["setups"][id]["downloads"].toString()) + 1).toString() : "1"
   };
   await github.repositories.updateFile(
     RepositorySlug(gitUserName, repoName3),
@@ -184,13 +164,10 @@ Future<void> updateFavsSetup(String id) async {
   await github.repositories
       .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
       .then((value) => repoContents = value);
-  jsonMap = json.decode(stringToBase64
-      .decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
+  jsonMap = json.decode(stringToBase64.decode(repoContents.file!.content!.replaceAll("\n", ""))) as Map?;
   jsonMap!["setups"][id] = {
-    "favorites": jsonMap["setups"][id] != null
-        ? (int.parse(jsonMap["setups"][id]["favorites"].toString()) + 1)
-            .toString()
-        : "1"
+    "favorites":
+        jsonMap["setups"][id] != null ? (int.parse(jsonMap["setups"][id]["favorites"].toString()) + 1).toString() : "1"
   };
   await github.repositories.updateFile(
     RepositorySlug(gitUserName, repoName3),

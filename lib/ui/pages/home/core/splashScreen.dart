@@ -47,11 +47,9 @@ class _SplashWidgetState extends State<SplashWidget> {
         'obsoleteVersion': globals.obsoleteAppVersion.toString(),
         'versionDesc':
             "Prism Premium is here, for the personalisaton lords!^*^Setups are here! Change the way of personalisation.^*^Favourites moved to profile.",
-        'topTitleText':
-            '["TOP-RATED","BEST OF COMMUNITY","FAN-FAVOURITE","TRENDING",]',
+        'topTitleText': '["TOP-RATED","BEST OF COMMUNITY","FAN-FAVOURITE","TRENDING",]',
         'premiumCollections': '["space","landscapes","mesh gradients",]',
-        'verifiedUsers':
-            '["akshaymaurya3006@gmail.com","maurya.abhay30@gmail.com",]'
+        'verifiedUsers': '["akshaymaurya3006@gmail.com","maurya.abhay30@gmail.com",]'
       });
       logger.d("Started Fetching Values from rc");
       await remoteConfig.fetch(expiration: const Duration(hours: 6));
@@ -79,11 +77,7 @@ class _SplashWidgetState extends State<SplashWidget> {
       globals.topTitleText = text.split(",");
       globals.topTitleText.shuffle();
       final cList = [];
-      var tempVar = remoteConfig
-          .getString('latestCategories')
-          .replaceAll('[', "")
-          .replaceAll(']', "")
-          .split("},");
+      var tempVar = remoteConfig.getString('latestCategories').replaceAll('[', "").replaceAll(']', "").split("},");
       tempVar = tempVar.sublist(0, tempVar.length - 1);
       categories = [];
       for (final element in tempVar) {
@@ -92,14 +86,11 @@ class _SplashWidgetState extends State<SplashWidget> {
       }
       categories.removeWhere((element) => element['name'] == "Trending");
       logger.d(cList.toString());
-      globals.followersTab =
-          main.prefs.get('followersTab', defaultValue: true) as bool;
+      globals.followersTab = main.prefs.get('followersTab', defaultValue: true) as bool;
       await getNotifs();
       logger.d("splash done");
-      logger.d(
-          "Current App Version: ${globals.currentAppVersion.replaceAll(".", "")}");
-      logger.d(
-          "Obsolete App Version: ${globals.obsoleteAppVersion.replaceAll(".", "")}");
+      logger.d("Current App Version: ${globals.currentAppVersion.replaceAll(".", "")}");
+      logger.d("Obsolete App Version: ${globals.obsoleteAppVersion.replaceAll(".", "")}");
       return true;
     } catch (e) {
       logger.d(e.toString());
@@ -149,17 +140,13 @@ class SecondarySplash extends StatelessWidget {
     return Container(
       width: MediaQuery.of(context).size.width,
       height: MediaQuery.of(context).size.height,
-      color: darkModeOn
-          ? config.Colors().mainDarkColor(1)
-          : config.Colors().mainColor(1),
+      color: darkModeOn ? config.Colors().mainDarkColor(1) : config.Colors().mainColor(1),
       child: Center(
         child: Container(
           width: MediaQuery.of(context).size.width * 0.29074074074,
           height: MediaQuery.of(context).size.width * 0.29074074074,
           decoration: const BoxDecoration(
-              image: DecorationImage(
-                  image: AssetImage("assets/images/ic_launcher.png"),
-                  fit: BoxFit.cover)),
+              image: DecorationImage(image: AssetImage("assets/images/ic_launcher.png"), fit: BoxFit.cover)),
         ),
       ),
     );

@@ -12,11 +12,7 @@ Future<List?> getCollections() async {
   if (navStack.last == "Home") {
     logger.d("Fetching collections!");
     collections = [];
-    await databaseReference
-        .collection("collections")
-        .orderBy("lastEditTime", descending: true)
-        .get()
-        .then((value) {
+    await databaseReference.collection("collections").orderBy("lastEditTime", descending: true).get().then((value) {
       for (final doc in value.docs) {
         collections!.add(doc.data());
       }

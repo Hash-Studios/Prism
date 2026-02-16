@@ -16,10 +16,8 @@ class DownloadList extends StatelessWidget {
         ),
         title: Text(
           "Downloads",
-          style: TextStyle(
-              color: Theme.of(context).accentColor,
-              fontWeight: FontWeight.w500,
-              fontFamily: "Proxima Nova"),
+          style:
+              TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
         ),
         subtitle: Text(
           "View or clear downloads",
@@ -34,9 +32,7 @@ class DownloadList extends StatelessWidget {
             title: Text(
               "My Downloads",
               style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "See all your downloaded wallpapers",
@@ -51,9 +47,7 @@ class DownloadList extends StatelessWidget {
               title: Text(
                 "Clear Downloads",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Clear downloaded wallpapers",
@@ -81,13 +75,11 @@ class DownloadList extends StatelessWidget {
                     ),
                     actions: <Widget>[
                       FlatButton(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                         onPressed: () async {
                           Navigator.of(context).pop();
                           final dir = Directory("storage/emulated/0/Prism/");
-                          final dir2 =
-                              Directory("storage/emulated/0/Pictures/Prism/");
+                          final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
                           final status = await Permission.storage.status;
                           if (!status.isGranted) {
                             await Permission.storage.request();
@@ -133,8 +125,7 @@ class DownloadList extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FlatButton(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                           color: Theme.of(context).errorColor,
                           onPressed: () {
                             Navigator.of(context).pop();

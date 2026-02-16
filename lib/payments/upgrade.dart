@@ -64,8 +64,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       purchaserInfo = await Purchases.getPurchaserInfo();
       logger.d(purchaserInfo.toString());
       if (purchaserInfo.entitlements.all['prism_premium'] != null) {
-        appData.isPro =
-            purchaserInfo.entitlements.all['prism_premium']!.isActive;
+        appData.isPro = purchaserInfo.entitlements.all['prism_premium']!.isActive;
       } else {
         appData.isPro = false;
       }
@@ -112,10 +111,8 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
         ),
       );
     } else {
-      if (_purchaserInfo!.entitlements.all.isNotEmpty &&
-          _purchaserInfo!.entitlements.all['prism_premium'] != null) {
-        appData.isPro =
-            _purchaserInfo!.entitlements.all['prism_premium']!.isActive;
+      if (_purchaserInfo!.entitlements.all.isNotEmpty && _purchaserInfo!.entitlements.all['prism_premium'] != null) {
+        appData.isPro = _purchaserInfo!.entitlements.all['prism_premium']!.isActive;
       } else {
         appData.isPro = false;
       }
@@ -153,17 +150,13 @@ class _UpsellScreenState extends State<UpsellScreen> {
     ),
     const FeatureChip(icon: JamIcons.picture, text: "Exclusive wallpapers"),
     const FeatureChip(icon: JamIcons.picture, text: "Upload unlimited walls"),
-    const FeatureChip(
-        icon: JamIcons.instant_picture, text: "No restrictions on setups"),
+    const FeatureChip(icon: JamIcons.instant_picture, text: "No restrictions on setups"),
     const FeatureChip(icon: JamIcons.trophy, text: "Premium only giveaways"),
     const FeatureChip(icon: JamIcons.filter, text: "Apply filters on walls"),
-    const FeatureChip(
-        icon: JamIcons.user, text: "Unique PRO badge on your profile"),
+    const FeatureChip(icon: JamIcons.user, text: "Unique PRO badge on your profile"),
     const FeatureChip(icon: JamIcons.upload, text: "Faster upload reviews"),
     const FeatureChip(icon: JamIcons.stop_sign, text: "Remove Ads"),
-    const FeatureChip(
-        icon: JamIcons.coffee_cup,
-        text: "Support development, and content growth"),
+    const FeatureChip(icon: JamIcons.coffee_cup, text: "Support development, and content growth"),
   ];
 
   void _scrollToBottom() {
@@ -177,17 +170,13 @@ class _UpsellScreenState extends State<UpsellScreen> {
       features.addAll(const [
         FeatureChip(icon: JamIcons.picture, text: "Exclusive wallpapers"),
         FeatureChip(icon: JamIcons.picture, text: "Upload unlimited walls"),
-        FeatureChip(
-            icon: JamIcons.instant_picture, text: "No restrictions on setups"),
+        FeatureChip(icon: JamIcons.instant_picture, text: "No restrictions on setups"),
         FeatureChip(icon: JamIcons.trophy, text: "Premium only giveaways"),
         FeatureChip(icon: JamIcons.filter, text: "Apply filters on walls"),
-        FeatureChip(
-            icon: JamIcons.user, text: "Unique PRO badge on your profile"),
+        FeatureChip(icon: JamIcons.user, text: "Unique PRO badge on your profile"),
         FeatureChip(icon: JamIcons.upload, text: "Faster upload reviews"),
         FeatureChip(icon: JamIcons.stop_sign, text: "Remove Ads"),
-        FeatureChip(
-            icon: JamIcons.coffee_cup,
-            text: "Support development, and content growth"),
+        FeatureChip(icon: JamIcons.coffee_cup, text: "Support development, and content growth"),
       ]);
     }
     super.initState();
@@ -208,22 +197,15 @@ class _UpsellScreenState extends State<UpsellScreen> {
                 gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Theme.of(context).errorColor,
-                      Theme.of(context).primaryColor
-                    ],
-                    stops: const [
-                      0.1,
-                      0.6
-                    ]),
+                    colors: [Theme.of(context).errorColor, Theme.of(context).primaryColor],
+                    stops: const [0.1, 0.6]),
               ),
               child: SafeArea(
                 child: Scaffold(
                     backgroundColor: Colors.transparent,
                     body: SingleChildScrollView(
                       child: SizedBox(
-                        height: MediaQuery.of(context).size.height -
-                            (globals.notchSize ?? 24),
+                        height: MediaQuery.of(context).size.height - (globals.notchSize ?? 24),
                         child: Stack(
                           children: [
                             SizedBox(
@@ -246,26 +228,16 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                     const SizedBox(
                                       width: 30,
                                     ),
-                                    SizedBox(
-                                        width: 40,
-                                        height: 40,
-                                        child: Image.asset(
-                                            "assets/images/prism.png")),
+                                    SizedBox(width: 40, height: 40, child: Image.asset("assets/images/prism.png")),
                                     const SizedBox(
                                       width: 10,
                                     ),
                                     SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.8,
+                                      width: MediaQuery.of(context).size.width * 0.8,
                                       child: Text(
                                         "Premium",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline2!
-                                            .copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context)
-                                                    .accentColor),
+                                        style: Theme.of(context).textTheme.headline2!.copyWith(
+                                            fontWeight: FontWeight.bold, color: Theme.of(context).accentColor),
                                       ),
                                     ),
                                   ],
@@ -279,22 +251,19 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       width: 30,
                                     ),
                                     SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.8,
+                                      width: MediaQuery.of(context).size.width * 0.8,
                                       child: Text(
                                         "Unlock everything",
                                         style: Theme.of(context)
                                             .textTheme
                                             .headline5!
-                                            .copyWith(
-                                                color: const Color(0xFFE57697)),
+                                            .copyWith(color: const Color(0xFFE57697)),
                                       ),
                                     ),
                                   ],
                                 ),
                                 Container(
-                                  margin:
-                                      const EdgeInsets.fromLTRB(0, 10, 0, 0),
+                                  margin: const EdgeInsets.fromLTRB(0, 10, 0, 0),
                                   width: MediaQuery.of(context).size.width,
                                   height: 58,
                                   child: GestureDetector(
@@ -308,45 +277,32 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                 ),
                                 const Spacer(),
                                 Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.8,
+                                  width: MediaQuery.of(context).size.width * 0.8,
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: Theme.of(context).errorColor ==
-                                                  Colors.black
+                                          color: Theme.of(context).errorColor == Colors.black
                                               ? Theme.of(context).accentColor
                                               : Theme.of(context).errorColor,
                                           width: 4),
                                       color: const Color(0x15ffffff),
                                       borderRadius: BorderRadius.circular(10)),
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
                                   child: Row(
                                     children: [
                                       const Spacer(),
                                       Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Lifetime',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .headline3!
-                                                .copyWith(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Theme.of(context)
-                                                        .accentColor),
+                                            style: Theme.of(context).textTheme.headline3!.copyWith(
+                                                fontWeight: FontWeight.bold, color: Theme.of(context).accentColor),
                                             textAlign: TextAlign.center,
                                           ),
-                                          if (lifetime.product.title
-                                              .contains("SALE"))
+                                          if (lifetime.product.title.contains("SALE"))
                                             Text(
                                               'SALE',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .headline6!
-                                                  .copyWith(color: Colors.red),
+                                              style: Theme.of(context).textTheme.headline6!.copyWith(color: Colors.red),
                                               textAlign: TextAlign.center,
                                             )
                                           else
@@ -359,9 +315,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                         style: Theme.of(context)
                                             .textTheme
                                             .headline3!
-                                            .copyWith(
-                                                color: Theme.of(context)
-                                                    .accentColor),
+                                            .copyWith(color: Theme.of(context).accentColor),
                                         textAlign: TextAlign.center,
                                       ),
                                       const Spacer(),
@@ -376,48 +330,29 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                     onTap: () async {
                                       try {
                                         logger.d('now trying to restore');
-                                        final PurchaserInfo restoredInfo =
-                                            await Purchases
-                                                .restoreTransactions();
+                                        final PurchaserInfo restoredInfo = await Purchases.restoreTransactions();
                                         logger.d('restore completed');
                                         logger.d(restoredInfo.toString());
 
-                                        appData.isPro = restoredInfo
-                                            .entitlements
-                                            .all["prism_premium"]!
-                                            .isActive;
+                                        appData.isPro = restoredInfo.entitlements.all["prism_premium"]!.isActive;
 
-                                        logger
-                                            .d('is user pro? ${appData.isPro}');
+                                        logger.d('is user pro? ${appData.isPro}');
 
                                         if (appData.isPro!) {
-                                          globals.prismUser.premium =
-                                              appData.isPro!;
-                                          main.prefs.put(main.userHiveKey,
-                                              globals.prismUser);
-                                          toasts.codeSend(
-                                              "You are now a premium member.");
-                                          main.RestartWidget.restartApp(
-                                              context);
+                                          globals.prismUser.premium = appData.isPro!;
+                                          main.prefs.put(main.userHiveKey, globals.prismUser);
+                                          toasts.codeSend("You are now a premium member.");
+                                          main.RestartWidget.restartApp(context);
                                         } else {
-                                          toasts.error(
-                                              "There was an error. Please try again later.");
+                                          toasts.error("There was an error. Please try again later.");
                                         }
                                       } on PlatformException catch (e) {
                                         logger.d('----xx-----');
-                                        final errorCode =
-                                            PurchasesErrorHelper.getErrorCode(
-                                                e);
-                                        if (errorCode ==
-                                            PurchasesErrorCode
-                                                .purchaseCancelledError) {
-                                          toasts.error(
-                                              "User cancelled purchase.");
-                                        } else if (errorCode ==
-                                            PurchasesErrorCode
-                                                .purchaseNotAllowedError) {
-                                          toasts.error(
-                                              "User not allowed to purchase.");
+                                        final errorCode = PurchasesErrorHelper.getErrorCode(e);
+                                        if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
+                                          toasts.error("User cancelled purchase.");
+                                        } else if (errorCode == PurchasesErrorCode.purchaseNotAllowedError) {
+                                          toasts.error("User not allowed to purchase.");
                                         } else {
                                           toasts.error(e.toString());
                                         }
@@ -425,32 +360,20 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       // return UpgradeScreen();
                                     },
                                     child: Container(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.8,
+                                      width: MediaQuery.of(context).size.width * 0.8,
                                       decoration: BoxDecoration(
-                                          color: Theme.of(context).errorColor ==
-                                                  Colors.black
-                                              ? Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(0.1)
+                                          color: Theme.of(context).errorColor == Colors.black
+                                              ? Theme.of(context).accentColor.withOpacity(0.1)
                                               : Theme.of(context).accentColor,
-                                          borderRadius:
-                                              BorderRadius.circular(500)),
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 12.0),
+                                          borderRadius: BorderRadius.circular(500)),
+                                      padding: const EdgeInsets.symmetric(vertical: 12.0),
                                       child: Text(
                                         'Restore',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline3!
-                                            .copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context)
-                                                            .errorColor ==
-                                                        Colors.black
-                                                    ? Colors.white
-                                                    : Theme.of(context)
-                                                        .primaryColor),
+                                        style: Theme.of(context).textTheme.headline3!.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).errorColor == Colors.black
+                                                ? Colors.white
+                                                : Theme.of(context).primaryColor),
                                         textAlign: TextAlign.center,
                                       ),
                                     ),
@@ -460,18 +383,14 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                   height: 10,
                                 ),
                                 SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.8,
+                                  width: MediaQuery.of(context).size.width * 0.8,
                                   child: Text(
                                     "By purchasing this product you will be able to access the Prism premium functionalities on all the devices logged into your Google account.",
                                     textAlign: TextAlign.center,
                                     style: Theme.of(context)
                                         .textTheme
                                         .headline6!
-                                        .copyWith(
-                                            fontSize: 12,
-                                            color:
-                                                Theme.of(context).accentColor),
+                                        .copyWith(fontSize: 12, color: Theme.of(context).accentColor),
                                   ),
                                 ),
                                 const Spacer(),
@@ -523,8 +442,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
             _purchaserInfo = await Purchases.purchasePackage(widget.package);
             logger.d('purchase completed');
 
-            appData.isPro =
-                _purchaserInfo!.entitlements.all["prism_premium"]!.isActive;
+            appData.isPro = _purchaserInfo!.entitlements.all["prism_premium"]!.isActive;
             globals.prismUser.premium = appData.isPro!;
             main.prefs.put(main.userHiveKey, globals.prismUser);
             logger.d('is user pro? ${appData.isPro}');
@@ -540,8 +458,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
             final errorCode = PurchasesErrorHelper.getErrorCode(e);
             if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
               toasts.error("User cancelled purchase.");
-            } else if (errorCode ==
-                PurchasesErrorCode.purchaseNotAllowedError) {
+            } else if (errorCode == PurchasesErrorCode.purchaseNotAllowedError) {
               toasts.error("User not allowed to purchase.");
             } else {
               toasts.error(e.toString());
@@ -559,9 +476,10 @@ class _PurchaseButtonState extends State<PurchaseButton> {
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Text(
             'Purchase',
-            style: Theme.of(context).textTheme.headline3!.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).primaryColor),
+            style: Theme.of(context)
+                .textTheme
+                .headline3!
+                .copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
             textAlign: TextAlign.center,
           ),
         ),
@@ -644,10 +562,7 @@ class FeatureChip extends StatelessWidget {
           ),
           label: Text(
             " $text",
-            style: Theme.of(context)
-                .textTheme
-                .headline5!
-                .copyWith(color: Theme.of(context).accentColor),
+            style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
           ),
           onPressed: () {}),
     );

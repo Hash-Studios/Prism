@@ -29,8 +29,7 @@ class FavouriteWallpaperButton extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _FavouriteWallpaperButtonState createState() =>
-      _FavouriteWallpaperButtonState();
+  _FavouriteWallpaperButtonState createState() => _FavouriteWallpaperButtonState();
 }
 
 class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
@@ -51,12 +50,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
         Container(
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withOpacity(.25),
-                    blurRadius: 4,
-                    offset: const Offset(0, 4))
-              ],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
@@ -64,12 +58,10 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
               valueChanged: () {
                 if (globals.prismUser.loggedIn == false) {
                   googleSignInPopUp(context, () {
-                    onFav(widget.id, widget.provider, widget.wallhaven,
-                        widget.pexels, widget.prism);
+                    onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels, widget.prism);
                   });
                 } else {
-                  onFav(widget.id, widget.provider, widget.wallhaven,
-                      widget.pexels, widget.prism);
+                  onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels, widget.prism);
                 }
                 if (widget.trash) {
                   navStack.removeLast();
@@ -82,26 +74,19 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
               isFavorite: box.get(widget.id, defaultValue: false) as bool,
             )),
         Positioned(
-            top: 0,
-            left: 0,
-            height: 53,
-            width: 53,
-            child: isLoading ? const CircularProgressIndicator() : Container())
+            top: 0, left: 0, height: 53, width: 53, child: isLoading ? const CircularProgressIndicator() : Container())
       ],
     );
   }
 
-  Future<void> onFav(String id, String provider, WallPaper? wallhaven,
-      WallPaperP? pexels, Map? prism) async {
+  Future<void> onFav(String id, String provider, WallPaper? wallhaven, WallPaperP? pexels, Map? prism) async {
     setState(() {
       isLoading = true;
     });
     Provider.of<FavouriteProvider>(context, listen: false)
         .favCheck(id, provider, wallhaven, pexels, prism)
         .then((value) {
-      analytics.logEvent(
-          name: 'fav_status_changed',
-          parameters: {'id': id, 'provider': provider});
+      analytics.logEvent(name: 'fav_status_changed', parameters: {'id': id, 'provider': provider});
       setState(() {
         isLoading = false;
       });

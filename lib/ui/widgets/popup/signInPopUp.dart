@@ -11,9 +11,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
   final Dialog loaderDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     child: Container(
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: Theme.of(context).primaryColor),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .7,
       height: MediaQuery.of(context).size.height * .3,
       child: const Center(
@@ -25,9 +23,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     content: SingleChildScrollView(
       child: Container(
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: Theme.of(context).primaryColor),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
         width: MediaQuery.of(context).size.width * .78,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -37,9 +33,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
               height: 150,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10)),
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
                   color: Theme.of(context).hintColor),
               child: const FlareActor(
                 "assets/animations/Signin.flr",
@@ -52,10 +46,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
                   child: Text(
                     'SIGNING IN UNLOCKS:',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: Theme.of(context).accentColor),
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).accentColor),
                   ),
                 ),
               ],
@@ -71,9 +62,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.heart,
                   size: 22,
-                  color: Theme.of(context).errorColor == Colors.black
-                      ? Colors.white
-                      : Theme.of(context).errorColor,
+                  color: Theme.of(context).errorColor == Colors.black ? Colors.white : Theme.of(context).errorColor,
                 ),
                 const SizedBox(
                   width: 20,
@@ -82,10 +71,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to favourite wallpapers.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline6!
-                        .copyWith(color: Theme.of(context).accentColor),
+                    style: Theme.of(context).textTheme.headline6!.copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
               ],
@@ -101,9 +87,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.upload,
                   size: 22,
-                  color: Theme.of(context).errorColor == Colors.black
-                      ? Colors.white
-                      : Theme.of(context).errorColor,
+                  color: Theme.of(context).errorColor == Colors.black ? Colors.white : Theme.of(context).errorColor,
                 ),
                 const SizedBox(
                   width: 20,
@@ -112,10 +96,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to upload wallpapers.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline6!
-                        .copyWith(color: Theme.of(context).accentColor),
+                    style: Theme.of(context).textTheme.headline6!.copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
               ],
@@ -131,9 +112,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.instant_picture,
                   size: 22,
-                  color: Theme.of(context).errorColor == Colors.black
-                      ? Colors.white
-                      : Theme.of(context).errorColor,
+                  color: Theme.of(context).errorColor == Colors.black ? Colors.white : Theme.of(context).errorColor,
                 ),
                 const SizedBox(
                   width: 20,
@@ -142,10 +121,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to upload setups.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline6!
-                        .copyWith(color: Theme.of(context).accentColor),
+                    style: Theme.of(context).textTheme.headline6!.copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
               ],
@@ -161,9 +137,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.coin,
                   size: 22,
-                  color: Theme.of(context).errorColor == Colors.black
-                      ? Colors.white
-                      : Theme.of(context).errorColor,
+                  color: Theme.of(context).errorColor == Colors.black ? Colors.white : Theme.of(context).errorColor,
                 ),
                 const SizedBox(
                   width: 20,
@@ -172,10 +146,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to view premium content.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline6!
-                        .copyWith(color: Theme.of(context).accentColor),
+                    style: Theme.of(context).textTheme.headline6!.copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
               ],
@@ -191,9 +162,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.cloud,
                   size: 22,
-                  color: Theme.of(context).errorColor == Colors.black
-                      ? Colors.white
-                      : Theme.of(context).errorColor,
+                  color: Theme.of(context).errorColor == Colors.black ? Colors.white : Theme.of(context).errorColor,
                 ),
                 const SizedBox(
                   width: 20,
@@ -202,10 +171,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to cloud sync data.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline6!
-                        .copyWith(color: Theme.of(context).accentColor),
+                    style: Theme.of(context).textTheme.headline6!.copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
               ],
@@ -234,10 +200,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
         color: Theme.of(context).errorColor,
         onPressed: () {
           Navigator.of(context).pop();
-          showDialog(
-              barrierDismissible: false,
-              context: context,
-              builder: (BuildContext context) => loaderDialog);
+          showDialog(barrierDismissible: false, context: context, builder: (BuildContext context) => loaderDialog);
           globals.gAuth.signInWithGoogle().then((value) {
             toasts.codeSend("Login Successful!");
             globals.prismUser.loggedIn = true;

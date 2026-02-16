@@ -32,9 +32,7 @@ class _GoogleButtonState extends State<GoogleButton> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                      color: const Color(0xFFEFF5FF).withOpacity(0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4)),
+                      color: const Color(0xFFEFF5FF).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4)),
                 ],
                 borderRadius: BorderRadius.circular(500),
               )
@@ -54,8 +52,7 @@ class _GoogleButtonState extends State<GoogleButton> {
               setState(() {
                 isError = true;
               });
-              Future.delayed(const Duration(milliseconds: 500))
-                  .then((value) => Navigator.pop(context));
+              Future.delayed(const Duration(milliseconds: 500)).then((value) => Navigator.pop(context));
             });
           },
           child: SizedBox(
@@ -74,12 +71,8 @@ class _GoogleButtonState extends State<GoogleButton> {
                     child: Text(widget.text,
                         textAlign: TextAlign.center,
                         style: widget.login
-                            ? Theme.of(context)
-                                .textTheme
-                                .button!
-                                .copyWith(color: config.Colors().mainColor(1))
-                            : Theme.of(context).textTheme.button!.copyWith(
-                                color: Theme.of(context).primaryColor)),
+                            ? Theme.of(context).textTheme.button!.copyWith(color: config.Colors().mainColor(1))
+                            : Theme.of(context).textTheme.button!.copyWith(color: Theme.of(context).primaryColor)),
                   ),
                 ],
               ),

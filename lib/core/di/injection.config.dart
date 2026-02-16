@@ -172,6 +172,7 @@ _i174.GetIt initGetIt(
       () => _i769.PublicProfileRepositoryImpl(gh<_i974.FirebaseFirestore>()));
   gh.lazySingleton<_i321.CreateRewardedAdUseCase>(() => _i321.CreateRewardedAdUseCase(gh<_i1055.AdsRepository>()));
   gh.lazySingleton<_i321.AddRewardUseCase>(() => _i321.AddRewardUseCase(gh<_i1055.AdsRepository>()));
+  gh.lazySingleton<_i321.ShowRewardedAdUseCase>(() => _i321.ShowRewardedAdUseCase(gh<_i1055.AdsRepository>()));
   gh.lazySingleton<_i321.ResetAdsUseCase>(() => _i321.ResetAdsUseCase(gh<_i1055.AdsRepository>()));
   gh.lazySingleton<_i406.FetchFavouriteWallsUseCase>(
       () => _i406.FetchFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()));
@@ -189,11 +190,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i563.CategoryFeedRepository>(
       () => _i307.CategoryFeedRepositoryImpl(gh<_i979.Box<dynamic>>(instanceName: 'prefsBox')));
   gh.lazySingleton<_i668.ProfileWallsRepository>(() => _i409.ProfileWallsRepositoryImpl(gh<_i974.FirebaseFirestore>()));
-  gh.factory<_i810.AdsBloc>(() => _i810.AdsBloc(
-        gh<_i321.CreateRewardedAdUseCase>(),
-        gh<_i321.AddRewardUseCase>(),
-        gh<_i321.ResetAdsUseCase>(),
-      ));
   gh.lazySingleton<_i491.ConnectivityService>(
       () => _i491.InternetConnectivityService(gh<_i973.InternetConnectionChecker>()));
   gh.factory<_i526.FavouriteWallsBloc>(() => _i526.FavouriteWallsBloc(
@@ -267,6 +263,12 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i108.ObserveQuickActionsUseCase>(
       () => _i108.ObserveQuickActionsUseCase(gh<_i865.QuickActionsRepository>()));
   gh.lazySingleton<_i750.SearchUsersUseCase>(() => _i750.SearchUsersUseCase(gh<_i204.UserSearchRepository>()));
+  gh.factory<_i810.AdsBloc>(() => _i810.AdsBloc(
+        gh<_i321.CreateRewardedAdUseCase>(),
+        gh<_i321.ShowRewardedAdUseCase>(),
+        gh<_i321.AddRewardUseCase>(),
+        gh<_i321.ResetAdsUseCase>(),
+      ));
   gh.lazySingleton<_i96.LoadThemeDarkUseCase>(() => _i96.LoadThemeDarkUseCase(gh<_i425.ThemeRepository>()));
   gh.lazySingleton<_i96.UpdateThemeDarkUseCase>(() => _i96.UpdateThemeDarkUseCase(gh<_i425.ThemeRepository>()));
   gh.lazySingleton<_i96.UpdateThemeDarkAccentUseCase>(

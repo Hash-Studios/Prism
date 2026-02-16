@@ -5,8 +5,7 @@ class ConnectivityWidget extends StatefulWidget {
   _ConnectivityWidgetState createState() => _ConnectivityWidgetState();
 }
 
-class _ConnectivityWidgetState extends State<ConnectivityWidget>
-    with SingleTickerProviderStateMixin {
+class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTickerProviderStateMixin {
   bool? dontAnimate;
 
   late AnimationController animationController;
@@ -15,13 +14,11 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget>
   @mustCallSuper
   void initState() {
     super.initState();
-    animationController = AnimationController(
-        duration: const Duration(milliseconds: 500), vsync: this);
+    animationController = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
     Future.delayed(const Duration(seconds: 1)).then((value) {
       animationController.forward();
     });
-    Future.delayed(const Duration(seconds: 10))
-        .then((value) => {animationController.reverse()});
+    Future.delayed(const Duration(seconds: 10)).then((value) => {animationController.reverse()});
   }
 
   @override

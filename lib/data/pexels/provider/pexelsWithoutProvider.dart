@@ -14,15 +14,13 @@ WallPaperP? wall;
 int pageGetDataP = 1;
 int pageGetQueryP = 1;
 List<Map<String, int>> pageNumbersP = categories
-    .where((category) =>
-        category['provider'] == "Pexels" && category['type'] == 'search')
+    .where((category) => category['provider'] == "Pexels" && category['type'] == 'search')
     .map((category) => {category['name'].toString(): 1})
     .toList();
 
-Future<List<WallPaperP>> categoryDataFetcherP(
-    String categoryName, String mode) async {
-  final int index = pageNumbersP.indexOf(pageNumbersP
-      .firstWhere((element) => element.keys.toList()[0] == categoryName));
+Future<List<WallPaperP>> categoryDataFetcherP(String categoryName, String mode) async {
+  final int index =
+      pageNumbersP.indexOf(pageNumbersP.firstWhere((element) => element.keys.toList()[0] == categoryName));
   if (mode == "r") {
     wallsP = [];
     pageNumbersP[index] = {categoryName: 1};
@@ -71,9 +69,7 @@ Future<List<WallPaperP>> getDataP(String mode) async {
     pageGetDataP = pageGetDataP + 1;
   }
   if (navStack.last == "Home") {
-    http.get(
-        Uri.parse(
-            "https://api.pexels.com/v1/curated?per_page=24&page=$pageGetDataP"),
+    http.get(Uri.parse("https://api.pexels.com/v1/curated?per_page=24&page=$pageGetDataP"),
         headers: {"Authorization": pexelApiKey}).then(
       (http.Response response) {
         final resp = json.decode(response.body);
@@ -103,8 +99,7 @@ Future<List<WallPaperP>> getDataP(String mode) async {
 Future<WallPaperP> getWallbyIDP(String? id) async {
   logger.d("https://api.pexels.com/v1/photos/$id");
   wall = null;
-  http.get(Uri.parse("https://api.pexels.com/v1/photos/$id"),
-      headers: {"Authorization": pexelApiKey}).then(
+  http.get(Uri.parse("https://api.pexels.com/v1/photos/$id"), headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
       return wall = WallPaperP(
@@ -120,9 +115,7 @@ Future<WallPaperP> getWallbyIDP(String? id) async {
 }
 
 Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
-  http.get(
-      Uri.parse(
-          "https://api.pexels.com/v1/search?query=$query&per_page=80&page=1"),
+  http.get(Uri.parse("https://api.pexels.com/v1/search?query=$query&per_page=80&page=1"),
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
@@ -147,9 +140,7 @@ Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
 }
 
 Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
-  http.get(
-      Uri.parse(
-          "https://api.pexels.com/v1/search?query=$query&per_page=80&page=$pageGetQueryP"),
+  http.get(Uri.parse("https://api.pexels.com/v1/search?query=$query&per_page=80&page=$pageGetQueryP"),
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
@@ -175,9 +166,7 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
 
 Future<List<WallPaperP>> getWallsPbyColor(String query) async {
   logger.d("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1");
-  http.get(
-      Uri.parse(
-          "https://api.pexels.com/v1/search?query=$query&per_page=24&page=1"),
+  http.get(Uri.parse("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1"),
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
@@ -202,11 +191,8 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
 }
 
 Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
-  logger.d(
-      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP");
-  http.get(
-      Uri.parse(
-          "https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP"),
+  logger.d("https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP");
+  http.get(Uri.parse("https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP"),
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);

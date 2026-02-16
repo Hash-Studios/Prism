@@ -28,12 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> onWillPop() async {
     final choice = choices[0];
-    if (Provider.of<CategorySupplier>(context, listen: false).selectedChoice !=
-        choice) {
-      Provider.of<CategorySupplier>(context, listen: false)
-          .changeSelectedChoice(choice as CategoryMenu);
-      Provider.of<CategorySupplier>(context, listen: false)
-          .changeWallpaperFuture(choice, "r");
+    if (Provider.of<CategorySupplier>(context, listen: false).selectedChoice != choice) {
+      Provider.of<CategorySupplier>(context, listen: false).changeSelectedChoice(choice as CategoryMenu);
+      Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(choice, "r");
       return false;
     }
     if (navStack.length > 1) navStack.removeLast();
@@ -46,8 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    if (main.prefs.get('subscribedToRecommendations', defaultValue: false)
-        as bool) {
+    if (main.prefs.get('subscribedToRecommendations', defaultValue: false) as bool) {
     } else {
       f.subscribeToTopic('recommendations');
       f.subscribeToTopic('posts');
@@ -55,9 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     isNew = true;
     _updateToken();
-    _future = Future.delayed(const Duration()).then((value) =>
-        Provider.of<CategorySupplier>(context, listen: false)
-            .wallpaperFutureRefresh);
+    _future = Future.delayed(const Duration())
+        .then((value) => Provider.of<CategorySupplier>(context, listen: false).wallpaperFutureRefresh);
   }
 
   void _updateToken() {
@@ -81,8 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     if (isNew) {
-      Future.delayed(const Duration())
-          .then((value) => showChangelogCheck(context));
+      Future.delayed(const Duration()).then((value) => showChangelogCheck(context));
     }
     return WillPopScope(
       onWillPop: onWillPop,
@@ -110,27 +104,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ));
               } else {
-                if (Provider.of<CategorySupplier>(context)
-                        .selectedChoice
-                        .provider ==
-                    "WallHaven") {
-                  return WallHavenGrid(
-                      provider: Provider.of<CategorySupplier>(context)
-                          .selectedChoice
-                          .provider);
-                } else if (Provider.of<CategorySupplier>(context)
-                        .selectedChoice
-                        .provider ==
-                    "Pexels") {
-                  return PexelsGrid(
-                      provider: Provider.of<CategorySupplier>(context)
-                          .selectedChoice
-                          .provider);
+                if (Provider.of<CategorySupplier>(context).selectedChoice.provider == "WallHaven") {
+                  return WallHavenGrid(provider: Provider.of<CategorySupplier>(context).selectedChoice.provider);
+                } else if (Provider.of<CategorySupplier>(context).selectedChoice.provider == "Pexels") {
+                  return PexelsGrid(provider: Provider.of<CategorySupplier>(context).selectedChoice.provider);
                 } else {
-                  return WallpaperGrid(
-                      provider: Provider.of<CategorySupplier>(context)
-                          .selectedChoice
-                          .provider);
+                  return WallpaperGrid(provider: Provider.of<CategorySupplier>(context).selectedChoice.provider);
                 }
               }
           }

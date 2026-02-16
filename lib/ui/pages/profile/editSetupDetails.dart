@@ -66,56 +66,42 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
     setupDoc = widget.arguments![0] as DocumentSnapshot;
     imageURL = setupDoc.data()!["image"].toString();
     groupWidgetValue = 0;
-    setupName =
-        TextEditingController(text: setupDoc.data()!["name"].toString());
+    setupName = TextEditingController(text: setupDoc.data()!["name"].toString());
     id = setupDoc.data()!["id"].toString();
-    setupDesc =
-        TextEditingController(text: setupDoc.data()!["desc"].toString());
+    setupDesc = TextEditingController(text: setupDoc.data()!["desc"].toString());
     iconName = TextEditingController(text: setupDoc.data()!["icon"].toString());
-    iconURL =
-        TextEditingController(text: setupDoc.data()!["icon_url"].toString());
-    widgetName1 =
-        TextEditingController(text: setupDoc.data()!["widget"].toString());
-    widgetURL1 =
-        TextEditingController(text: setupDoc.data()!["widget_url"].toString());
+    iconURL = TextEditingController(text: setupDoc.data()!["icon_url"].toString());
+    widgetName1 = TextEditingController(text: setupDoc.data()!["widget"].toString());
+    widgetURL1 = TextEditingController(text: setupDoc.data()!["widget_url"].toString());
     if ("${setupDoc.data()!["wallpaper_url"]}" != "") {
       if ("${setupDoc.data()!["wallpaper_url"]}"[0] != "[") {
-        if ("${setupDoc.data()!["wall_id"]}" != "" &&
-            "${setupDoc.data()!["wall_id"]}" != null) {
+        if ("${setupDoc.data()!["wall_id"]}" != "" && "${setupDoc.data()!["wall_id"]}" != null) {
           wallpaperUploaded = true;
           wallpaperUploadLink = setupDoc.data()!["wallpaper_url"].toString();
           wallpaperId = setupDoc.data()!["wall_id"].toString();
           groupValue = 1;
         } else {
-          wallpaperUrl = TextEditingController(
-              text: setupDoc.data()!["wallpaper_url"].toString());
+          wallpaperUrl = TextEditingController(text: setupDoc.data()!["wallpaper_url"].toString());
           groupValue = 0;
         }
       } else {
-        wallpaperAppName = TextEditingController(
-            text: setupDoc.data()!["wallpaper_url"][0].toString());
-        wallpaperAppWallName = TextEditingController(
-            text: setupDoc.data()!["wallpaper_url"][2].toString());
-        wallpaperAppLink = TextEditingController(
-            text: setupDoc.data()!["wallpaper_url"][1].toString());
+        wallpaperAppName = TextEditingController(text: setupDoc.data()!["wallpaper_url"][0].toString());
+        wallpaperAppWallName = TextEditingController(text: setupDoc.data()!["wallpaper_url"][2].toString());
+        wallpaperAppLink = TextEditingController(text: setupDoc.data()!["wallpaper_url"][1].toString());
         groupValue = 2;
       }
     } else {
-      wallpaperUrl = TextEditingController(
-          text: setupDoc.data()!["wallpaper_url"].toString());
+      wallpaperUrl = TextEditingController(text: setupDoc.data()!["wallpaper_url"].toString());
       groupValue = 0;
     }
-    widgetName2 =
-        TextEditingController(text: setupDoc.data()!["widget2"].toString());
-    widgetURL2 =
-        TextEditingController(text: setupDoc.data()!["widget_url2"].toString());
+    widgetName2 = TextEditingController(text: setupDoc.data()!["widget2"].toString());
+    widgetURL2 = TextEditingController(text: setupDoc.data()!["widget_url2"].toString());
     isUploading = false;
     isProcessing = false;
     wallpaperProvider = setupDoc.data()!["wallpaper_provider"].toString();
     wallpaperThumb = setupDoc.data()!["wallpaper_thumb"].toString();
     review = setupDoc.data()!["review"] as bool?;
-    secondWidgetAdded = "${setupDoc.data()!["widget2"]}" != "" &&
-        "${setupDoc.data()!["widget2"]}" != null;
+    secondWidgetAdded = "${setupDoc.data()!["widget2"]}" != "" && "${setupDoc.data()!["widget2"]}" != null;
   }
 
   final Map<int, Widget> logoWidgets = <int, Widget>{
@@ -199,12 +185,8 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
       final String base64Image = base64Encode(imageBytes);
       final github = GitHub(auth: Authentication.withToken(token));
       await github.repositories
-          .createFile(
-              RepositorySlug(gitUserName, repoName2),
-              CreateFile(
-                  message: Path.basename(image.path),
-                  content: base64Image,
-                  path: Path.basename(image.path)))
+          .createFile(RepositorySlug(gitUserName, repoName2),
+              CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)))
           .then((value) => setState(() {
                 imageURL = value.content!.downloadUrl;
               }));
@@ -247,12 +229,9 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           setupDesc.text == "" ||
                           setupDesc.text == null ||
                           (wallpaperUploaded == false &&
-                              (wallpaperUrl.text == "" ||
-                                  wallpaperUrl.text == null) &&
-                              ((wallpaperAppLink.text == "" ||
-                                      wallpaperAppLink.text == null) ||
-                                  (wallpaperAppName.text == "" ||
-                                      wallpaperAppName.text == null))) ||
+                              (wallpaperUrl.text == "" || wallpaperUrl.text == null) &&
+                              ((wallpaperAppLink.text == "" || wallpaperAppLink.text == null) ||
+                                  (wallpaperAppName.text == "" || wallpaperAppName.text == null))) ||
                           iconName.text == "" ||
                           iconName.text == null ||
                           iconURL.text == "" ||
@@ -262,9 +241,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         navStack.removeLast();
                         logger.d(navStack.toString());
                         Navigator.pop(context);
-                        analytics.logEvent(
-                            name: 'edit_setup',
-                            parameters: {'id': id, 'link': imageURL});
+                        analytics.logEvent(name: 'edit_setup', parameters: {'id': id, 'link': imageURL});
                         WallStore.updateSetup(
                           setupDoc.id,
                           id,
@@ -277,11 +254,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                       wallpaperAppName.text != null &&
                                       wallpaperAppLink.text != "" &&
                                       wallpaperAppLink.text != null
-                                  ? [
-                                      wallpaperAppName.text,
-                                      wallpaperAppLink.text,
-                                      wallpaperAppWallName.text
-                                    ]
+                                  ? [wallpaperAppName.text, wallpaperAppLink.text, wallpaperAppWallName.text]
                                   : wallpaperUrl.text,
                           iconName.text,
                           iconURL.text,
@@ -319,8 +292,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                 child: CircleAvatar(
                   backgroundColor: Theme.of(context).errorColor,
                   radius: 20,
-                  child: ClipOval(
-                      child: Image.network(globals.prismUser.profilePhoto)),
+                  child: ClipOval(child: Image.network(globals.prismUser.profilePhoto)),
                 ),
               ),
               const Spacer(),
@@ -394,8 +366,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                       padding: const EdgeInsets.all(20.0),
                       height: 200,
                       width: 120,
-                      child: CachedNetworkImage(
-                          imageUrl: imageURL!, fit: BoxFit.contain),
+                      child: CachedNetworkImage(imageUrl: imageURL!, fit: BoxFit.contain),
                     ),
                     if (isUploading || isProcessing)
                       Container(
@@ -404,8 +375,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         width: 120,
                         child: Center(
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                Theme.of(context).errorColor),
+                            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).errorColor),
                           ),
                         ),
                       )
@@ -451,29 +421,22 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                       child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(500),
-                            color: Theme.of(context).hintColor),
+                        decoration:
+                            BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                         child: TextField(
                           cursorColor: Theme.of(context).errorColor,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline5!
-                              .copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                           controller: widgetName1,
                           focusNode: textFocusNode,
                           decoration: InputDecoration(
-                            contentPadding:
-                                const EdgeInsets.only(left: 30, top: 15),
+                            contentPadding: const EdgeInsets.only(left: 30, top: 15),
                             border: InputBorder.none,
                             disabledBorder: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             hintText: "Write widget app name...",
-                            hintStyle: Theme.of(context)
-                                .textTheme
-                                .headline5!
-                                .copyWith(color: Theme.of(context).accentColor),
+                            hintStyle:
+                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.android,
                               color: Theme.of(context).accentColor,
@@ -485,29 +448,22 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                       child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(500),
-                            color: Theme.of(context).hintColor),
+                        decoration:
+                            BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                         child: TextField(
                           cursorColor: Theme.of(context).errorColor,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline5!
-                              .copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                           controller: widgetURL1,
                           focusNode: textFocusNode,
                           decoration: InputDecoration(
-                            contentPadding:
-                                const EdgeInsets.only(left: 30, top: 15),
+                            contentPadding: const EdgeInsets.only(left: 30, top: 15),
                             border: InputBorder.none,
                             disabledBorder: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             hintText: "Write widget app link...",
-                            hintStyle: Theme.of(context)
-                                .textTheme
-                                .headline5!
-                                .copyWith(color: Theme.of(context).accentColor),
+                            hintStyle:
+                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.google_play,
                               color: Theme.of(context).accentColor,
@@ -521,29 +477,22 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                         child: Container(
                           decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(500),
-                              color: Theme.of(context).hintColor),
+                              borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                           child: TextField(
                             cursorColor: Theme.of(context).errorColor,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headline5!
-                                .copyWith(color: Theme.of(context).accentColor),
+                            style:
+                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                             controller: widgetName2,
                             focusNode: textFocusNode,
                             decoration: InputDecoration(
-                              contentPadding:
-                                  const EdgeInsets.only(left: 30, top: 15),
+                              contentPadding: const EdgeInsets.only(left: 30, top: 15),
                               border: InputBorder.none,
                               disabledBorder: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
                               hintText: "Write 2nd widget app name...",
-                              hintStyle: Theme.of(context)
-                                  .textTheme
-                                  .headline5!
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
+                              hintStyle:
+                                  Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                               suffixIcon: Icon(
                                 JamIcons.android,
                                 color: Theme.of(context).accentColor,
@@ -559,36 +508,28 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               secondWidgetAdded = true;
                             });
                           },
-                          child: Text("Add more widget",
-                              style: Theme.of(context).textTheme.bodyText2)),
+                          child: Text("Add more widget", style: Theme.of(context).textTheme.bodyText2)),
                     if (secondWidgetAdded == true)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                         child: Container(
                           decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(500),
-                              color: Theme.of(context).hintColor),
+                              borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                           child: TextField(
                             cursorColor: Theme.of(context).errorColor,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headline5!
-                                .copyWith(color: Theme.of(context).accentColor),
+                            style:
+                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                             controller: widgetURL2,
                             focusNode: textFocusNode,
                             decoration: InputDecoration(
-                              contentPadding:
-                                  const EdgeInsets.only(left: 30, top: 15),
+                              contentPadding: const EdgeInsets.only(left: 30, top: 15),
                               border: InputBorder.none,
                               disabledBorder: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
                               hintText: "Write 2nd widget app link...",
-                              hintStyle: Theme.of(context)
-                                  .textTheme
-                                  .headline5!
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
+                              hintStyle:
+                                  Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                               suffixIcon: Icon(
                                 JamIcons.google_play,
                                 color: Theme.of(context).accentColor,
@@ -607,29 +548,22 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                       child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(500),
-                            color: Theme.of(context).hintColor),
+                        decoration:
+                            BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                         child: TextField(
                           cursorColor: Theme.of(context).errorColor,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline5!
-                              .copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                           controller: iconName,
                           focusNode: textFocusNode,
                           decoration: InputDecoration(
-                            contentPadding:
-                                const EdgeInsets.only(left: 30, top: 15),
+                            contentPadding: const EdgeInsets.only(left: 30, top: 15),
                             border: InputBorder.none,
                             disabledBorder: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             hintText: "Write icon pack name...",
-                            hintStyle: Theme.of(context)
-                                .textTheme
-                                .headline5!
-                                .copyWith(color: Theme.of(context).accentColor),
+                            hintStyle:
+                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: IconButton(
                               onPressed: () {
                                 bool fetched = false;
@@ -650,237 +584,185 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   builder: (context) => GestureDetector(
                                     onTap: () => Navigator.of(context).pop(),
                                     child: Container(
-                                        color: const Color.fromRGBO(
-                                            0, 0, 0, 0.001),
+                                        color: const Color.fromRGBO(0, 0, 0, 0.001),
                                         child: GestureDetector(
                                             onTap: () {},
                                             child: DraggableScrollableSheet(
                                               initialChildSize: 0.8,
                                               minChildSize: 0.4,
-                                              builder: (context, controller) =>
-                                                  StatefulBuilder(
-                                                builder: (BuildContext context,
-                                                    StateSetter setState) {
+                                              builder: (context, controller) => StatefulBuilder(
+                                                builder: (BuildContext context, StateSetter setState) {
                                                   if (!fetched) {
-                                                    final Box box =
-                                                        Hive.box('appsCache');
+                                                    final Box box = Hive.box('appsCache');
                                                     setState(() {
                                                       fetched = true;
-                                                      icons = (box.get('icons',
-                                                                  defaultValue: {})
-                                                              as Map)
-                                                          .values
-                                                          .toList();
-                                                      allIcons = (box.get(
-                                                                  'icons',
-                                                                  defaultValue: {})
-                                                              as Map)
-                                                          .values
-                                                          .toList();
+                                                      icons =
+                                                          (box.get('icons', defaultValue: {}) as Map).values.toList();
+                                                      allIcons =
+                                                          (box.get('icons', defaultValue: {}) as Map).values.toList();
                                                       if (icons.isNotEmpty) {
                                                         loading = false;
                                                       }
                                                     });
-                                                    getIcons().then(
-                                                        (value) => setState(() {
-                                                              icons = value;
-                                                              allIcons = value;
-                                                              loading = false;
-                                                            }));
+                                                    getIcons().then((value) => setState(() {
+                                                          icons = value;
+                                                          allIcons = value;
+                                                          loading = false;
+                                                        }));
                                                   }
                                                   return Container(
                                                     decoration: BoxDecoration(
-                                                      color: Theme.of(context)
-                                                          .primaryColor,
-                                                      borderRadius:
-                                                          const BorderRadius
-                                                              .only(
-                                                        topLeft:
-                                                            Radius.circular(24),
-                                                        topRight:
-                                                            Radius.circular(24),
+                                                      color: Theme.of(context).primaryColor,
+                                                      borderRadius: const BorderRadius.only(
+                                                        topLeft: Radius.circular(24),
+                                                        topRight: Radius.circular(24),
                                                       ),
                                                     ),
                                                     child: Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
                                                         children: [
                                                           Center(
                                                             child: Container(
-                                                              margin:
-                                                                  const EdgeInsets
-                                                                          .all(
-                                                                      16.0),
+                                                              margin: const EdgeInsets.all(16.0),
                                                               width: 32,
                                                               height: 6,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: Theme.of(
-                                                                        context)
+                                                              decoration: BoxDecoration(
+                                                                color: Theme.of(context)
                                                                     .textTheme
                                                                     .bodyText1!
                                                                     .color!
-                                                                    .withOpacity(
-                                                                        0.1),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            5000),
+                                                                    .withOpacity(0.1),
+                                                                borderRadius: BorderRadius.circular(5000),
                                                               ),
                                                             ),
                                                           ),
                                                           if (loading)
                                                             const Padding(
-                                                              padding:
-                                                                  EdgeInsets
-                                                                      .all(
-                                                                          16.0),
+                                                              padding: EdgeInsets.all(16.0),
                                                               child: Center(
-                                                                child:
-                                                                    CircularProgressIndicator(),
+                                                                child: CircularProgressIndicator(),
                                                               ),
                                                             )
                                                           else
                                                             Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
+                                                              mainAxisSize: MainAxisSize.min,
                                                               children: [
                                                                 Padding(
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                              .all(
-                                                                          16.0),
-                                                                  child:
-                                                                      TextField(
-                                                                    onSubmitted:
-                                                                        (query) {
-                                                                      query = query
-                                                                          .toLowerCase();
-                                                                      icons =
-                                                                          allIcons;
-                                                                      if (query !=
-                                                                          '') {
+                                                                  padding: const EdgeInsets.all(16.0),
+                                                                  child: TextField(
+                                                                    onSubmitted: (query) {
+                                                                      query = query.toLowerCase();
+                                                                      icons = allIcons;
+                                                                      if (query != '') {
                                                                         icons = icons
-                                                                            .where((e) =>
-                                                                                (e as Map)["name"].toString().trim().toLowerCase().contains(query))
+                                                                            .where((e) => (e as Map)["name"]
+                                                                                .toString()
+                                                                                .trim()
+                                                                                .toLowerCase()
+                                                                                .contains(query))
                                                                             .toList();
                                                                       }
-                                                                      setState(
-                                                                          () =>
-                                                                              {});
+                                                                      setState(() => {});
                                                                     },
-                                                                    onChanged:
-                                                                        (query) {
-                                                                      query = query
-                                                                          .toLowerCase();
-                                                                      icons =
-                                                                          allIcons;
-                                                                      if (query !=
-                                                                          '') {
+                                                                    onChanged: (query) {
+                                                                      query = query.toLowerCase();
+                                                                      icons = allIcons;
+                                                                      if (query != '') {
                                                                         icons = icons
-                                                                            .where((e) =>
-                                                                                (e as Map)["name"].toString().trim().toLowerCase().contains(query))
+                                                                            .where((e) => (e as Map)["name"]
+                                                                                .toString()
+                                                                                .trim()
+                                                                                .toLowerCase()
+                                                                                .contains(query))
                                                                             .toList();
                                                                       }
-                                                                      setState(
-                                                                          () =>
-                                                                              {});
+                                                                      setState(() => {});
                                                                     },
-                                                                    style: Theme.of(
-                                                                            context)
+                                                                    style: Theme.of(context)
                                                                         .textTheme
                                                                         .bodyText1!
-                                                                        .copyWith(
-                                                                            fontSize:
-                                                                                16),
-                                                                    decoration:
-                                                                        InputDecoration(
-                                                                      prefixIcon:
-                                                                          const Icon(
-                                                                              Icons.search),
-                                                                      hintText:
-                                                                          "Search Icons",
-                                                                      hintStyle: Theme.of(
-                                                                              context)
+                                                                        .copyWith(fontSize: 16),
+                                                                    decoration: InputDecoration(
+                                                                      prefixIcon: const Icon(Icons.search),
+                                                                      hintText: "Search Icons",
+                                                                      hintStyle: Theme.of(context)
                                                                           .textTheme
                                                                           .bodyText1!
                                                                           .copyWith(
-                                                                            fontSize:
-                                                                                16,
-                                                                            color:
-                                                                                Theme.of(context).textTheme.bodyText1!.color!.withOpacity(0.6),
+                                                                            fontSize: 16,
+                                                                            color: Theme.of(context)
+                                                                                .textTheme
+                                                                                .bodyText1!
+                                                                                .color!
+                                                                                .withOpacity(0.6),
                                                                           ),
                                                                     ),
                                                                   ),
                                                                 ),
                                                                 SizedBox(
-                                                                  height: MediaQuery.of(context)
-                                                                              .size
-                                                                              .height *
-                                                                          1 -
-                                                                      119,
-                                                                  child: ListView
-                                                                      .separated(
-                                                                    separatorBuilder:
-                                                                        (context,
-                                                                                index) =>
-                                                                            const Divider(
+                                                                  height: MediaQuery.of(context).size.height * 1 - 119,
+                                                                  child: ListView.separated(
+                                                                    separatorBuilder: (context, index) => const Divider(
                                                                       height: 2,
                                                                     ),
-                                                                    shrinkWrap:
-                                                                        true,
-                                                                    controller:
-                                                                        controller,
-                                                                    itemCount:
-                                                                        icons.length +
-                                                                            1,
-                                                                    itemBuilder: (context,
-                                                                            index) =>
-                                                                        (index ==
-                                                                                icons.length)
-                                                                            ? const ListTile(
-                                                                                title: SizedBox(
-                                                                                  height: 60,
-                                                                                ),
-                                                                              )
-                                                                            : ListTile(
-                                                                                onTap: () {
-                                                                                  iconName.text = (icons[index] as Map)["name"].toString().trim();
-                                                                                  iconURL.text = (icons[index] as Map)["link"].toString().trim();
-                                                                                  Navigator.pop(context);
-                                                                                },
-                                                                                leading: ClipRRect(
-                                                                                  borderRadius: BorderRadius.circular(8),
-                                                                                  child: CachedNetworkImage(
-                                                                                    imageUrl: (icons[index] as Map)["icon"].toString(),
-                                                                                    width: 38,
-                                                                                    height: 38,
-                                                                                    fit: BoxFit.cover,
-                                                                                  ),
-                                                                                ),
-                                                                                title: Text(
-                                                                                  (icons[index] as Map)["name"].toString().trim(),
-                                                                                  style: TextStyle(
-                                                                                    color: Theme.of(context).accentColor,
-                                                                                    fontSize: 16,
-                                                                                    fontFamily: "Proxima Nova",
-                                                                                    fontWeight: FontWeight.normal,
-                                                                                  ),
-                                                                                ),
-                                                                                subtitle: Text(
-                                                                                  (icons[index] as Map)["id"].toString().trim(),
-                                                                                  style: TextStyle(
-                                                                                    color: Theme.of(context).accentColor.withOpacity(0.5),
-                                                                                    fontSize: 12,
-                                                                                    fontFamily: "Proxima Nova",
-                                                                                    fontWeight: FontWeight.normal,
-                                                                                  ),
-                                                                                ),
+                                                                    shrinkWrap: true,
+                                                                    controller: controller,
+                                                                    itemCount: icons.length + 1,
+                                                                    itemBuilder: (context, index) => (index ==
+                                                                            icons.length)
+                                                                        ? const ListTile(
+                                                                            title: SizedBox(
+                                                                              height: 60,
+                                                                            ),
+                                                                          )
+                                                                        : ListTile(
+                                                                            onTap: () {
+                                                                              iconName.text =
+                                                                                  (icons[index] as Map)["name"]
+                                                                                      .toString()
+                                                                                      .trim();
+                                                                              iconURL.text =
+                                                                                  (icons[index] as Map)["link"]
+                                                                                      .toString()
+                                                                                      .trim();
+                                                                              Navigator.pop(context);
+                                                                            },
+                                                                            leading: ClipRRect(
+                                                                              borderRadius: BorderRadius.circular(8),
+                                                                              child: CachedNetworkImage(
+                                                                                imageUrl: (icons[index] as Map)["icon"]
+                                                                                    .toString(),
+                                                                                width: 38,
+                                                                                height: 38,
+                                                                                fit: BoxFit.cover,
                                                                               ),
+                                                                            ),
+                                                                            title: Text(
+                                                                              (icons[index] as Map)["name"]
+                                                                                  .toString()
+                                                                                  .trim(),
+                                                                              style: TextStyle(
+                                                                                color: Theme.of(context).accentColor,
+                                                                                fontSize: 16,
+                                                                                fontFamily: "Proxima Nova",
+                                                                                fontWeight: FontWeight.normal,
+                                                                              ),
+                                                                            ),
+                                                                            subtitle: Text(
+                                                                              (icons[index] as Map)["id"]
+                                                                                  .toString()
+                                                                                  .trim(),
+                                                                              style: TextStyle(
+                                                                                color: Theme.of(context)
+                                                                                    .accentColor
+                                                                                    .withOpacity(0.5),
+                                                                                fontSize: 12,
+                                                                                fontFamily: "Proxima Nova",
+                                                                                fontWeight: FontWeight.normal,
+                                                                              ),
+                                                                            ),
+                                                                          ),
                                                                   ),
                                                                 )
                                                               ],
@@ -905,29 +787,22 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                       child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(500),
-                            color: Theme.of(context).hintColor),
+                        decoration:
+                            BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                         child: TextField(
                           cursorColor: Theme.of(context).errorColor,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline5!
-                              .copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                           controller: iconURL,
                           focusNode: textFocusNode,
                           decoration: InputDecoration(
-                            contentPadding:
-                                const EdgeInsets.only(left: 30, top: 15),
+                            contentPadding: const EdgeInsets.only(left: 30, top: 15),
                             border: InputBorder.none,
                             disabledBorder: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             hintText: "Write icon app link...",
-                            hintStyle: Theme.of(context)
-                                .textTheme
-                                .headline5!
-                                .copyWith(color: Theme.of(context).accentColor),
+                            hintStyle:
+                                Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.google_play_circle,
                               color: Theme.of(context).accentColor,
@@ -973,29 +848,22 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                   child: Container(
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(500),
-                        color: Theme.of(context).hintColor),
+                    decoration:
+                        BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                     child: TextField(
                       cursorColor: Theme.of(context).errorColor,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headline5!
-                          .copyWith(color: Theme.of(context).accentColor),
+                      style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                       controller: wallpaperUrl,
                       focusNode: textFocusNode,
                       decoration: InputDecoration(
-                        contentPadding:
-                            const EdgeInsets.only(left: 30, top: 15),
+                        contentPadding: const EdgeInsets.only(left: 30, top: 15),
                         border: InputBorder.none,
                         disabledBorder: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         hintText: "Write wallpaper link...",
-                        hintStyle: Theme.of(context)
-                            .textTheme
-                            .headline5!
-                            .copyWith(color: Theme.of(context).accentColor),
+                        hintStyle:
+                            Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                         suffixIcon: Icon(
                           JamIcons.picture,
                           color: Theme.of(context).accentColor,
@@ -1009,21 +877,14 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                     ? Padding(
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                         child: FloatingActionButton.extended(
-                          backgroundColor: wallpaperUploaded == true
-                              ? Theme.of(context).hintColor
-                              : Theme.of(context).errorColor,
+                          backgroundColor:
+                              wallpaperUploaded == true ? Theme.of(context).hintColor : Theme.of(context).errorColor,
                           onPressed: () async {
-                            final pickedFile = await ImagePicker()
-                                .getImage(source: ImageSource.gallery);
+                            final pickedFile = await ImagePicker().getImage(source: ImageSource.gallery);
                             if (pickedFile != null) {
-                              Future.delayed(const Duration())
-                                  .then((value) async {
-                                final argumentsFromWall =
-                                    await Navigator.pushNamed(
-                                        context, uploadWallRoute, arguments: [
-                                  File(pickedFile.path),
-                                  true
-                                ]);
+                              Future.delayed(const Duration()).then((value) async {
+                                final argumentsFromWall = await Navigator.pushNamed(context, uploadWallRoute,
+                                    arguments: [File(pickedFile.path), true]);
                                 if (argumentsFromWall != null) {
                                   final List argsC = argumentsFromWall as List;
                                   if (argsC.length == 2) {
@@ -1038,12 +899,8 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             }
                           },
                           label: Text(
-                            wallpaperUploaded == true
-                                ? "Change Wall"
-                                : "Upload",
-                            style: TextStyle(
-                                color: Theme.of(context).accentColor,
-                                fontWeight: FontWeight.normal),
+                            wallpaperUploaded == true ? "Change Wall" : "Upload",
+                            style: TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.normal),
                           ),
                           icon: Icon(
                             JamIcons.upload,
@@ -1057,20 +914,17 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                             child: Container(
                               decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(500),
-                                  color: Theme.of(context).hintColor),
+                                  borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                               child: TextField(
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline5!
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
+                                    .copyWith(color: Theme.of(context).accentColor),
                                 controller: wallpaperAppName,
                                 focusNode: textFocusNode,
                                 decoration: InputDecoration(
-                                  contentPadding:
-                                      const EdgeInsets.only(left: 30, top: 15),
+                                  contentPadding: const EdgeInsets.only(left: 30, top: 15),
                                   border: InputBorder.none,
                                   disabledBorder: InputBorder.none,
                                   enabledBorder: InputBorder.none,
@@ -1079,8 +933,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   hintStyle: Theme.of(context)
                                       .textTheme
                                       .headline5!
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
+                                      .copyWith(color: Theme.of(context).accentColor),
                                   suffixIcon: Icon(
                                     JamIcons.android,
                                     color: Theme.of(context).accentColor,
@@ -1093,20 +946,17 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                             child: Container(
                               decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(500),
-                                  color: Theme.of(context).hintColor),
+                                  borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                               child: TextField(
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline5!
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
+                                    .copyWith(color: Theme.of(context).accentColor),
                                 controller: wallpaperAppLink,
                                 focusNode: textFocusNode,
                                 decoration: InputDecoration(
-                                  contentPadding:
-                                      const EdgeInsets.only(left: 30, top: 15),
+                                  contentPadding: const EdgeInsets.only(left: 30, top: 15),
                                   border: InputBorder.none,
                                   disabledBorder: InputBorder.none,
                                   enabledBorder: InputBorder.none,
@@ -1115,8 +965,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   hintStyle: Theme.of(context)
                                       .textTheme
                                       .headline5!
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
+                                      .copyWith(color: Theme.of(context).accentColor),
                                   suffixIcon: Icon(
                                     JamIcons.google_play,
                                     color: Theme.of(context).accentColor,
@@ -1129,20 +978,17 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                             child: Container(
                               decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(500),
-                                  color: Theme.of(context).hintColor),
+                                  borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                               child: TextField(
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline5!
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
+                                    .copyWith(color: Theme.of(context).accentColor),
                                 controller: wallpaperAppWallName,
                                 focusNode: textFocusNode,
                                 decoration: InputDecoration(
-                                  contentPadding:
-                                      const EdgeInsets.only(left: 30, top: 15),
+                                  contentPadding: const EdgeInsets.only(left: 30, top: 15),
                                   border: InputBorder.none,
                                   disabledBorder: InputBorder.none,
                                   enabledBorder: InputBorder.none,
@@ -1151,8 +997,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   hintStyle: Theme.of(context)
                                       .textTheme
                                       .headline5!
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
+                                      .copyWith(color: Theme.of(context).accentColor),
                                   suffixIcon: Icon(
                                     JamIcons.picture,
                                     color: Theme.of(context).accentColor,

@@ -24,8 +24,7 @@ class FavoriteIcon extends StatefulWidget {
   _FavoriteIconState createState() => _FavoriteIconState();
 }
 
-class _FavoriteIconState extends State<FavoriteIcon>
-    with TickerProviderStateMixin {
+class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Color?> _colorAnimation;
   late Animation<double> _sizeAnimation;
@@ -69,9 +68,7 @@ class _FavoriteIconState extends State<FavoriteIcon>
       end: widget._iconColor,
     ).animate(_curve);
 
-    _colorAnimation = (_isFavorite == true)
-        ? _selectedColorAnimation
-        : _deSelectedColorAnimation;
+    _colorAnimation = (_isFavorite == true) ? _selectedColorAnimation : _deSelectedColorAnimation;
     _sizeAnimation = TweenSequence(
       <TweenSequenceItem<double>>[
         TweenSequenceItem<double>(

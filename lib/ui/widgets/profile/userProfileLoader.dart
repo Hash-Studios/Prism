@@ -17,8 +17,7 @@ class _UserProfileLoaderState extends State<UserProfileLoader> {
 
   @override
   void initState() {
-    _future = Provider.of<UserProfileProvider>(context, listen: false)
-        .getuserProfileWalls(widget.email);
+    _future = Provider.of<UserProfileProvider>(context, listen: false).getuserProfileWalls(widget.email);
     super.initState();
   }
 
@@ -33,8 +32,7 @@ class _UserProfileLoaderState extends State<UserProfileLoader> {
             logger.d("snapshot null");
             return const LoadingCards();
           }
-          if (snapshot.connectionState == ConnectionState.waiting ||
-              snapshot.connectionState == ConnectionState.none) {
+          if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
             logger.d("snapshot none, waiting");
             return const LoadingCards();
           } else {

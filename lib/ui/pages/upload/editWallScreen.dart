@@ -17,30 +17,8 @@ class EditWallScreen extends StatefulWidget {
 }
 
 class _EditWallScreenState extends State<EditWallScreen> {
-  final GlobalKey<ExtendedImageEditorState> editorKey =
-      GlobalKey<ExtendedImageEditorState>();
-  final defaultColorMatrix = const <double>[
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0
-  ];
+  final GlobalKey<ExtendedImageEditorState> editorKey = GlobalKey<ExtendedImageEditorState>();
+  final defaultColorMatrix = const <double>[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
   List<double> calculateSaturationMatrix(double saturation) {
     final m = List<double>.from(defaultColorMatrix);
     final invSat = 1 - saturation;
@@ -112,14 +90,10 @@ class _EditWallScreenState extends State<EditWallScreen> {
         appBar: AppBar(
             title: Text(
               "Edit Wallpaper",
-              style: Theme.of(context)
-                  .textTheme
-                  .headline3!
-                  .copyWith(color: Theme.of(context).accentColor),
+              style: Theme.of(context).textTheme.headline3!.copyWith(color: Theme.of(context).accentColor),
             ),
             leading: IconButton(
-                icon:
-                    Icon(JamIcons.close, color: Theme.of(context).accentColor),
+                icon: Icon(JamIcons.close, color: Theme.of(context).accentColor),
                 onPressed: () {
                   navStack.removeLast();
                   logger.d(navStack.toString());
@@ -127,8 +101,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                 }),
             actions: <Widget>[
               IconButton(
-                icon: Icon(JamIcons.history,
-                    color: Theme.of(context).accentColor),
+                icon: Icon(JamIcons.history, color: Theme.of(context).accentColor),
                 onPressed: () {
                   setState(() {
                     sat = 1;
@@ -175,8 +148,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyText2!
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
+                                    .copyWith(color: Theme.of(context).accentColor),
                               )
                             ],
                           ),
@@ -192,8 +164,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyText2!
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
+                                    .copyWith(color: Theme.of(context).accentColor),
                               )
                             ],
                           ),
@@ -209,8 +180,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyText2!
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
+                                    .copyWith(color: Theme.of(context).accentColor),
                               )
                             ],
                           ),
@@ -241,26 +211,20 @@ class _EditWallScreenState extends State<EditWallScreen> {
                           const Spacer(flex: 3),
                           Text(
                             sat.toStringAsFixed(2),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyText2!
-                                .copyWith(color: Theme.of(context).accentColor),
+                            style:
+                                Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                           ),
                           const Spacer(flex: 2),
                           Text(
                             bright.toStringAsFixed(2),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyText2!
-                                .copyWith(color: Theme.of(context).accentColor),
+                            style:
+                                Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                           ),
                           const Spacer(flex: 2),
                           Text(
                             con.toStringAsFixed(2),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyText2!
-                                .copyWith(color: Theme.of(context).accentColor),
+                            style:
+                                Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                           ),
                           const Spacer(flex: 3),
                         ],
@@ -283,9 +247,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
       child: ColorFiltered(
         colorFilter: ColorFilter.matrix(calculateSaturationMatrix(sat)),
         child: ExtendedImage(
-          color: bright > 0
-              ? Colors.white.withOpacity(bright)
-              : Colors.black.withOpacity(-bright),
+          color: bright > 0 ? Colors.white.withOpacity(bright) : Colors.black.withOpacity(-bright),
           colorBlendMode: bright > 0 ? BlendMode.lighten : BlendMode.darken,
           image: ExtendedFileImageProvider(image!, cacheRawData: true),
           height: MediaQuery.of(context).size.width,
@@ -401,8 +363,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     final ImageEditorOption option = ImageEditorOption();
 
     option.addOption(ClipOption.fromRect(rect));
-    option.addOption(
-        FlipOption(horizontal: flipHorizontal, vertical: flipVertical));
+    option.addOption(FlipOption(horizontal: flipHorizontal, vertical: flipVertical));
     if (action.hasRotateAngle) {
       option.addOption(RotateOption(radian.toInt()));
     }
@@ -428,9 +389,8 @@ class _EditWallScreenState extends State<EditWallScreen> {
     logger.d('image_editor time : $diff');
     if (navStack.length > 1) navStack.removeLast();
     logger.d(navStack.toString());
-    Future.delayed(const Duration()).then((value) =>
-        Navigator.pushReplacementNamed(context, uploadWallRoute,
-            arguments: [image, false]));
+    Future.delayed(const Duration())
+        .then((value) => Navigator.pushReplacementNamed(context, uploadWallRoute, arguments: [image, false]));
   }
 
   void flip() {

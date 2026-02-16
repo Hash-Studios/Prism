@@ -24,8 +24,7 @@ class PexelsTile extends StatelessWidget {
           decoration: PData.wallsP.isEmpty
               ? BoxDecoration(
                   color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
+                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),
@@ -33,15 +32,13 @@ class PexelsTile extends StatelessWidget {
                 )
               : BoxDecoration(
                   color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
+                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
-                      image: CachedNetworkImageProvider(
-                          PData.wallsP[index].src!["medium"].toString()),
+                      image: CachedNetworkImageProvider(PData.wallsP[index].src!["medium"].toString()),
                       fit: BoxFit.cover)),
         ),
         ClipRRect(
@@ -54,11 +51,8 @@ class PexelsTile extends StatelessWidget {
               onTap: () {
                 if (PData.wallsP == []) {
                 } else {
-                  Navigator.pushNamed(context, wallpaperRoute, arguments: [
-                    widget.provider,
-                    index,
-                    PData.wallsP[index].src!["small"]
-                  ]);
+                  Navigator.pushNamed(context, wallpaperRoute,
+                      arguments: [widget.provider, index, PData.wallsP[index].src!["small"]]);
                 }
               },
             ),

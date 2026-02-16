@@ -26,16 +26,9 @@ class DarkThemeModel extends ChangeNotifier {
 
   void changeAccent(Color? accentColor) {
     ThemeData newTheme = currentTheme!;
-    newTheme = newTheme.copyWith(
-        errorColor: accentColor,
-        colorScheme: ColorScheme.dark(primary: accentColor!));
+    newTheme = newTheme.copyWith(errorColor: accentColor, colorScheme: ColorScheme.dark(primary: accentColor!));
     currentTheme = newTheme;
-    main.prefs.put(
-        "darkAccent",
-        int.parse(accentColor
-            .toString()
-            .replaceAll("Color(", "")
-            .replaceAll(")", "")));
+    main.prefs.put("darkAccent", int.parse(accentColor.toString().replaceAll("Color(", "").replaceAll(")", "")));
     return notifyListeners();
   }
 
@@ -53,12 +46,8 @@ class DarkThemeModel extends ChangeNotifier {
     logger.d(themeID);
     currentTheme = darkThemes[themeID];
     main.prefs.put("darkThemeID", themeID);
-    main.prefs.put(
-        "darkAccent",
-        int.parse(currentTheme!.errorColor
-            .toString()
-            .replaceAll("Color(", "")
-            .replaceAll(")", "")));
+    main.prefs
+        .put("darkAccent", int.parse(currentTheme!.errorColor.toString().replaceAll("Color(", "").replaceAll(")", "")));
     return notifyListeners();
   }
 }

@@ -49,8 +49,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         finalQuery = p;
         finalDocs = [];
         for (final doc in finalQuery.docs) {
-          if (following.contains(doc.data()["email"]) &&
-              finalDocs.length <= 30) {
+          if (following.contains(doc.data()["email"]) && finalDocs.length <= 30) {
             finalDocs.add(doc);
           }
         }
@@ -85,8 +84,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context)!.scrollController!;
+    final ScrollController controller = InheritedDataProvider.of(context)!.scrollController!;
     return WillPopScope(
       onWillPop: onWillPop,
       child: Padding(
@@ -105,11 +103,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
             if (index == finalDocs.length) {
               return Container(
                 width: MediaQuery.of(context).size.width * 0.7,
-                height: finalDocs.isEmpty
-                    ? MediaQuery.of(context).size.height * 0.8
-                    : 100,
-                padding: EdgeInsets.symmetric(
-                    horizontal: finalDocs.isEmpty ? 0 : 20),
+                height: finalDocs.isEmpty ? MediaQuery.of(context).size.height * 0.8 : 100,
+                padding: EdgeInsets.symmetric(horizontal: finalDocs.isEmpty ? 0 : 20),
                 child: Center(
                   child: Text(
                     finalDocs.isEmpty
@@ -165,17 +160,14 @@ class _FollowingTileState extends State<FollowingTile> {
       child: Column(
         children: [
           PremiumBannerFollowingFeed(
-            comparator: !globals.isPremiumWall(globals.premiumCollections,
-                widget.finalDocs[widget.index]["collections"] as List? ?? []),
+            comparator: !globals.isPremiumWall(
+                globals.premiumCollections, widget.finalDocs[widget.index]["collections"] as List? ?? []),
             child: Stack(
               children: [
                 GestureDetector(
                   onTap: () {
-                    globals.isPremiumWall(
-                                    globals.premiumCollections,
-                                    widget.finalDocs[widget.index]
-                                            ["collections"] as List? ??
-                                        []) ==
+                    globals.isPremiumWall(globals.premiumCollections,
+                                    widget.finalDocs[widget.index]["collections"] as List? ?? []) ==
                                 true &&
                             globals.prismUser.premium != true
                         ? showGooglePopUp(context, () {
@@ -186,8 +178,7 @@ class _FollowingTileState extends State<FollowingTile> {
                           })
                         : Navigator.pushNamed(context, shareRoute, arguments: [
                             widget.finalDocs[widget.index]["id"],
-                            widget.finalDocs[widget.index]
-                                ["wallpaper_provider"],
+                            widget.finalDocs[widget.index]["wallpaper_provider"],
                             widget.finalDocs[widget.index]["wallpaper_url"],
                             widget.finalDocs[widget.index]["wallpaper_thumb"]
                           ]);
@@ -195,8 +186,7 @@ class _FollowingTileState extends State<FollowingTile> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(25),
                     child: CachedNetworkImage(
-                      imageUrl: widget.finalDocs[widget.index]
-                          ["wallpaper_thumb"] as String,
+                      imageUrl: widget.finalDocs[widget.index]["wallpaper_thumb"] as String,
                       placeholder: (context, url) {
                         return Container(
                           height: 400,
@@ -215,10 +205,9 @@ class _FollowingTileState extends State<FollowingTile> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    Navigator.pushNamed(context, followerProfileRoute,
-                        arguments: [
-                          widget.finalDocs[widget.index]["email"],
-                        ]);
+                    Navigator.pushNamed(context, followerProfileRoute, arguments: [
+                      widget.finalDocs[widget.index]["email"],
+                    ]);
                   },
                   child: Row(
                     children: [
@@ -228,15 +217,12 @@ class _FollowingTileState extends State<FollowingTile> {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(0, 0, 4, 0),
                             child: CircleAvatar(
-                              backgroundImage: CachedNetworkImageProvider(
-                                  widget.finalDocs[widget.index]["userPhoto"]
-                                      as String),
+                              backgroundImage:
+                                  CachedNetworkImageProvider(widget.finalDocs[widget.index]["userPhoto"] as String),
                               radius: 16,
                             ),
                           ),
-                          if (globals.verifiedUsers.contains(widget
-                              .finalDocs[widget.index]["email"]
-                              .toString()))
+                          if (globals.verifiedUsers.contains(widget.finalDocs[widget.index]["email"].toString()))
                             Container(
                               width: 15,
                               height: 15,
@@ -269,13 +255,8 @@ class _FollowingTileState extends State<FollowingTile> {
                               widget.finalDocs[widget.index]["by"].toString(),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyText2!
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12),
+                              style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                  color: Theme.of(context).accentColor, fontWeight: FontWeight.bold, fontSize: 12),
                             ),
                           ),
                           SizedBox(
@@ -284,9 +265,7 @@ class _FollowingTileState extends State<FollowingTile> {
                               timeago.format(
                                 now.subtract(
                                   now.difference(
-                                    (widget.finalDocs[widget.index]["createdAt"]
-                                            as Timestamp)
-                                        .toDate(),
+                                    (widget.finalDocs[widget.index]["createdAt"] as Timestamp).toDate(),
                                   ),
                                 ),
                               ),
@@ -295,11 +274,7 @@ class _FollowingTileState extends State<FollowingTile> {
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyText2!
-                                  .copyWith(
-                                      color: Theme.of(context)
-                                          .accentColor
-                                          .withOpacity(0.8),
-                                      fontSize: 10),
+                                  .copyWith(color: Theme.of(context).accentColor.withOpacity(0.8), fontSize: 10),
                             ),
                           ),
                         ],
@@ -309,10 +284,7 @@ class _FollowingTileState extends State<FollowingTile> {
                 ),
                 const Spacer(),
                 if (globals.isPremiumWall(
-                            globals.premiumCollections,
-                            widget.finalDocs[widget.index]["collections"]
-                                    as List? ??
-                                []) ==
+                            globals.premiumCollections, widget.finalDocs[widget.index]["collections"] as List? ?? []) ==
                         true &&
                     globals.prismUser.premium != true)
                   Container()

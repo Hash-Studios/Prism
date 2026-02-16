@@ -1,7 +1,6 @@
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
-import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as wdata;
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:flutter/cupertino.dart';
@@ -20,8 +19,7 @@ final List choices = categories
 class CategorySupplier extends ChangeNotifier {
   Future<List?> wallpaperFutureRefresh = categories[0]['type'] == 'non-search'
       ? categories[0]['name'] == 'Popular'
-          ? wdata.getData("r", main.prefs.get('WHcategories') as int?,
-              main.prefs.get('WHpurity') as int?)
+          ? wdata.getData("r", main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?)
           : categories[0]['name'] == 'Curated'
               ? pdata.getDataP("r")
               : categories[0]['name'] == 'Community'
@@ -44,14 +42,10 @@ class CategorySupplier extends ChangeNotifier {
       if (category['name'] == choice.name) {
         if (category['type'] == 'search') {
           if (category['provider'] == "WallHaven") {
-            wallpaperFutureRefresh = wdata.categoryDataFetcher(
-                category['name'].toString(),
-                mode,
-                main.prefs.get('WHcategories') as int?,
-                main.prefs.get('WHpurity') as int?);
+            wallpaperFutureRefresh = wdata.categoryDataFetcher(category['name'].toString(), mode,
+                main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
           } else if (category['provider'] == "Pexels") {
-            wallpaperFutureRefresh =
-                pdata.categoryDataFetcherP(category['name'].toString(), mode);
+            wallpaperFutureRefresh = pdata.categoryDataFetcherP(category['name'].toString(), mode);
           }
         } else if (category['type'] == 'non-search') {
           if (category['name'] == 'Community') {
@@ -59,10 +53,8 @@ class CategorySupplier extends ChangeNotifier {
           } else if (category['name'] == 'Curated') {
             wallpaperFutureRefresh = pdata.getDataP(mode);
           } else if (category['name'] == 'Popular') {
-            wallpaperFutureRefresh = wdata.getData(
-                mode,
-                main.prefs.get('WHcategories') as int?,
-                main.prefs.get('WHpurity') as int?);
+            wallpaperFutureRefresh =
+                wdata.getData(mode, main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
           }
         }
       }

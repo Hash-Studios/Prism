@@ -60,8 +60,7 @@ class LogOutputPrinter extends PrettyPrinter {
     final prefix = SimplePrinter.levelPrefixes[logLvl];
     final str =
         "---------------------------------------------------------------------------\nLEVEL : $logLvl\nMESSAGE : ${DateTime.now().toString().substring(11, 22)} :: $logMsg\nERROR : $logError\nSTACKTRACE : $logStrace";
-    Future.delayed(const Duration(seconds: 1))
-        .then((value) => _logFile!.writeStringSync('$str\n'));
+    Future.delayed(const Duration(seconds: 1)).then((value) => _logFile!.writeStringSync('$str\n'));
     final timeStr = getTime().substring(0, 12);
     if (logStrace != null) {
       // print(color!('$timeStr $prefix - $logMsg \n$logStrace'));
@@ -150,8 +149,7 @@ Future<String> zipLogs() async {
   final zipFile = File(join(printer.logsFolderPath(), 'logs.zip'));
   try {
     logger.v("Zipping Started");
-    await ZipFile.createFromFiles(
-        sourceDir: sourceDir, files: files, zipFile: zipFile);
+    await ZipFile.createFromFiles(sourceDir: sourceDir, files: files, zipFile: zipFile);
     logger.v("Zipping Finished Successfully");
   } catch (e, strace) {
     logger.e(e, e, strace);

@@ -29,9 +29,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
     return Padding(
       padding: MediaQuery.of(context).viewInsets,
       child: Container(
-        height: MediaQuery.of(context).size.height / 2 > 400
-            ? MediaQuery.of(context).size.height / 2
-            : 400,
+        height: MediaQuery.of(context).size.height / 2 > 400 ? MediaQuery.of(context).size.height / 2 : 400,
         decoration: BoxDecoration(
           color: Theme.of(context).primaryColor,
           borderRadius: const BorderRadius.only(
@@ -50,9 +48,8 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                   child: Container(
                     height: 5,
                     width: 30,
-                    decoration: BoxDecoration(
-                        color: Theme.of(context).hintColor,
-                        borderRadius: BorderRadius.circular(500)),
+                    decoration:
+                        BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(500)),
                   ),
                 )
               ],
@@ -72,35 +69,24 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                   child: Center(
                     child: TextField(
                       cursorColor: const Color(0xFFE57697),
-                      style: Theme.of(context)
-                          .textTheme
-                          .headline5!
-                          .copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.headline5!.copyWith(color: Colors.white),
                       controller: codeController,
                       decoration: InputDecoration(
-                        contentPadding:
-                            const EdgeInsets.only(left: 30, top: 15),
+                        contentPadding: const EdgeInsets.only(left: 30, top: 15),
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                                color: Colors.white, width: 2)),
+                            borderSide: const BorderSide(color: Colors.white, width: 2)),
                         disabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                                color: Colors.white, width: 2)),
+                            borderSide: const BorderSide(color: Colors.white, width: 2)),
                         enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                                color: Colors.white, width: 2)),
+                            borderSide: const BorderSide(color: Colors.white, width: 2)),
                         focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                                color: Colors.white, width: 2)),
+                            borderSide: const BorderSide(color: Colors.white, width: 2)),
                         labelText: "Enter Code",
-                        labelStyle: Theme.of(context)
-                            .textTheme
-                            .headline5!
-                            .copyWith(fontSize: 14, color: Colors.white),
+                        labelStyle: Theme.of(context).textTheme.headline5!.copyWith(fontSize: 14, color: Colors.white),
                         prefixIcon: const Icon(
                           JamIcons.coin,
                           color: Colors.white,
@@ -123,35 +109,26 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                   child: GestureDetector(
                     onTap: enabled
                         ? () async {
-                            if (codeController.text != "" &&
-                                codeController.text.length >= 8) {
+                            if (codeController.text != "" && codeController.text.length >= 8) {
                               setState(() {
                                 isLoading = true;
                               });
                               await firestore
                                   .collection('codes')
-                                  .where('code',
-                                      isEqualTo:
-                                          codeController.text.toLowerCase())
+                                  .where('code', isEqualTo: codeController.text.toLowerCase())
                                   .limit(1)
                                   .get()
                                   .then((value) {
                                 if (value.docs.isNotEmpty) {
-                                  if (value.docs[0].data()["redeemed"] ==
-                                      false) {
-                                    firestore
-                                        .collection('codes')
-                                        .doc(value.docs[0].id)
-                                        .update({
+                                  if (value.docs[0].data()["redeemed"] == false) {
+                                    firestore.collection('codes').doc(value.docs[0].id).update({
                                       "redeemed": true,
                                       "winner": globals.prismUser.toJson(),
                                       "when": DateTime.now().toUtc()
                                     });
-                                    toasts.codeSend(
-                                        "Congratulations, we will contact you!");
+                                    toasts.codeSend("Congratulations, we will contact you!");
                                   } else {
-                                    toasts.error(
-                                        "Sorry, this code has already been redeemed!");
+                                    toasts.error("Sorry, this code has already been redeemed!");
                                   }
                                 } else {
                                   toasts.error("Invalid code!");
@@ -170,14 +147,11 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                         width: width - 14,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: !enabled
-                              ? Theme.of(context).primaryColor
-                              : Theme.of(context).errorColor.withOpacity(0.2),
+                          color:
+                              !enabled ? Theme.of(context).primaryColor : Theme.of(context).errorColor.withOpacity(0.2),
                           border: Border.all(
                               color: !enabled
-                                  ? Theme.of(context)
-                                      .accentColor
-                                      .withOpacity(0.5)
+                                  ? Theme.of(context).accentColor.withOpacity(0.5)
                                   : Theme.of(context).errorColor,
                               width: 3),
                           borderRadius: BorderRadius.circular(10),
@@ -190,9 +164,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                                   style: TextStyle(
                                       fontSize: 16,
                                       color: !enabled
-                                          ? Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(0.5)
+                                          ? Theme.of(context).accentColor.withOpacity(0.5)
                                           : Theme.of(context).accentColor,
                                       fontWeight: FontWeight.bold),
                                 ),

@@ -9,14 +9,10 @@ class SearchFocusedMenuHolder extends StatefulWidget {
   final int index;
 
   const SearchFocusedMenuHolder(
-      {required this.selectedProvider,
-      required this.query,
-      required this.child,
-      required this.index});
+      {required this.selectedProvider, required this.query, required this.child, required this.index});
 
   @override
-  _SearchFocusedMenuHolderState createState() =>
-      _SearchFocusedMenuHolderState();
+  _SearchFocusedMenuHolderState createState() => _SearchFocusedMenuHolderState();
 }
 
 class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
@@ -25,8 +21,7 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
   Size? childSize;
 
   void getOffset() {
-    final RenderBox renderBox =
-        (containerKey.currentContext!.findRenderObject() as RenderBox?)!;
+    final RenderBox renderBox = (containerKey.currentContext!.findRenderObject() as RenderBox?)!;
     final Size size = renderBox.size;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     setState(() {
@@ -51,8 +46,7 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
                   PageRouteBuilder(
                       transitionDuration: const Duration(milliseconds: 200),
                       pageBuilder: (context, animation, secondaryAnimation) {
-                        animation =
-                            Tween(begin: 0.0, end: 1.0).animate(animation);
+                        animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                         return FadeTransition(
                             opacity: animation,
                             child: SearchFocusedMenuDetails(
@@ -70,9 +64,8 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
             child: Container(
               decoration: BoxDecoration(
                   color: Theme.of(context).hintColor,
-                  borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20))),
+                  borderRadius:
+                      const BorderRadius.only(topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
               padding: const EdgeInsets.all(0),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
