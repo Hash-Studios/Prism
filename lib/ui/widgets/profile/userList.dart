@@ -18,12 +18,9 @@ class UserList extends StatelessWidget {
       return ListTile(
         onTap: () {
           final Dialog loaderDialog = Dialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: Container(
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: Theme.of(context).primaryColor),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
               width: MediaQuery.of(context).size.width * .7,
               height: MediaQuery.of(context).size.height * .3,
               child: const Center(
@@ -32,10 +29,7 @@ class UserList extends StatelessWidget {
             ),
           );
           if (globals.prismUser.loggedIn == false) {
-            showDialog(
-                barrierDismissible: false,
-                context: context,
-                builder: (BuildContext context) => loaderDialog);
+            showDialog(barrierDismissible: false, context: context, builder: (BuildContext context) => loaderDialog);
             globals.gAuth.signInWithGoogle().then((value) {
               toasts.codeSend("Login Successful!");
               globals.prismUser.loggedIn = true;
@@ -56,10 +50,8 @@ class UserList extends StatelessWidget {
         leading: const Icon(JamIcons.log_in),
         title: Text(
           "Sign in",
-          style: TextStyle(
-              color: Theme.of(context).accentColor,
-              fontWeight: FontWeight.w500,
-              fontFamily: "Proxima Nova"),
+          style:
+              TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
         ),
         subtitle: const Text(
           "Sign in to sync data across devices",
@@ -72,15 +64,11 @@ class UserList extends StatelessWidget {
         leading: const Icon(JamIcons.user_circle),
         title: Text(
           "User",
-          style: TextStyle(
-              color: Theme.of(context).accentColor,
-              fontWeight: FontWeight.w500,
-              fontFamily: "Proxima Nova"),
+          style:
+              TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
         ),
         subtitle: Text(
-          globals.prismUser.loggedIn == true
-              ? "Clear favorites or logout"
-              : "Login with Google",
+          globals.prismUser.loggedIn == true ? "Clear favorites or logout" : "Login with Google",
           style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
         ),
         children: <Widget>[
@@ -124,15 +112,11 @@ class UserList extends StatelessWidget {
                           ),
                           actions: <Widget>[
                             FlatButton(
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(5)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                               onPressed: () {
                                 Navigator.of(context).pop();
-                                toasts
-                                    .error("Cleared all favourite wallpapers!");
-                                Provider.of<FavouriteProvider>(context,
-                                        listen: false)
-                                    .deleteData();
+                                toasts.error("Cleared all favourite wallpapers!");
+                                Provider.of<FavouriteProvider>(context, listen: false).deleteData();
                               },
                               child: Text(
                                 'YES',
@@ -145,8 +129,7 @@ class UserList extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: FlatButton(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(5)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                 color: Theme.of(context).errorColor,
                                 onPressed: () {
                                   Navigator.of(context).pop();
@@ -202,14 +185,11 @@ class UserList extends StatelessWidget {
                           ),
                           actions: <Widget>[
                             FlatButton(
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(5)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                               onPressed: () {
                                 Navigator.of(context).pop();
                                 toasts.error("Cleared all favourite setups!");
-                                Provider.of<FavouriteSetupProvider>(context,
-                                        listen: false)
-                                    .deleteData();
+                                Provider.of<FavouriteSetupProvider>(context, listen: false).deleteData();
                               },
                               child: Text(
                                 'YES',
@@ -222,8 +202,7 @@ class UserList extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: FlatButton(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(5)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                 color: Theme.of(context).errorColor,
                                 onPressed: () {
                                   Navigator.of(context).pop();

@@ -29,10 +29,7 @@ class _GeneralListState extends State<GeneralList> {
       ),
       title: Text(
         "General",
-        style: TextStyle(
-            color: Theme.of(context).accentColor,
-            fontWeight: FontWeight.w500,
-            fontFamily: "Proxima Nova"),
+        style: TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
       ),
       subtitle: Text(
         "Change app look & settings",
@@ -50,9 +47,7 @@ class _GeneralListState extends State<GeneralList> {
           title: Text(
             "Themes",
             style: TextStyle(
-                color: Theme.of(context).accentColor,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Proxima Nova"),
+                color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
           ),
           subtitle: const Text(
             "Toggle app theme",
@@ -66,9 +61,7 @@ class _GeneralListState extends State<GeneralList> {
             title: Text(
               "Clear Cache",
               style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Clear locally cached images",
@@ -121,9 +114,7 @@ class _GeneralListState extends State<GeneralList> {
             title: Text(
               "Show Following Feed",
               style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
             ),
             subtitle: followers
                 ? const Text(
@@ -150,9 +141,7 @@ class _GeneralListState extends State<GeneralList> {
             title: Text(
               "Show Anime Wallpapers",
               style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
             ),
             subtitle: categories == 111
                 ? const Text(
@@ -185,9 +174,7 @@ class _GeneralListState extends State<GeneralList> {
             title: Text(
               "Show Sketchy Wallpapers",
               style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
             ),
             subtitle: purity == 110
                 ? const Text(
@@ -219,9 +206,7 @@ class _GeneralListState extends State<GeneralList> {
           title: Text(
             "Restart App",
             style: TextStyle(
-                color: Theme.of(context).accentColor,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Proxima Nova"),
+                color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
           ),
           subtitle: const Text(
             "Force the application to restart",

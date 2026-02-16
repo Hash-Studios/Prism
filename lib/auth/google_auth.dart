@@ -30,18 +30,15 @@ class GoogleAuth {
   Future<String> signInWithGoogle() async {
     isLoading = true;
     prefs = await Hive.openBox('prefs');
-    final GoogleSignInAccount? googleSignInAccount =
-        await googleSignIn.signIn();
-    final GoogleSignInAuthentication googleSignInAuthentication =
-        await googleSignInAccount!.authentication;
+    final GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
+    final GoogleSignInAuthentication googleSignInAuthentication = await googleSignInAccount!.authentication;
 
     final AuthCredential credential = GoogleAuthProvider.credential(
       accessToken: googleSignInAuthentication.accessToken,
       idToken: googleSignInAuthentication.idToken,
     );
 
-    final UserCredential authResult =
-        await _auth.signInWithCredential(credential);
+    final UserCredential authResult = await _auth.signInWithCredential(credential);
     final User? user = authResult.user;
     assert(user!.email != null);
     assert(user!.displayName != null);
@@ -57,10 +54,7 @@ class GoogleAuth {
       if (usersData[0] != null && usersData[1] != null) {
         final doc = usersData[1]!;
         globals.prismUser = PrismUsersV2.fromDocumentSnapshot(doc, user);
-        FirebaseFirestore.instance
-            .collection(USER_NEW_COLLECTION)
-            .doc(globals.prismUser.id)
-            .update({
+        FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         });
@@ -80,10 +74,7 @@ class GoogleAuth {
       else if (usersData[0] == null && usersData[1] != null) {
         final doc = usersData[1]!;
         globals.prismUser = PrismUsersV2.fromDocumentSnapshot(doc, user);
-        FirebaseFirestore.instance
-            .collection(USER_NEW_COLLECTION)
-            .doc(globals.prismUser.id)
-            .update({
+        FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         });
@@ -158,10 +149,7 @@ class GoogleAuth {
     });
     await Purchases.reset();
     try {
-      FirebaseFirestore.instance
-          .collection(USER_NEW_COLLECTION)
-          .doc(globals.prismUser.id)
-          .update({
+      FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
         'loggedIn': false,
       });
     } catch (e, st) {
@@ -180,27 +168,22 @@ class GoogleAuth {
   }
 
   Future<DocumentSnapshot?> getUserOLD(User? user) async {
-    final QuerySnapshot result = await FirebaseFirestore.instance
-        .collection(USER_OLD_COLLECTION)
-        .where('id', isEqualTo: user!.uid)
-        .get();
+    final QuerySnapshot result =
+        await FirebaseFirestore.instance.collection(USER_OLD_COLLECTION).where('id', isEqualTo: user!.uid).get();
     final List<DocumentSnapshot> documents = result.docs;
     return documents.isNotEmpty ? documents.first : null;
   }
 
   Future<DocumentSnapshot?> getUserNEW(User? user) async {
-    final QuerySnapshot result = await FirebaseFirestore.instance
-        .collection(USER_NEW_COLLECTION)
-        .where('id', isEqualTo: user!.uid)
-        .get();
+    final QuerySnapshot result =
+        await FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).where('id', isEqualTo: user!.uid).get();
     final List<DocumentSnapshot> documents = result.docs;
     return documents.isNotEmpty ? documents.first : null;
   }
 
   Future<List<DocumentSnapshot?>> getUsersData(User? user) async {
     late final List<DocumentSnapshot?> output;
-    await Future.wait([getUserOLD(user), getUserNEW(user)])
-        .then((value) => output = value);
+    await Future.wait([getUserOLD(user), getUserNEW(user)]).then((value) => output = value);
     return output;
   }
 }

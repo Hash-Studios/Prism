@@ -58,8 +58,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       onWillPop: () async {
         if (_currentPage != 0) {
           onboardingCarouselController.previousPage(
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeOutCubic);
+              duration: const Duration(milliseconds: 150), curve: Curves.easeOutCubic);
           return false;
         }
         return true;
@@ -77,9 +76,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 110, 0, 8),
-                          child: image1),
+                      Padding(padding: const EdgeInsets.fromLTRB(0, 110, 0, 8), child: image1),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: const [
@@ -129,9 +126,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 110, 0, 8),
-                          child: image2),
+                      Padding(padding: const EdgeInsets.fromLTRB(0, 110, 0, 8), child: image2),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -164,17 +159,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 scrollDirection: Axis.horizontal,
                                 children: [
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(5),
                                       child: MaterialButton(
                                         color: Theme.of(context).hintColor,
                                         padding: EdgeInsets.zero,
                                         onPressed: () {
-                                          Provider.of<ThemeModeExtended>(
-                                                  context,
-                                                  listen: false)
+                                          Provider.of<ThemeModeExtended>(context, listen: false)
                                               .changeThemeMode("Light");
 
                                           setState(() {
@@ -184,37 +176,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         child: Stack(
                                           children: [
                                             Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.27,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.06,
+                                              width: MediaQuery.of(context).size.width * 0.27,
+                                              height: MediaQuery.of(context).size.height * 0.06,
                                               decoration: BoxDecoration(
-                                                border: Border.all(
-                                                    color: Colors.black12),
-                                                borderRadius:
-                                                    BorderRadius.circular(5),
+                                                border: Border.all(color: Colors.black12),
+                                                borderRadius: BorderRadius.circular(5),
                                                 color: Colors.white,
                                               ),
                                               child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
+                                                mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
                                                   Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            4.0),
+                                                    padding: const EdgeInsets.all(4.0),
                                                     child: Text(
                                                       "Light",
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .subtitle2!
-                                                          .copyWith(
-                                                              color:
-                                                                  Colors.black),
+                                                          .copyWith(color: Colors.black),
                                                     ),
                                                   ),
                                                 ],
@@ -222,25 +201,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             ),
                                             if (selectedTheme == 1)
                                               Container(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.27,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.06,
+                                                width: MediaQuery.of(context).size.width * 0.27,
+                                                height: MediaQuery.of(context).size.height * 0.06,
                                                 decoration: BoxDecoration(
-                                                    color: Colors.black
-                                                        .withOpacity(0.5),
-                                                    border: Border.all(
-                                                        color: Colors.black45),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            5)),
+                                                    color: Colors.black.withOpacity(0.5),
+                                                    border: Border.all(color: Colors.black45),
+                                                    borderRadius: BorderRadius.circular(5)),
                                                 child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
+                                                  mainAxisAlignment: MainAxisAlignment.center,
                                                   children: const [
                                                     Icon(
                                                       JamIcons.check,
@@ -257,17 +225,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     ),
                                   ),
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(5),
                                       child: MaterialButton(
                                         color: Theme.of(context).hintColor,
                                         padding: EdgeInsets.zero,
                                         onPressed: () {
-                                          Provider.of<ThemeModeExtended>(
-                                                  context,
-                                                  listen: false)
+                                          Provider.of<ThemeModeExtended>(context, listen: false)
                                               .changeThemeMode("Dark");
                                           setState(() {
                                             selectedTheme = 2;
@@ -276,36 +241,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         child: Stack(
                                           children: [
                                             Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.27,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.06,
+                                              width: MediaQuery.of(context).size.width * 0.27,
+                                              height: MediaQuery.of(context).size.height * 0.06,
                                               decoration: BoxDecoration(
-                                                  border: Border.all(
-                                                      color: Colors.black12),
-                                                  borderRadius:
-                                                      BorderRadius.circular(5),
+                                                  border: Border.all(color: Colors.black12),
+                                                  borderRadius: BorderRadius.circular(5),
                                                   color: Colors.black),
                                               child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
+                                                mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
                                                   Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            4.0),
+                                                    padding: const EdgeInsets.all(4.0),
                                                     child: Text(
                                                       "Dark",
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .subtitle2!
-                                                          .copyWith(
-                                                              color:
-                                                                  Colors.white),
+                                                          .copyWith(color: Colors.white),
                                                     ),
                                                   ),
                                                 ],
@@ -313,25 +265,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             ),
                                             if (selectedTheme == 2)
                                               Container(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.27,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.06,
+                                                width: MediaQuery.of(context).size.width * 0.27,
+                                                height: MediaQuery.of(context).size.height * 0.06,
                                                 decoration: BoxDecoration(
-                                                    color: Colors.white
-                                                        .withOpacity(0.5),
-                                                    border: Border.all(
-                                                        color: Colors.black45),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            5)),
+                                                    color: Colors.white.withOpacity(0.5),
+                                                    border: Border.all(color: Colors.black45),
+                                                    borderRadius: BorderRadius.circular(5)),
                                                 child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
+                                                  mainAxisAlignment: MainAxisAlignment.center,
                                                   children: const [
                                                     Icon(
                                                       JamIcons.check,
@@ -348,17 +289,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     ),
                                   ),
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(5),
                                       child: MaterialButton(
                                         color: Theme.of(context).hintColor,
                                         padding: EdgeInsets.zero,
                                         onPressed: () {
-                                          Provider.of<ThemeModeExtended>(
-                                                  context,
-                                                  listen: false)
+                                          Provider.of<ThemeModeExtended>(context, listen: false)
                                               .changeThemeMode("System");
                                           setState(() {
                                             selectedTheme = 3;
@@ -367,47 +305,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         child: Stack(
                                           children: [
                                             Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.27,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.06,
+                                              width: MediaQuery.of(context).size.width * 0.27,
+                                              height: MediaQuery.of(context).size.height * 0.06,
                                               decoration: BoxDecoration(
-                                                border: Border.all(
-                                                    color: Colors.black12),
-                                                borderRadius:
-                                                    BorderRadius.circular(5),
-                                                color: MediaQuery.of(context)
-                                                            .platformBrightness ==
-                                                        Brightness.dark
+                                                border: Border.all(color: Colors.black12),
+                                                borderRadius: BorderRadius.circular(5),
+                                                color: MediaQuery.of(context).platformBrightness == Brightness.dark
                                                     ? Colors.black
                                                     : Colors.white,
                                               ),
                                               child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
+                                                mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
                                                   Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            4.0),
+                                                    padding: const EdgeInsets.all(4.0),
                                                     child: Text(
                                                       "System",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .subtitle2!
-                                                          .copyWith(
-                                                              color: MediaQuery.of(
-                                                                              context)
-                                                                          .platformBrightness ==
-                                                                      Brightness
-                                                                          .dark
-                                                                  ? Colors.white
-                                                                  : Colors
-                                                                      .black),
+                                                      style: Theme.of(context).textTheme.subtitle2!.copyWith(
+                                                          color: MediaQuery.of(context).platformBrightness ==
+                                                                  Brightness.dark
+                                                              ? Colors.white
+                                                              : Colors.black),
                                                     ),
                                                   ),
                                                 ],
@@ -415,40 +333,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             ),
                                             if (selectedTheme == 3)
                                               Container(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.27,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.06,
+                                                width: MediaQuery.of(context).size.width * 0.27,
+                                                height: MediaQuery.of(context).size.height * 0.06,
                                                 decoration: BoxDecoration(
-                                                    color: MediaQuery.of(
-                                                                    context)
-                                                                .platformBrightness ==
-                                                            Brightness.dark
-                                                        ? Colors.white
-                                                            .withOpacity(0.5)
-                                                        : Colors.black
-                                                            .withOpacity(0.5),
-                                                    border: Border.all(
-                                                        color: Colors.black45),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            5)),
+                                                    color: MediaQuery.of(context).platformBrightness == Brightness.dark
+                                                        ? Colors.white.withOpacity(0.5)
+                                                        : Colors.black.withOpacity(0.5),
+                                                    border: Border.all(color: Colors.black45),
+                                                    borderRadius: BorderRadius.circular(5)),
                                                 child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
+                                                  mainAxisAlignment: MainAxisAlignment.center,
                                                   children: [
                                                     Icon(
                                                       JamIcons.check,
-                                                      color: MediaQuery.of(
-                                                                      context)
-                                                                  .platformBrightness ==
-                                                              Brightness.dark
-                                                          ? Colors.black
-                                                          : Colors.white,
+                                                      color:
+                                                          MediaQuery.of(context).platformBrightness == Brightness.dark
+                                                              ? Colors.black
+                                                              : Colors.white,
                                                     ),
                                                   ],
                                                 ),
@@ -495,9 +396,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 110, 0, 8),
-                          child: image3),
+                      Padding(padding: const EdgeInsets.fromLTRB(0, 110, 0, 8), child: image3),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: const [
@@ -556,19 +455,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         onPressed: _currentPage != 2
                             ? () {
                                 onboardingCarouselController.animateToPage(2,
-                                    duration: const Duration(milliseconds: 250),
-                                    curve: Curves.easeOutCubic);
+                                    duration: const Duration(milliseconds: 250), curve: Curves.easeOutCubic);
                               }
                             : () {
                                 main.prefs.put('onboarded_new', true);
                                 Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => SplashWidget()));
+                                    context, MaterialPageRoute(builder: (context) => SplashWidget()));
                               },
-                        style: ButtonStyle(
-                            overlayColor: MaterialStateColor.resolveWith(
-                                (states) => Colors.white10)),
+                        style: ButtonStyle(overlayColor: MaterialStateColor.resolveWith((states) => Colors.white10)),
                         child: SizedBox(
                           width: 75,
                           child: Text(
@@ -588,8 +482,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         onPressed: _currentPage != 2
                             ? () {
                                 onboardingCarouselController.nextPage(
-                                    duration: const Duration(milliseconds: 250),
-                                    curve: Curves.easeOutCubic);
+                                    duration: const Duration(milliseconds: 250), curve: Curves.easeOutCubic);
                               }
                             : isSignedIn!
                                 ? () {
@@ -601,27 +494,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         setState(() {
                                           isLoading = true;
                                         });
-                                        await globals.gAuth
-                                            .signInWithGoogle()
-                                            .then((value) {
+                                        await globals.gAuth.signInWithGoogle().then((value) {
                                           toasts.codeSend("Login Successful!");
                                           globals.prismUser.loggedIn = true;
-                                          main.prefs.put(main.userHiveKey,
-                                              globals.prismUser);
-                                          Future.delayed(const Duration(
-                                                  milliseconds: 500))
-                                              .then((value) {
-                                            main.prefs
-                                                .put('onboarded_new', true);
+                                          main.prefs.put(main.userHiveKey, globals.prismUser);
+                                          Future.delayed(const Duration(milliseconds: 500)).then((value) {
+                                            main.prefs.put('onboarded_new', true);
                                             Navigator.pushReplacement(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const OptionalInfo3(
-                                                  heading:
-                                                      'Follow top creators',
-                                                  subheading:
-                                                      'Never miss the latest and greatest',
+                                                builder: (context) => const OptionalInfo3(
+                                                  heading: 'Follow top creators',
+                                                  subheading: 'Never miss the latest and greatest',
                                                   showSkip: false,
                                                   skipText: "Skip",
                                                   doneText: "DONE",
@@ -632,20 +516,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         }).catchError((e) {
                                           logger.d(e.toString());
                                           globals.prismUser.loggedIn = false;
-                                          main.prefs.put(main.userHiveKey,
-                                              globals.prismUser);
-                                          toasts.error(
-                                              "Something went wrong, please try again!");
+                                          main.prefs.put(main.userHiveKey, globals.prismUser);
+                                          toasts.error("Something went wrong, please try again!");
                                         });
                                         setState(() {
                                           isLoading = false;
-                                          isSignedIn =
-                                              globals.prismUser.loggedIn;
+                                          isSignedIn = globals.prismUser.loggedIn;
                                         });
                                       },
                         style: ButtonStyle(
-                          backgroundColor: MaterialStateColor.resolveWith(
-                              (states) => Colors.white),
+                          backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
                         ),
                         child: SizedBox(
                           width: 60,
@@ -675,9 +555,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             height: 20,
                                             width: 20,
                                             child: CircularProgressIndicator(
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                      Color(0xFFE57697)),
+                                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE57697)),
                                             ),
                                           ),
                                         )

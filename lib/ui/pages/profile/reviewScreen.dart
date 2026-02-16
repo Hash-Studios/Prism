@@ -27,8 +27,7 @@ class ReviewScreen extends StatefulWidget {
   _ReviewScreenState createState() => _ReviewScreenState();
 }
 
-class _ReviewScreenState extends State<ReviewScreen>
-    with SingleTickerProviderStateMixin {
+class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderStateMixin {
   TabController? tabController;
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
@@ -58,12 +57,10 @@ class _ReviewScreenState extends State<ReviewScreen>
                 ),
                 Container(
                   margin: const EdgeInsets.only(left: 3, bottom: 5),
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).errorColor,
-                      borderRadius: BorderRadius.circular(500)),
+                  decoration:
+                      BoxDecoration(color: Theme.of(context).errorColor, borderRadius: BorderRadius.circular(500)),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 1.0, horizontal: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
                     child: Text(
                       "BETA",
                       style: TextStyle(
@@ -92,19 +89,13 @@ class _ReviewScreenState extends State<ReviewScreen>
                 Tab(
                   child: Text(
                     "Wallpapers",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyText2!
-                        .copyWith(color: Theme.of(context).accentColor),
+                    style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
                 Tab(
                   child: Text(
                     "Setups",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyText2!
-                        .copyWith(color: Theme.of(context).accentColor),
+                    style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                   ),
                 )
               ]),
@@ -132,8 +123,7 @@ class _WallReviewState extends State<WallReview> {
   @override
   Widget build(BuildContext context) {
     final CollectionReference walls = firestore.collection('walls');
-    final CollectionReference rejectedWalls =
-        firestore.collection('rejectedWalls');
+    final CollectionReference rejectedWalls = firestore.collection('rejectedWalls');
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -142,16 +132,14 @@ class _WallReviewState extends State<WallReview> {
                   .where("email", isEqualTo: globals.prismUser.email)
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
-              builder: (BuildContext context,
-                  AsyncSnapshot<QuerySnapshot> snapshot) {
+              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (!snapshot.hasData) {
                   return Container();
                 } else {
                   return Column(
                     children: List.generate(
                       snapshot.data!.docs.length,
-                      (int index) =>
-                          RejectedWallTile(snapshot.data!.docs[index]),
+                      (int index) => RejectedWallTile(snapshot.data!.docs[index]),
                     ),
                   );
                 }
@@ -162,8 +150,7 @@ class _WallReviewState extends State<WallReview> {
                   .where("review", isEqualTo: false)
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
-              builder: (BuildContext context,
-                  AsyncSnapshot<QuerySnapshot> snapshot) {
+              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (!snapshot.hasData) {
                   return Center(
                     child: Loader(),
@@ -217,14 +204,8 @@ class WallTile extends StatelessWidget {
                         width: 8,
                       ),
                       Text(
-                        formatter.format(
-                            (wallpaper.data()!["createdAt"] as Timestamp)
-                                .toDate()
-                                .toLocal()),
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyText2!
-                            .copyWith(color: Theme.of(context).accentColor),
+                        formatter.format((wallpaper.data()!["createdAt"] as Timestamp).toDate().toLocal()),
+                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                       ),
                     ],
                   ),
@@ -239,14 +220,11 @@ class WallTile extends StatelessWidget {
                                 context,
                                 CupertinoPageRoute(
                                     builder: (context) => PhotoView(
-                                          onTapUp:
-                                              (context, details, controller) {
+                                          onTapUp: (context, details, controller) {
                                             Navigator.pop(context);
                                           },
-                                          imageProvider:
-                                              CachedNetworkImageProvider(
-                                            wallpaper.data()!["wallpaper_url"]
-                                                as String,
+                                          imageProvider: CachedNetworkImageProvider(
+                                            wallpaper.data()!["wallpaper_url"] as String,
                                           ),
                                         ),
                                     fullscreenDialog: true));
@@ -255,8 +233,7 @@ class WallTile extends StatelessWidget {
                             height: 240,
                             width: 120,
                             child: CachedNetworkImage(
-                              imageUrl: wallpaper.data()!["wallpaper_thumb"]
-                                  as String,
+                              imageUrl: wallpaper.data()!["wallpaper_thumb"] as String,
                               fit: BoxFit.contain,
                             ),
                           ),
@@ -281,8 +258,7 @@ class WallTile extends StatelessWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyText2!
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
+                                      .copyWith(color: Theme.of(context).accentColor),
                                 ),
                               ],
                             ),
@@ -303,8 +279,7 @@ class WallTile extends StatelessWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyText2!
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
+                                      .copyWith(color: Theme.of(context).accentColor),
                                 ),
                               ],
                             ),
@@ -325,8 +300,7 @@ class WallTile extends StatelessWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyText2!
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
+                                      .copyWith(color: Theme.of(context).accentColor),
                                 ),
                               ],
                             ),
@@ -342,10 +316,7 @@ class WallTile extends StatelessWidget {
                               onPressed: () {},
                               label: Text(
                                 "IN REVIEW",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyText2!
-                                    .copyWith(color: Colors.black),
+                                style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.black),
                               ),
                             ),
                             const SizedBox(
@@ -359,57 +330,38 @@ class WallTile extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: Icon(JamIcons.download,
-                                        color: Theme.of(context).primaryColor),
+                                    icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
                                     onPressed: () async {
-                                      final status =
-                                          await Permission.storage.status;
+                                      final status = await Permission.storage.status;
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link = wallpaper
-                                          .data()!["wallpaper_url"]
-                                          .toString();
+                                      final link = wallpaper.data()!["wallpaper_url"].toString();
                                       logger.d(link);
 
-                                      final androidInfo =
-                                          await DeviceInfoPlugin().androidInfo;
+                                      final androidInfo = await DeviceInfoPlugin().androidInfo;
                                       final sdkInt = androidInfo.version.sdkInt;
                                       logger.d('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
-                                      main.localNotification
-                                          .createDownloadNotification();
+                                      main.localNotification.createDownloadNotification();
 
                                       if (sdkInt >= 30) {
-                                        await platform.invokeMethod(
-                                            'save_image',
-                                            {"link": link}).then((value) {
+                                        await platform.invokeMethod('save_image', {"link": link}).then((value) {
                                           if (value as bool) {
-                                            analytics.logEvent(
-                                                name: 'download_own_wall',
-                                                parameters: {'link': link});
-                                            toasts.codeSend(
-                                                "Wall Downloaded in Pictures/Prism!");
-                                            main.localNotification
-                                                .cancelDownloadNotification();
+                                            analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
+                                            toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+                                            main.localNotification.cancelDownloadNotification();
                                           } else {
-                                            toasts.error(
-                                                "Couldn't download! Please Retry!");
+                                            toasts.error("Couldn't download! Please Retry!");
                                           }
                                         }).catchError((e) {
                                           logger.d(e.toString());
                                         });
                                       } else {
-                                        GallerySaver.saveImage(link,
-                                                albumName: "Prism")
-                                            .then((value) {
-                                          analytics.logEvent(
-                                              name: 'download_own_wall',
-                                              parameters: {'link': link});
-                                          toasts.codeSend(
-                                              "Wall Downloaded in Internal Storage/Prism!");
-                                          main.localNotification
-                                              .cancelDownloadNotification();
+                                        GallerySaver.saveImage(link, albumName: "Prism").then((value) {
+                                          analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
+                                          toasts.codeSend("Wall Downloaded in Internal Storage/Prism!");
+                                          main.localNotification.cancelDownloadNotification();
                                         }).catchError((e) {});
                                       }
                                     },
@@ -424,21 +376,16 @@ class WallTile extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: const Icon(JamIcons.trash,
-                                        color: Colors.white),
+                                    icon: const Icon(JamIcons.trash, color: Colors.white),
                                     onPressed: () async {
-                                      final AlertDialog deleteWallPopUp =
-                                          AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
+                                      final AlertDialog deleteWallPopUp = AlertDialog(
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                         title: Text(
                                           'Delete this wallpaper?',
                                           style: TextStyle(
                                               fontWeight: FontWeight.w700,
                                               fontSize: 16,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                              color: Theme.of(context).accentColor),
                                         ),
                                         content: Text(
                                           "This is permanent, and this action can't be undone!",
@@ -446,23 +393,16 @@ class WallTile extends StatelessWidget {
                                               fontFamily: "Proxima Nova",
                                               fontWeight: FontWeight.normal,
                                               fontSize: 14,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                              color: Theme.of(context).accentColor),
                                         ),
                                         actions: [
                                           FlatButton(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(5)),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).hintColor,
                                             onPressed: () async {
                                               Navigator.pop(context);
-                                              await firestore
-                                                  .collection("walls")
-                                                  .doc(wallpaper.id)
-                                                  .delete();
-                                              toasts.codeSend(
-                                                  "Wallpaper successfully deleted from server!");
+                                              await firestore.collection("walls").doc(wallpaper.id).delete();
+                                              toasts.codeSend("Wallpaper successfully deleted from server!");
                                             },
                                             child: const Text(
                                               'DELETE',
@@ -473,9 +413,7 @@ class WallTile extends StatelessWidget {
                                             ),
                                           ),
                                           FlatButton(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(5)),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).errorColor,
                                             onPressed: () {
                                               Navigator.of(context).pop();
@@ -489,19 +427,14 @@ class WallTile extends StatelessWidget {
                                             ),
                                           ),
                                         ],
-                                        backgroundColor:
-                                            Theme.of(context).primaryColor,
-                                        actionsPadding:
-                                            const EdgeInsets.fromLTRB(
-                                                10, 0, 10, 0),
+                                        backgroundColor: Theme.of(context).primaryColor,
+                                        actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                                       );
 
                                       showModal(
                                           context: context,
-                                          configuration:
-                                              const FadeScaleTransitionConfiguration(),
-                                          builder: (BuildContext context) =>
-                                              deleteWallPopUp);
+                                          configuration: const FadeScaleTransitionConfiguration(),
+                                          builder: (BuildContext context) => deleteWallPopUp);
                                     },
                                   ),
                                 ),
@@ -556,14 +489,8 @@ class RejectedWallTile extends StatelessWidget {
                         width: 8,
                       ),
                       Text(
-                        formatter.format(
-                            (wallpaper.data()!["createdAt"] as Timestamp)
-                                .toDate()
-                                .toLocal()),
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyText2!
-                            .copyWith(color: Theme.of(context).accentColor),
+                        formatter.format((wallpaper.data()!["createdAt"] as Timestamp).toDate().toLocal()),
+                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                       ),
                     ],
                   ),
@@ -578,14 +505,11 @@ class RejectedWallTile extends StatelessWidget {
                                 context,
                                 CupertinoPageRoute(
                                     builder: (context) => PhotoView(
-                                          onTapUp:
-                                              (context, details, controller) {
+                                          onTapUp: (context, details, controller) {
                                             Navigator.pop(context);
                                           },
-                                          imageProvider:
-                                              CachedNetworkImageProvider(
-                                            wallpaper.data()!["wallpaper_url"]
-                                                as String,
+                                          imageProvider: CachedNetworkImageProvider(
+                                            wallpaper.data()!["wallpaper_url"] as String,
                                           ),
                                         ),
                                     fullscreenDialog: true));
@@ -594,8 +518,7 @@ class RejectedWallTile extends StatelessWidget {
                             height: 240,
                             width: 120,
                             child: CachedNetworkImage(
-                              imageUrl: wallpaper.data()!["wallpaper_thumb"]
-                                  as String,
+                              imageUrl: wallpaper.data()!["wallpaper_thumb"] as String,
                               fit: BoxFit.contain,
                             ),
                           ),
@@ -620,8 +543,7 @@ class RejectedWallTile extends StatelessWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyText2!
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
+                                      .copyWith(color: Theme.of(context).accentColor),
                                 ),
                               ],
                             ),
@@ -642,8 +564,7 @@ class RejectedWallTile extends StatelessWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyText2!
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
+                                      .copyWith(color: Theme.of(context).accentColor),
                                 ),
                               ],
                             ),
@@ -664,8 +585,7 @@ class RejectedWallTile extends StatelessWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyText2!
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
+                                      .copyWith(color: Theme.of(context).accentColor),
                                 ),
                               ],
                             ),
@@ -681,10 +601,7 @@ class RejectedWallTile extends StatelessWidget {
                               onPressed: () {},
                               label: Text(
                                 "REJECTED",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyText2!
-                                    .copyWith(color: Colors.white),
+                                style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.white),
                               ),
                             ),
                             const SizedBox(
@@ -698,57 +615,38 @@ class RejectedWallTile extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: Icon(JamIcons.download,
-                                        color: Theme.of(context).primaryColor),
+                                    icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
                                     onPressed: () async {
-                                      final status =
-                                          await Permission.storage.status;
+                                      final status = await Permission.storage.status;
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link = wallpaper
-                                          .data()!["wallpaper_url"]
-                                          .toString();
+                                      final link = wallpaper.data()!["wallpaper_url"].toString();
                                       logger.d(link);
 
-                                      final androidInfo =
-                                          await DeviceInfoPlugin().androidInfo;
+                                      final androidInfo = await DeviceInfoPlugin().androidInfo;
                                       final sdkInt = androidInfo.version.sdkInt;
                                       logger.d('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
-                                      main.localNotification
-                                          .createDownloadNotification();
+                                      main.localNotification.createDownloadNotification();
 
                                       if (sdkInt >= 30) {
-                                        await platform.invokeMethod(
-                                            'save_image',
-                                            {"link": link}).then((value) {
+                                        await platform.invokeMethod('save_image', {"link": link}).then((value) {
                                           if (value as bool) {
-                                            analytics.logEvent(
-                                                name: 'download_own_wall',
-                                                parameters: {'link': link});
-                                            toasts.codeSend(
-                                                "Wall Downloaded in Pictures/Prism!");
-                                            main.localNotification
-                                                .cancelDownloadNotification();
+                                            analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
+                                            toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+                                            main.localNotification.cancelDownloadNotification();
                                           } else {
-                                            toasts.error(
-                                                "Couldn't download! Please Retry!");
+                                            toasts.error("Couldn't download! Please Retry!");
                                           }
                                         }).catchError((e) {
                                           logger.d(e.toString());
                                         });
                                       } else {
-                                        GallerySaver.saveImage(link,
-                                                albumName: "Prism")
-                                            .then((value) {
-                                          analytics.logEvent(
-                                              name: 'download_own_wall',
-                                              parameters: {'link': link});
-                                          toasts.codeSend(
-                                              "Wall Downloaded in Internal Storage/Prism!");
-                                          main.localNotification
-                                              .cancelDownloadNotification();
+                                        GallerySaver.saveImage(link, albumName: "Prism").then((value) {
+                                          analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
+                                          toasts.codeSend("Wall Downloaded in Internal Storage/Prism!");
+                                          main.localNotification.cancelDownloadNotification();
                                         }).catchError((e) {});
                                       }
                                     },
@@ -763,21 +661,16 @@ class RejectedWallTile extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: const Icon(JamIcons.trash,
-                                        color: Colors.white),
+                                    icon: const Icon(JamIcons.trash, color: Colors.white),
                                     onPressed: () async {
-                                      final AlertDialog deleteWallPopUp =
-                                          AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
+                                      final AlertDialog deleteWallPopUp = AlertDialog(
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                         title: Text(
                                           'Delete this wallpaper?',
                                           style: TextStyle(
                                               fontWeight: FontWeight.w700,
                                               fontSize: 16,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                              color: Theme.of(context).accentColor),
                                         ),
                                         content: Text(
                                           "This is permanent, and this action can't be undone!",
@@ -785,23 +678,16 @@ class RejectedWallTile extends StatelessWidget {
                                               fontFamily: "Proxima Nova",
                                               fontWeight: FontWeight.normal,
                                               fontSize: 14,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                              color: Theme.of(context).accentColor),
                                         ),
                                         actions: [
                                           FlatButton(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(5)),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).hintColor,
                                             onPressed: () async {
                                               Navigator.pop(context);
-                                              await firestore
-                                                  .collection("rejectedWalls")
-                                                  .doc(wallpaper.id)
-                                                  .delete();
-                                              toasts.codeSend(
-                                                  "Wallpaper successfully deleted from server!");
+                                              await firestore.collection("rejectedWalls").doc(wallpaper.id).delete();
+                                              toasts.codeSend("Wallpaper successfully deleted from server!");
                                             },
                                             child: const Text(
                                               'DELETE',
@@ -812,9 +698,7 @@ class RejectedWallTile extends StatelessWidget {
                                             ),
                                           ),
                                           FlatButton(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(5)),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).errorColor,
                                             onPressed: () {
                                               Navigator.of(context).pop();
@@ -828,19 +712,14 @@ class RejectedWallTile extends StatelessWidget {
                                             ),
                                           ),
                                         ],
-                                        backgroundColor:
-                                            Theme.of(context).primaryColor,
-                                        actionsPadding:
-                                            const EdgeInsets.fromLTRB(
-                                                10, 0, 10, 0),
+                                        backgroundColor: Theme.of(context).primaryColor,
+                                        actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                                       );
 
                                       showModal(
                                           context: context,
-                                          configuration:
-                                              const FadeScaleTransitionConfiguration(),
-                                          builder: (BuildContext context) =>
-                                              deleteWallPopUp);
+                                          configuration: const FadeScaleTransitionConfiguration(),
+                                          builder: (BuildContext context) => deleteWallPopUp);
                                     },
                                   ),
                                 ),
@@ -864,10 +743,7 @@ class RejectedWallTile extends StatelessWidget {
                         width: MediaQuery.of(context).size.width * 0.7,
                         child: Text(
                           "The wallpaper didn't meet our expectations. Please try uploading a good quality wallpaper.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyText2!
-                              .copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                         ),
                       ),
                     ],
@@ -892,8 +768,7 @@ class _SetupReviewState extends State<SetupReview> {
   @override
   Widget build(BuildContext context) {
     final CollectionReference setups = firestore.collection('setups');
-    final CollectionReference rejectedSetups =
-        firestore.collection('rejectedSetups');
+    final CollectionReference rejectedSetups = firestore.collection('rejectedSetups');
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -902,16 +777,14 @@ class _SetupReviewState extends State<SetupReview> {
                   .where("email", isEqualTo: globals.prismUser.email)
                   .orderBy('created_at', descending: true)
                   .snapshots(),
-              builder: (BuildContext context,
-                  AsyncSnapshot<QuerySnapshot> snapshot) {
+              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (!snapshot.hasData) {
                   return Container();
                 } else {
                   return Column(
                     children: List.generate(
                       snapshot.data!.docs.length,
-                      (int index) =>
-                          RejectedSetupTile(snapshot.data!.docs[index]),
+                      (int index) => RejectedSetupTile(snapshot.data!.docs[index]),
                     ),
                   );
                 }
@@ -922,8 +795,7 @@ class _SetupReviewState extends State<SetupReview> {
                   .where("review", isEqualTo: false)
                   .orderBy('created_at', descending: true)
                   .snapshots(),
-              builder: (BuildContext context,
-                  AsyncSnapshot<QuerySnapshot> snapshot) {
+              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (!snapshot.hasData) {
                   return Center(
                     child: Loader(),
@@ -932,8 +804,7 @@ class _SetupReviewState extends State<SetupReview> {
                   return Column(
                     children: List.generate(
                       snapshot.data!.docs.length,
-                      (int index) =>
-                          SetupTile(snapshot.data!.docs[index], false),
+                      (int index) => SetupTile(snapshot.data!.docs[index], false),
                     ),
                   );
                 }
@@ -956,14 +827,8 @@ class SetupTile extends StatelessWidget {
     return Container(
       width: MediaQuery.of(context).size.width,
       constraints: BoxConstraints(
-        minHeight: "${wallpaper.data()!["widget2"]}" != "" &&
-                "${wallpaper.data()!["widget2"]}" != null
-            ? 420
-            : 390,
-        maxHeight: "${wallpaper.data()!["widget2"]}" != "" &&
-                "${wallpaper.data()!["widget2"]}" != null
-            ? 470
-            : 440,
+        minHeight: "${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null ? 420 : 390,
+        maxHeight: "${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null ? 470 : 440,
       ),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
@@ -988,14 +853,8 @@ class SetupTile extends StatelessWidget {
                         width: 8,
                       ),
                       Text(
-                        formatter.format(
-                            (wallpaper.data()!["created_at"] as Timestamp)
-                                .toDate()
-                                .toLocal()),
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyText2!
-                            .copyWith(color: Theme.of(context).accentColor),
+                        formatter.format((wallpaper.data()!["created_at"] as Timestamp).toDate().toLocal()),
+                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                       ),
                     ],
                   ),
@@ -1012,14 +871,11 @@ class SetupTile extends StatelessWidget {
                                     context,
                                     CupertinoPageRoute(
                                         builder: (context) => PhotoView(
-                                              onTapUp: (context, details,
-                                                  controller) {
+                                              onTapUp: (context, details, controller) {
                                                 Navigator.pop(context);
                                               },
-                                              imageProvider:
-                                                  CachedNetworkImageProvider(
-                                                wallpaper.data()!["image"]
-                                                    as String,
+                                              imageProvider: CachedNetworkImageProvider(
+                                                wallpaper.data()!["image"] as String,
                                               ),
                                             ),
                                         fullscreenDialog: true));
@@ -1028,8 +884,7 @@ class SetupTile extends StatelessWidget {
                                 height: 240,
                                 width: 120,
                                 child: CachedNetworkImage(
-                                  imageUrl:
-                                      wallpaper.data()!["image"] as String,
+                                  imageUrl: wallpaper.data()!["image"] as String,
                                   fit: BoxFit.contain,
                                 ),
                               ),
@@ -1039,8 +894,7 @@ class SetupTile extends StatelessWidget {
                             ),
                             GestureDetector(
                               onTap: () {
-                                toasts.codeSend(
-                                    "${wallpaper.data()!["name"]} - ${wallpaper.data()!["desc"]}");
+                                toasts.codeSend("${wallpaper.data()!["name"]} - ${wallpaper.data()!["desc"]}");
                               },
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.3,
@@ -1049,29 +903,18 @@ class SetupTile extends StatelessWidget {
                                       text: "${wallpaper.data()!["name"]}" == ""
                                           ? "No name"
                                           : "${wallpaper.data()!["name"]}",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyText2!
-                                          .copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              decoration:
-                                                  TextDecoration.underline,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.underline,
+                                          color: Theme.of(context).accentColor),
                                       children: [
                                         TextSpan(
-                                          text: "${wallpaper.data()!["desc"]}" ==
-                                                  ""
+                                          text: "${wallpaper.data()!["desc"]}" == ""
                                               ? " - No desc"
                                               : " - ${wallpaper.data()!["desc"]}",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2!
-                                              .copyWith(
-                                                  decoration:
-                                                      TextDecoration.underline,
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                          style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                              decoration: TextDecoration.underline,
+                                              color: Theme.of(context).accentColor),
                                         )
                                       ]),
                                   overflow: TextOverflow.ellipsis,
@@ -1097,16 +940,13 @@ class SetupTile extends StatelessWidget {
                                   width: 8,
                                 ),
                                 SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.3,
+                                  width: MediaQuery.of(context).size.width * 0.3,
                                   child: Text(
                                     "${wallpaper.data()!["id"]}",
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodyText2!
-                                        .copyWith(
-                                            color:
-                                                Theme.of(context).accentColor),
+                                        .copyWith(color: Theme.of(context).accentColor),
                                   ),
                                 ),
                               ],
@@ -1116,40 +956,29 @@ class SetupTile extends StatelessWidget {
                             ),
                             GestureDetector(
                               onTap: () {
-                                if ("${wallpaper.data()!["wallpaper_url"]}" !=
-                                    "") {
-                                  if ("${wallpaper.data()!["wallpaper_url"]}"[
-                                          0] !=
-                                      "[") {
-                                    if ("${wallpaper.data()!["wall_id"]}" !=
-                                            "" &&
-                                        "${wallpaper.data()!["wall_id"]}" !=
-                                            null) {
+                                if ("${wallpaper.data()!["wallpaper_url"]}" != "") {
+                                  if ("${wallpaper.data()!["wallpaper_url"]}"[0] != "[") {
+                                    if ("${wallpaper.data()!["wall_id"]}" != "" &&
+                                        "${wallpaper.data()!["wall_id"]}" != null) {
                                       Navigator.push(
                                           context,
                                           CupertinoPageRoute(
                                               builder: (context) => PhotoView(
-                                                    onTapUp: (context, details,
-                                                        controller) {
+                                                    onTapUp: (context, details, controller) {
                                                       Navigator.pop(context);
                                                     },
-                                                    imageProvider:
-                                                        CachedNetworkImageProvider(
-                                                      wallpaper.data()![
-                                                              "wallpaper_url"]
-                                                          as String,
+                                                    imageProvider: CachedNetworkImageProvider(
+                                                      wallpaper.data()!["wallpaper_url"] as String,
                                                     ),
                                                   ),
                                               fullscreenDialog: true));
                                     } else {
-                                      launch("${wallpaper.data()!["wallpaper_url"]}")
-                                          .catchError((e) {
+                                      launch("${wallpaper.data()!["wallpaper_url"]}").catchError((e) {
                                         toasts.error("Error in link!");
                                       });
                                     }
                                   } else {
-                                    launch("${wallpaper.data()!["wallpaper_url"][1]}")
-                                        .catchError((e) {
+                                    launch("${wallpaper.data()!["wallpaper_url"][1]}").catchError((e) {
                                       toasts.error("Error in link!");
                                     });
                                   }
@@ -1167,25 +996,15 @@ class SetupTile extends StatelessWidget {
                                     width: 8,
                                   ),
                                   SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.3,
+                                    width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.data()!["wallpaper_url"]}" !=
-                                              ""
-                                          ? "${wallpaper.data()!["wallpaper_url"]}"[
-                                                      0] !=
-                                                  "["
+                                      "${wallpaper.data()!["wallpaper_url"]}" != ""
+                                          ? "${wallpaper.data()!["wallpaper_url"]}"[0] != "["
                                               ? "Wallpaper"
                                               : "${wallpaper.data()!["wallpaper_url"][0]} - ${wallpaper.data()!["wallpaper_url"][2]}"
                                           : "Wallpaper",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyText2!
-                                          .copyWith(
-                                              decoration:
-                                                  TextDecoration.underline,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                          decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
                                     ),
                                   ),
                                 ],
@@ -1197,8 +1016,7 @@ class SetupTile extends StatelessWidget {
                             GestureDetector(
                               onTap: () {
                                 if ("${wallpaper.data()!["icon_url"]}" != "") {
-                                  launch("${wallpaper.data()!["icon_url"]}")
-                                      .catchError((e) {
+                                  launch("${wallpaper.data()!["icon_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                   });
                                 } else {
@@ -1215,38 +1033,26 @@ class SetupTile extends StatelessWidget {
                                     width: 8,
                                   ),
                                   SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.3,
+                                    width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.data()!["icon"]}" == ""
-                                          ? "No icon"
-                                          : "${wallpaper.data()!["icon"]}",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyText2!
-                                          .copyWith(
-                                              decoration:
-                                                  TextDecoration.underline,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                      "${wallpaper.data()!["icon"]}" == "" ? "No icon" : "${wallpaper.data()!["icon"]}",
+                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                          decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            if ("${wallpaper.data()!["widget"]}" != "" &&
-                                "${wallpaper.data()!["widget"]}" != null)
+                            if ("${wallpaper.data()!["widget"]}" != "" && "${wallpaper.data()!["widget"]}" != null)
                               const SizedBox(
                                 height: 16,
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget"]}" != "" &&
-                                "${wallpaper.data()!["widget"]}" != null)
+                            if ("${wallpaper.data()!["widget"]}" != "" && "${wallpaper.data()!["widget"]}" != null)
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()!["widget_url"]}")
-                                      .catchError((e) {
+                                  launch("${wallpaper.data()!["widget_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                   });
                                 },
@@ -1260,18 +1066,11 @@ class SetupTile extends StatelessWidget {
                                       width: 8,
                                     ),
                                     SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.3,
+                                      width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
                                         "${wallpaper.data()!["widget"]}",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2!
-                                            .copyWith(
-                                                decoration:
-                                                    TextDecoration.underline,
-                                                color: Theme.of(context)
-                                                    .accentColor),
+                                        style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                            decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
                                       ),
                                     ),
                                   ],
@@ -1279,19 +1078,16 @@ class SetupTile extends StatelessWidget {
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget2"]}" != "" &&
-                                "${wallpaper.data()!["widget2"]}" != null)
+                            if ("${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null)
                               const SizedBox(
                                 height: 16,
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget2"]}" != "" &&
-                                "${wallpaper.data()!["widget2"]}" != null)
+                            if ("${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null)
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()!["widget_url2"]}")
-                                      .catchError((e) {
+                                  launch("${wallpaper.data()!["widget_url2"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                   });
                                 },
@@ -1305,18 +1101,11 @@ class SetupTile extends StatelessWidget {
                                       width: 8,
                                     ),
                                     SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.3,
+                                      width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
                                         "${wallpaper.data()!["widget2"]}",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2!
-                                            .copyWith(
-                                                decoration:
-                                                    TextDecoration.underline,
-                                                color: Theme.of(context)
-                                                    .accentColor),
+                                        style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                            decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
                                       ),
                                     ),
                                   ],
@@ -1339,10 +1128,7 @@ class SetupTile extends StatelessWidget {
                                 onPressed: () {},
                                 label: Text(
                                   "IN REVIEW",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyText2!
-                                      .copyWith(color: Colors.black),
+                                  style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.black),
                                 ),
                               ),
                             const SizedBox(
@@ -1356,12 +1142,9 @@ class SetupTile extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: Icon(JamIcons.pencil,
-                                        color: Theme.of(context).primaryColor),
+                                    icon: Icon(JamIcons.pencil, color: Theme.of(context).primaryColor),
                                     onPressed: () {
-                                      Navigator.pushNamed(
-                                          context, editSetupDetailsRoute,
-                                          arguments: [wallpaper]);
+                                      Navigator.pushNamed(context, editSetupDetailsRoute, arguments: [wallpaper]);
                                     },
                                   ),
                                 ),
@@ -1374,50 +1157,35 @@ class SetupTile extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: Icon(JamIcons.download,
-                                        color: Theme.of(context).primaryColor),
+                                    icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
                                     onPressed: () async {
-                                      final status =
-                                          await Permission.storage.status;
+                                      final status = await Permission.storage.status;
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link =
-                                          wallpaper.data()!["image"].toString();
+                                      final link = wallpaper.data()!["image"].toString();
                                       logger.d(link);
 
-                                      final androidInfo =
-                                          await DeviceInfoPlugin().androidInfo;
+                                      final androidInfo = await DeviceInfoPlugin().androidInfo;
                                       final sdkInt = androidInfo.version.sdkInt;
                                       logger.d('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
 
                                       if (sdkInt >= 30) {
-                                        await platform.invokeMethod(
-                                            'save_setup',
-                                            {"link": link}).then((value) {
+                                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
                                           if (value as bool) {
-                                            analytics.logEvent(
-                                                name: 'download_own_setup',
-                                                parameters: {'link': link});
-                                            toasts.codeSend(
-                                                "Setup Downloaded in Pictures/Prism Setup!");
+                                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                                            toasts.codeSend("Setup Downloaded in Pictures/Prism Setup!");
                                           } else {
-                                            toasts.error(
-                                                "Couldn't download! Please Retry!");
+                                            toasts.error("Couldn't download! Please Retry!");
                                           }
                                         }).catchError((e) {
                                           logger.d(e.toString());
                                         });
                                       } else {
-                                        GallerySaver.saveImage(link,
-                                                albumName: "Prism Setups")
-                                            .then((value) {
-                                          analytics.logEvent(
-                                              name: 'download_own_setup',
-                                              parameters: {'link': link});
-                                          toasts.codeSend(
-                                              "Setup Downloaded in Internal Storage/Prism Setup!");
+                                        GallerySaver.saveImage(link, albumName: "Prism Setups").then((value) {
+                                          analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                                          toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setup!");
                                         }).catchError((e) {});
                                       }
                                     },
@@ -1436,19 +1204,13 @@ class SetupTile extends StatelessWidget {
                               ),
                               label: Text(
                                 "DELETE",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyText2!
-                                    .copyWith(color: Colors.white),
+                                style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.white),
                               ),
                               onPressed: () async {
                                 final AlertDialog deleteWallPopUp = AlertDialog(
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   title: Text(
-                                    draft
-                                        ? 'Delete this draft?'
-                                        : 'Delete this setup?',
+                                    draft ? 'Delete this draft?' : 'Delete this setup?',
                                     style: TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 16,
@@ -1464,26 +1226,16 @@ class SetupTile extends StatelessWidget {
                                   ),
                                   actions: [
                                     FlatButton(
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(5)),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                       color: Theme.of(context).hintColor,
                                       onPressed: () async {
                                         Navigator.pop(context);
                                         if (draft) {
-                                          await firestore
-                                              .collection("draftSetups")
-                                              .doc(wallpaper.id)
-                                              .delete();
-                                          toasts.codeSend(
-                                              "Draft successfully deleted from server!");
+                                          await firestore.collection("draftSetups").doc(wallpaper.id).delete();
+                                          toasts.codeSend("Draft successfully deleted from server!");
                                         } else {
-                                          await firestore
-                                              .collection("setups")
-                                              .doc(wallpaper.id)
-                                              .delete();
-                                          toasts.codeSend(
-                                              "Setup successfully deleted from server!");
+                                          await firestore.collection("setups").doc(wallpaper.id).delete();
+                                          toasts.codeSend("Setup successfully deleted from server!");
                                         }
                                       },
                                       child: const Text(
@@ -1495,9 +1247,7 @@ class SetupTile extends StatelessWidget {
                                       ),
                                     ),
                                     FlatButton(
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(5)),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                       color: Theme.of(context).errorColor,
                                       onPressed: () {
                                         Navigator.of(context).pop();
@@ -1511,18 +1261,14 @@ class SetupTile extends StatelessWidget {
                                       ),
                                     ),
                                   ],
-                                  backgroundColor:
-                                      Theme.of(context).primaryColor,
-                                  actionsPadding:
-                                      const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                                  backgroundColor: Theme.of(context).primaryColor,
+                                  actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                                 );
 
                                 showModal(
                                     context: context,
-                                    configuration:
-                                        const FadeScaleTransitionConfiguration(),
-                                    builder: (BuildContext context) =>
-                                        deleteWallPopUp);
+                                    configuration: const FadeScaleTransitionConfiguration(),
+                                    builder: (BuildContext context) => deleteWallPopUp);
                               },
                             ),
                           ],
@@ -1550,10 +1296,7 @@ class RejectedSetupTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: "${wallpaper.data()!["widget2"]}" != "" &&
-              "${wallpaper.data()!["widget2"]}" != null
-          ? 460
-          : 430,
+      height: "${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null ? 460 : 430,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1577,14 +1320,8 @@ class RejectedSetupTile extends StatelessWidget {
                         width: 8,
                       ),
                       Text(
-                        formatter.format(
-                            (wallpaper.data()!["created_at"] as Timestamp)
-                                .toDate()
-                                .toLocal()),
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyText2!
-                            .copyWith(color: Theme.of(context).accentColor),
+                        formatter.format((wallpaper.data()!["created_at"] as Timestamp).toDate().toLocal()),
+                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                       ),
                     ],
                   ),
@@ -1601,14 +1338,11 @@ class RejectedSetupTile extends StatelessWidget {
                                     context,
                                     CupertinoPageRoute(
                                         builder: (context) => PhotoView(
-                                              onTapUp: (context, details,
-                                                  controller) {
+                                              onTapUp: (context, details, controller) {
                                                 Navigator.pop(context);
                                               },
-                                              imageProvider:
-                                                  CachedNetworkImageProvider(
-                                                wallpaper.data()!["image"]
-                                                    as String,
+                                              imageProvider: CachedNetworkImageProvider(
+                                                wallpaper.data()!["image"] as String,
                                               ),
                                             ),
                                         fullscreenDialog: true));
@@ -1617,8 +1351,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 height: 240,
                                 width: 120,
                                 child: CachedNetworkImage(
-                                  imageUrl:
-                                      wallpaper.data()!["image"] as String,
+                                  imageUrl: wallpaper.data()!["image"] as String,
                                   fit: BoxFit.contain,
                                 ),
                               ),
@@ -1628,35 +1361,23 @@ class RejectedSetupTile extends StatelessWidget {
                             ),
                             GestureDetector(
                               onTap: () {
-                                toasts.codeSend(
-                                    "${wallpaper.data()!["name"]} - ${wallpaper.data()!["desc"]}");
+                                toasts.codeSend("${wallpaper.data()!["name"]} - ${wallpaper.data()!["desc"]}");
                               },
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 child: RichText(
                                   text: TextSpan(
                                       text: "${wallpaper.data()!["name"]}",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyText2!
-                                          .copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              decoration:
-                                                  TextDecoration.underline,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.underline,
+                                          color: Theme.of(context).accentColor),
                                       children: [
                                         TextSpan(
-                                          text:
-                                              " - ${wallpaper.data()!["desc"]}",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2!
-                                              .copyWith(
-                                                  decoration:
-                                                      TextDecoration.underline,
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                          text: " - ${wallpaper.data()!["desc"]}",
+                                          style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                              decoration: TextDecoration.underline,
+                                              color: Theme.of(context).accentColor),
                                         )
                                       ]),
                                   overflow: TextOverflow.ellipsis,
@@ -1682,16 +1403,13 @@ class RejectedSetupTile extends StatelessWidget {
                                   width: 8,
                                 ),
                                 SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.3,
+                                  width: MediaQuery.of(context).size.width * 0.3,
                                   child: Text(
                                     "${wallpaper.data()!["id"]}",
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodyText2!
-                                        .copyWith(
-                                            color:
-                                                Theme.of(context).accentColor),
+                                        .copyWith(color: Theme.of(context).accentColor),
                                   ),
                                 ),
                               ],
@@ -1701,37 +1419,28 @@ class RejectedSetupTile extends StatelessWidget {
                             ),
                             GestureDetector(
                               onTap: () {
-                                if ("${wallpaper.data()!["wallpaper_url"]}"[
-                                        0] !=
-                                    "[") {
+                                if ("${wallpaper.data()!["wallpaper_url"]}"[0] != "[") {
                                   if ("${wallpaper.data()!["wall_id"]}" != "" &&
-                                      "${wallpaper.data()!["wall_id"]}" !=
-                                          null) {
+                                      "${wallpaper.data()!["wall_id"]}" != null) {
                                     Navigator.push(
                                         context,
                                         CupertinoPageRoute(
                                             builder: (context) => PhotoView(
-                                                  onTapUp: (context, details,
-                                                      controller) {
+                                                  onTapUp: (context, details, controller) {
                                                     Navigator.pop(context);
                                                   },
-                                                  imageProvider:
-                                                      CachedNetworkImageProvider(
-                                                    wallpaper.data()![
-                                                            "wallpaper_url"]
-                                                        as String,
+                                                  imageProvider: CachedNetworkImageProvider(
+                                                    wallpaper.data()!["wallpaper_url"] as String,
                                                   ),
                                                 ),
                                             fullscreenDialog: true));
                                   } else {
-                                    launch("${wallpaper.data()!["wallpaper_url"]}")
-                                        .catchError((e) {
+                                    launch("${wallpaper.data()!["wallpaper_url"]}").catchError((e) {
                                       toasts.error("Error in link!");
                                     });
                                   }
                                 } else {
-                                  launch("${wallpaper.data()!["wallpaper_url"][1]}")
-                                      .catchError((e) {
+                                  launch("${wallpaper.data()!["wallpaper_url"][1]}").catchError((e) {
                                     toasts.error("Error in link!");
                                   });
                                 }
@@ -1746,22 +1455,13 @@ class RejectedSetupTile extends StatelessWidget {
                                     width: 8,
                                   ),
                                   SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.3,
+                                    width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.data()!["wallpaper_url"]}"[
-                                                  0] !=
-                                              "["
+                                      "${wallpaper.data()!["wallpaper_url"]}"[0] != "["
                                           ? "Wallpaper"
                                           : "${wallpaper.data()!["wallpaper_url"][0]} - ${wallpaper.data()!["wallpaper_url"][2]}",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyText2!
-                                          .copyWith(
-                                              decoration:
-                                                  TextDecoration.underline,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                          decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
                                     ),
                                   ),
                                 ],
@@ -1772,8 +1472,7 @@ class RejectedSetupTile extends StatelessWidget {
                             ),
                             GestureDetector(
                               onTap: () {
-                                launch("${wallpaper.data()!["icon_url"]}")
-                                    .catchError((e) {
+                                launch("${wallpaper.data()!["icon_url"]}").catchError((e) {
                                   toasts.error("Error in link!");
                                 });
                               },
@@ -1787,36 +1486,26 @@ class RejectedSetupTile extends StatelessWidget {
                                     width: 8,
                                   ),
                                   SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.3,
+                                    width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
                                       "${wallpaper.data()!["icon"]}",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyText2!
-                                          .copyWith(
-                                              decoration:
-                                                  TextDecoration.underline,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                      style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                          decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            if ("${wallpaper.data()!["widget"]}" != "" &&
-                                "${wallpaper.data()!["widget"]}" != null)
+                            if ("${wallpaper.data()!["widget"]}" != "" && "${wallpaper.data()!["widget"]}" != null)
                               const SizedBox(
                                 height: 16,
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget"]}" != "" &&
-                                "${wallpaper.data()!["widget"]}" != null)
+                            if ("${wallpaper.data()!["widget"]}" != "" && "${wallpaper.data()!["widget"]}" != null)
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()!["widget_url"]}")
-                                      .catchError((e) {
+                                  launch("${wallpaper.data()!["widget_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                   });
                                 },
@@ -1830,18 +1519,11 @@ class RejectedSetupTile extends StatelessWidget {
                                       width: 8,
                                     ),
                                     SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.3,
+                                      width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
                                         "${wallpaper.data()!["widget"]}",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2!
-                                            .copyWith(
-                                                decoration:
-                                                    TextDecoration.underline,
-                                                color: Theme.of(context)
-                                                    .accentColor),
+                                        style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                            decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
                                       ),
                                     ),
                                   ],
@@ -1849,19 +1531,16 @@ class RejectedSetupTile extends StatelessWidget {
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget2"]}" != "" &&
-                                "${wallpaper.data()!["widget2"]}" != null)
+                            if ("${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null)
                               const SizedBox(
                                 height: 16,
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()!["widget2"]}" != "" &&
-                                "${wallpaper.data()!["widget2"]}" != null)
+                            if ("${wallpaper.data()!["widget2"]}" != "" && "${wallpaper.data()!["widget2"]}" != null)
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()!["widget_url2"]}")
-                                      .catchError((e) {
+                                  launch("${wallpaper.data()!["widget_url2"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                   });
                                 },
@@ -1875,18 +1554,11 @@ class RejectedSetupTile extends StatelessWidget {
                                       width: 8,
                                     ),
                                     SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.3,
+                                      width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
                                         "${wallpaper.data()!["widget2"]}",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2!
-                                            .copyWith(
-                                                decoration:
-                                                    TextDecoration.underline,
-                                                color: Theme.of(context)
-                                                    .accentColor),
+                                        style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                            decoration: TextDecoration.underline, color: Theme.of(context).accentColor),
                                       ),
                                     ),
                                   ],
@@ -1906,10 +1578,7 @@ class RejectedSetupTile extends StatelessWidget {
                               onPressed: () {},
                               label: Text(
                                 "REJECTED",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyText2!
-                                    .copyWith(color: Colors.white),
+                                style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.white),
                               ),
                             ),
                             const SizedBox(
@@ -1923,50 +1592,35 @@ class RejectedSetupTile extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: Icon(JamIcons.download,
-                                        color: Theme.of(context).primaryColor),
+                                    icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
                                     onPressed: () async {
-                                      final status =
-                                          await Permission.storage.status;
+                                      final status = await Permission.storage.status;
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link =
-                                          wallpaper.data()!["image"].toString();
+                                      final link = wallpaper.data()!["image"].toString();
                                       logger.d(link);
 
-                                      final androidInfo =
-                                          await DeviceInfoPlugin().androidInfo;
+                                      final androidInfo = await DeviceInfoPlugin().androidInfo;
                                       final sdkInt = androidInfo.version.sdkInt;
                                       logger.d('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
 
                                       if (sdkInt >= 30) {
-                                        await platform.invokeMethod(
-                                            'save_setup',
-                                            {"link": link}).then((value) {
+                                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
                                           if (value as bool) {
-                                            analytics.logEvent(
-                                                name: 'download_own_setup',
-                                                parameters: {'link': link});
-                                            toasts.codeSend(
-                                                "Setup Downloaded in Pictures/Prism Setups!");
+                                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                                            toasts.codeSend("Setup Downloaded in Pictures/Prism Setups!");
                                           } else {
-                                            toasts.error(
-                                                "Couldn't download! Please Retry!");
+                                            toasts.error("Couldn't download! Please Retry!");
                                           }
                                         }).catchError((e) {
                                           logger.d(e.toString());
                                         });
                                       } else {
-                                        GallerySaver.saveImage(link,
-                                                albumName: "Prism Setups")
-                                            .then((value) {
-                                          analytics.logEvent(
-                                              name: 'download_own_setup',
-                                              parameters: {'link': link});
-                                          toasts.codeSend(
-                                              "Setup Downloaded in Internal Storage/Prism Setups!");
+                                        GallerySaver.saveImage(link, albumName: "Prism Setups").then((value) {
+                                          analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                                          toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setups!");
                                         }).catchError((e) {});
                                       }
                                     },
@@ -1981,21 +1635,16 @@ class RejectedSetupTile extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: const Icon(JamIcons.trash,
-                                        color: Colors.white),
+                                    icon: const Icon(JamIcons.trash, color: Colors.white),
                                     onPressed: () async {
-                                      final AlertDialog deleteWallPopUp =
-                                          AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
+                                      final AlertDialog deleteWallPopUp = AlertDialog(
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                         title: Text(
                                           'Delete this setup?',
                                           style: TextStyle(
                                               fontWeight: FontWeight.w700,
                                               fontSize: 16,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                              color: Theme.of(context).accentColor),
                                         ),
                                         content: Text(
                                           "This is permanent, and this action can't be undone!",
@@ -2003,23 +1652,16 @@ class RejectedSetupTile extends StatelessWidget {
                                               fontFamily: "Proxima Nova",
                                               fontWeight: FontWeight.normal,
                                               fontSize: 14,
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                              color: Theme.of(context).accentColor),
                                         ),
                                         actions: [
                                           FlatButton(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(5)),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).hintColor,
                                             onPressed: () async {
                                               Navigator.pop(context);
-                                              await firestore
-                                                  .collection("rejectedSetups")
-                                                  .doc(wallpaper.id)
-                                                  .delete();
-                                              toasts.codeSend(
-                                                  "Setup successfully deleted from server!");
+                                              await firestore.collection("rejectedSetups").doc(wallpaper.id).delete();
+                                              toasts.codeSend("Setup successfully deleted from server!");
                                             },
                                             child: const Text(
                                               'DELETE',
@@ -2030,9 +1672,7 @@ class RejectedSetupTile extends StatelessWidget {
                                             ),
                                           ),
                                           FlatButton(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(5)),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             color: Theme.of(context).errorColor,
                                             onPressed: () {
                                               Navigator.of(context).pop();
@@ -2046,19 +1686,14 @@ class RejectedSetupTile extends StatelessWidget {
                                             ),
                                           ),
                                         ],
-                                        backgroundColor:
-                                            Theme.of(context).primaryColor,
-                                        actionsPadding:
-                                            const EdgeInsets.fromLTRB(
-                                                10, 0, 10, 0),
+                                        backgroundColor: Theme.of(context).primaryColor,
+                                        actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                                       );
 
                                       showModal(
                                           context: context,
-                                          configuration:
-                                              const FadeScaleTransitionConfiguration(),
-                                          builder: (BuildContext context) =>
-                                              deleteWallPopUp);
+                                          configuration: const FadeScaleTransitionConfiguration(),
+                                          builder: (BuildContext context) => deleteWallPopUp);
                                     },
                                   ),
                                 ),
@@ -2082,10 +1717,7 @@ class RejectedSetupTile extends StatelessWidget {
                         width: MediaQuery.of(context).size.width * 0.7,
                         child: Text(
                           "The setup didn't meet our expectations. Please try uploading another setup.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyText2!
-                              .copyWith(color: Theme.of(context).accentColor),
+                          style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                         ),
                       ),
                     ],

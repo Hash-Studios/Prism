@@ -68,7 +68,5 @@ class PrismUsersAdapter extends TypeAdapter<PrismUsers> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is PrismUsersAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
+      other is PrismUsersAdapter && runtimeType == other.runtimeType && typeId == other.typeId;
 }

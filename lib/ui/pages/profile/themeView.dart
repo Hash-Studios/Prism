@@ -54,31 +54,25 @@ class _ThemeViewState extends State<ThemeView> {
   @override
   void initState() {
     currentTheme = Provider.of<ThemeModel>(context, listen: false).currentTheme;
-    selectedTheme =
-        Provider.of<ThemeModel>(context, listen: false).getIndex(currentTheme);
-    currentDarkTheme =
-        Provider.of<DarkThemeModel>(context, listen: false).currentTheme;
-    selectedDarkTheme = Provider.of<DarkThemeModel>(context, listen: false)
-        .getIndex(currentDarkTheme);
-    selectedAccentColor = Color(int.parse(
-        Provider.of<ThemeModel>(context, listen: false)
-            .currentTheme!
-            .errorColor
-            .toString()
-            .replaceAll("MaterialColor(primary value: Color(0xff", "")
-            .replaceAll("Color(", "")
-            .replaceAll(")", "")));
-    selectedDarkAccentColor = Color(int.parse(
-        Provider.of<DarkThemeModel>(context, listen: false)
-            .currentTheme!
-            .errorColor
-            .toString()
-            .replaceAll("MaterialColor(primary value: Color(0xff", "")
-            .replaceAll("Color(", "")
-            .replaceAll(")", "")));
+    selectedTheme = Provider.of<ThemeModel>(context, listen: false).getIndex(currentTheme);
+    currentDarkTheme = Provider.of<DarkThemeModel>(context, listen: false).currentTheme;
+    selectedDarkTheme = Provider.of<DarkThemeModel>(context, listen: false).getIndex(currentDarkTheme);
+    selectedAccentColor = Color(int.parse(Provider.of<ThemeModel>(context, listen: false)
+        .currentTheme!
+        .errorColor
+        .toString()
+        .replaceAll("MaterialColor(primary value: Color(0xff", "")
+        .replaceAll("Color(", "")
+        .replaceAll(")", "")));
+    selectedDarkAccentColor = Color(int.parse(Provider.of<DarkThemeModel>(context, listen: false)
+        .currentTheme!
+        .errorColor
+        .toString()
+        .replaceAll("MaterialColor(primary value: Color(0xff", "")
+        .replaceAll("Color(", "")
+        .replaceAll(")", "")));
     changingLight = Provider.of<ThemeModeExtended>(context, listen: false)
-            .getCurrentModeStyle(
-                SchedulerBinding.instance!.window.platformBrightness) ==
+            .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
         "Light";
     super.initState();
   }
@@ -115,8 +109,7 @@ class _ThemeViewState extends State<ThemeView> {
                       .replaceAll("Color(0xff", "")
                       .replaceAll(")", "");
                   main.prefs.put("systemOverlayColor", accentColor);
-                  analytics.logEvent(
-                      name: "accent_changed", parameters: {'color': hexString});
+                  analytics.logEvent(name: "accent_changed", parameters: {'color': hexString});
                   navStack.removeLast();
                   logger.d(navStack.toString());
                   Navigator.pop(context);
@@ -127,19 +120,14 @@ class _ThemeViewState extends State<ThemeView> {
             children: [
               Text(
                 "Theme Manager",
-                style: Theme.of(context)
-                    .textTheme
-                    .headline3!
-                    .copyWith(color: Theme.of(context).accentColor),
+                style: Theme.of(context).textTheme.headline3!.copyWith(color: Theme.of(context).accentColor),
               ),
               Container(
                 margin: const EdgeInsets.only(left: 3, bottom: 5),
-                decoration: BoxDecoration(
-                    color: Theme.of(context).errorColor,
-                    borderRadius: BorderRadius.circular(500)),
+                decoration:
+                    BoxDecoration(color: Theme.of(context).errorColor, borderRadius: BorderRadius.circular(500)),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
                   child: Text(
                     "BETA",
                     style: TextStyle(
@@ -162,14 +150,9 @@ class _ThemeViewState extends State<ThemeView> {
                   isScrollControlled: true,
                   context: context,
                   builder: (context) => PreferencePanel(
-                    selectedValue: Provider.of<ThemeModeExtended>(context,
-                                    listen: false)
-                                .currentMode ==
-                            ThemeMode.light
+                    selectedValue: Provider.of<ThemeModeExtended>(context, listen: false).currentMode == ThemeMode.light
                         ? 1
-                        : Provider.of<ThemeModeExtended>(context, listen: false)
-                                    .currentMode ==
-                                ThemeMode.dark
+                        : Provider.of<ThemeModeExtended>(context, listen: false).currentMode == ThemeMode.dark
                             ? 2
                             : 0,
                     func: (bool value) {
@@ -184,9 +167,7 @@ class _ThemeViewState extends State<ThemeView> {
               title: Text(
                 "Theme Preference",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
               ),
               subtitle: Text(
                 Provider.of<ThemeModeExtended>(context).getCurrentModeAbs(),
@@ -211,12 +192,10 @@ class _ThemeViewState extends State<ThemeView> {
                     )
                   ],
                 ),
-                width: Provider.of<ThemeModeExtended>(context).currentMode ==
-                        ThemeMode.system
+                width: Provider.of<ThemeModeExtended>(context).currentMode == ThemeMode.system
                     ? MediaQuery.of(context).size.height * 0.35 * 0.4993924666
                     : MediaQuery.of(context).size.height * 0.45 * 0.4993924666,
-                height: Provider.of<ThemeModeExtended>(context).currentMode ==
-                        ThemeMode.system
+                height: Provider.of<ThemeModeExtended>(context).currentMode == ThemeMode.system
                     ? MediaQuery.of(context).size.height * 0.35
                     : MediaQuery.of(context).size.height * 0.45,
                 child: ClipRRect(
@@ -234,11 +213,7 @@ class _ThemeViewState extends State<ThemeView> {
                                       .toString()
                                       .substring(2))
                               .replaceAll(
-                                  "E57697",
-                                  selectedAccentColor!.value
-                                      .toRadixString(16)
-                                      .toString()
-                                      .substring(2))
+                                  "E57697", selectedAccentColor!.value.toRadixString(16).toString().substring(2))
                               .replaceAll(
                                   "F0F0F0",
                                   Provider.of<ThemeModel>(context)
@@ -271,11 +246,7 @@ class _ThemeViewState extends State<ThemeView> {
                                       .toString()
                                       .substring(2))
                               .replaceAll(
-                                  "E57697",
-                                  selectedDarkAccentColor!.value
-                                      .toRadixString(16)
-                                      .toString()
-                                      .substring(2))
+                                  "E57697", selectedDarkAccentColor!.value.toRadixString(16).toString().substring(2))
                               .replaceAll(
                                   "F0F0F0",
                                   Provider.of<DarkThemeModel>(context)
@@ -300,8 +271,7 @@ class _ThemeViewState extends State<ThemeView> {
               ),
             ),
             const Divider(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode !=
-                ThemeMode.dark)
+            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.dark)
               Container(
                 width: MediaQuery.of(context).size.width,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -312,8 +282,7 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode !=
-                ThemeMode.dark)
+            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.dark)
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.07,
@@ -336,14 +305,11 @@ class _ThemeViewState extends State<ThemeView> {
                             setState(() {
                               changingLight = true;
                               selectedTheme = index;
-                              selectedAccentColor = Color(int.parse(Provider.of<
-                                      ThemeModel>(context, listen: false)
+                              selectedAccentColor = Color(int.parse(Provider.of<ThemeModel>(context, listen: false)
                                   .currentTheme!
                                   .errorColor
                                   .toString()
-                                  .replaceAll(
-                                      "MaterialColor(primary value: Color(0xff",
-                                      "")
+                                  .replaceAll("MaterialColor(primary value: Color(0xff", "")
                                   .replaceAll("Color(", "")
                                   .replaceAll(")", "")));
                             });
@@ -353,13 +319,11 @@ class _ThemeViewState extends State<ThemeView> {
                             children: [
                               Container(
                                 width: MediaQuery.of(context).size.width * 0.3,
-                                height:
-                                    MediaQuery.of(context).size.height * 0.06,
+                                height: MediaQuery.of(context).size.height * 0.06,
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.black12),
                                   borderRadius: BorderRadius.circular(10),
-                                  color: themes[themes.keys.toList()[index]]!
-                                      .hintColor,
+                                  color: themes[themes.keys.toList()[index]]!.hintColor,
                                 ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -367,16 +331,11 @@ class _ThemeViewState extends State<ThemeView> {
                                     Padding(
                                       padding: const EdgeInsets.all(4.0),
                                       child: Text(
-                                        themes.keys
-                                            .toList()[index]
-                                            .substring(2),
+                                        themes.keys.toList()[index].substring(2),
                                         style: Theme.of(context)
                                             .textTheme
                                             .subtitle2!
-                                            .copyWith(
-                                                color: themes[themes.keys
-                                                        .toList()[index]]!
-                                                    .accentColor),
+                                            .copyWith(color: themes[themes.keys.toList()[index]]!.accentColor),
                                       ),
                                     ),
                                   ],
@@ -384,14 +343,10 @@ class _ThemeViewState extends State<ThemeView> {
                               ),
                               if (index == selectedTheme)
                                 Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.3,
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.06,
+                                  width: MediaQuery.of(context).size.width * 0.3,
+                                  height: MediaQuery.of(context).size.height * 0.06,
                                   decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .accentColor
-                                          .withOpacity(0.5),
+                                      color: Theme.of(context).accentColor.withOpacity(0.5),
                                       border: Border.all(color: Colors.black45),
                                       borderRadius: BorderRadius.circular(10)),
                                   child: Column(
@@ -416,8 +371,7 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode !=
-                ThemeMode.light)
+            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.light)
               Container(
                 width: MediaQuery.of(context).size.width,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -428,8 +382,7 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode !=
-                ThemeMode.light)
+            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.light)
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.07,
@@ -447,23 +400,19 @@ class _ThemeViewState extends State<ThemeView> {
                           padding: EdgeInsets.zero,
                           onPressed: () {
                             Provider.of<DarkThemeModel>(context, listen: false)
-                                .changeThemeByID(
-                                    darkThemes.keys.toList()[index]);
+                                .changeThemeByID(darkThemes.keys.toList()[index]);
                             logger.d(selectedDarkAccentColor.toString());
                             setState(() {
                               changingLight = false;
                               selectedDarkTheme = index;
-                              selectedDarkAccentColor = Color(int.parse(Provider
-                                      .of<DarkThemeModel>(context,
-                                          listen: false)
-                                  .currentTheme!
-                                  .errorColor
-                                  .toString()
-                                  .replaceAll(
-                                      "MaterialColor(primary value: Color(0xff",
-                                      "")
-                                  .replaceAll("Color(", "")
-                                  .replaceAll(")", "")));
+                              selectedDarkAccentColor = Color(int.parse(
+                                  Provider.of<DarkThemeModel>(context, listen: false)
+                                      .currentTheme!
+                                      .errorColor
+                                      .toString()
+                                      .replaceAll("MaterialColor(primary value: Color(0xff", "")
+                                      .replaceAll("Color(", "")
+                                      .replaceAll(")", "")));
                             });
                             logger.d(selectedDarkAccentColor.toString());
                           },
@@ -471,14 +420,11 @@ class _ThemeViewState extends State<ThemeView> {
                             children: [
                               Container(
                                 width: MediaQuery.of(context).size.width * 0.3,
-                                height:
-                                    MediaQuery.of(context).size.height * 0.06,
+                                height: MediaQuery.of(context).size.height * 0.06,
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.black12),
                                   borderRadius: BorderRadius.circular(10),
-                                  color: darkThemes[
-                                          darkThemes.keys.toList()[index]]!
-                                      .hintColor,
+                                  color: darkThemes[darkThemes.keys.toList()[index]]!.hintColor,
                                 ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -486,17 +432,11 @@ class _ThemeViewState extends State<ThemeView> {
                                     Padding(
                                       padding: const EdgeInsets.all(4.0),
                                       child: Text(
-                                        darkThemes.keys
-                                            .toList()[index]
-                                            .substring(2),
+                                        darkThemes.keys.toList()[index].substring(2),
                                         style: Theme.of(context)
                                             .textTheme
                                             .subtitle2!
-                                            .copyWith(
-                                                color: darkThemes[darkThemes
-                                                        .keys
-                                                        .toList()[index]]!
-                                                    .accentColor),
+                                            .copyWith(color: darkThemes[darkThemes.keys.toList()[index]]!.accentColor),
                                       ),
                                     ),
                                   ],
@@ -504,14 +444,10 @@ class _ThemeViewState extends State<ThemeView> {
                               ),
                               if (index == selectedDarkTheme)
                                 Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.3,
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.06,
+                                  width: MediaQuery.of(context).size.width * 0.3,
+                                  height: MediaQuery.of(context).size.height * 0.06,
                                   decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .accentColor
-                                          .withOpacity(0.5),
+                                      color: Theme.of(context).accentColor.withOpacity(0.5),
                                       border: Border.all(color: Colors.black45),
                                       borderRadius: BorderRadius.circular(10)),
                                   child: Column(
@@ -537,8 +473,7 @@ class _ThemeViewState extends State<ThemeView> {
             else
               Container(),
             const Divider(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode !=
-                ThemeMode.dark)
+            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.dark)
               Container(
                 width: MediaQuery.of(context).size.width,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -549,8 +484,7 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode !=
-                ThemeMode.dark)
+            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.dark)
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.055,
@@ -565,8 +499,7 @@ class _ThemeViewState extends State<ThemeView> {
                           changingLight = true;
                           selectedAccentColor = accentColors[index];
                         });
-                        Provider.of<ThemeModel>(context, listen: false)
-                            .changeAccent(selectedAccentColor);
+                        Provider.of<ThemeModel>(context, listen: false).changeAccent(selectedAccentColor);
                       },
                       child: Stack(
                         children: [
@@ -574,10 +507,7 @@ class _ThemeViewState extends State<ThemeView> {
                             margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color:
-                                    selectedAccentColor == accentColors[index]
-                                        ? Colors.white
-                                        : Colors.white38,
+                                color: selectedAccentColor == accentColors[index] ? Colors.white : Colors.white38,
                               ),
                               color: accentColors[index],
                               shape: BoxShape.circle,
@@ -591,9 +521,7 @@ class _ThemeViewState extends State<ThemeView> {
                             Container(
                               margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .accentColor
-                                    .withOpacity(0.6),
+                                color: Theme.of(context).accentColor.withOpacity(0.6),
                                 shape: BoxShape.circle,
                               ),
                               child: SizedBox(
@@ -615,8 +543,7 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode !=
-                ThemeMode.light)
+            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.light)
               Container(
                 width: MediaQuery.of(context).size.width,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -627,8 +554,7 @@ class _ThemeViewState extends State<ThemeView> {
               )
             else
               Container(),
-            if (Provider.of<ThemeModeExtended>(context).currentMode !=
-                ThemeMode.light)
+            if (Provider.of<ThemeModeExtended>(context).currentMode != ThemeMode.light)
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height * 0.055,
@@ -643,8 +569,7 @@ class _ThemeViewState extends State<ThemeView> {
                           changingLight = false;
                           selectedDarkAccentColor = accentColors[index];
                         });
-                        Provider.of<DarkThemeModel>(context, listen: false)
-                            .changeAccent(selectedDarkAccentColor);
+                        Provider.of<DarkThemeModel>(context, listen: false).changeAccent(selectedDarkAccentColor);
                       },
                       child: Stack(
                         children: [
@@ -652,10 +577,7 @@ class _ThemeViewState extends State<ThemeView> {
                             margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: selectedDarkAccentColor ==
-                                        accentColors[index]
-                                    ? Colors.white
-                                    : Colors.white38,
+                                color: selectedDarkAccentColor == accentColors[index] ? Colors.white : Colors.white38,
                               ),
                               color: accentColors[index],
                               shape: BoxShape.circle,
@@ -669,9 +591,7 @@ class _ThemeViewState extends State<ThemeView> {
                             Container(
                               margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .accentColor
-                                    .withOpacity(0.6),
+                                color: Theme.of(context).accentColor.withOpacity(0.6),
                                 shape: BoxShape.circle,
                               ),
                               child: SizedBox(
@@ -723,9 +643,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width * 0.85;
     return Container(
-      height: MediaQuery.of(context).size.height / 2 > 400
-          ? MediaQuery.of(context).size.height / 2
-          : 400,
+      height: MediaQuery.of(context).size.height / 2 > 400 ? MediaQuery.of(context).size.height / 2 : 400,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         borderRadius: const BorderRadius.only(
@@ -744,9 +662,8 @@ class _PreferencePanelState extends State<PreferencePanel> {
                 child: Container(
                   height: 5,
                   width: 30,
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).hintColor,
-                      borderRadius: BorderRadius.circular(500)),
+                  decoration:
+                      BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(500)),
                 ),
               )
             ],
@@ -768,13 +685,10 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       widget.selectedValue = 0;
                     });
                     Navigator.pop(context);
-                    Provider.of<ThemeModeExtended>(context, listen: false)
-                        .changeThemeMode("System");
-                    widget.func!(
-                        Provider.of<ThemeModeExtended>(context, listen: false)
-                                .getCurrentModeStyle(SchedulerBinding
-                                    .instance!.window.platformBrightness) ==
-                            "Light");
+                    Provider.of<ThemeModeExtended>(context, listen: false).changeThemeMode("System");
+                    widget.func!(Provider.of<ThemeModeExtended>(context, listen: false)
+                            .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
+                        "Light");
                   },
                   child: SizedBox(
                     width: width - 20,
@@ -797,9 +711,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                         child: Text(
                           "System",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor,
-                              fontWeight: FontWeight.bold),
+                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -814,8 +726,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       widget.selectedValue = 1;
                     });
                     Navigator.pop(context);
-                    Provider.of<ThemeModeExtended>(context, listen: false)
-                        .changeThemeMode("Light");
+                    Provider.of<ThemeModeExtended>(context, listen: false).changeThemeMode("Light");
                     widget.func!(true);
                   },
                   child: SizedBox(
@@ -839,9 +750,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                         child: Text(
                           "Light",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor,
-                              fontWeight: FontWeight.bold),
+                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -856,8 +765,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       widget.selectedValue = 2;
                     });
                     Navigator.pop(context);
-                    Provider.of<ThemeModeExtended>(context, listen: false)
-                        .changeThemeMode("Dark");
+                    Provider.of<ThemeModeExtended>(context, listen: false).changeThemeMode("Dark");
                     widget.func!(false);
                   },
                   child: SizedBox(
@@ -881,9 +789,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                         child: Text(
                           "Dark",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor,
-                              fontWeight: FontWeight.bold),
+                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),

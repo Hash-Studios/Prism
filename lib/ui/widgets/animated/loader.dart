@@ -70,11 +70,10 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
-                            MediaQuery.of(context).platformBrightness) ==
+            color: Provider.of<ThemeModeExtended>(context)
+                            .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                         "Dark" &&
-                    Provider.of<DarkThemeModel>(context).currentTheme ==
-                        kDarkTheme2
+                    Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
                 ? Theme.of(context).errorColor == Colors.black
                     ? Theme.of(context).accentColor
                     : Theme.of(context).errorColor

@@ -106,8 +106,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       wallpaperResolution = res;
     });
 
-    image.length().then((value) =>
-        {wallpaperSize = "${(value / 1024 / 1024).toStringAsFixed(2)}MB"});
+    image.length().then((value) => {wallpaperSize = "${(value / 1024 / 1024).toStringAsFixed(2)}MB"});
 
     imageBytes = await image.readAsBytes();
     imageBytesThumb = await compressFile(image);
@@ -117,10 +116,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   Future deleteFile() async {
     final github = GitHub(auth: Authentication.withToken(token));
-    await github.repositories.deleteFile(RepositorySlug(gitUserName, repoName),
-        wallpaperPath, wallpaperPath, wallpaperSha, "master");
-    await github.repositories.deleteFile(RepositorySlug(gitUserName, repoName),
-        thumbPath, thumbPath, thumbSha, "master");
+    await github.repositories
+        .deleteFile(RepositorySlug(gitUserName, repoName), wallpaperPath, wallpaperPath, wallpaperSha, "master");
+    await github.repositories
+        .deleteFile(RepositorySlug(gitUserName, repoName), thumbPath, thumbPath, thumbSha, "master");
     logger.d("Files deleted");
   }
 
@@ -134,12 +133,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       final String base64ImageThumb = base64Encode(imageBytesThumb);
       final github = GitHub(auth: Authentication.withToken(token));
       await github.repositories
-          .createFile(
-              RepositorySlug(gitUserName, repoName),
-              CreateFile(
-                  message: Path.basename(image.path),
-                  content: base64Image,
-                  path: Path.basename(image.path)))
+          .createFile(RepositorySlug(gitUserName, repoName),
+              CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)))
           .then((value) => setState(() {
                 wallpaperUrl = value.content!.downloadUrl;
                 wallpaperPath = value.content!.path!;
@@ -209,9 +204,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 width: MediaQuery.of(context).size.width / 2.4,
                 height: MediaQuery.of(context).size.width / 2.4,
                 child: FlareActor(
-                  isUploading
-                      ? "assets/animations/Upload.flr"
-                      : "assets/animations/Process.flr",
+                  isUploading ? "assets/animations/Upload.flr" : "assets/animations/Process.flr",
                   animation: isUploading ? "upload" : "process",
                 ),
               )
@@ -252,8 +245,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       borderRadius: BorderRadius.circular(500),
                       child: LinearProgressIndicator(
                         backgroundColor: Theme.of(context).hintColor,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).errorColor),
+                        valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).errorColor),
                       )))
             else
               Container(),
@@ -283,8 +275,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 10,
-                            color:
-                                Theme.of(context).accentColor.withOpacity(0.6),
+                            color: Theme.of(context).accentColor.withOpacity(0.6),
                           ),
                         ),
                       ),
@@ -296,28 +287,16 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: !isProcessing && !isUploading
-              ? Theme.of(context).errorColor
-              : Theme.of(context).hintColor,
+          backgroundColor: !isProcessing && !isUploading ? Theme.of(context).errorColor : Theme.of(context).hintColor,
           disabledElevation: 0,
           onPressed: !isProcessing && !isUploading
               ? () async {
                   navStack.removeLast();
                   logger.d(navStack.toString());
                   Navigator.pop(context, [wallpaperUrl, id]);
-                  analytics.logEvent(
-                      name: 'upload_wallpaper',
-                      parameters: {'id': id, 'link': wallpaperUrl});
-                  WallStore.createRecord(
-                      id,
-                      wallpaperProvider,
-                      wallpaperThumb,
-                      wallpaperUrl,
-                      wallpaperResolution,
-                      wallpaperSize,
-                      wallpaperCategory,
-                      wallpaperDesc,
-                      fromSetupRoute ? "setup" : review);
+                  analytics.logEvent(name: 'upload_wallpaper', parameters: {'id': id, 'link': wallpaperUrl});
+                  WallStore.createRecord(id, wallpaperProvider, wallpaperThumb, wallpaperUrl, wallpaperResolution,
+                      wallpaperSize, wallpaperCategory, wallpaperDesc, fromSetupRoute ? "setup" : review);
                   Navigator.pushNamed(context, reviewRoute);
                 }
               : null,

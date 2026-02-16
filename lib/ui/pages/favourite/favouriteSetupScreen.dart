@@ -31,9 +31,7 @@ class FavouriteSetupScreen extends StatelessWidget {
           ),
           body: BottomBar(
             child: FavSetupLoader(
-              future:
-                  Provider.of<FavouriteSetupProvider>(context, listen: false)
-                      .getDataBase(),
+              future: Provider.of<FavouriteSetupProvider>(context, listen: false).getDataBase(),
             ),
           )),
     );

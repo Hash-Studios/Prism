@@ -36,8 +36,7 @@ class SetupViewScreen extends StatefulWidget {
   _SetupViewScreenState createState() => _SetupViewScreenState();
 }
 
-class _SetupViewScreenState extends State<SetupViewScreen>
-    with SingleTickerProviderStateMixin {
+class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     navStack.removeLast();
     logger.d(navStack.toString());
@@ -56,19 +55,12 @@ class _SetupViewScreenState extends State<SetupViewScreen>
 
   @override
   void initState() {
-    shakeController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
+    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments![0] as int;
     isLoading = true;
-    updateViewsSetup(Provider.of<SetupProvider>(context, listen: false)
-        .setups![index!]["id"]
-        .toString()
-        .toUpperCase());
+    updateViewsSetup(Provider.of<SetupProvider>(context, listen: false).setups![index!]["id"].toString().toUpperCase());
     _futureView = getViewsSetup(
-        Provider.of<SetupProvider>(context, listen: false)
-            .setups![index!]["id"]
-            .toString()
-            .toUpperCase());
+        Provider.of<SetupProvider>(context, listen: false).setups![index!]["id"].toString().toUpperCase());
     box = Hive.box('localFav');
     super.initState();
   }
@@ -83,9 +75,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
     setState(() {
       isLoading = true;
     });
-    Provider.of<FavouriteSetupProvider>(context, listen: false)
-        .favCheck(id, setupMap)
-        .then((value) {
+    Provider.of<FavouriteSetupProvider>(context, listen: false).favCheck(id, setupMap).then((value) {
       analytics.logEvent(name: 'setup_fav_status_changed', parameters: {
         'id': id,
       });
@@ -97,9 +87,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(shakeController)
+    final Animation<double> offsetAnimation =
+        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
           ..addStatusListener((status) {
             if (status == AnimationStatus.completed) {
               shakeController.reverse();
@@ -125,9 +114,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
           parallaxEnabled: true,
           parallaxOffset: 0.00,
           color: Colors.transparent,
-          maxHeight: MediaQuery.of(context).size.height * .70 > 600
-              ? MediaQuery.of(context).size.height * .70
-              : 600,
+          maxHeight: MediaQuery.of(context).size.height * .70 > 600 ? MediaQuery.of(context).size.height * .70 : 600,
           controller: panelController,
           onPanelOpened: () {
             setState(() {
@@ -141,9 +128,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
           },
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            height: MediaQuery.of(context).size.height * .70 > 600
-                ? MediaQuery.of(context).size.height * .70
-                : 600,
+            height: MediaQuery.of(context).size.height * .70 > 600 ? MediaQuery.of(context).size.height * .70 : 600,
             width: MediaQuery.of(context).size.width,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(30),
@@ -192,8 +177,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       forward: true,
                                       slideSide: SlideFromSlide.bottom,
                                       child: Text(
-                                        Provider.of<SetupProvider>(context,
-                                                listen: false)
+                                        Provider.of<SetupProvider>(context, listen: false)
                                             .setups![index!]["name"]
                                             .toString()
                                             .toUpperCase(),
@@ -202,10 +186,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                         style: Theme.of(context)
                                             .textTheme
                                             .headline1!
-                                            .copyWith(
-                                                fontSize: 30,
-                                                color: Theme.of(context)
-                                                    .accentColor),
+                                            .copyWith(fontSize: 30, color: Theme.of(context).accentColor),
                                       ),
                                     ),
                             ),
@@ -218,8 +199,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       slideSide: SlideFromSlide.bottom,
                                       delay: const Duration(milliseconds: 50),
                                       child: Text(
-                                        Provider.of<SetupProvider>(context,
-                                                listen: false)
+                                        Provider.of<SetupProvider>(context, listen: false)
                                             .setups![index!]["desc"]
                                             .toString(),
                                         maxLines: 2,
@@ -227,9 +207,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                         style: Theme.of(context)
                                             .textTheme
                                             .headline6!
-                                            .copyWith(
-                                                color: Theme.of(context)
-                                                    .accentColor),
+                                            .copyWith(color: Theme.of(context).accentColor),
                                       ),
                                     ),
                             ),
@@ -247,30 +225,21 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                   delay: const Duration(milliseconds: 100),
                                   slideSide: SlideFromSlide.bottom,
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: <Widget>[
                                       Column(
                                         mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: <Widget>[
                                           SizedBox(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.36,
+                                            width: MediaQuery.of(context).size.width * 0.36,
                                             child: Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      0, 5, 0, 5),
+                                              padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
                                               child: Row(
                                                 children: [
                                                   Text(
-                                                    Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
+                                                    Provider.of<SetupProvider>(context, listen: false)
                                                         .setups![index!]["id"]
                                                         .toString()
                                                         .toUpperCase(),
@@ -278,92 +247,46 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText1!
-                                                        .copyWith(
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor,
-                                                            fontSize: 16),
+                                                        .copyWith(color: Theme.of(context).accentColor, fontSize: 16),
                                                   ),
                                                   Padding(
-                                                    padding: const EdgeInsets
-                                                            .symmetric(
-                                                        horizontal: 6.0),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
                                                     child: Container(
                                                       height: 16,
-                                                      color: Theme.of(context)
-                                                          .accentColor,
+                                                      color: Theme.of(context).accentColor,
                                                       width: 2,
                                                     ),
                                                   ),
                                                   FutureBuilder(
                                                     future: _futureView,
-                                                    builder:
-                                                        (context, snapshot) {
-                                                      switch (snapshot
-                                                          .connectionState) {
-                                                        case ConnectionState
-                                                            .waiting:
+                                                    builder: (context, snapshot) {
+                                                      switch (snapshot.connectionState) {
+                                                        case ConnectionState.waiting:
                                                           return Text(
                                                             "",
-                                                            style: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .bodyText1!
-                                                                .copyWith(
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .accentColor,
-                                                                    fontSize:
-                                                                        16),
+                                                            style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                                                                color: Theme.of(context).accentColor, fontSize: 16),
                                                           );
-                                                        case ConnectionState
-                                                            .none:
+                                                        case ConnectionState.none:
                                                           return Text(
                                                             "",
-                                                            style: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .bodyText1!
-                                                                .copyWith(
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .accentColor,
-                                                                    fontSize:
-                                                                        16),
+                                                            style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                                                                color: Theme.of(context).accentColor, fontSize: 16),
                                                           );
                                                         default:
-                                                          if (snapshot
-                                                              .hasError) {
+                                                          if (snapshot.hasError) {
                                                             return Text(
                                                               "",
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .bodyText1!
-                                                                  .copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .accentColor,
-                                                                      fontSize:
-                                                                          16),
+                                                              style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                                                                  color: Theme.of(context).accentColor, fontSize: 16),
                                                             );
                                                           } else {
                                                             return Text(
                                                               "${snapshot.data} views",
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .fade,
+                                                              overflow: TextOverflow.fade,
                                                               softWrap: false,
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .bodyText1!
-                                                                  .copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .accentColor,
-                                                                      fontSize:
-                                                                          16),
+                                                              style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                                                                  color: Theme.of(context).accentColor, fontSize: 16),
                                                             );
                                                           }
                                                       }
@@ -375,19 +298,12 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                           ),
                                           GestureDetector(
                                             onTap: () async {
-                                              await createCopyrightLink(
-                                                  true, context,
+                                              await createCopyrightLink(true, context,
                                                   index: index.toString(),
-                                                  name: Provider.of<
-                                                              SetupProvider>(
-                                                          context,
-                                                          listen: false)
+                                                  name: Provider.of<SetupProvider>(context, listen: false)
                                                       .setups![index!]["name"]
                                                       .toString(),
-                                                  thumbUrl: Provider.of<
-                                                              SetupProvider>(
-                                                          context,
-                                                          listen: false)
+                                                  thumbUrl: Provider.of<SetupProvider>(context, listen: false)
                                                       .setups![index!]["image"]
                                                       .toString());
                                             },
@@ -396,24 +312,15 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                 Icon(
                                                   JamIcons.info,
                                                   size: 20,
-                                                  color: Theme.of(context)
-                                                      .accentColor
-                                                      .withOpacity(.7),
+                                                  color: Theme.of(context).accentColor.withOpacity(.7),
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
                                                   "Report",
                                                   overflow: TextOverflow.fade,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyText2!
-                                                      .copyWith(
-                                                          decoration:
-                                                              TextDecoration
-                                                                  .underline,
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
+                                                  style: Theme.of(context).textTheme.bodyText2!.copyWith(
+                                                      decoration: TextDecoration.underline,
+                                                      color: Theme.of(context).accentColor),
                                                 ),
                                               ],
                                             ),
@@ -422,8 +329,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       ),
                                       Column(
                                         mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
+                                        crossAxisAlignment: CrossAxisAlignment.end,
                                         children: <Widget>[
                                           SizedBox(
                                             width: 150,
@@ -432,91 +338,52 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               child: Stack(
                                                 children: [
                                                   Align(
-                                                    alignment:
-                                                        Alignment.topRight,
+                                                    alignment: Alignment.topRight,
                                                     child: ActionChip(
                                                         label: Text(
-                                                          Provider.of<SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .setups![index!]
-                                                                  ["by"]
+                                                          Provider.of<SetupProvider>(context, listen: false)
+                                                              .setups![index!]["by"]
                                                               .toString(),
-                                                          overflow:
-                                                              TextOverflow.fade,
-                                                          style: Theme.of(
-                                                                  context)
+                                                          overflow: TextOverflow.fade,
+                                                          style: Theme.of(context)
                                                               .textTheme
                                                               .bodyText2!
-                                                              .copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor),
+                                                              .copyWith(color: Theme.of(context).accentColor),
                                                         ),
-                                                        padding:
-                                                            const EdgeInsets
-                                                                    .symmetric(
-                                                                vertical: 5,
-                                                                horizontal: 5),
+                                                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                         avatar: CircleAvatar(
-                                                          backgroundImage:
-                                                              CachedNetworkImageProvider(Provider.of<
-                                                                          SetupProvider>(
-                                                                      context,
-                                                                      listen:
-                                                                          false)
-                                                                  .setups![
-                                                                      index!][
-                                                                      "userPhoto"]
+                                                          backgroundImage: CachedNetworkImageProvider(
+                                                              Provider.of<SetupProvider>(context, listen: false)
+                                                                  .setups![index!]["userPhoto"]
                                                                   .toString()),
                                                         ),
-                                                        labelPadding:
-                                                            const EdgeInsets
-                                                                    .fromLTRB(
-                                                                7, 3, 7, 3),
+                                                        labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                         onPressed: () {
-                                                          Navigator.pushNamed(
-                                                              context,
-                                                              followerProfileRoute,
+                                                          Navigator.pushNamed(context, followerProfileRoute,
                                                               arguments: [
-                                                                Provider.of<SetupProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
+                                                                Provider.of<SetupProvider>(context, listen: false)
                                                                     .setups![index!]["email"],
                                                               ]);
                                                         }),
                                                   ),
-                                                  if (globals.verifiedUsers
-                                                      .contains(Provider.of<
-                                                                  SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .setups![index!]
-                                                              ["email"]
+                                                  if (globals.verifiedUsers.contains(
+                                                      Provider.of<SetupProvider>(context, listen: false)
+                                                          .setups![index!]["email"]
                                                           .toString()))
                                                     Align(
-                                                      alignment:
-                                                          Alignment.topRight,
+                                                      alignment: Alignment.topRight,
                                                       child: SizedBox(
                                                         width: 20,
                                                         height: 20,
                                                         child: SvgPicture.string(verifiedIcon.replaceAll(
                                                             "E57697",
-                                                            Theme.of(context)
-                                                                        .errorColor ==
-                                                                    Colors.black
+                                                            Theme.of(context).errorColor == Colors.black
                                                                 ? "E57697"
-                                                                : Theme.of(
-                                                                        context)
+                                                                : Theme.of(context)
                                                                     .errorColor
                                                                     .toString()
-                                                                    .replaceAll(
-                                                                        "Color(0xff",
-                                                                        "")
-                                                                    .replaceAll(
-                                                                        ")",
-                                                                        ""))),
+                                                                    .replaceAll("Color(0xff", "")
+                                                                    .replaceAll(")", ""))),
                                                       ),
                                                     )
                                                   else
@@ -536,102 +403,59 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                         flex: 16,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                          child: Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups![index!]["widget"] ==
-                                      "" ||
-                                  Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups![index!]["widget"] ==
-                                      null
+                          child: Provider.of<SetupProvider>(context, listen: false).setups![index!]["widget"] == "" ||
+                                  Provider.of<SetupProvider>(context, listen: false).setups![index!]["widget"] == null
                               ? Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        if (Provider.of<SetupProvider>(context,
-                                                    listen: false)
-                                                .setups![index!]
-                                                    ["wallpaper_url"]
+                                        if (Provider.of<SetupProvider>(context, listen: false)
+                                                .setups![index!]["wallpaper_url"]
                                                 .toString()[0] !=
                                             "[") {
-                                          if (Provider.of<SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .setups![index!]
+                                          if (Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                       ["wall_id"] ==
                                                   null ||
-                                              Provider.of<SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .setups![index!]
+                                              Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                       ["wall_id"] ==
                                                   "") {
                                             logger.d("Id Not Found!");
-                                            launch(Provider.of<SetupProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .setups![index!]
-                                                    ["wallpaper_url"]
+                                            launch(Provider.of<SetupProvider>(context, listen: false)
+                                                .setups![index!]["wallpaper_url"]
                                                 .toString());
                                           } else {
-                                            Navigator.pushNamed(
-                                                context, shareRoute,
-                                                arguments: [
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["wall_id"]
-                                                      .toString(),
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["wallpaper_provider"]
-                                                      .toString(),
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["wallpaper_url"]
-                                                      .toString(),
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["wallpaper_url"]
-                                                      .toString(),
-                                                ]);
+                                            Navigator.pushNamed(context, shareRoute, arguments: [
+                                              Provider.of<SetupProvider>(context, listen: false)
+                                                  .setups![index!]["wall_id"]
+                                                  .toString(),
+                                              Provider.of<SetupProvider>(context, listen: false)
+                                                  .setups![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              Provider.of<SetupProvider>(context, listen: false)
+                                                  .setups![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              Provider.of<SetupProvider>(context, listen: false)
+                                                  .setups![index!]["wallpaper_url"]
+                                                  .toString(),
+                                            ]);
                                           }
                                         } else {
-                                          launch(Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .setups![index!]["wallpaper_url"]
-                                                  [1]
+                                          launch(Provider.of<SetupProvider>(context, listen: false)
+                                              .setups![index!]["wallpaper_url"][1]
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .setups![index!]
-                                                      ["wallpaper_url"]
+                                      tileText: Provider.of<SetupProvider>(context, listen: false)
+                                                  .setups![index!]["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
-                                          ? (Provider.of<SetupProvider>(context,
-                                                                  listen: false)
-                                                              .setups![index!]
+                                          ? (Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                           ["wall_id"] ==
                                                       null ||
-                                                  Provider.of<SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .setups![index!]
+                                                  Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                           ["wall_id"] ==
                                                       "")
                                               ? "Wall Link"
@@ -642,67 +466,43 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled: Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
+                                      isInstalled: Provider.of<SetupProvider>(context, listen: false)
                                               .setups![index!]["icon_url"]
                                               .toString()
-                                              .contains(
-                                                  'play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
-                                              Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
+                                              .contains('play.google.com/store/apps/details?id=')
+                                          ? DeviceApps.isAppInstalled(Provider.of<SetupProvider>(context, listen: false)
+                                              .setups![index!]["icon_url"]
+                                              .toString()
+                                              .split("details?id=")[1]
+                                              .split("&")[0])
+                                          : Future.value(false),
+                                      onTap: () async {
+                                        if (Provider.of<SetupProvider>(context, listen: false)
+                                            .setups![index!]["icon_url"]
+                                            .toString()
+                                            .contains('play.google.com/store/apps/details?id=')) {
+                                          final isInstalled = await DeviceApps.isAppInstalled(
+                                              Provider.of<SetupProvider>(context, listen: false)
+                                                  .setups![index!]["icon_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0]);
+                                          isInstalled
+                                              ? DeviceApps.openApp(Provider.of<SetupProvider>(context, listen: false)
                                                   .setups![index!]["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0])
-                                          : Future.value(false),
-                                      onTap: () async {
-                                        if (Provider.of<SetupProvider>(context,
-                                                listen: false)
-                                            .setups![index!]["icon_url"]
-                                            .toString()
-                                            .contains(
-                                                'play.google.com/store/apps/details?id=')) {
-                                          final isInstalled =
-                                              await DeviceApps.isAppInstalled(
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["icon_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0]);
-                                          isInstalled
-                                              ? DeviceApps.openApp(
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["icon_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0])
-                                              : launch(
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["icon_url"]
-                                                      .toString());
+                                              : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                  .setups![index!]["icon_url"]
+                                                  .toString());
                                         } else {
-                                          launch(Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
+                                          launch(Provider.of<SetupProvider>(context, listen: false)
                                               .setups![index!]["icon_url"]
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<SetupProvider>(
-                                              context,
-                                              listen: false)
+                                      tileText: Provider.of<SetupProvider>(context, listen: false)
                                           .setups![index!]["icon"]
                                           .toString(),
                                       tileType: "Icons",
@@ -711,105 +511,60 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     ),
                                   ],
                                 )
-                              : Provider.of<SetupProvider>(context,
-                                                  listen: false)
-                                              .setups![index!]["widget2"] ==
-                                          "" ||
-                                      Provider.of<SetupProvider>(context,
-                                                  listen: false)
-                                              .setups![index!]["widget2"] ==
+                              : Provider.of<SetupProvider>(context, listen: false).setups![index!]["widget2"] == "" ||
+                                      Provider.of<SetupProvider>(context, listen: false).setups![index!]["widget2"] ==
                                           null
                                   ? Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
+                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         SetupDetailsTile(
                                           isInstalled: Future.value(false),
                                           onTap: () async {
-                                            if (Provider.of<SetupProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .setups![index!]
-                                                        ["wallpaper_url"]
+                                            if (Provider.of<SetupProvider>(context, listen: false)
+                                                    .setups![index!]["wallpaper_url"]
                                                     .toString()[0] !=
                                                 "[") {
-                                              if (Provider.of<SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .setups![index!]
+                                              if (Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                           ["wall_id"] ==
                                                       null ||
-                                                  Provider.of<SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .setups![index!]
+                                                  Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                           ["wall_id"] ==
                                                       "") {
                                                 logger.d("Id Not Found!");
-                                                launch(
-                                                    Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["wallpaper_url"]
-                                                        .toString());
+                                                launch(Provider.of<SetupProvider>(context, listen: false)
+                                                    .setups![index!]["wallpaper_url"]
+                                                    .toString());
                                               } else {
-                                                Navigator.pushNamed(
-                                                    context, shareRoute,
-                                                    arguments: [
-                                                      Provider.of<SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .setups![index!]
-                                                              ["wall_id"]
-                                                          .toString(),
-                                                      Provider.of<SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .setups![index!][
-                                                              "wallpaper_provider"]
-                                                          .toString(),
-                                                      Provider.of<SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .setups![index!]
-                                                              ["wallpaper_url"]
-                                                          .toString(),
-                                                      Provider.of<SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .setups![index!]
-                                                              ["wallpaper_url"]
-                                                          .toString(),
-                                                    ]);
+                                                Navigator.pushNamed(context, shareRoute, arguments: [
+                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["wall_id"]
+                                                      .toString(),
+                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["wallpaper_provider"]
+                                                      .toString(),
+                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["wallpaper_url"]
+                                                      .toString(),
+                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["wallpaper_url"]
+                                                      .toString(),
+                                                ]);
                                               }
                                             } else {
-                                              launch(Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .setups![index!]
-                                                      ["wallpaper_url"][1]
+                                              launch(Provider.of<SetupProvider>(context, listen: false)
+                                                  .setups![index!]["wallpaper_url"][1]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["wallpaper_url"]
+                                          tileText: Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
-                                              ? (Provider.of<SetupProvider>(
-                                                                      context,
-                                                                      listen: false)
-                                                                  .setups![index!]
+                                              ? (Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                               ["wall_id"] ==
                                                           null ||
-                                                      Provider.of<SetupProvider>(
-                                                                      context,
-                                                                      listen: false)
-                                                                  .setups![index!]
+                                                      Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                               ["wall_id"] ==
                                                           "")
                                                   ? "Wall Link"
@@ -817,156 +572,99 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
-                                          delay:
-                                              const Duration(milliseconds: 150),
+                                          delay: const Duration(milliseconds: 150),
                                         ),
                                         SetupDetailsTile(
-                                          isInstalled: Provider.of<
-                                                          SetupProvider>(
-                                                      context,
-                                                      listen: false)
+                                          isInstalled: Provider.of<SetupProvider>(context, listen: false)
                                                   .setups![index!]["icon_url"]
                                                   .toString()
-                                                  .contains(
-                                                      'play.google.com/store/apps/details?id=')
+                                                  .contains('play.google.com/store/apps/details?id=')
                                               ? DeviceApps.isAppInstalled(
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["icon_url"]
+                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
                                               : Future.value(false),
                                           onTap: () async {
-                                            if (Provider.of<SetupProvider>(
-                                                    context,
-                                                    listen: false)
+                                            if (Provider.of<SetupProvider>(context, listen: false)
                                                 .setups![index!]["icon_url"]
                                                 .toString()
-                                                .contains(
-                                                    'play.google.com/store/apps/details?id=')) {
-                                              final isInstalled =
-                                                  await DeviceApps
-                                                      .isAppInstalled(Provider
-                                                              .of<SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                          .setups![index!]
-                                                              ["icon_url"]
-                                                          .toString()
-                                                          .split(
-                                                              "details?id=")[1]
-                                                          .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(Provider
-                                                          .of<SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                      .setups![index!]
-                                                          ["icon_url"]
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(
+                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
-                                                      .split("&")[0])
-                                                  : launch(Provider.of<
-                                                              SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["icon_url"]
+                                                      .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(
+                                                      Provider.of<SetupProvider>(context, listen: false)
+                                                          .setups![index!]["icon_url"]
+                                                          .toString()
+                                                          .split("details?id=")[1]
+                                                          .split("&")[0])
+                                                  : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["icon_url"]
                                                       .toString());
                                             } else {
-                                              launch(Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
+                                              launch(Provider.of<SetupProvider>(context, listen: false)
                                                   .setups![index!]["icon_url"]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
+                                          tileText: Provider.of<SetupProvider>(context, listen: false)
                                               .setups![index!]["icon"]
                                               .toString(),
                                           tileType: "Icons",
                                           panelCollapsed: panelCollapsed,
-                                          delay:
-                                              const Duration(milliseconds: 200),
+                                          delay: const Duration(milliseconds: 200),
                                         ),
                                         SetupDetailsTile(
-                                          isInstalled: Provider.of<
-                                                          SetupProvider>(
-                                                      context,
-                                                      listen: false)
+                                          isInstalled: Provider.of<SetupProvider>(context, listen: false)
                                                   .setups![index!]["widget_url"]
                                                   .toString()
-                                                  .contains(
-                                                      'play.google.com/store/apps/details?id=')
+                                                  .contains('play.google.com/store/apps/details?id=')
                                               ? DeviceApps.isAppInstalled(
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["widget_url"]
+                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
                                               : Future.value(false),
                                           onTap: () async {
-                                            if (Provider.of<SetupProvider>(
-                                                    context,
-                                                    listen: false)
+                                            if (Provider.of<SetupProvider>(context, listen: false)
                                                 .setups![index!]["widget_url"]
                                                 .toString()
-                                                .contains(
-                                                    'play.google.com/store/apps/details?id=')) {
-                                              final isInstalled =
-                                                  await DeviceApps
-                                                      .isAppInstalled(Provider
-                                                              .of<SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                          .setups![index!]
-                                                              ["widget_url"]
-                                                          .toString()
-                                                          .split(
-                                                              "details?id=")[1]
-                                                          .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(Provider
-                                                          .of<SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                      .setups![index!]
-                                                          ["widget_url"]
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(
+                                                  Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
-                                                      .split("&")[0])
-                                                  : launch(Provider.of<
-                                                              SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["widget_url"]
+                                                      .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(
+                                                      Provider.of<SetupProvider>(context, listen: false)
+                                                          .setups![index!]["widget_url"]
+                                                          .toString()
+                                                          .split("details?id=")[1]
+                                                          .split("&")[0])
+                                                  : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["widget_url"]
                                                       .toString());
                                             } else {
-                                              launch(Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
+                                              launch(Provider.of<SetupProvider>(context, listen: false)
                                                   .setups![index!]["widget_url"]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
+                                          tileText: Provider.of<SetupProvider>(context, listen: false)
                                               .setups![index!]["widget"]
                                               .toString(),
                                           tileType: "Widget",
                                           panelCollapsed: panelCollapsed,
-                                          delay:
-                                              const Duration(milliseconds: 250),
+                                          delay: const Duration(milliseconds: 250),
                                         ),
                                       ],
                                     )
@@ -978,90 +676,50 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                           SetupDetailsTile(
                                             isInstalled: Future.value(false),
                                             onTap: () async {
-                                              if (Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["wallpaper_url"]
+                                              if (Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "[") {
-                                                if (Provider.of<SetupProvider>(
-                                                                    context,
-                                                                    listen: false)
-                                                                .setups![index!]
+                                                if (Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                             ["wall_id"] ==
                                                         null ||
-                                                    Provider.of<SetupProvider>(
-                                                                    context,
-                                                                    listen: false)
-                                                                .setups![index!]
+                                                    Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                             ["wall_id"] ==
                                                         "") {
                                                   logger.d("Id Not Found!");
-                                                  launch(Provider.of<
-                                                              SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups![index!]
-                                                          ["wallpaper_url"]
+                                                  launch(Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups![index!]["wallpaper_url"]
                                                       .toString());
                                                 } else {
-                                                  Navigator.pushNamed(
-                                                      context, shareRoute,
-                                                      arguments: [
-                                                        Provider.of<SetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .setups![index!]
-                                                                ["wall_id"]
-                                                            .toString(),
-                                                        Provider.of<SetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .setups![index!][
-                                                                "wallpaper_provider"]
-                                                            .toString(),
-                                                        Provider.of<SetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .setups![index!][
-                                                                "wallpaper_url"]
-                                                            .toString(),
-                                                        Provider.of<SetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .setups![index!][
-                                                                "wallpaper_url"]
-                                                            .toString(),
-                                                      ]);
+                                                  Navigator.pushNamed(context, shareRoute, arguments: [
+                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["wall_id"]
+                                                        .toString(),
+                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["wallpaper_provider"]
+                                                        .toString(),
+                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["wallpaper_url"]
+                                                        .toString(),
+                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["wallpaper_url"]
+                                                        .toString(),
+                                                  ]);
                                                 }
                                               } else {
-                                                launch(
-                                                    Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["wallpaper_url"][1]
-                                                        .toString());
+                                                launch(Provider.of<SetupProvider>(context, listen: false)
+                                                    .setups![index!]["wallpaper_url"][1]
+                                                    .toString());
                                               }
                                             },
-                                            tileText: Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["wallpaper_url"]
+                                            tileText: Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
-                                                ? (Provider.of<SetupProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .setups![index!]
+                                                ? (Provider.of<SetupProvider>(context, listen: false).setups![index!]
                                                                 ["wall_id"] ==
                                                             null ||
-                                                        Provider.of<SetupProvider>(
-                                                                    context,
-                                                                    listen: false)
+                                                        Provider.of<SetupProvider>(context, listen: false)
                                                                 .setups![index!]["wall_id"] ==
                                                             "")
                                                     ? "Wall Link"
@@ -1069,236 +727,145 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                 : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
-                                            delay: const Duration(
-                                                milliseconds: 150),
+                                            delay: const Duration(milliseconds: 150),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<
-                                                            SetupProvider>(
-                                                        context,
-                                                        listen: false)
+                                            isInstalled: Provider.of<SetupProvider>(context, listen: false)
                                                     .setups![index!]["icon_url"]
                                                     .toString()
-                                                    .contains(
-                                                        'play.google.com/store/apps/details?id=')
+                                                    .contains('play.google.com/store/apps/details?id=')
                                                 ? DeviceApps.isAppInstalled(
-                                                    Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["icon_url"]
+                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
-                                              if (Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
+                                              if (Provider.of<SetupProvider>(context, listen: false)
                                                   .setups![index!]["icon_url"]
                                                   .toString()
-                                                  .contains(
-                                                      'play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps
-                                                    .isAppInstalled(Provider.of<
-                                                                SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["icon_url"]
+                                                  .contains('play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps.isAppInstalled(
+                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0]);
                                                 isInstalled
-                                                    ? DeviceApps.openApp(Provider
-                                                            .of<SetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                        .setups![index!]
-                                                            ["icon_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0])
-                                                    : launch(Provider.of<
-                                                                SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["icon_url"]
+                                                    ? DeviceApps.openApp(
+                                                        Provider.of<SetupProvider>(context, listen: false)
+                                                            .setups![index!]["icon_url"]
+                                                            .toString()
+                                                            .split("details?id=")[1]
+                                                            .split("&")[0])
+                                                    : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["icon_url"]
                                                         .toString());
                                               } else {
-                                                launch(
-                                                    Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["icon_url"]
-                                                        .toString());
+                                                launch(Provider.of<SetupProvider>(context, listen: false)
+                                                    .setups![index!]["icon_url"]
+                                                    .toString());
                                               }
                                             },
-                                            tileText:
-                                                Provider.of<SetupProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .setups![index!]["icon"]
-                                                    .toString(),
+                                            tileText: Provider.of<SetupProvider>(context, listen: false)
+                                                .setups![index!]["icon"]
+                                                .toString(),
                                             tileType: "Icons",
                                             panelCollapsed: panelCollapsed,
-                                            delay: const Duration(
-                                                milliseconds: 200),
+                                            delay: const Duration(milliseconds: 200),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<
-                                                            SetupProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .setups![index!]
-                                                        ["widget_url"]
+                                            isInstalled: Provider.of<SetupProvider>(context, listen: false)
+                                                    .setups![index!]["widget_url"]
                                                     .toString()
-                                                    .contains(
-                                                        'play.google.com/store/apps/details?id=')
+                                                    .contains('play.google.com/store/apps/details?id=')
                                                 ? DeviceApps.isAppInstalled(
-                                                    Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["widget_url"]
+                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
-                                              if (Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
+                                              if (Provider.of<SetupProvider>(context, listen: false)
                                                   .setups![index!]["widget_url"]
                                                   .toString()
-                                                  .contains(
-                                                      'play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps
-                                                    .isAppInstalled(Provider.of<
-                                                                SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["widget_url"]
+                                                  .contains('play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps.isAppInstalled(
+                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0]);
                                                 isInstalled
-                                                    ? DeviceApps.openApp(Provider
-                                                            .of<SetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                        .setups![index!]
-                                                            ["widget_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0])
-                                                    : launch(Provider.of<
-                                                                SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["widget_url"]
+                                                    ? DeviceApps.openApp(
+                                                        Provider.of<SetupProvider>(context, listen: false)
+                                                            .setups![index!]["widget_url"]
+                                                            .toString()
+                                                            .split("details?id=")[1]
+                                                            .split("&")[0])
+                                                    : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["widget_url"]
                                                         .toString());
                                               } else {
-                                                launch(
-                                                    Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["widget_url"]
-                                                        .toString());
+                                                launch(Provider.of<SetupProvider>(context, listen: false)
+                                                    .setups![index!]["widget_url"]
+                                                    .toString());
                                               }
                                             },
-                                            tileText:
-                                                Provider.of<SetupProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .setups![index!]["widget"]
-                                                    .toString(),
+                                            tileText: Provider.of<SetupProvider>(context, listen: false)
+                                                .setups![index!]["widget"]
+                                                .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
-                                            delay: const Duration(
-                                                milliseconds: 250),
+                                            delay: const Duration(milliseconds: 250),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<
-                                                            SetupProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .setups![index!]
-                                                        ["widget_url2"]
+                                            isInstalled: Provider.of<SetupProvider>(context, listen: false)
+                                                    .setups![index!]["widget_url2"]
                                                     .toString()
-                                                    .contains(
-                                                        'play.google.com/store/apps/details?id=')
+                                                    .contains('play.google.com/store/apps/details?id=')
                                                 ? DeviceApps.isAppInstalled(
-                                                    Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["widget_url2"]
+                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
-                                              if (Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .setups![index!]
-                                                      ["widget_url2"]
+                                              if (Provider.of<SetupProvider>(context, listen: false)
+                                                  .setups![index!]["widget_url2"]
                                                   .toString()
-                                                  .contains(
-                                                      'play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps
-                                                    .isAppInstalled(Provider.of<
-                                                                SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["widget_url2"]
+                                                  .contains('play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps.isAppInstalled(
+                                                    Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0]);
                                                 isInstalled
-                                                    ? DeviceApps.openApp(Provider
-                                                            .of<SetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                        .setups![index!]
-                                                            ["widget_url2"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0])
-                                                    : launch(Provider.of<
-                                                                SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["widget_url2"]
+                                                    ? DeviceApps.openApp(
+                                                        Provider.of<SetupProvider>(context, listen: false)
+                                                            .setups![index!]["widget_url2"]
+                                                            .toString()
+                                                            .split("details?id=")[1]
+                                                            .split("&")[0])
+                                                    : launch(Provider.of<SetupProvider>(context, listen: false)
+                                                        .setups![index!]["widget_url2"]
                                                         .toString());
                                               } else {
-                                                launch(
-                                                    Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups![index!]
-                                                            ["widget_url2"]
-                                                        .toString());
+                                                launch(Provider.of<SetupProvider>(context, listen: false)
+                                                    .setups![index!]["widget_url2"]
+                                                    .toString());
                                               }
                                             },
-                                            tileText:
-                                                Provider.of<SetupProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .setups![index!]["widget2"]
-                                                    .toString(),
+                                            tileText: Provider.of<SetupProvider>(context, listen: false)
+                                                .setups![index!]["widget2"]
+                                                .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
-                                            delay: const Duration(
-                                                milliseconds: 300),
+                                            delay: const Duration(milliseconds: 300),
                                           ),
                                         ],
                                       ),
@@ -1317,9 +884,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                 color: Theme.of(context).primaryColor,
                                 boxShadow: [
                                   BoxShadow(
-                                      color: Colors.black.withOpacity(.25),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 4))
+                                      color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))
                                 ],
                                 borderRadius: BorderRadius.circular(500),
                               ),
@@ -1329,36 +894,25 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                   if (globals.prismUser.loggedIn == false) {
                                     googleSignInPopUp(context, () {
                                       onFavSetup(
-                                          Provider.of<SetupProvider>(context,
-                                                  listen: false)
+                                          Provider.of<SetupProvider>(context, listen: false)
                                               .setups![index!]
                                               .data()["id"]
                                               .toString(),
-                                          Provider.of<SetupProvider>(context,
-                                                  listen: false)
-                                              .setups![index!]
-                                              .data());
+                                          Provider.of<SetupProvider>(context, listen: false).setups![index!].data());
                                     });
                                   } else {
                                     onFavSetup(
-                                        Provider.of<SetupProvider>(context,
-                                                listen: false)
+                                        Provider.of<SetupProvider>(context, listen: false)
                                             .setups![index!]
                                             .data()["id"]
                                             .toString(),
-                                        Provider.of<SetupProvider>(context,
-                                                listen: false)
-                                            .setups![index!]
-                                            .data());
+                                        Provider.of<SetupProvider>(context, listen: false).setups![index!].data());
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,
                                 iconSize: 30,
                                 isFavorite: box.get(
-                                    Provider.of<SetupProvider>(context,
-                                            listen: false)
-                                        .setups![index!]["id"]
-                                        .toString(),
+                                    Provider.of<SetupProvider>(context, listen: false).setups![index!]["id"].toString(),
                                     defaultValue: false) as bool,
                               ),
                             ),
@@ -1366,12 +920,10 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                               onTap: () {
                                 createSetupDynamicLink(
                                     index.toString(),
-                                    Provider.of<SetupProvider>(context,
-                                            listen: false)
+                                    Provider.of<SetupProvider>(context, listen: false)
                                         .setups![index!]["name"]
                                         .toString(),
-                                    Provider.of<SetupProvider>(context,
-                                            listen: false)
+                                    Provider.of<SetupProvider>(context, listen: false)
                                         .setups![index!]["image"]
                                         .toString());
                               },
@@ -1380,9 +932,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                   color: Theme.of(context).primaryColor,
                                   boxShadow: [
                                     BoxShadow(
-                                        color: Colors.black.withOpacity(.25),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 4))
+                                        color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))
                                   ],
                                   borderRadius: BorderRadius.circular(500),
                                 ),
@@ -1427,24 +977,19 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                       },
                       child: CachedNetworkImage(
                         imageUrl:
-                            Provider.of<SetupProvider>(context, listen: false)
-                                .setups![index!]["image"]
-                                .toString(),
+                            Provider.of<SetupProvider>(context, listen: false).setups![index!]["image"].toString(),
                         imageBuilder: (context, imageProvider) => Container(
                           margin: EdgeInsets.symmetric(
-                              vertical: offsetAnimation.value * 1.25,
-                              horizontal: offsetAnimation.value / 2),
+                              vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
                           decoration: BoxDecoration(
-                            borderRadius:
-                                BorderRadius.circular(offsetAnimation.value),
+                            borderRadius: BorderRadius.circular(offsetAnimation.value),
                             image: DecorationImage(
                               image: imageProvider,
                               fit: BoxFit.cover,
                             ),
                           ),
                         ),
-                        progressIndicatorBuilder:
-                            (context, url, downloadProgress) => Stack(
+                        progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
                           children: <Widget>[
                             const SizedBox.expand(
                                 child: Text(
@@ -1472,8 +1017,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
               Align(
                 alignment: Alignment.topLeft,
                 child: Padding(
-                  padding:
-                      EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                  padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
@@ -1490,24 +1034,19 @@ class _SetupViewScreenState extends State<SetupViewScreen>
               Align(
                 alignment: Alignment.topRight,
                 child: Padding(
-                  padding:
-                      EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                  padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                   child: IconButton(
                     onPressed: () {
                       Navigator.push(
                           context,
                           PageRouteBuilder(
-                              transitionDuration:
-                                  const Duration(milliseconds: 300),
-                              pageBuilder:
-                                  (context, animation, secondaryAnimation) {
-                                animation = Tween(begin: 0.0, end: 1.0)
-                                    .animate(animation);
+                              transitionDuration: const Duration(milliseconds: 300),
+                              pageBuilder: (context, animation, secondaryAnimation) {
+                                animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                 return FadeTransition(
                                     opacity: animation,
                                     child: SetupOverlay(
-                                      link: Provider.of<SetupProvider>(context,
-                                              listen: false)
+                                      link: Provider.of<SetupProvider>(context, listen: false)
                                           .setups![index!]["image"]
                                           .toString(),
                                     ));
@@ -1572,8 +1111,7 @@ class SetupDetailsTile extends StatelessWidget {
                           overflow: TextOverflow.fade,
                           style: TextStyle(
                             fontSize: 140,
-                            color:
-                                Theme.of(context).accentColor.withOpacity(0.1),
+                            color: Theme.of(context).accentColor.withOpacity(0.1),
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -1603,8 +1141,7 @@ class SetupDetailsTile extends StatelessWidget {
                                 child: FutureBuilder<bool>(
                                   future: isInstalled,
                                   initialData: false,
-                                  builder: (BuildContext context,
-                                      AsyncSnapshot snapshot) {
+                                  builder: (BuildContext context, AsyncSnapshot snapshot) {
                                     if (snapshot.data == true) {
                                       return Icon(
                                         JamIcons.check,
@@ -1628,12 +1165,8 @@ class SetupDetailsTile extends StatelessWidget {
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              splashColor: Theme.of(context)
-                                  .accentColor
-                                  .withOpacity(0.3),
-                              highlightColor: Theme.of(context)
-                                  .accentColor
-                                  .withOpacity(0.1),
+                              splashColor: Theme.of(context).accentColor.withOpacity(0.3),
+                              highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
                               onTap: () {
                                 onTap();
                               },
@@ -1655,36 +1188,23 @@ class ModifiedDownloadButton extends StatelessWidget {
   const ModifiedDownloadButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return Provider.of<SetupProvider>(context, listen: false)
-                .setups![index!]["wallpaper_url"]
-                .toString()[0] !=
-            "["
-        ? Provider.of<SetupProvider>(context, listen: false).setups![index!]
-                        ["wall_id"] !=
-                    null &&
-                Provider.of<SetupProvider>(context, listen: false)
-                        .setups![index!]["wall_id"] !=
-                    ""
+    return Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString()[0] != "["
+        ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"] != null &&
+                Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"] != ""
             ? DownloadButton(
-                link: Provider.of<SetupProvider>(context, listen: false)
-                    .setups![index!]["wallpaper_url"]
-                    .toString(),
+                link: Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(Provider.of<SetupProvider>(context, listen: false)
-                      .setups![index!]["wallpaper_url"]
-                      .toString());
+                  launch(
+                      Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString());
                 },
                 child: Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).primaryColor,
                     boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(.25),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4))
+                      BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))
                     ],
                     borderRadius: BorderRadius.circular(500),
                   ),
@@ -1698,19 +1218,12 @@ class ModifiedDownloadButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(Provider.of<SetupProvider>(context, listen: false)
-                  .setups![index!]["wallpaper_url"][1]
-                  .toString());
+              launch(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][1].toString());
             },
             child: Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(.25),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4))
-                ],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
                 borderRadius: BorderRadius.circular(500),
               ),
               padding: const EdgeInsets.all(17),
@@ -1729,36 +1242,23 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return Provider.of<SetupProvider>(context, listen: false)
-                .setups![index!]["wallpaper_url"]
-                .toString()[0] !=
-            "["
-        ? Provider.of<SetupProvider>(context, listen: false).setups![index!]
-                        ["wall_id"] !=
-                    null &&
-                Provider.of<SetupProvider>(context, listen: false)
-                        .setups![index!]["wall_id"] !=
-                    ""
+    return Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString()[0] != "["
+        ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"] != null &&
+                Provider.of<SetupProvider>(context, listen: false).setups![index!]["wall_id"] != ""
             ? SetWallpaperButton(
-                url: Provider.of<SetupProvider>(context, listen: false)
-                    .setups![index!]["wallpaper_url"]
-                    .toString(),
+                url: Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(Provider.of<SetupProvider>(context, listen: false)
-                      .setups![index!]["wallpaper_url"]
-                      .toString());
+                  launch(
+                      Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"].toString());
                 },
                 child: Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).primaryColor,
                     boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(.25),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4))
+                      BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))
                     ],
                     borderRadius: BorderRadius.circular(500),
                   ),
@@ -1772,19 +1272,12 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(Provider.of<SetupProvider>(context, listen: false)
-                  .setups![index!]["wallpaper_url"][1]
-                  .toString());
+              launch(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][1].toString());
             },
             child: Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(.25),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4))
-                ],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
                 borderRadius: BorderRadius.circular(500),
               ),
               padding: const EdgeInsets.all(17),

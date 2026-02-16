@@ -22,23 +22,14 @@ class ThemeModel extends ChangeNotifier {
 
   void changeAccent(Color? accentColor) {
     ThemeData newTheme = currentTheme!;
-    newTheme = newTheme.copyWith(
-        errorColor: accentColor,
-        colorScheme: ColorScheme.light(primary: accentColor!));
+    newTheme = newTheme.copyWith(errorColor: accentColor, colorScheme: ColorScheme.light(primary: accentColor!));
     currentTheme = newTheme;
-    main.prefs.put(
-        "lightAccent",
-        int.parse(accentColor
-            .toString()
-            .replaceAll("Color(", "")
-            .replaceAll(")", "")));
+    main.prefs.put("lightAccent", int.parse(accentColor.toString().replaceAll("Color(", "").replaceAll(")", "")));
     return notifyListeners();
   }
 
   int? getIndex(ThemeData? currentThemeData) {
-    return themes.values.toList().contains(currentThemeData)
-        ? themes.values.toList().indexOf(currentThemeData)
-        : null;
+    return themes.values.toList().contains(currentThemeData) ? themes.values.toList().indexOf(currentThemeData) : null;
   }
 
   String getTheme(ThemeData currentThemeData) {
@@ -50,11 +41,7 @@ class ThemeModel extends ChangeNotifier {
     currentTheme = themes[themeID];
     main.prefs.put("lightThemeID", themeID);
     main.prefs.put(
-        "lightAccent",
-        int.parse(currentTheme!.errorColor
-            .toString()
-            .replaceAll("Color(", "")
-            .replaceAll(")", "")));
+        "lightAccent", int.parse(currentTheme!.errorColor.toString().replaceAll("Color(", "").replaceAll(")", "")));
     return notifyListeners();
   }
 }

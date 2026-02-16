@@ -40,9 +40,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
               imageBuilder: (context, imageProvider) => Container(
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    colorFilter: widget.colorChanged
-                        ? ColorFilter.mode(widget.accent!, BlendMode.hue)
-                        : null,
+                    colorFilter: widget.colorChanged ? ColorFilter.mode(widget.accent!, BlendMode.hue) : null,
                     image: imageProvider,
                     fit: BoxFit.cover,
                   ),

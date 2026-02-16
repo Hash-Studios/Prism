@@ -28,13 +28,11 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     bool? result;
     try {
       if (widget.url!.contains("com.hash.prism")) {
-        result =
-            await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
           'url': widget.url,
         });
       } else if (widget.url!.contains("/0/")) {
-        result =
-            await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
           'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
         });
       } else {
@@ -44,9 +42,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       }
       if (result!) {
         logger.d("Success");
-        analytics.logEvent(
-            name: 'set_wall',
-            parameters: {'type': 'Both', 'result': 'Success'});
+        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
@@ -57,8 +53,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
     } catch (e) {
-      analytics.logEvent(
-          name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
+      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       logger.d(e.toString());
     }
   }
@@ -67,26 +62,21 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     bool? result;
     try {
       if (widget.url!.contains("com.hash.prism")) {
-        result = await platform
-            .invokeMethod("set_both_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_both_wallpaper_file", <String, dynamic>{
           'url': widget.url,
         });
       } else if (widget.url!.contains("/0/")) {
-        result = await platform
-            .invokeMethod("set_both_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_both_wallpaper_file", <String, dynamic>{
           'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
         });
       } else {
-        result =
-            await platform.invokeMethod("set_both_wallpaper", <String, dynamic>{
+        result = await platform.invokeMethod("set_both_wallpaper", <String, dynamic>{
           'url': widget.url,
         });
       }
       if (result!) {
         logger.d("Success");
-        analytics.logEvent(
-            name: 'set_wall',
-            parameters: {'type': 'Both', 'result': 'Success'});
+        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -98,8 +88,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
     } catch (e) {
-      analytics.logEvent(
-          name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
+      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       logger.d(e.toString());
     }
   }
@@ -108,26 +97,21 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     bool? result;
     try {
       if (widget.url!.contains("com.hash.prism")) {
-        result = await platform
-            .invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
           'url': widget.url,
         });
       } else if (widget.url!.contains("/0/")) {
-        result = await platform
-            .invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
           'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
         });
       } else {
-        result =
-            await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
+        result = await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
           'url': widget.url,
         });
       }
       if (result!) {
         logger.d("Success");
-        analytics.logEvent(
-            name: 'set_wall',
-            parameters: {'type': 'Lock', 'result': 'Success'});
+        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -140,8 +124,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(
-          name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
+      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
     }
   }
 
@@ -149,26 +132,21 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     bool? result;
     try {
       if (widget.url!.contains("com.hash.prism")) {
-        result = await platform
-            .invokeMethod("set_home_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_home_wallpaper_file", <String, dynamic>{
           'url': widget.url,
         });
       } else if (widget.url!.contains("/0/")) {
-        result = await platform
-            .invokeMethod("set_home_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_home_wallpaper_file", <String, dynamic>{
           'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
         });
       } else {
-        result =
-            await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
+        result = await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
           'url': widget.url,
         });
       }
       if (result!) {
         logger.d("Success");
-        analytics.logEvent(
-            name: 'set_wall',
-            parameters: {'type': 'Home', 'result': 'Success'});
+        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -181,8 +159,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(
-          name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
+      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
     }
   }
 
@@ -192,14 +169,12 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       setState(() {
         isLoading = true;
       });
-      Future.delayed(const Duration(seconds: 1))
-          .then((value) => _setWallPaper());
+      Future.delayed(const Duration(seconds: 1)).then((value) => _setWallPaper());
     } else {
       setState(() {
         isLoading = true;
       });
-      Future.delayed(const Duration(seconds: 1))
-          .then((value) => _setWallPaper());
+      Future.delayed(const Duration(seconds: 1)).then((value) => _setWallPaper());
     }
   }
 
@@ -215,8 +190,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
               ? logger.d("")
               : sdkInt >= 24
                   ? onPaint()
-                  : toasts
-                      .error("Crop is supported for Android 7.0 and above!");
+                  : toasts.error("Crop is supported for Android 7.0 and above!");
         } else {
           toasts.error("Sorry crop is supported for Android 7.0 and above!");
         }
@@ -234,8 +208,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                     setState(() {
                       isLoading = true;
                     });
-                    Future.delayed(const Duration(seconds: 1))
-                        .then((value) => _setHomeWallPaper());
+                    Future.delayed(const Duration(seconds: 1)).then((value) => _setHomeWallPaper());
                   },
                   onTap2: () {
                     HapticFeedback.vibrate();
@@ -243,8 +216,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                     setState(() {
                       isLoading = true;
                     });
-                    Future.delayed(const Duration(seconds: 1))
-                        .then((value) => _setLockWallPaper());
+                    Future.delayed(const Duration(seconds: 1)).then((value) => _setLockWallPaper());
                   },
                   onTap3: () {
                     HapticFeedback.vibrate();
@@ -252,8 +224,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                     setState(() {
                       isLoading = true;
                     });
-                    Future.delayed(const Duration(seconds: 1))
-                        .then((value) => _setBothWallPaper());
+                    Future.delayed(const Duration(seconds: 1)).then((value) => _setBothWallPaper());
                   },
                 ),
               );
@@ -263,12 +234,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withOpacity(.25),
-                    blurRadius: 4,
-                    offset: const Offset(0, 4))
-              ],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
@@ -283,8 +249,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
               left: 0,
               height: 53,
               width: 53,
-              child:
-                  isLoading ? const CircularProgressIndicator() : Container())
+              child: isLoading ? const CircularProgressIndicator() : Container())
         ],
       ),
     );
@@ -316,9 +281,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width * 0.85;
     return Container(
-      height: MediaQuery.of(context).size.height / 2 > 400
-          ? MediaQuery.of(context).size.height / 2
-          : 400,
+      height: MediaQuery.of(context).size.height / 2 > 400 ? MediaQuery.of(context).size.height / 2 : 400,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         borderRadius: const BorderRadius.only(
@@ -337,9 +300,8 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                 child: Container(
                   height: 5,
                   width: 30,
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).hintColor,
-                      borderRadius: BorderRadius.circular(500)),
+                  decoration:
+                      BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(500)),
                 ),
               )
             ],
@@ -367,17 +329,14 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                       height: 60,
                       decoration: BoxDecoration(
                         color: Theme.of(context).errorColor.withOpacity(0.2),
-                        border: Border.all(
-                            color: Theme.of(context).errorColor, width: 3),
+                        border: Border.all(color: Theme.of(context).errorColor, width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
                         child: Text(
                           "Home Screen",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor,
-                              fontWeight: FontWeight.bold),
+                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -398,17 +357,14 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                       height: 60,
                       decoration: BoxDecoration(
                         color: Theme.of(context).errorColor.withOpacity(0.2),
-                        border: Border.all(
-                            color: Theme.of(context).errorColor, width: 3),
+                        border: Border.all(color: Theme.of(context).errorColor, width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
                         child: Text(
                           "Lock Screen",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor,
-                              fontWeight: FontWeight.bold),
+                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -429,17 +385,14 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                       height: 60,
                       decoration: BoxDecoration(
                         color: Theme.of(context).errorColor.withOpacity(0.2),
-                        border: Border.all(
-                            color: Theme.of(context).errorColor, width: 3),
+                        border: Border.all(color: Theme.of(context).errorColor, width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
                         child: Text(
                           "Both",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor,
-                              fontWeight: FontWeight.bold),
+                              fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),

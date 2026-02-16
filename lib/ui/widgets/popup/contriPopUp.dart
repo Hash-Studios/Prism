@@ -21,9 +21,7 @@ void showContributorDetails(BuildContext context, String username) {
   final AlertDialog userPopUp = AlertDialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     content: Container(
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: Theme.of(context).primaryColor),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .78,
       child: FutureBuilder<User?>(
           future: getUser(username),
@@ -45,9 +43,8 @@ void showContributorDetails(BuildContext context, String username) {
                     height: 150,
                     width: MediaQuery.of(context).size.width * .78,
                     decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(10)),
+                        borderRadius:
+                            const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
                         color: Theme.of(context).hintColor),
                     child: Row(
                       children: [
@@ -55,8 +52,7 @@ void showContributorDetails(BuildContext context, String username) {
                           width: 20,
                         ),
                         CircleAvatar(
-                          backgroundImage: CachedNetworkImageProvider(
-                              snapshot.data!.avatarUrl ?? ""),
+                          backgroundImage: CachedNetworkImageProvider(snapshot.data!.avatarUrl ?? ""),
                           radius: 40,
                         ),
                         const SizedBox(
@@ -76,9 +72,7 @@ void showContributorDetails(BuildContext context, String username) {
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyText2!
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor,
-                                        fontSize: 20),
+                                    .copyWith(color: Theme.of(context).accentColor, fontSize: 20),
                               ),
                             ),
                             SizedBox(
@@ -90,10 +84,7 @@ void showContributorDetails(BuildContext context, String username) {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyText2!
-                                      .copyWith(
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(0.5)),
+                                      .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
                                 )),
                             const SizedBox(
                               height: 5,
@@ -101,13 +92,9 @@ void showContributorDetails(BuildContext context, String username) {
                             if (snapshot.data!.location != null)
                               Row(
                                 children: [
-                                  Icon(JamIcons.map_marker,
-                                      color: Theme.of(context)
-                                          .accentColor
-                                          .withOpacity(0.5)),
+                                  Icon(JamIcons.map_marker, color: Theme.of(context).accentColor.withOpacity(0.5)),
                                   SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.3,
+                                      width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
                                         snapshot.data!.location!,
                                         textAlign: TextAlign.center,
@@ -115,10 +102,7 @@ void showContributorDetails(BuildContext context, String username) {
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2!
-                                            .copyWith(
-                                                color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(0.5)),
+                                            .copyWith(color: Theme.of(context).accentColor.withOpacity(0.5)),
                                       )),
                                 ],
                               )
@@ -150,23 +134,15 @@ void showContributorDetails(BuildContext context, String username) {
                   Wrap(
                     alignment: WrapAlignment.center,
                     children: [
-                      if (snapshot.data!.blog != null &&
-                          snapshot.data!.blog != "")
-                        ActionButton(
-                            icon: JamIcons.link,
-                            link: "https://${snapshot.data!.blog}",
-                            text: "WEBSITE")
+                      if (snapshot.data!.blog != null && snapshot.data!.blog != "")
+                        ActionButton(icon: JamIcons.link, link: "https://${snapshot.data!.blog}", text: "WEBSITE")
                       else
                         Container(),
-                      ActionButton(
-                          icon: JamIcons.github,
-                          link: snapshot.data!.htmlUrl!,
-                          text: "GITHUB"),
+                      ActionButton(icon: JamIcons.github, link: snapshot.data!.htmlUrl!, text: "GITHUB"),
                       if (snapshot.data!.twitterUsername != null)
                         ActionButton(
                             icon: JamIcons.twitter,
-                            link:
-                                "https://www.twitter.com/${snapshot.data!.twitterUsername}",
+                            link: "https://www.twitter.com/${snapshot.data!.twitterUsername}",
                             text: "TWITTER")
                       else
                         Container(),

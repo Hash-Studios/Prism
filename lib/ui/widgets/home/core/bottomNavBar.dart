@@ -27,8 +27,7 @@ class BottomBar extends StatefulWidget {
   _BottomBarState createState() => _BottomBarState();
 }
 
-class _BottomBarState extends State<BottomBar>
-    with SingleTickerProviderStateMixin {
+class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMixin {
   ScrollController scrollBottomBarController = ScrollController();
   late AnimationController _controller;
   late Animation<Offset> _offsetAnimation;
@@ -75,16 +74,14 @@ class _BottomBarState extends State<BottomBar>
 
   Future<void> myScroll() async {
     scrollBottomBarController.addListener(() {
-      if (scrollBottomBarController.position.userScrollDirection ==
-          ScrollDirection.reverse) {
+      if (scrollBottomBarController.position.userScrollDirection == ScrollDirection.reverse) {
         if (!isScrollingDown) {
           isScrollingDown = true;
           isOnTop = false;
           hideBottomBar();
         }
       }
-      if (scrollBottomBarController.position.userScrollDirection ==
-          ScrollDirection.forward) {
+      if (scrollBottomBarController.position.userScrollDirection == ScrollDirection.forward) {
         if (isScrollingDown) {
           isScrollingDown = false;
           isOnTop = true;
@@ -130,10 +127,8 @@ class _BottomBarState extends State<BottomBar>
               mini: true,
               onPressed: () {
                 scrollBottomBarController
-                    .animateTo(
-                        scrollBottomBarController.position.minScrollExtent,
-                        duration: const Duration(milliseconds: 500),
-                        curve: Curves.easeIn)
+                    .animateTo(scrollBottomBarController.position.minScrollExtent,
+                        duration: const Duration(milliseconds: 500), curve: Curves.easeIn)
                     .then((value) {
                   setState(() {
                     isOnTop = true;
@@ -158,8 +153,7 @@ class BottomNavBar extends StatefulWidget {
   _BottomNavBarState createState() => _BottomNavBarState();
 }
 
-class _BottomNavBarState extends State<BottomNavBar>
-    with SingleTickerProviderStateMixin {
+class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderStateMixin {
   late AnimationController _controller2;
   late Animation<double> _paddingAnimation;
   bool? isLoggedin = false;
@@ -213,10 +207,7 @@ class _BottomNavBarState extends State<BottomNavBar>
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         boxShadow: [
-          BoxShadow(
-              color: const Color(0xFF000000).withOpacity(0.25),
-              blurRadius: 4,
-              offset: const Offset(0, 4)),
+          BoxShadow(color: const Color(0xFF000000).withOpacity(0.25), blurRadius: 4, offset: const Offset(0, 4)),
         ],
         borderRadius: BorderRadius.circular(500),
       ),
@@ -248,11 +239,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                                 : Theme.of(context).errorColor
                             : Theme.of(context).accentColor,
                       ),
-                      margin: navStack.last == "Home"
-                          ? const EdgeInsets.all(3)
-                          : const EdgeInsets.all(0),
-                      width:
-                          navStack.last == "Home" ? _paddingAnimation.value : 0,
+                      margin: navStack.last == "Home" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      width: navStack.last == "Home" ? _paddingAnimation.value : 0,
                       height: navStack.last == "Home" ? 3 : 0,
                     )
                   ],
@@ -295,12 +283,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                                 : Theme.of(context).errorColor
                             : Theme.of(context).accentColor,
                       ),
-                      margin: navStack.last == "Search"
-                          ? const EdgeInsets.all(3)
-                          : const EdgeInsets.all(0),
-                      width: navStack.last == "Search"
-                          ? _paddingAnimation.value
-                          : 0,
+                      margin: navStack.last == "Search" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      width: navStack.last == "Search" ? _paddingAnimation.value : 0,
                       height: navStack.last == "Search" ? 3 : 0,
                     )
                   ],
@@ -327,9 +311,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                           color: Theme.of(context).errorColor == Colors.black
                               ? Colors.black
                               : Theme.of(context).errorColor,
-                          width: Theme.of(context).errorColor == Colors.black
-                              ? 1
-                              : 0,
+                          width: Theme.of(context).errorColor == Colors.black ? 1 : 0,
                         ),
                         color: Theme.of(context).errorColor == Colors.black
                             ? Colors.white24
@@ -361,12 +343,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                                     : Theme.of(context).errorColor
                                 : Theme.of(context).accentColor,
                           ),
-                          margin: navStack.last == "Add"
-                              ? const EdgeInsets.all(3)
-                              : const EdgeInsets.all(0),
-                          width: navStack.last == "Add"
-                              ? _paddingAnimation.value
-                              : 0,
+                          margin: navStack.last == "Add" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                          width: navStack.last == "Add" ? _paddingAnimation.value : 0,
                           height: navStack.last == "Add" ? 3 : 0,
                         )
                       ],
@@ -396,8 +374,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                     Container(
                       height: navStack.last == "Setups" ? 9 : 0,
                     ),
-                    Icon(JamIcons.instant_picture_f,
-                        color: Theme.of(context).accentColor),
+                    Icon(JamIcons.instant_picture_f, color: Theme.of(context).accentColor),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
@@ -407,12 +384,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                                 : Theme.of(context).errorColor
                             : Theme.of(context).accentColor,
                       ),
-                      margin: navStack.last == "Setups"
-                          ? const EdgeInsets.all(3)
-                          : const EdgeInsets.all(0),
-                      width: navStack.last == "Setups"
-                          ? _paddingAnimation.value
-                          : 0,
+                      margin: navStack.last == "Setups" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      width: navStack.last == "Setups" ? _paddingAnimation.value : 0,
                       height: navStack.last == "Setups" ? 3 : 0,
                     )
                   ],
@@ -447,8 +420,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                           : Container(
                               padding: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(500),
-                                  color: Theme.of(context).accentColor),
+                                  borderRadius: BorderRadius.circular(500), color: Theme.of(context).accentColor),
                               child: CircleAvatar(
                                 backgroundColor: Theme.of(context).accentColor,
                                 radius: 11,
@@ -476,12 +448,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                                 : Theme.of(context).errorColor
                             : Theme.of(context).accentColor,
                       ),
-                      margin: navStack.last == "Profile"
-                          ? const EdgeInsets.all(3)
-                          : const EdgeInsets.all(0),
-                      width: navStack.last == "Profile"
-                          ? _paddingAnimation.value
-                          : 0,
+                      margin: navStack.last == "Profile" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      width: navStack.last == "Profile" ? _paddingAnimation.value : 0,
                       height: navStack.last == "Profile" ? 3 : 0,
                     )
                   ],
@@ -491,12 +459,10 @@ class _BottomNavBarState extends State<BottomNavBar>
                     logger.d("Currently on Profile");
                   } else {
                     if (navStack.last == "Home") {
-                      Navigator.of(context).pushNamed(profileRoute,
-                          arguments: [globals.prismUser.email]);
+                      Navigator.of(context).pushNamed(profileRoute, arguments: [globals.prismUser.email]);
                     } else {
                       Navigator.of(context).popUntil((route) {
-                        if (navStack.last != "Home" &&
-                            navStack.last != "Profile") {
+                        if (navStack.last != "Home" && navStack.last != "Profile") {
                           navStack.removeLast();
                           logger.d(navStack.toString());
                           return false;
@@ -506,8 +472,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                         }
                       });
                       if ((navStack.last == "Home") == true) {
-                        Navigator.of(context).pushNamed(profileRoute,
-                            arguments: [globals.prismUser.email]);
+                        Navigator.of(context).pushNamed(profileRoute, arguments: [globals.prismUser.email]);
                       }
                     }
                   }
@@ -545,8 +510,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
         _wallpaper = File(pickedFile.path);
       });
       Navigator.pop(context);
-      Future.delayed(const Duration()).then((value) =>
-          Navigator.pushNamed(context, editWallRoute, arguments: [_wallpaper]));
+      Future.delayed(const Duration())
+          .then((value) => Navigator.pushNamed(context, editWallRoute, arguments: [_wallpaper]));
     }
   }
 
@@ -554,9 +519,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width * 0.85;
     return Container(
-      height: MediaQuery.of(context).size.height / 1.5 > 500
-          ? MediaQuery.of(context).size.height / 1.5
-          : 500,
+      height: MediaQuery.of(context).size.height / 1.5 > 500 ? MediaQuery.of(context).size.height / 1.5 : 500,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         borderRadius: const BorderRadius.only(
@@ -575,9 +538,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                 child: Container(
                   height: 5,
                   width: 30,
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).hintColor,
-                      borderRadius: BorderRadius.circular(500)),
+                  decoration:
+                      BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(500)),
                 ),
               )
             ],
@@ -599,8 +561,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
                       onTap: () async {
-                        int dailyWallUpload = main.prefs
-                            .get("dailyWallUpload", defaultValue: 0) as int;
+                        int dailyWallUpload = main.prefs.get("dailyWallUpload", defaultValue: 0) as int;
                         if (main.prefs.get('date') !=
                             DateFormat("yy-MM-dd").format(
                               DateTime.now(),
@@ -617,8 +578,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                           if (dailyWallUpload < 5) {
                             await getImage();
                           } else {
-                            toasts.codeSend(
-                                "Free users can only upload 5 walls a day.");
+                            toasts.codeSend("Free users can only upload 5 walls a day.");
                             if (globals.prismUser.loggedIn == false) {
                               googleSignInPopUp(context, () {
                                 Navigator.of(context).pop();
@@ -643,12 +603,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                               width: width / 2 - 14,
                               height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .errorColor
-                                    .withOpacity(0.2),
-                                border: Border.all(
-                                    color: Theme.of(context).errorColor,
-                                    width: 3),
+                                color: Theme.of(context).errorColor.withOpacity(0.2),
+                                border: Border.all(color: Theme.of(context).errorColor, width: 3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: ClipRRect(
@@ -670,9 +626,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                       border: Border.all(
                                         color: Theme.of(context).errorColor,
                                       ),
-                                      color: Theme.of(context)
-                                          .errorColor
-                                          .withOpacity(0.2),
+                                      color: Theme.of(context).errorColor.withOpacity(0.2),
                                       shape: BoxShape.circle),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
@@ -692,10 +646,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                   ),
                   Text(
                     "Wallpapers",
-                    style: TextStyle(
-                        fontSize: 16,
-                        color: Theme.of(context).accentColor,
-                        fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
                   )
                 ],
               ),
@@ -708,8 +659,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     child: GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
-                        Future.delayed(const Duration()).then((value) =>
-                            Navigator.pushNamed(context, setupGuidelinesRoute));
+                        Future.delayed(const Duration())
+                            .then((value) => Navigator.pushNamed(context, setupGuidelinesRoute));
                       },
                       child: SizedBox(
                         width: width / 2 - 20,
@@ -721,12 +672,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                               width: width / 2 - 14,
                               height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .errorColor
-                                    .withOpacity(0.2),
-                                border: Border.all(
-                                    color: Theme.of(context).errorColor,
-                                    width: 3),
+                                color: Theme.of(context).errorColor.withOpacity(0.2),
+                                border: Border.all(color: Theme.of(context).errorColor, width: 3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: ClipRRect(
@@ -748,9 +695,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                       border: Border.all(
                                         color: Theme.of(context).errorColor,
                                       ),
-                                      color: Theme.of(context)
-                                          .errorColor
-                                          .withOpacity(0.2),
+                                      color: Theme.of(context).errorColor.withOpacity(0.2),
                                       shape: BoxShape.circle),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
@@ -770,10 +715,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                   ),
                   Text(
                     "Setups",
-                    style: TextStyle(
-                        fontSize: 16,
-                        color: Theme.of(context).accentColor,
-                        fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
                   )
                 ],
               ),
@@ -823,8 +765,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
     Future.delayed(const Duration()).then((value) => setState(() {
           _anchoredBanner = null;
         }));
-    final AnchoredAdaptiveBannerAdSize? size =
-        await AdSize.getAnchoredAdaptiveBannerAdSize(
+    final AnchoredAdaptiveBannerAdSize? size = await AdSize.getAnchoredAdaptiveBannerAdSize(
       Orientation.portrait,
       MediaQuery.of(context).size.width.truncate(),
     );
@@ -844,9 +785,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
     final BannerAd banner = BannerAd(
       size: size,
       request: AdBannerWidget.request,
-      adUnitId: kReleaseMode
-          ? "ca-app-pub-4649644680694757/8480286673"
-          : BannerAd.testAdUnitId,
+      adUnitId: kReleaseMode ? "ca-app-pub-4649644680694757/8480286673" : BannerAd.testAdUnitId,
       listener: BannerAdListener(
         onAdLoaded: (Ad ad) {
           logger.d('$BannerAd loaded.');
@@ -893,10 +832,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
               : Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).primaryColor.withOpacity(0),
-                        Theme.of(context).primaryColor
-                      ],
+                      colors: [Theme.of(context).primaryColor.withOpacity(0), Theme.of(context).primaryColor],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),

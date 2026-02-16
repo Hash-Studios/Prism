@@ -10,8 +10,7 @@ ThemeData kLightTheme = ThemeData(
   accentColor: config.Colors().accentColor(1),
   focusColor: config.Colors().mainColor(1),
   hintColor: config.Colors().secondColor(1),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -25,20 +24,11 @@ ThemeData kLightTheme = ThemeData(
       fontFamily: "Proxima Nova",
     ),
     headline4: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.black),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.black),
+        fontSize: 16, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: config.Colors().accentColor(1)),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentColor(1),
@@ -86,8 +76,7 @@ ThemeData kDarkTheme = ThemeData(
   accentColor: config.Colors().accentDarkColor(1),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: config.Colors().secondDarkColor(1),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -105,16 +94,10 @@ ThemeData kDarkTheme = ThemeData(
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: config.Colors().accentDarkColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -162,8 +145,7 @@ ThemeData kLightTheme2 = ThemeData(
   accentColor: const Color(0xFF96732C),
   focusColor: config.Colors().mainColor(1),
   hintColor: const Color(0xFFF1E6D0),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -177,20 +159,11 @@ ThemeData kLightTheme2 = ThemeData(
       fontFamily: "Proxima Nova",
     ),
     headline4: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.black),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.black),
+        fontSize: 16, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: config.Colors().accentColor(1)),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentColor(1),
@@ -238,8 +211,7 @@ ThemeData kDarkTheme2 = ThemeData(
   errorColor: Colors.black,
   focusColor: Colors.black,
   hintColor: Colors.black,
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -252,21 +224,12 @@ ThemeData kDarkTheme2 = ThemeData(
       color: Colors.white,
       fontFamily: "Proxima Nova",
     ),
-    headline4: const TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
+    headline4:
+        const TextStyle(fontSize: 16, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
     headline1: const TextStyle(
       fontFamily: 'Proxima Nova',
       color: Colors.white,
@@ -314,8 +277,7 @@ ThemeData kLightTheme3 = ThemeData(
   accentColor: const Color(0xFF7D564B),
   focusColor: config.Colors().mainColor(1),
   hintColor: const Color(0xFFBE9C93),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -329,20 +291,11 @@ ThemeData kLightTheme3 = ThemeData(
       fontFamily: "Proxima Nova",
     ),
     headline4: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.black),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.black),
+        fontSize: 16, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: config.Colors().accentColor(1)),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentColor(1),
@@ -390,8 +343,7 @@ ThemeData kLightTheme4 = ThemeData(
   accentColor: const Color(0xFF36435A),
   focusColor: config.Colors().mainColor(1),
   hintColor: const Color(0xFF788CAF),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -405,20 +357,11 @@ ThemeData kLightTheme4 = ThemeData(
       fontFamily: "Proxima Nova",
     ),
     headline4: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.black),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.black),
+        fontSize: 16, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: config.Colors().accentColor(1)),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentColor(1),
@@ -466,8 +409,7 @@ ThemeData kDarkTheme3 = ThemeData(
   accentColor: const Color(0xFFE3E4D0),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF35371F),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -485,16 +427,10 @@ ThemeData kDarkTheme3 = ThemeData(
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: config.Colors().accentDarkColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -542,8 +478,7 @@ ThemeData kDarkTheme4 = ThemeData(
   accentColor: const Color(0xFFB0CCE0),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF152836),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -561,16 +496,10 @@ ThemeData kDarkTheme4 = ThemeData(
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: config.Colors().accentDarkColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -618,8 +547,7 @@ ThemeData kDarkTheme5 = ThemeData(
   accentColor: const Color(0xFFD9E6D6),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF1D2B1A),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -637,16 +565,10 @@ ThemeData kDarkTheme5 = ThemeData(
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: config.Colors().accentDarkColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -694,8 +616,7 @@ ThemeData kDarkTheme6 = ThemeData(
   accentColor: const Color(0xFFDFB0A0),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF361B12),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -713,16 +634,10 @@ ThemeData kDarkTheme6 = ThemeData(
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: config.Colors().accentDarkColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -770,8 +685,7 @@ ThemeData kDarkTheme7 = ThemeData(
   accentColor: const Color(0xFFA9CDDF),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF193543),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -789,16 +703,10 @@ ThemeData kDarkTheme7 = ThemeData(
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: config.Colors().accentDarkColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -846,8 +754,7 @@ ThemeData kDarkTheme8 = ThemeData(
   accentColor: const Color(0xFFEEEFF2),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF33363F),
-  accentTextTheme:
-      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme: const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -865,16 +772,10 @@ ThemeData kDarkTheme8 = ThemeData(
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: config.Colors().accentDarkColor(1)),
-    headline3: const TextStyle(
-        fontSize: 20,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
-    headline2: const TextStyle(
-        fontSize: 24,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: Colors.white),
+    headline3:
+        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+    headline2:
+        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
     headline1: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),

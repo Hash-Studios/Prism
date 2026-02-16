@@ -28,8 +28,7 @@ class _FavSetupLoaderState extends State<FavSetupLoader> {
           logger.d("snapshot null");
           return const LoadingSetupCards();
         }
-        if (snapshot.connectionState == ConnectionState.waiting ||
-            snapshot.connectionState == ConnectionState.none) {
+        if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
           logger.d("snapshot none, waiting");
           return const LoadingSetupCards();
         } else {

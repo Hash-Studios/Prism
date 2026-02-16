@@ -14,8 +14,7 @@ class LoadingSetupCards extends StatefulWidget {
   _LoadingSetupCardsState createState() => _LoadingSetupCardsState();
 }
 
-class _LoadingSetupCardsState extends State<LoadingSetupCards>
-    with SingleTickerProviderStateMixin {
+class _LoadingSetupCardsState extends State<LoadingSetupCards> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Color?> animation;
 
@@ -27,8 +26,7 @@ class _LoadingSetupCardsState extends State<LoadingSetupCards>
       vsync: this,
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(
-                    SchedulerBinding.instance!.window.platformBrightness) ==
+                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color?>(
             [
@@ -96,10 +94,7 @@ class _LoadingSetupCardsState extends State<LoadingSetupCards>
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent:
-                    MediaQuery.of(context).orientation == Orientation.portrait
-                        ? 300
-                        : 250,
+                maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                 childAspectRatio: 0.5025,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8),
@@ -117,10 +112,7 @@ class _LoadingSetupCardsState extends State<LoadingSetupCards>
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent:
-                    MediaQuery.of(context).orientation == Orientation.portrait
-                        ? 300
-                        : 250,
+                maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                 childAspectRatio: 0.5025,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8),

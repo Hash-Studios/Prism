@@ -18,8 +18,7 @@ Future<void> createRecord(
     String? wallpaperCategory,
     String? wallpaperDesc,
     dynamic review) async {
-  int dailyWallUpload =
-      main.prefs.get("dailyWallUpload", defaultValue: 0) as int;
+  int dailyWallUpload = main.prefs.get("dailyWallUpload", defaultValue: 0) as int;
   if (main.prefs.get('date') !=
       DateFormat("yy-MM-dd").format(
         DateTime.now(),
@@ -64,18 +63,13 @@ Future<void> createRecord(
         <String, dynamic>{
           'notification': <String, dynamic>{
             'title': '🎉 New Premium Wall for review!',
-            'body':
-                'New Post by ${globals.prismUser.username} is up for review.',
+            'body': 'New Post by ${globals.prismUser.username} is up for review.',
             'color': "#e57697",
             'image': wallpaperThumb,
             'android_channel_id': "posts",
           },
           'priority': 'high',
-          'data': <String, dynamic>{
-            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-            'id': '1',
-            'status': 'done'
-          },
+          'data': <String, dynamic>{'click_action': 'FLUTTER_NOTIFICATION_CLICK', 'id': '1', 'status': 'done'},
           'to': "/topics/${"maurya.abhay30".split("@")[0]}"
         },
       ),
@@ -90,18 +84,13 @@ Future<void> createRecord(
         <String, dynamic>{
           'notification': <String, dynamic>{
             'title': '🎉 New Premium Wall for review!',
-            'body':
-                'New Post by ${globals.prismUser.username} is up for review.',
+            'body': 'New Post by ${globals.prismUser.username} is up for review.',
             'color': "#e57697",
             'image': wallpaperThumb,
             'android_channel_id': "posts",
           },
           'priority': 'high',
-          'data': <String, dynamic>{
-            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-            'id': '1',
-            'status': 'done'
-          },
+          'data': <String, dynamic>{'click_action': 'FLUTTER_NOTIFICATION_CLICK', 'id': '1', 'status': 'done'},
           'to': "/topics/${"akshaymaurya3006".split("@")[0]}"
         },
       ),
@@ -161,18 +150,13 @@ Future<void> createSetup(
         <String, dynamic>{
           'notification': <String, dynamic>{
             'title': '🎉 New Premium Setup for review!',
-            'body':
-                'New Post by ${globals.prismUser.username} is up for review.',
+            'body': 'New Post by ${globals.prismUser.username} is up for review.',
             'color': "#e57697",
             'image': imageURL,
             'android_channel_id': "posts",
           },
           'priority': 'high',
-          'data': <String, dynamic>{
-            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-            'id': '1',
-            'status': 'done'
-          },
+          'data': <String, dynamic>{'click_action': 'FLUTTER_NOTIFICATION_CLICK', 'id': '1', 'status': 'done'},
           'to': "/topics/${"maurya.abhay30".split("@")[0]}"
         },
       ),
@@ -187,18 +171,13 @@ Future<void> createSetup(
         <String, dynamic>{
           'notification': <String, dynamic>{
             'title': '🎉 New Premium Setup for review!',
-            'body':
-                'New Post by ${globals.prismUser.username} is up for review.',
+            'body': 'New Post by ${globals.prismUser.username} is up for review.',
             'color': "#e57697",
             'image': imageURL,
             'android_channel_id': "posts",
           },
           'priority': 'high',
-          'data': <String, dynamic>{
-            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-            'id': '1',
-            'status': 'done'
-          },
+          'data': <String, dynamic>{'click_action': 'FLUTTER_NOTIFICATION_CLICK', 'id': '1', 'status': 'done'},
           'to': "/topics/${"akshaymaurya3006".split("@")[0]}"
         },
       ),

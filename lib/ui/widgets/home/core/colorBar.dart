@@ -24,32 +24,23 @@ class ColorBar extends StatelessWidget {
               onLongPress: () {
                 HapticFeedback.vibrate();
                 Clipboard.setData(ClipboardData(
-                  text: colors![color]
-                      .toString()
-                      .replaceAll("Color(0xff", "")
-                      .replaceAll(")", ""),
+                  text: colors![color].toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
                 )).then((result) {
                   toasts.color(colors![color]!);
                 });
               },
               onTap: () {
-                Future.delayed(const Duration())
-                    .then((value) => Navigator.pushNamed(
-                          context,
-                          colorRoute,
-                          arguments: [
-                            colors![color]
-                                .toString()
-                                .replaceAll("Color(0xff", "")
-                                .replaceAll(")", ""),
-                          ],
-                        ));
+                Future.delayed(const Duration()).then((value) => Navigator.pushNamed(
+                      context,
+                      colorRoute,
+                      arguments: [
+                        colors![color].toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
+                      ],
+                    ));
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: colors == null
-                      ? Theme.of(context).accentColor.withOpacity(0.1)
-                      : colors![color],
+                  color: colors == null ? Theme.of(context).accentColor.withOpacity(0.1) : colors![color],
                   shape: BoxShape.circle,
                 ),
                 height: MediaQuery.of(context).size.width / 8,

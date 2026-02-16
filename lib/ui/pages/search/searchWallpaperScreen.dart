@@ -2,8 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
-import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as wdata;
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
@@ -32,8 +31,7 @@ class SearchWallpaperScreen extends StatefulWidget {
   _SearchWallpaperScreenState createState() => _SearchWallpaperScreenState();
 }
 
-class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
-    with SingleTickerProviderStateMixin {
+class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     logger.d(navStack.toString());
@@ -79,11 +77,11 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
       accent = colors![0];
     });
     if (accent!.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.dark));
+      SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
     } else {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.light));
+      SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
     }
   }
 
@@ -97,19 +95,18 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
         colorChanged = true;
       });
       if (accent!.computeLuminance() > 0.5) {
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-            .copyWith(statusBarIconBrightness: Brightness.dark));
+        SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
       } else {
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-            .copyWith(statusBarIconBrightness: Brightness.light));
+        SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
       }
     }
   }
 
   @override
   void initState() {
-    shakeController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
+    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
     selectedProvider = widget.arguments![0].toString();
     query = widget.arguments![1].toString();
@@ -127,9 +124,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(shakeController)
+    final Animation<double> offsetAnimation =
+        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
           ..addStatusListener((status) {
             if (status == AnimationStatus.completed) {
               shakeController.reverse();
@@ -140,8 +136,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
       child: selectedProvider == "WallHaven"
           ? Scaffold(
               key: _scaffoldKey,
-              backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : accent,
+              backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   setState(() {
@@ -252,31 +247,23 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             Expanded(
                               flex: 8,
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                                padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: <Widget>[
                                     Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: <Widget>[
                                         Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              0, 5, 0, 10),
+                                          padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                           child: Text(
-                                            wdata.wallsS[index].id
-                                                .toString()
-                                                .toUpperCase(),
+                                            wdata.wallsS[index].id.toString().toUpperCase(),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText1!
-                                                .copyWith(
-                                                    color: Theme.of(context)
-                                                        .accentColor),
+                                                .copyWith(color: Theme.of(context).accentColor),
                                           ),
                                         ),
                                         Row(
@@ -284,20 +271,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                             Icon(
                                               JamIcons.eye,
                                               size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
+                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
-                                              wdata.wallsS[index].views
-                                                  .toString(),
+                                              wdata.wallsS[index].views.toString(),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                           ],
                                         ),
@@ -307,20 +289,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                             Icon(
                                               JamIcons.heart_f,
                                               size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
+                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
-                                              wdata.wallsS[index].favourites
-                                                  .toString(),
+                                              wdata.wallsS[index].favourites.toString(),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                           ],
                                         ),
@@ -330,9 +307,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                             Icon(
                                               JamIcons.save,
                                               size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
+                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
@@ -340,9 +315,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                           ],
                                         ),
@@ -350,35 +323,25 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                     ),
                                     Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
+                                      crossAxisAlignment: CrossAxisAlignment.end,
                                       children: <Widget>[
                                         Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              0, 0, 0, 0),
+                                          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
                                           child: Row(
                                             children: [
                                               Text(
-                                                wdata.wallsS[index].category
-                                                        .toString()[0]
-                                                        .toUpperCase() +
-                                                    wdata.wallsS[index].category
-                                                        .toString()
-                                                        .substring(1),
+                                                wdata.wallsS[index].category.toString()[0].toUpperCase() +
+                                                    wdata.wallsS[index].category.toString().substring(1),
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2!
-                                                    .copyWith(
-                                                        color: Theme.of(context)
-                                                            .accentColor),
+                                                    .copyWith(color: Theme.of(context).accentColor),
                                               ),
                                               const SizedBox(width: 10),
                                               Icon(
                                                 JamIcons.unordered_list,
                                                 size: 20,
-                                                color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(.7),
+                                                color: Theme.of(context).accentColor.withOpacity(.7),
                                               ),
                                             ],
                                           ),
@@ -387,22 +350,17 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                         Row(
                                           children: [
                                             Text(
-                                              wdata.wallsS[index].resolution
-                                                  .toString(),
+                                              wdata.wallsS[index].resolution.toString(),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
                                               JamIcons.set_square,
                                               size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
+                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                             ),
                                           ],
                                         ),
@@ -410,24 +368,17 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                         Row(
                                           children: [
                                             Text(
-                                              query
-                                                      .toString()[0]
-                                                      .toUpperCase() +
-                                                  query.toString().substring(1),
+                                              query.toString()[0].toUpperCase() + query.toString().substring(1),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
                                               JamIcons.search,
                                               size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
+                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                             ),
                                           ],
                                         ),
@@ -440,20 +391,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             Expanded(
                               flex: 5,
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: <Widget>[
                                   DownloadButton(
                                     colorChanged: colorChanged,
-                                    link: screenshotTaken
-                                        ? _imageFile.path
-                                        : wdata.wallsS[index].path.toString(),
+                                    link: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path.toString(),
                                   ),
                                   SetWallpaperButton(
                                       colorChanged: colorChanged,
-                                      url: screenshotTaken
-                                          ? _imageFile.path
-                                          : wdata.wallsS[index].path),
+                                      url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path),
                                   FavouriteWallpaperButton(
                                     id: wdata.wallsS[index].id.toString(),
                                     provider: "WallHaven",
@@ -464,9 +410,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                       id: wdata.wallsS[index].id,
                                       provider: "WallHaven",
                                       url: wdata.wallsS[index].path,
-                                      thumbUrl: wdata
-                                          .wallsS[index].thumbs!["original"]
-                                          .toString()),
+                                      thumbUrl: wdata.wallsS[index].thumbs!["original"].toString()),
                                   EditButton(
                                     url: wdata.wallsS[index].path,
                                   ),
@@ -507,29 +451,22 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             },
                             child: CachedNetworkImage(
                               imageUrl: wdata.wallsS[index].path!,
-                              imageBuilder: (context, imageProvider) =>
-                                  Screenshot(
+                              imageBuilder: (context, imageProvider) => Screenshot(
                                 controller: screenshotController,
                                 child: Container(
                                   margin: EdgeInsets.symmetric(
-                                      vertical: offsetAnimation.value * 1.25,
-                                      horizontal: offsetAnimation.value / 2),
+                                      vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(
-                                        offsetAnimation.value),
+                                    borderRadius: BorderRadius.circular(offsetAnimation.value),
                                     image: DecorationImage(
-                                      colorFilter: colorChanged
-                                          ? ColorFilter.mode(
-                                              accent!, BlendMode.hue)
-                                          : null,
+                                      colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
                                       image: imageProvider,
                                       fit: BoxFit.cover,
                                     ),
                                   ),
                                 ),
                               ),
-                              progressIndicatorBuilder:
-                                  (context, url, downloadProgress) => Stack(
+                              progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
                                 children: <Widget>[
                                   const SizedBox.expand(child: Text("")),
                                   Center(
@@ -557,8 +494,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                     Align(
                       alignment: Alignment.topLeft,
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize! + 8, 8, 8),
+                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
@@ -579,20 +515,16 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize! + 8, 8, 8),
+                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             final link = wdata.wallsS[index].path;
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                    transitionDuration:
-                                        const Duration(milliseconds: 300),
-                                    pageBuilder: (context, animation,
-                                        secondaryAnimation) {
-                                      animation = Tween(begin: 0.0, end: 1.0)
-                                          .animate(animation);
+                                    transitionDuration: const Duration(milliseconds: 300),
+                                    pageBuilder: (context, animation, secondaryAnimation) {
+                                      animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                       return FadeTransition(
                                           opacity: animation,
                                           child: ClockOverlay(
@@ -622,8 +554,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
             )
           : Scaffold(
               key: _scaffoldKey,
-              backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : accent,
+              backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   setState(() {
@@ -734,101 +665,86 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             Expanded(
                               flex: 8,
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                                padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          0, 5, 0, 10),
+                                      padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                       child: SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                .8,
+                                        width: MediaQuery.of(context).size.width * .8,
                                         child: Text(
                                           pdata.wallsPS[index].url
                                                       .toString()
-                                                      .replaceAll(
-                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")
                                                       .length >
                                                   8
                                               ? pdata.wallsPS[index].url
                                                       .toString()
-                                                      .replaceAll(
-                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")[0]
                                                       .toUpperCase() +
                                                   pdata.wallsPS[index].url
                                                       .toString()
-                                                      .replaceAll(
-                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")
                                                       .substring(
                                                           1,
-                                                          pdata.wallsPS[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                          pdata.wallsPS[index].url
+                                                                  .toString()
+                                                                  .replaceAll("https://www.pexels.com/photo/", "")
+                                                                  .replaceAll("-", " ")
+                                                                  .replaceAll("/", "")
+                                                                  .length -
                                                               7)
                                               : pdata.wallsPS[index].url
                                                       .toString()
-                                                      .replaceAll(
-                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")[0]
                                                       .toUpperCase() +
                                                   pdata.wallsPS[index].url
                                                       .toString()
-                                                      .replaceAll(
-                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")
                                                       .substring(1),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText1!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                           overflow: TextOverflow.ellipsis,
                                           maxLines: 1,
                                         ),
                                       ),
                                     ),
                                     Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment: CrossAxisAlignment.end,
                                       children: <Widget>[
                                         Column(
                                           mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: <Widget>[
                                             Row(
                                               children: [
                                                 Icon(
                                                   JamIcons.info,
                                                   size: 20,
-                                                  color: Theme.of(context)
-                                                      .accentColor
-                                                      .withOpacity(.7),
+                                                  color: Theme.of(context).accentColor.withOpacity(.7),
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
-                                                  pdata.wallsPS[index].id
-                                                      .toString(),
+                                                  pdata.wallsPS[index].id.toString(),
                                                   style: Theme.of(context)
                                                       .textTheme
                                                       .bodyText2!
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
+                                                      .copyWith(color: Theme.of(context).accentColor),
                                                 ),
                                               ],
                                             ),
@@ -838,9 +754,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                 Icon(
                                                   JamIcons.set_square,
                                                   size: 20,
-                                                  color: Theme.of(context)
-                                                      .accentColor
-                                                      .withOpacity(.7),
+                                                  color: Theme.of(context).accentColor.withOpacity(.7),
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
@@ -848,10 +762,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                   style: Theme.of(context)
                                                       .textTheme
                                                       .bodyText2!
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
+                                                      .copyWith(color: Theme.of(context).accentColor),
                                                 ),
                                               ],
                                             ),
@@ -859,40 +770,25 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                         ),
                                         Column(
                                           mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
+                                          crossAxisAlignment: CrossAxisAlignment.end,
                                           children: <Widget>[
                                             SizedBox(
                                               width: 160,
                                               child: Align(
-                                                alignment:
-                                                    Alignment.centerRight,
+                                                alignment: Alignment.centerRight,
                                                 child: ActionChip(
                                                   onPressed: () {
-                                                    launch(pdata
-                                                        .wallsPS[index].url!);
+                                                    launch(pdata.wallsPS[index].url!);
                                                   },
-                                                  padding: const EdgeInsets
-                                                          .symmetric(
-                                                      vertical: 5,
-                                                      horizontal: 5),
-                                                  avatar: Icon(JamIcons.camera,
-                                                      color: Theme.of(context)
-                                                          .accentColor),
-                                                  labelPadding:
-                                                      const EdgeInsets.fromLTRB(
-                                                          7, 3, 7, 3),
+                                                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                                  avatar: Icon(JamIcons.camera, color: Theme.of(context).accentColor),
+                                                  labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                   label: Text(
-                                                    pdata.wallsPS[index]
-                                                        .photographer
-                                                        .toString(),
+                                                    pdata.wallsPS[index].photographer.toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2!
-                                                        .copyWith(
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor)
+                                                        .copyWith(color: Theme.of(context).accentColor)
                                                         .copyWith(fontSize: 16),
                                                     overflow: TextOverflow.fade,
                                                   ),
@@ -906,18 +802,13 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                   style: Theme.of(context)
                                                       .textTheme
                                                       .bodyText2!
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
+                                                      .copyWith(color: Theme.of(context).accentColor),
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Icon(
                                                   JamIcons.database,
                                                   size: 20,
-                                                  color: Theme.of(context)
-                                                      .accentColor
-                                                      .withOpacity(.7),
+                                                  color: Theme.of(context).accentColor.withOpacity(.7),
                                                 ),
                                               ],
                                             ),
@@ -932,23 +823,18 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             Expanded(
                               flex: 5,
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: <Widget>[
                                   DownloadButton(
                                       colorChanged: colorChanged,
                                       link: screenshotTaken
                                           ? _imageFile.path
-                                          : pdata
-                                              .wallsPS[index].src!["original"]
-                                              .toString()),
+                                          : pdata.wallsPS[index].src!["original"].toString()),
                                   SetWallpaperButton(
                                       colorChanged: colorChanged,
                                       url: screenshotTaken
                                           ? _imageFile.path
-                                          : pdata
-                                              .wallsPS[index].src!["original"]
-                                              .toString()),
+                                          : pdata.wallsPS[index].src!["original"].toString()),
                                   FavouriteWallpaperButton(
                                     id: pdata.wallsPS[index].id.toString(),
                                     provider: "Pexels",
@@ -958,14 +844,10 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                   ShareButton(
                                       id: pdata.wallsPS[index].id,
                                       provider: selectedProvider,
-                                      url: pdata.wallsPS[index].src!["original"]
-                                          .toString(),
-                                      thumbUrl: pdata
-                                          .wallsPS[index].src!["medium"]
-                                          .toString()),
+                                      url: pdata.wallsPS[index].src!["original"].toString(),
+                                      thumbUrl: pdata.wallsPS[index].src!["medium"].toString()),
                                   EditButton(
-                                    url: pdata.wallsPS[index].src!["original"]
-                                        .toString(),
+                                    url: pdata.wallsPS[index].src!["original"].toString(),
                                   ),
                                 ],
                               ),
@@ -1003,31 +885,23 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
-                              imageUrl: pdata.wallsPS[index].src!["original"]
-                                  .toString(),
-                              imageBuilder: (context, imageProvider) =>
-                                  Screenshot(
+                              imageUrl: pdata.wallsPS[index].src!["original"].toString(),
+                              imageBuilder: (context, imageProvider) => Screenshot(
                                 controller: screenshotController,
                                 child: Container(
                                   margin: EdgeInsets.symmetric(
-                                      vertical: offsetAnimation.value * 1.25,
-                                      horizontal: offsetAnimation.value / 2),
+                                      vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(
-                                        offsetAnimation.value),
+                                    borderRadius: BorderRadius.circular(offsetAnimation.value),
                                     image: DecorationImage(
-                                      colorFilter: colorChanged
-                                          ? ColorFilter.mode(
-                                              accent!, BlendMode.hue)
-                                          : null,
+                                      colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
                                       image: imageProvider,
                                       fit: BoxFit.cover,
                                     ),
                                   ),
                                 ),
                               ),
-                              progressIndicatorBuilder:
-                                  (context, url, downloadProgress) => Stack(
+                              progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
                                 children: <Widget>[
                                   const SizedBox.expand(child: Text("")),
                                   Center(
@@ -1055,8 +929,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                     Align(
                       alignment: Alignment.topLeft,
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize! + 8, 8, 8),
+                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
@@ -1077,20 +950,16 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize! + 8, 8, 8),
+                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             final link = pdata.wallsPS[index].src!["original"];
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                    transitionDuration:
-                                        const Duration(milliseconds: 300),
-                                    pageBuilder: (context, animation,
-                                        secondaryAnimation) {
-                                      animation = Tween(begin: 0.0, end: 1.0)
-                                          .animate(animation);
+                                    transitionDuration: const Duration(milliseconds: 300),
+                                    pageBuilder: (context, animation, secondaryAnimation) {
+                                      animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                       return FadeTransition(
                                           opacity: animation,
                                           child: ClockOverlay(

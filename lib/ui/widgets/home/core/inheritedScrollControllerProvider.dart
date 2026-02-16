@@ -7,8 +7,7 @@ class InheritedDataProvider extends InheritedWidget {
     this.scrollController,
   }) : super(child: child);
   @override
-  bool updateShouldNotify(InheritedDataProvider oldWidget) =>
-      scrollController != oldWidget.scrollController;
+  bool updateShouldNotify(InheritedDataProvider oldWidget) => scrollController != oldWidget.scrollController;
   static InheritedDataProvider? of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<InheritedDataProvider>();
 }

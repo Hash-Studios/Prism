@@ -32,8 +32,7 @@ class _ProfileLoaderState extends State<ProfileLoader> {
               child: Loader(),
             );
           }
-          if (snapshot.connectionState == ConnectionState.waiting ||
-              snapshot.connectionState == ConnectionState.none) {
+          if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
             logger.d("snapshot none, waiting");
             return Center(
               child: Loader(),

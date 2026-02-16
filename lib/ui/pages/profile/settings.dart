@@ -60,9 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).errorColor == Colors.black
-                          ? Colors.grey
-                          : Theme.of(context).errorColor,
+                      color: Theme.of(context).errorColor == Colors.black ? Colors.grey : Theme.of(context).errorColor,
                     ),
                   ),
                 ),
@@ -110,9 +108,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).errorColor == Colors.black
-                        ? Colors.grey
-                        : Theme.of(context).errorColor,
+                    color: Theme.of(context).errorColor == Colors.black ? Colors.grey : Theme.of(context).errorColor,
                   ),
                 ),
               ),
@@ -141,9 +137,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   "Clear Cache",
                   style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: "Proxima Nova"),
+                      color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
                 ),
                 subtitle: const Text(
                   "Clear locally cached images",
@@ -196,9 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   "Show Following Feed",
                   style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: "Proxima Nova"),
+                      color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
                 ),
                 subtitle: followers
                     ? const Text(
@@ -225,9 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   "Show Anime Wallpapers",
                   style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: "Proxima Nova"),
+                      color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
                 ),
                 subtitle: categories == 111
                     ? const Text(
@@ -260,9 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   "Show Sketchy Wallpapers",
                   style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: "Proxima Nova"),
+                      color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
                 ),
                 subtitle: purity == 110
                     ? const Text(
@@ -294,9 +282,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text(
                 "Restart App",
                 style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                    color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
                 "Force the application to restart",
@@ -312,9 +298,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).errorColor == Colors.black
-                        ? Colors.grey
-                        : Theme.of(context).errorColor,
+                    color: Theme.of(context).errorColor == Colors.black ? Colors.grey : Theme.of(context).errorColor,
                   ),
                 ),
               ),
@@ -323,12 +307,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ListTile(
                 onTap: () {
                   final Dialog loaderDialog = Dialog(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     child: Container(
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: Theme.of(context).primaryColor),
+                      decoration:
+                          BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
                       width: MediaQuery.of(context).size.width * .7,
                       height: MediaQuery.of(context).size.height * .3,
                       child: const Center(
@@ -338,9 +320,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                   if (globals.prismUser.loggedIn == false) {
                     showDialog(
-                        barrierDismissible: false,
-                        context: context,
-                        builder: (BuildContext context) => loaderDialog);
+                        barrierDismissible: false, context: context, builder: (BuildContext context) => loaderDialog);
                     globals.gAuth.signInWithGoogle().then((value) {
                       toasts.codeSend("Login Successful!");
                       globals.prismUser.loggedIn = true;
@@ -362,9 +342,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   "Sign in",
                   style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: "Proxima Nova"),
+                      color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
                 ),
                 subtitle: const Text(
                   "Sign in to sync data across devices",
@@ -395,8 +373,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onTap: () async {
                               showModal(
                                 context: context,
-                                configuration:
-                                    const FadeScaleTransitionConfiguration(),
+                                configuration: const FadeScaleTransitionConfiguration(),
                                 builder: (context) => AlertDialog(
                                   shape: const RoundedRectangleBorder(
                                     borderRadius: BorderRadius.all(
@@ -409,24 +386,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: Center(
                                       child: Text(
                                         "Do you want remove all your favourite wallpapers?",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline4,
+                                        style: Theme.of(context).textTheme.headline4,
                                       ),
                                     ),
                                   ),
                                   actions: <Widget>[
                                     FlatButton(
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(5)),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                       onPressed: () {
                                         Navigator.of(context).pop();
-                                        toasts.error(
-                                            "Cleared all favourite wallpapers!");
-                                        Provider.of<FavouriteProvider>(context,
-                                                listen: false)
-                                            .deleteData();
+                                        toasts.error("Cleared all favourite wallpapers!");
+                                        Provider.of<FavouriteProvider>(context, listen: false).deleteData();
                                       },
                                       child: Text(
                                         'YES',
@@ -437,12 +407,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ),
                                     Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 8.0),
+                                      padding: const EdgeInsets.only(right: 8.0),
                                       child: FlatButton(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5)),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                         color: Theme.of(context).errorColor,
                                         onPressed: () {
                                           Navigator.of(context).pop();
@@ -457,8 +424,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ),
                                   ],
-                                  backgroundColor:
-                                      Theme.of(context).primaryColor,
+                                  backgroundColor: Theme.of(context).primaryColor,
                                 ),
                               );
                             }),
@@ -480,8 +446,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onTap: () async {
                               showModal(
                                 context: context,
-                                configuration:
-                                    const FadeScaleTransitionConfiguration(),
+                                configuration: const FadeScaleTransitionConfiguration(),
                                 builder: (context) => AlertDialog(
                                   shape: const RoundedRectangleBorder(
                                     borderRadius: BorderRadius.all(
@@ -494,25 +459,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: Center(
                                       child: Text(
                                         "Do you want remove all your favourite setups?",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline4,
+                                        style: Theme.of(context).textTheme.headline4,
                                       ),
                                     ),
                                   ),
                                   actions: <Widget>[
                                     FlatButton(
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(5)),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                       onPressed: () {
                                         Navigator.of(context).pop();
-                                        toasts.error(
-                                            "Cleared all favourite setups!");
-                                        Provider.of<FavouriteSetupProvider>(
-                                                context,
-                                                listen: false)
-                                            .deleteData();
+                                        toasts.error("Cleared all favourite setups!");
+                                        Provider.of<FavouriteSetupProvider>(context, listen: false).deleteData();
                                       },
                                       child: Text(
                                         'YES',
@@ -523,12 +480,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ),
                                     Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 8.0),
+                                      padding: const EdgeInsets.only(right: 8.0),
                                       child: FlatButton(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5)),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                         color: Theme.of(context).errorColor,
                                         onPressed: () {
                                           Navigator.of(context).pop();
@@ -543,8 +497,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ),
                                   ],
-                                  backgroundColor:
-                                      Theme.of(context).primaryColor,
+                                  backgroundColor: Theme.of(context).primaryColor,
                                 ),
                               );
                             }),

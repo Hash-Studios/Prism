@@ -13,9 +13,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
   final AlertDialog categoryPopUp = AlertDialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     content: Container(
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: Theme.of(context).primaryColor),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .78,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -24,13 +22,10 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
           Container(
             height: 75,
             decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10)),
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
                 color: Theme.of(context).primaryColor),
             child: Center(
-              child: Text("Categories",
-                  style: Theme.of(context).textTheme.headline2),
+              child: Text("Categories", style: Theme.of(context).textTheme.headline2),
             ),
           ),
           SizedBox(
@@ -54,8 +49,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                         color: Theme.of(context).errorColor,
                         borderRadius: BorderRadius.circular(10),
                         image: DecorationImage(
-                          image: CachedNetworkImageProvider(
-                              choice.image as String),
+                          image: CachedNetworkImageProvider(choice.image as String),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -65,27 +59,19 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                           padding: EdgeInsets.zero,
                           onPressed: () {
                             Navigator.pop(context);
-                            Provider.of<CategorySupplier>(context,
-                                    listen: false)
+                            Provider.of<CategorySupplier>(context, listen: false)
                                 .changeSelectedChoice(choice as CategoryMenu);
-                            Provider.of<CategorySupplier>(context,
-                                    listen: false)
-                                .changeWallpaperFuture(choice, "r");
-                            PM.tabController!.animateTo(0,
-                                duration: const Duration(milliseconds: 200),
-                                curve: Curves.easeInCubic);
+                            Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(choice, "r");
+                            PM.tabController!
+                                .animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeInCubic);
                           },
                           child: Container(
                             height: 100,
                             width: MediaQuery.of(context).size.width * .7,
                             decoration: BoxDecoration(
                               color: initialValue == choice as CategoryMenu
-                                  ? Theme.of(context)
-                                      .primaryColor
-                                      .withOpacity(0.7)
-                                  : Theme.of(context)
-                                      .primaryColor
-                                      .withOpacity(0.4),
+                                  ? Theme.of(context).primaryColor.withOpacity(0.7)
+                                  : Theme.of(context).primaryColor.withOpacity(0.4),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Center(
@@ -93,8 +79,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   if (initialValue == choice)
-                                    Icon(JamIcons.check,
-                                        color: Theme.of(context).accentColor)
+                                    Icon(JamIcons.check, color: Theme.of(context).accentColor)
                                   else
                                     Container(),
                                   Text(
@@ -102,9 +87,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                                     style: Theme.of(context)
                                         .textTheme
                                         .headline4!
-                                        .copyWith(
-                                            color:
-                                                Theme.of(context).accentColor),
+                                        .copyWith(color: Theme.of(context).accentColor),
                                   ),
                                 ],
                               ),

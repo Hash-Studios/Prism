@@ -11,8 +11,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart'
-    as CData;
+import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
 import 'package:Prism/logger/logger.dart';
 
 class CollectionsGrid extends StatefulWidget {
@@ -20,13 +19,11 @@ class CollectionsGrid extends StatefulWidget {
   _CollectionsGridState createState() => _CollectionsGridState();
 }
 
-class _CollectionsGridState extends State<CollectionsGrid>
-    with TickerProviderStateMixin {
+class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
   AnimationController? _controller;
   late Animation<Color?> animation;
   bool? isLoggedin;
-  GlobalKey<RefreshIndicatorState> refreshKey =
-      GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshKey = GlobalKey<RefreshIndicatorState>();
   Random r = Random();
 
   @override
@@ -38,8 +35,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
       vsync: this,
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(
-                    SchedulerBinding.instance!.window.platformBrightness) ==
+                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color?>(
             [
@@ -119,8 +115,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller =
-        InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshKey,
@@ -144,24 +139,14 @@ class _CollectionsGridState extends State<CollectionsGrid>
                 Navigator.pushNamed(
                   context,
                   collectionViewRoute,
-                  arguments: [
-                    CData.collections![index]['name']
-                        .toString()
-                        .trim()
-                        .toLowerCase()
-                  ],
+                  arguments: [CData.collections![index]['name'].toString().trim().toLowerCase()],
                 );
               } else {
                 if (globals.prismUser.premium == true) {
                   Navigator.pushNamed(
                     context,
                     collectionViewRoute,
-                    arguments: [
-                      CData.collections![index]['name']
-                          .toString()
-                          .trim()
-                          .toLowerCase()
-                    ],
+                    arguments: [CData.collections![index]['name'].toString().trim().toLowerCase()],
                   );
                 } else {
                   showGooglePopUp(() {
@@ -187,18 +172,13 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
-                                    color: Provider.of<ThemeModeExtended>(
-                                                    context)
-                                                .getCurrentModeStyle(
-                                                    MediaQuery.of(context)
-                                                        .platformBrightness) ==
+                                    color: Provider.of<ThemeModeExtended>(context)
+                                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                             "Light"
                                         ? Colors.black12
                                         : Colors.black54)
                               ]),
-                          height:
-                              (MediaQuery.of(context).size.width / 2) / 0.6225 -
-                                  63.5,
+                          height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 63.5,
                           width: MediaQuery.of(context).size.width / 2 - 59)),
                   Align(
                     alignment: Alignment.bottomCenter,
@@ -209,37 +189,24 @@ class _CollectionsGridState extends State<CollectionsGrid>
                       ),
                       child: CData.collections!.toList().isNotEmpty
                           ? Text(
-                              CData.collections![index]['name']
-                                  .toString()
-                                  .toUpperCase(),
+                              CData.collections![index]['name'].toString().toUpperCase(),
                               textAlign: TextAlign.center,
                               maxLines: 1,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline2!
-                                  .copyWith(
-                                      fontSize: 16,
-                                      color: Theme.of(context).accentColor,
-                                      fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.headline2!.copyWith(
+                                  fontSize: 16, color: Theme.of(context).accentColor, fontWeight: FontWeight.bold),
                             )
                           : Text(
                               "LOADING",
                               textAlign: TextAlign.center,
                               maxLines: 1,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline2!
-                                  .copyWith(
-                                      fontSize: 16,
-                                      color: Provider.of<ThemeModeExtended>(
-                                                      context)
-                                                  .getCurrentModeStyle(
-                                                      MediaQuery.of(context)
-                                                          .platformBrightness) ==
-                                              "Light"
-                                          ? Colors.black
-                                          : Colors.white,
-                                      fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.headline2!.copyWith(
+                                  fontSize: 16,
+                                  color: Provider.of<ThemeModeExtended>(context)
+                                              .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
+                                          "Light"
+                                      ? Colors.black
+                                      : Colors.white,
+                                  fontWeight: FontWeight.bold),
                             ),
                     ),
                   ),
@@ -254,18 +221,13 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
-                                    color: Provider.of<ThemeModeExtended>(
-                                                    context)
-                                                .getCurrentModeStyle(
-                                                    MediaQuery.of(context)
-                                                        .platformBrightness) ==
+                                    color: Provider.of<ThemeModeExtended>(context)
+                                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                             "Light"
                                         ? Colors.black26
                                         : Colors.black54)
                               ]),
-                          height:
-                              (MediaQuery.of(context).size.width / 2) / 0.6225 -
-                                  108.5,
+                          height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
                           width: MediaQuery.of(context).size.width / 2 - 59)),
                   Positioned(
                       top: 20,
@@ -281,13 +243,10 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        CData.collections![index]['thumb2']
-                                            .toString(),
+                                        CData.collections![index]['thumb2'].toString(),
                                       ),
                                       fit: BoxFit.cover)),
-                          height:
-                              (MediaQuery.of(context).size.width / 2) / 0.6225 -
-                                  108.5,
+                          height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
                           width: MediaQuery.of(context).size.width / 2 - 59)),
                   Positioned(
                       top: 0,
@@ -300,18 +259,13 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
-                                    color: Provider.of<ThemeModeExtended>(
-                                                    context)
-                                                .getCurrentModeStyle(
-                                                    MediaQuery.of(context)
-                                                        .platformBrightness) ==
+                                    color: Provider.of<ThemeModeExtended>(context)
+                                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                             "Light"
                                         ? Colors.black26
                                         : Colors.black54)
                               ]),
-                          height:
-                              (MediaQuery.of(context).size.width / 2) / 0.6225 -
-                                  108.5,
+                          height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
                           width: MediaQuery.of(context).size.width / 2 - 59)),
                   Positioned(
                       top: 0,
@@ -327,13 +281,10 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        CData.collections![index]['thumb1']
-                                            .toString(),
+                                        CData.collections![index]['thumb1'].toString(),
                                       ),
                                       fit: BoxFit.cover)),
-                          height:
-                              (MediaQuery.of(context).size.width / 2) / 0.6225 -
-                                  108.5,
+                          height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
                           width: MediaQuery.of(context).size.width / 2 - 59)),
                 ],
               ),

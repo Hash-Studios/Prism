@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:Prism/data/ads/adsNotifier.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/features/ads/presentation/bloc/ads_bloc.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/followingScreen.dart';
@@ -13,6 +13,7 @@ import 'package:animations/animations.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
@@ -51,8 +52,7 @@ class PageManagerChild extends StatefulWidget {
   _PageManagerChildState createState() => _PageManagerChildState();
 }
 
-class _PageManagerChildState extends State<PageManagerChild>
-    with SingleTickerProviderStateMixin {
+class _PageManagerChildState extends State<PageManagerChild> with SingleTickerProviderStateMixin {
   int page = 0;
   int linkOpened = 0;
   bool result = true;
@@ -74,9 +74,7 @@ class _PageManagerChildState extends State<PageManagerChild>
 
   Future<void> saveFavToLocal() async {
     if (globals.prismUser.loggedIn) {
-      await Provider.of<FavouriteProvider>(context, listen: false)
-          .getDataBase()
-          .then(
+      await Provider.of<FavouriteProvider>(context, listen: false).getDataBase().then(
         (value) {
           for (final element in value!) {
             box.put(element['id'].toString(), true);
@@ -90,9 +88,8 @@ class _PageManagerChildState extends State<PageManagerChild>
   @override
   void initState() {
     super.initState();
-    tabController =
-        TabController(length: globals.followersTab ? 3 : 2, vsync: this);
-    Provider.of<AdsNotifier>(context, listen: false).createRewardedAd();
+    tabController = TabController(length: globals.followersTab ? 3 : 2, vsync: this);
+    context.read<AdsBloc>().add(const AdsEvent.started());
     final QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
       setState(() {
@@ -126,22 +123,10 @@ class _PageManagerChildState extends State<PageManagerChild>
     quickActions.setShortcutItems(<ShortcutItem>[
       // NOTE: This second action icon will only work on Android.
       // In a real world project keep the same file name for both platforms.
-      const ShortcutItem(
-          type: 'Follow_Feed',
-          localizedTitle: 'Feed',
-          icon: '@drawable/ic_feed'),
-      const ShortcutItem(
-          type: 'Collections',
-          localizedTitle: 'Collections',
-          icon: '@drawable/ic_collections'),
-      const ShortcutItem(
-          type: 'Setups',
-          localizedTitle: 'Setups',
-          icon: '@drawable/ic_setups'),
-      const ShortcutItem(
-          type: 'Downloads',
-          localizedTitle: 'Downloads',
-          icon: '@drawable/ic_downloads'),
+      const ShortcutItem(type: 'Follow_Feed', localizedTitle: 'Feed', icon: '@drawable/ic_feed'),
+      const ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
+      const ShortcutItem(type: 'Setups', localizedTitle: 'Setups', icon: '@drawable/ic_setups'),
+      const ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
     ]);
     if (box.get('dataSaved', defaultValue: false) as bool) {
     } else {
@@ -162,30 +147,26 @@ class _PageManagerChildState extends State<PageManagerChild>
   }
 
   Future<bool> initDynamicLinks(BuildContext context) async {
-    final PendingDynamicLinkData data =
-        await FirebaseDynamicLinks.instance.getInitialLink();
+    final PendingDynamicLinkData data = await FirebaseDynamicLinks.instance.getInitialLink();
     final Uri? deepLink = data?.link;
 
     if (deepLink != null && linkOpened == 0) {
       logger.d("opened while closed altogether via deep link");
       if (deepLink.pathSegments[0] == "share") {
-        Future.delayed(const Duration()).then(
-            (value) => Navigator.pushNamed(context, shareRoute, arguments: [
-                  deepLink.queryParameters["id"],
-                  deepLink.queryParameters["provider"],
-                  deepLink.queryParameters["url"],
-                  deepLink.queryParameters["thumb"],
-                ]));
+        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareRoute, arguments: [
+              deepLink.queryParameters["id"],
+              deepLink.queryParameters["provider"],
+              deepLink.queryParameters["url"],
+              deepLink.queryParameters["thumb"],
+            ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "user") {
-        Future.delayed(const Duration()).then((value) =>
-            Navigator.pushNamed(context, followerProfileRoute, arguments: [
+        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, followerProfileRoute, arguments: [
               deepLink.queryParameters["email"],
             ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "setup") {
-        Future.delayed(const Duration()).then((value) =>
-            Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
+        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
               deepLink.queryParameters["name"],
               deepLink.queryParameters["thumbUrl"],
             ]));
@@ -197,31 +178,29 @@ class _PageManagerChildState extends State<PageManagerChild>
       logger.d("opened while closed altogether via deep link2345");
     }
 
-    FirebaseDynamicLinks.instance.onLink(
-        onSuccess: (PendingDynamicLinkData dynamicLink) async {
+    FirebaseDynamicLinks.instance.onLink(onSuccess: (PendingDynamicLinkData dynamicLink) async {
       final Uri deepLink = dynamicLink.link;
 
       if (deepLink != null) {
         logger.d("opened while bg via deep link1");
         if (deepLink.pathSegments[0] == "share") {
-          Future.delayed(const Duration()).then(
-              (value) => Navigator.pushNamed(context, shareRoute, arguments: [
-                    deepLink.queryParameters["id"],
-                    deepLink.queryParameters["provider"],
-                    deepLink.queryParameters["url"],
-                    deepLink.queryParameters["thumb"],
-                  ]));
+          Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareRoute, arguments: [
+                deepLink.queryParameters["id"],
+                deepLink.queryParameters["provider"],
+                deepLink.queryParameters["url"],
+                deepLink.queryParameters["thumb"],
+              ]));
         } else if (deepLink.pathSegments[0] == "user") {
-          Future.delayed(const Duration()).then((value) =>
-              Navigator.pushNamed(context, followerProfileRoute, arguments: [
-                deepLink.queryParameters["email"],
-              ]));
+          Future.delayed(const Duration())
+              .then((value) => Navigator.pushNamed(context, followerProfileRoute, arguments: [
+                    deepLink.queryParameters["email"],
+                  ]));
         } else if (deepLink.pathSegments[0] == "setup") {
-          Future.delayed(const Duration()).then((value) =>
-              Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
-                deepLink.queryParameters["name"],
-                deepLink.queryParameters["thumbUrl"],
-              ]));
+          Future.delayed(const Duration())
+              .then((value) => Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
+                    deepLink.queryParameters["name"],
+                    deepLink.queryParameters["thumbUrl"],
+                  ]));
         } else {}
 
         logger.d("opened while bg via deep link2345");
@@ -326,8 +305,7 @@ class _PageManagerChildState extends State<PageManagerChild>
                                 });
                               },
                               style: ButtonStyle(
-                                backgroundColor: MaterialStateColor.resolveWith(
-                                    (states) => Colors.white),
+                                backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
                               ),
                               child: const SizedBox(
                                 width: 60,

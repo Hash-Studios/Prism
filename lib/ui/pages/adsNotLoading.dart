@@ -43,8 +43,7 @@ class AdsNotLoading extends StatelessWidget {
                 const Spacer(),
                 const Padding(
                   padding: EdgeInsets.all(8.0),
-                  child:
-                      Center(child: Text("🥲", style: TextStyle(fontSize: 80))),
+                  child: Center(child: Text("🥲", style: TextStyle(fontSize: 80))),
                 ),
                 const SizedBox(
                   height: 10,
@@ -52,8 +51,10 @@ class AdsNotLoading extends StatelessWidget {
                 Text(
                   "Unable to load reward ad",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyText2!.copyWith(
-                      color: Theme.of(context).accentColor, fontSize: 24),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyText2!
+                      .copyWith(color: Theme.of(context).accentColor, fontSize: 24),
                 ),
                 const SizedBox(
                   height: 10,
@@ -79,10 +80,7 @@ class AdsNotLoading extends StatelessWidget {
                       child: Text(
                         "➡️ Google has put ads on hold for us (common).",
                         textAlign: TextAlign.left,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyText2!
-                            .copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                       ),
                     ),
                     Padding(
@@ -90,10 +88,7 @@ class AdsNotLoading extends StatelessWidget {
                       child: Text(
                         "➡️ Your device's network connection is poor.",
                         textAlign: TextAlign.left,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyText2!
-                            .copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                       ),
                     ),
                     Padding(
@@ -101,10 +96,7 @@ class AdsNotLoading extends StatelessWidget {
                       child: Text(
                         "➡️ You're running an AdBlocker which is preventing us from loading ads.",
                         textAlign: TextAlign.left,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyText2!
-                            .copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                       ),
                     ),
                     const SizedBox(
@@ -115,10 +107,7 @@ class AdsNotLoading extends StatelessWidget {
                       child: Text(
                         "Please check your network settings and try again. We have although downloaded the wall for you, because we get it, that it's frustating when the ads don't laod.",
                         textAlign: TextAlign.left,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyText2!
-                            .copyWith(color: Theme.of(context).accentColor),
+                        style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                       ),
                     ),
                   ],

@@ -9,10 +9,8 @@ class AboutList extends StatelessWidget {
         leading: const Icon(JamIcons.info),
         title: Text(
           "About Prism",
-          style: TextStyle(
-              color: Theme.of(context).accentColor,
-              fontWeight: FontWeight.w500,
-              fontFamily: "Proxima Nova"),
+          style:
+              TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
         ),
         subtitle: const Text(
           "GitHub, website & more!",

@@ -11,12 +11,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
   Future<List?> getDataBase() async {
     final String uid = globals.prismUser.id;
     liked = [];
-    await databaseReference
-        .collection(USER_NEW_COLLECTION)
-        .doc(uid)
-        .collection("setups")
-        .get()
-        .then((value) {
+    await databaseReference.collection(USER_NEW_COLLECTION).doc(uid).collection("setups").get().then((value) {
       liked = [];
       for (final f in value.docs) {
         liked!.add(f.data());
@@ -31,12 +26,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
   Future<bool> deleteDataByID(String id) async {
     final String uid = globals.prismUser.id;
     try {
-      await databaseReference
-          .collection(USER_NEW_COLLECTION)
-          .doc(uid)
-          .collection("setups")
-          .doc(id)
-          .delete();
+      await databaseReference.collection(USER_NEW_COLLECTION).doc(uid).collection("setups").doc(id).delete();
     } catch (e) {
       logger.d(e.toString());
     }
@@ -122,12 +112,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
   Future<bool> deleteData() async {
     final String uid = globals.prismUser.id;
     try {
-      await databaseReference
-          .collection(USER_NEW_COLLECTION)
-          .doc(uid)
-          .collection("setups")
-          .get()
-          .then((snapshot) {
+      await databaseReference.collection(USER_NEW_COLLECTION).doc(uid).collection("setups").get().then((snapshot) {
         for (final DocumentSnapshot ds in snapshot.docs) {
           ds.reference.delete();
         }

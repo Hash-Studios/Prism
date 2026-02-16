@@ -29,12 +29,10 @@ class UserProfileWallViewScreen extends StatefulWidget {
   const UserProfileWallViewScreen({this.arguments});
 
   @override
-  _UserProfileWallViewScreenState createState() =>
-      _UserProfileWallViewScreenState();
+  _UserProfileWallViewScreenState createState() => _UserProfileWallViewScreenState();
 }
 
-class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
-    with SingleTickerProviderStateMixin {
+class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     logger.d(navStack.toString());
@@ -80,11 +78,11 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
       accent = colors![0];
     });
     if (accent!.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.dark));
+      SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
     } else {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.light));
+      SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
     }
   }
 
@@ -98,11 +96,11 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
         colorChanged = true;
       });
       if (accent!.computeLuminance() > 0.5) {
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-            .copyWith(statusBarIconBrightness: Brightness.dark));
+        SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
       } else {
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-            .copyWith(statusBarIconBrightness: Brightness.light));
+        SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
       }
     }
   }
@@ -110,24 +108,21 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
   @override
   void initState() {
     super.initState();
-    shakeController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
+    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments![0] as int;
     thumb = widget.arguments![1].toString();
     isLoading = true;
     WidgetsBinding.instance!.addPostFrameCallback((_) {
-      updateViews(
-          Provider.of<user_data.UserProfileProvider>(context, listen: false)
-              .userProfileWalls![index]
-              .data()["id"]
-              .toString()
-              .toUpperCase());
-      _futureView = getViews(
-          Provider.of<user_data.UserProfileProvider>(context, listen: false)
-              .userProfileWalls![index]
-              .data()["id"]
-              .toString()
-              .toUpperCase());
+      updateViews(Provider.of<user_data.UserProfileProvider>(context, listen: false)
+          .userProfileWalls![index]
+          .data()["id"]
+          .toString()
+          .toUpperCase());
+      _futureView = getViews(Provider.of<user_data.UserProfileProvider>(context, listen: false)
+          .userProfileWalls![index]
+          .data()["id"]
+          .toString()
+          .toUpperCase());
     });
     _updatePaletteGenerator();
   }
@@ -140,9 +135,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(shakeController)
+    final Animation<double> offsetAnimation =
+        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
           ..addStatusListener((status) {
             if (status == AnimationStatus.completed) {
               shakeController.reverse();
@@ -271,18 +265,13 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     SizedBox(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.36,
+                                      width: MediaQuery.of(context).size.width * 0.36,
                                       child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            0, 5, 0, 10),
+                                        padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Row(
                                           children: [
                                             Text(
-                                              Provider.of<
-                                                          user_data
-                                                              .UserProfileProvider>(
-                                                      context)
+                                              Provider.of<user_data.UserProfileProvider>(context)
                                                   .userProfileWalls![index]
                                                   .data()["id"]
                                                   .toString()
@@ -290,37 +279,27 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText1!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 6.0),
+                                              padding: const EdgeInsets.symmetric(horizontal: 6.0),
                                               child: Container(
                                                 height: 20,
-                                                color: Theme.of(context)
-                                                    .accentColor,
+                                                color: Theme.of(context).accentColor,
                                                 width: 2,
                                               ),
                                             ),
                                             FutureBuilder(
                                               future: _futureView,
                                               builder: (context, snapshot) {
-                                                switch (
-                                                    snapshot.connectionState) {
+                                                switch (snapshot.connectionState) {
                                                   case ConnectionState.waiting:
                                                     return Text(
                                                       "",
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .bodyText1!
-                                                          .copyWith(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor,
-                                                              fontSize: 16),
+                                                          .copyWith(color: Theme.of(context).accentColor, fontSize: 16),
                                                     );
                                                   case ConnectionState.none:
                                                     return Text(
@@ -328,39 +307,22 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .bodyText1!
-                                                          .copyWith(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor,
-                                                              fontSize: 16),
+                                                          .copyWith(color: Theme.of(context).accentColor, fontSize: 16),
                                                     );
                                                   default:
                                                     if (snapshot.hasError) {
                                                       return Text(
                                                         "",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyText1!
-                                                            .copyWith(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor,
-                                                                fontSize: 16),
+                                                        style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                                                            color: Theme.of(context).accentColor, fontSize: 16),
                                                       );
                                                     } else {
                                                       return Text(
                                                         "${snapshot.data} views",
-                                                        overflow:
-                                                            TextOverflow.fade,
+                                                        overflow: TextOverflow.fade,
                                                         softWrap: false,
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyText1!
-                                                            .copyWith(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor,
-                                                                fontSize: 16),
+                                                        style: Theme.of(context).textTheme.bodyText1!.copyWith(
+                                                            color: Theme.of(context).accentColor, fontSize: 16),
                                                       );
                                                     }
                                                 }
@@ -375,25 +337,18 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                         Icon(
                                           JamIcons.upload,
                                           size: 20,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(.7),
+                                          color: Theme.of(context).accentColor.withOpacity(.7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          Provider.of<
-                                                      user_data
-                                                          .UserProfileProvider>(
-                                                  context)
+                                          Provider.of<user_data.UserProfileProvider>(context)
                                               .userProfileWalls![index]
                                               .data()["by"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                         ),
                                       ],
                                     ),
@@ -403,25 +358,18 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                         Icon(
                                           JamIcons.arrow_circle_right,
                                           size: 20,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(.7),
+                                          color: Theme.of(context).accentColor.withOpacity(.7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          Provider.of<
-                                                      user_data
-                                                          .UserProfileProvider>(
-                                                  context)
+                                          Provider.of<user_data.UserProfileProvider>(context)
                                               .userProfileWalls![index]
                                               .data()["desc"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                         ),
                                       ],
                                     ),
@@ -431,25 +379,18 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                         Icon(
                                           JamIcons.save,
                                           size: 20,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(.7),
+                                          color: Theme.of(context).accentColor.withOpacity(.7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          Provider.of<
-                                                      user_data
-                                                          .UserProfileProvider>(
-                                                  context)
+                                          Provider.of<user_data.UserProfileProvider>(context)
                                               .userProfileWalls![index]
                                               .data()["size"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                         ),
                                       ],
                                     ),
@@ -462,27 +403,20 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                     Row(
                                       children: [
                                         Text(
-                                          Provider.of<
-                                                      user_data
-                                                          .UserProfileProvider>(
-                                                  context)
+                                          Provider.of<user_data.UserProfileProvider>(context)
                                               .userProfileWalls![index]
                                               .data()["resolution"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                         ),
                                         const SizedBox(width: 10),
                                         Icon(
                                           JamIcons.set_square,
                                           size: 20,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(.7),
+                                          color: Theme.of(context).accentColor.withOpacity(.7),
                                         ),
                                       ],
                                     ),
@@ -490,27 +424,20 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                     Row(
                                       children: [
                                         Text(
-                                          Provider.of<
-                                                      user_data
-                                                          .UserProfileProvider>(
-                                                  context)
+                                          Provider.of<user_data.UserProfileProvider>(context)
                                               .userProfileWalls![index]
                                               .data()["wallpaper_provider"]
                                               .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                              .copyWith(color: Theme.of(context).accentColor),
                                         ),
                                         const SizedBox(width: 10),
                                         Icon(
                                           JamIcons.database,
                                           size: 20,
-                                          color: Theme.of(context)
-                                              .accentColor
-                                              .withOpacity(.7),
+                                          color: Theme.of(context).accentColor.withOpacity(.7),
                                         ),
                                       ],
                                     ),
@@ -529,9 +456,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                 colorChanged: colorChanged,
                                 link: screenshotTaken
                                     ? _imageFile.path
-                                    : Provider.of<
-                                            user_data
-                                                .UserProfileProvider>(context)
+                                    : Provider.of<user_data.UserProfileProvider>(context)
                                         .userProfileWalls![index]
                                         .data()["wallpaper_url"]
                                         .toString(),
@@ -540,60 +465,43 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                 colorChanged: colorChanged,
                                 url: screenshotTaken
                                     ? _imageFile.path
-                                    : Provider.of<
-                                            user_data
-                                                .UserProfileProvider>(context)
+                                    : Provider.of<user_data.UserProfileProvider>(context)
                                         .userProfileWalls![index]
                                         .data()["wallpaper_url"]
                                         .toString(),
                               ),
                               FavouriteWallpaperButton(
-                                id: Provider.of<user_data.UserProfileProvider>(
-                                        context)
+                                id: Provider.of<user_data.UserProfileProvider>(context)
                                     .userProfileWalls![index]
                                     .data()["id"]
                                     .toString(),
-                                provider:
-                                    Provider.of<user_data.UserProfileProvider>(
-                                            context)
-                                        .userProfileWalls![index]
-                                        .data()["wallpaper_provider"]
-                                        .toString(),
+                                provider: Provider.of<user_data.UserProfileProvider>(context)
+                                    .userProfileWalls![index]
+                                    .data()["wallpaper_provider"]
+                                    .toString(),
                                 prism:
-                                    Provider.of<user_data.UserProfileProvider>(
-                                            context)
-                                        .userProfileWalls![index]
-                                        .data(),
+                                    Provider.of<user_data.UserProfileProvider>(context).userProfileWalls![index].data(),
                                 trash: false,
                               ),
                               ShareButton(
-                                  id: Provider.of<
-                                          user_data
-                                              .UserProfileProvider>(context)
+                                  id: Provider.of<user_data.UserProfileProvider>(context)
                                       .userProfileWalls![index]
                                       .data()["id"]
                                       .toString(),
-                                  provider: Provider.of<
-                                          user_data
-                                              .UserProfileProvider>(context)
+                                  provider: Provider.of<user_data.UserProfileProvider>(context)
                                       .userProfileWalls![index]
                                       .data()["wallpaper_provider"]
                                       .toString(),
-                                  url: Provider.of<
-                                          user_data
-                                              .UserProfileProvider>(context)
+                                  url: Provider.of<user_data.UserProfileProvider>(context)
                                       .userProfileWalls![index]
                                       .data()["wallpaper_url"]
                                       .toString(),
-                                  thumbUrl: Provider.of<
-                                          user_data
-                                              .UserProfileProvider>(context)
+                                  thumbUrl: Provider.of<user_data.UserProfileProvider>(context)
                                       .userProfileWalls![index]
                                       .data()["wallpaper_thumb"]
                                       .toString()),
                               EditButton(
-                                url: Provider.of<user_data.UserProfileProvider>(
-                                        context)
+                                url: Provider.of<user_data.UserProfileProvider>(context)
                                     .userProfileWalls![index]
                                     .data()["wallpaper_url"]
                                     .toString(),
@@ -634,8 +542,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           shakeController.forward(from: 0.0);
                         },
                         child: CachedNetworkImage(
-                          imageUrl: Provider.of<user_data.UserProfileProvider>(
-                                  context)
+                          imageUrl: Provider.of<user_data.UserProfileProvider>(context)
                               .userProfileWalls![index]
                               .data()["wallpaper_url"]
                               .toString(),
@@ -643,23 +550,18 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                             controller: screenshotController,
                             child: Container(
                               margin: EdgeInsets.symmetric(
-                                  vertical: offsetAnimation.value * 1.25,
-                                  horizontal: offsetAnimation.value / 2),
+                                  vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                    offsetAnimation.value),
+                                borderRadius: BorderRadius.circular(offsetAnimation.value),
                                 image: DecorationImage(
-                                  colorFilter: colorChanged
-                                      ? ColorFilter.mode(accent!, BlendMode.hue)
-                                      : null,
+                                  colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
                                   image: imageProvider,
                                   fit: BoxFit.cover,
                                 ),
                               ),
                             ),
                           ),
-                          progressIndicatorBuilder:
-                              (context, url, downloadProgress) => Stack(
+                          progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
                             children: <Widget>[
                               const SizedBox.expand(child: Text("")),
                               Center(
@@ -687,8 +589,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                 Align(
                   alignment: Alignment.topLeft,
                   child: Padding(
-                    padding:
-                        EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                    padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                     child: IconButton(
                       onPressed: () {
                         navStack.removeLast();
@@ -709,24 +610,18 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                 Align(
                   alignment: Alignment.topRight,
                   child: Padding(
-                    padding:
-                        EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                    padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                     child: IconButton(
                       onPressed: () {
-                        final link = Provider.of<user_data.UserProfileProvider>(
-                                context,
-                                listen: false)
+                        final link = Provider.of<user_data.UserProfileProvider>(context, listen: false)
                             .userProfileWalls![index]
                             .data()["wallpaper_url"];
                         Navigator.push(
                             context,
                             PageRouteBuilder(
-                                transitionDuration:
-                                    const Duration(milliseconds: 300),
-                                pageBuilder:
-                                    (context, animation, secondaryAnimation) {
-                                  animation = Tween(begin: 0.0, end: 1.0)
-                                      .animate(animation);
+                                transitionDuration: const Duration(milliseconds: 300),
+                                pageBuilder: (context, animation, secondaryAnimation) {
+                                  animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                   return FadeTransition(
                                       opacity: animation,
                                       child: ClockOverlay(

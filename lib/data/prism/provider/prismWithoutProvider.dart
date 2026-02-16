@@ -85,11 +85,7 @@ Future<List?> seeMorePrism() async {
 
 Future<Map> getDataByID(String? id) async {
   wall = {};
-  await databaseReference
-      .collection("walls")
-      .where('id', isEqualTo: id)
-      .get()
-      .then((value) {
+  await databaseReference.collection("walls").where('id', isEqualTo: id).get().then((value) {
     for (final element in value.docs) {
       if (element.data()["id"] == id) {
         wall = element.data();

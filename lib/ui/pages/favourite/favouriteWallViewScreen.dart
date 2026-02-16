@@ -32,8 +32,7 @@ class FavWallpaperViewScreen extends StatefulWidget {
   _FavWallpaperViewScreenState createState() => _FavWallpaperViewScreenState();
 }
 
-class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
-    with SingleTickerProviderStateMixin {
+class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     logger.d(navStack.toString());
@@ -79,11 +78,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
       accent = colors![0];
     });
     if (accent!.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.dark));
+      SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
     } else {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.light));
+      SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
     }
   }
 
@@ -97,34 +96,25 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
         colorChanged = true;
       });
       if (accent!.computeLuminance() > 0.5) {
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-            .copyWith(statusBarIconBrightness: Brightness.dark));
+        SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
       } else {
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-            .copyWith(statusBarIconBrightness: Brightness.light));
+        SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
       }
     }
   }
 
   @override
   void initState() {
-    shakeController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
+    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments![0] as int;
     thumb = widget.arguments![1] as String;
     isLoading = true;
-    if (Provider.of<FavouriteProvider>(context, listen: false).liked![index]
-            ["provider"] ==
-        "Prism") {
-      updateViews(Provider.of<FavouriteProvider>(context, listen: false)
-          .liked![index]["id"]
-          .toString()
-          .toUpperCase());
-      _futureView = getViews(
-          Provider.of<FavouriteProvider>(context, listen: false)
-              .liked![index]["id"]
-              .toString()
-              .toUpperCase());
+    if (Provider.of<FavouriteProvider>(context, listen: false).liked![index]["provider"] == "Prism") {
+      updateViews(Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().toUpperCase());
+      _futureView =
+          getViews(Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().toUpperCase());
     }
     _updatePaletteGenerator();
     super.initState();
@@ -138,9 +128,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(shakeController)
+    final Animation<double> offsetAnimation =
+        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
           ..addStatusListener((status) {
             if (status == AnimationStatus.completed) {
               shakeController.reverse();
@@ -148,19 +137,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
           });
     return WillPopScope(
       onWillPop: onWillPop,
-      child: Provider.of<FavouriteProvider>(context, listen: false)
-                      .liked![index]["provider"] ==
-                  "WallHaven" ||
-              Provider.of<FavouriteProvider>(context, listen: false)
-                      .liked![index]["provider"] ==
-                  "Pexels" ||
-              Provider.of<FavouriteProvider>(context, listen: false)
-                      .liked![index]["provider"] ==
-                  "Prism"
+      child: Provider.of<FavouriteProvider>(context, listen: false).liked![index]["provider"] == "WallHaven" ||
+              Provider.of<FavouriteProvider>(context, listen: false).liked![index]["provider"] == "Pexels" ||
+              Provider.of<FavouriteProvider>(context, listen: false).liked![index]["provider"] == "Prism"
           ? Scaffold(
               key: _scaffoldKey,
-              backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : accent,
+              backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   setState(() {
@@ -267,41 +249,31 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               ),
                             )),
                             ColorBar(colors: colors),
-                            if (Provider.of<FavouriteProvider>(context,
-                                        listen: false)
-                                    .liked![index]["provider"] ==
+                            if (Provider.of<FavouriteProvider>(context, listen: false).liked![index]["provider"] ==
                                 "WallHaven")
                               Expanded(
                                 flex: 8,
                                 child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                                  padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: <Widget>[
                                       Column(
                                         mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: <Widget>[
                                           Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                0, 5, 0, 10),
+                                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                             child: Text(
-                                              Provider.of<FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
+                                              Provider.of<FavouriteProvider>(context, listen: false)
                                                   .liked![index]["id"]
                                                   .toString()
                                                   .toUpperCase(),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText1!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                           ),
                                           Row(
@@ -309,9 +281,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               Icon(
                                                 JamIcons.eye,
                                                 size: 20,
-                                                color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(.7),
+                                                color: Theme.of(context).accentColor.withOpacity(.7),
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -319,9 +289,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2!
-                                                    .copyWith(
-                                                        color: Theme.of(context)
-                                                            .accentColor),
+                                                    .copyWith(color: Theme.of(context).accentColor),
                                               ),
                                             ],
                                           ),
@@ -331,9 +299,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               Icon(
                                                 JamIcons.heart_f,
                                                 size: 20,
-                                                color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(.7),
+                                                color: Theme.of(context).accentColor.withOpacity(.7),
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -341,9 +307,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2!
-                                                    .copyWith(
-                                                        color: Theme.of(context)
-                                                            .accentColor),
+                                                    .copyWith(color: Theme.of(context).accentColor),
                                               ),
                                             ],
                                           ),
@@ -353,9 +317,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               Icon(
                                                 JamIcons.save,
                                                 size: 20,
-                                                color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(.7),
+                                                color: Theme.of(context).accentColor.withOpacity(.7),
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -363,9 +325,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2!
-                                                    .copyWith(
-                                                        color: Theme.of(context)
-                                                            .accentColor),
+                                                    .copyWith(color: Theme.of(context).accentColor),
                                               ),
                                             ],
                                           ),
@@ -373,44 +333,31 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       ),
                                       Column(
                                         mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
+                                        crossAxisAlignment: CrossAxisAlignment.end,
                                         children: <Widget>[
                                           Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                0, 0, 0, 0),
+                                            padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
                                             child: Row(
                                               children: [
                                                 Text(
-                                                  Provider.of<FavouriteProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .liked![index]
-                                                              ["category"]
+                                                  Provider.of<FavouriteProvider>(context, listen: false)
+                                                          .liked![index]["category"]
                                                           .toString()[0]
                                                           .toUpperCase() +
-                                                      Provider.of<FavouriteProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .liked![index]
-                                                              ["category"]
+                                                      Provider.of<FavouriteProvider>(context, listen: false)
+                                                          .liked![index]["category"]
                                                           .toString()
                                                           .substring(1),
                                                   style: Theme.of(context)
                                                       .textTheme
                                                       .bodyText2!
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
+                                                      .copyWith(color: Theme.of(context).accentColor),
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Icon(
                                                   JamIcons.unordered_list,
                                                   size: 20,
-                                                  color: Theme.of(context)
-                                                      .accentColor
-                                                      .withOpacity(.7),
+                                                  color: Theme.of(context).accentColor.withOpacity(.7),
                                                 ),
                                               ],
                                             ),
@@ -423,17 +370,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2!
-                                                    .copyWith(
-                                                        color: Theme.of(context)
-                                                            .accentColor),
+                                                    .copyWith(color: Theme.of(context).accentColor),
                                               ),
                                               const SizedBox(width: 10),
                                               Icon(
                                                 JamIcons.set_square,
                                                 size: 20,
-                                                color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(.7),
+                                                color: Theme.of(context).accentColor.withOpacity(.7),
                                               ),
                                             ],
                                           ),
@@ -441,25 +384,19 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                           Row(
                                             children: [
                                               Text(
-                                                Provider.of<FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
+                                                Provider.of<FavouriteProvider>(context, listen: false)
                                                     .liked![index]["provider"]
                                                     .toString(),
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2!
-                                                    .copyWith(
-                                                        color: Theme.of(context)
-                                                            .accentColor),
+                                                    .copyWith(color: Theme.of(context).accentColor),
                                               ),
                                               const SizedBox(width: 10),
                                               Icon(
                                                 JamIcons.database,
                                                 size: 20,
-                                                color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(.7),
+                                                color: Theme.of(context).accentColor.withOpacity(.7),
                                               ),
                                             ],
                                           ),
@@ -470,129 +407,89 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                 ),
                               )
                             else
-                              Provider.of<FavouriteProvider>(context,
-                                              listen: false)
-                                          .liked![index]["provider"] ==
+                              Provider.of<FavouriteProvider>(context, listen: false).liked![index]["provider"] ==
                                       "Prism"
                                   ? Expanded(
                                       flex: 8,
                                       child: SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.36,
+                                        width: MediaQuery.of(context).size.width * 0.36,
                                         child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              35, 0, 35, 10),
+                                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
                                           child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment: CrossAxisAlignment.end,
                                             children: <Widget>[
                                               Column(
                                                 mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: <Widget>[
                                                   Padding(
-                                                    padding: const EdgeInsets
-                                                        .fromLTRB(0, 5, 0, 10),
+                                                    padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                     child: Row(
                                                       children: [
                                                         Text(
-                                                          Provider.of<FavouriteProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .liked![index]
-                                                                  ["id"]
+                                                          Provider.of<FavouriteProvider>(context, listen: false)
+                                                              .liked![index]["id"]
                                                               .toString()
                                                               .toUpperCase(),
-                                                          style: Theme.of(
-                                                                  context)
+                                                          style: Theme.of(context)
                                                               .textTheme
                                                               .bodyText1!
-                                                              .copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor),
+                                                              .copyWith(color: Theme.of(context).accentColor),
                                                         ),
                                                         Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                      .symmetric(
-                                                                  horizontal:
-                                                                      6.0),
+                                                          padding: const EdgeInsets.symmetric(horizontal: 6.0),
                                                           child: Container(
                                                             height: 20,
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor,
+                                                            color: Theme.of(context).accentColor,
                                                             width: 2,
                                                           ),
                                                         ),
                                                         FutureBuilder(
                                                           future: _futureView,
-                                                          builder: (context,
-                                                              snapshot) {
-                                                            switch (snapshot
-                                                                .connectionState) {
-                                                              case ConnectionState
-                                                                  .waiting:
+                                                          builder: (context, snapshot) {
+                                                            switch (snapshot.connectionState) {
+                                                              case ConnectionState.waiting:
                                                                 return Text(
                                                                   "",
-                                                                  style: Theme.of(
-                                                                          context)
+                                                                  style: Theme.of(context)
                                                                       .textTheme
                                                                       .bodyText1!
                                                                       .copyWith(
-                                                                          color: Theme.of(context)
-                                                                              .accentColor,
-                                                                          fontSize:
-                                                                              16),
+                                                                          color: Theme.of(context).accentColor,
+                                                                          fontSize: 16),
                                                                 );
-                                                              case ConnectionState
-                                                                  .none:
+                                                              case ConnectionState.none:
                                                                 return Text(
                                                                   "",
-                                                                  style: Theme.of(
-                                                                          context)
+                                                                  style: Theme.of(context)
                                                                       .textTheme
                                                                       .bodyText1!
                                                                       .copyWith(
-                                                                          color: Theme.of(context)
-                                                                              .accentColor,
-                                                                          fontSize:
-                                                                              16),
+                                                                          color: Theme.of(context).accentColor,
+                                                                          fontSize: 16),
                                                                 );
                                                               default:
-                                                                if (snapshot
-                                                                    .hasError) {
+                                                                if (snapshot.hasError) {
                                                                   return Text(
                                                                     "",
-                                                                    style: Theme.of(
-                                                                            context)
+                                                                    style: Theme.of(context)
                                                                         .textTheme
                                                                         .bodyText1!
                                                                         .copyWith(
-                                                                            color:
-                                                                                Theme.of(context).accentColor,
+                                                                            color: Theme.of(context).accentColor,
                                                                             fontSize: 16),
                                                                   );
                                                                 } else {
                                                                   return Text(
                                                                     "${snapshot.data} views",
-                                                                    overflow:
-                                                                        TextOverflow
-                                                                            .fade,
-                                                                    softWrap:
-                                                                        false,
-                                                                    style: Theme.of(
-                                                                            context)
+                                                                    overflow: TextOverflow.fade,
+                                                                    softWrap: false,
+                                                                    style: Theme.of(context)
                                                                         .textTheme
                                                                         .bodyText1!
                                                                         .copyWith(
-                                                                            color:
-                                                                                Theme.of(context).accentColor,
+                                                                            color: Theme.of(context).accentColor,
                                                                             fontSize: 16),
                                                                   );
                                                                 }
@@ -607,9 +504,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                       Icon(
                                                         JamIcons.camera,
                                                         size: 20,
-                                                        color: Theme.of(context)
-                                                            .accentColor
-                                                            .withOpacity(.7),
+                                                        color: Theme.of(context).accentColor.withOpacity(.7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
@@ -617,10 +512,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyText2!
-                                                            .copyWith(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor),
+                                                            .copyWith(color: Theme.of(context).accentColor),
                                                       ),
                                                     ],
                                                   ),
@@ -628,12 +520,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                   Row(
                                                     children: [
                                                       Icon(
-                                                        JamIcons
-                                                            .arrow_circle_right,
+                                                        JamIcons.arrow_circle_right,
                                                         size: 20,
-                                                        color: Theme.of(context)
-                                                            .accentColor
-                                                            .withOpacity(.7),
+                                                        color: Theme.of(context).accentColor.withOpacity(.7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
@@ -641,10 +530,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyText2!
-                                                            .copyWith(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor),
+                                                            .copyWith(color: Theme.of(context).accentColor),
                                                       ),
                                                     ],
                                                   ),
@@ -654,9 +540,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                       Icon(
                                                         JamIcons.save,
                                                         size: 20,
-                                                        color: Theme.of(context)
-                                                            .accentColor
-                                                            .withOpacity(.7),
+                                                        color: Theme.of(context).accentColor.withOpacity(.7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
@@ -664,10 +548,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyText2!
-                                                            .copyWith(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor),
+                                                            .copyWith(color: Theme.of(context).accentColor),
                                                       ),
                                                     ],
                                                   ),
@@ -675,8 +556,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               ),
                                               Column(
                                                 mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.end,
+                                                crossAxisAlignment: CrossAxisAlignment.end,
                                                 children: <Widget>[
                                                   Row(
                                                     children: [
@@ -685,18 +565,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyText2!
-                                                            .copyWith(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor),
+                                                            .copyWith(color: Theme.of(context).accentColor),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Icon(
                                                         JamIcons.set_square,
                                                         size: 20,
-                                                        color: Theme.of(context)
-                                                            .accentColor
-                                                            .withOpacity(.7),
+                                                        color: Theme.of(context).accentColor.withOpacity(.7),
                                                       ),
                                                     ],
                                                   ),
@@ -704,27 +579,19 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        Provider.of<FavouriteProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .liked![index]
-                                                                ["provider"]
+                                                        Provider.of<FavouriteProvider>(context, listen: false)
+                                                            .liked![index]["provider"]
                                                             .toString(),
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyText2!
-                                                            .copyWith(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor),
+                                                            .copyWith(color: Theme.of(context).accentColor),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Icon(
                                                         JamIcons.database,
                                                         size: 20,
-                                                        color: Theme.of(context)
-                                                            .accentColor
-                                                            .withOpacity(.7),
+                                                        color: Theme.of(context).accentColor.withOpacity(.7),
                                                       ),
                                                     ],
                                                   ),
@@ -735,186 +602,109 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                         ),
                                       ),
                                     )
-                                  : Provider.of<FavouriteProvider>(context,
-                                                  listen: false)
-                                              .liked![index]["provider"] ==
+                                  : Provider.of<FavouriteProvider>(context, listen: false).liked![index]["provider"] ==
                                           "Pexels"
                                       ? Expanded(
                                           flex: 8,
                                           child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                35, 0, 35, 15),
+                                            padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
                                             child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.end,
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
                                                   children: <Widget>[
                                                     Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
                                                       children: <Widget>[
                                                         Row(
                                                           children: [
                                                             Icon(
                                                               JamIcons.camera,
                                                               size: 20,
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor
-                                                                  .withOpacity(
-                                                                      .7),
+                                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                                             ),
-                                                            const SizedBox(
-                                                                width: 10),
+                                                            const SizedBox(width: 10),
                                                             SizedBox(
-                                                              width: MediaQuery.of(
-                                                                          context)
-                                                                      .size
-                                                                      .width *
-                                                                  .4,
+                                                              width: MediaQuery.of(context).size.width * .4,
                                                               child: Text(
-                                                                Provider.of<FavouriteProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .liked![
-                                                                        index][
-                                                                        "photographer"]
+                                                                Provider.of<FavouriteProvider>(context, listen: false)
+                                                                    .liked![index]["photographer"]
                                                                     .toString(),
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .left,
-                                                                style: Theme.of(
-                                                                        context)
+                                                                textAlign: TextAlign.left,
+                                                                style: Theme.of(context)
                                                                     .textTheme
                                                                     .bodyText2!
-                                                                    .copyWith(
-                                                                        color: Theme.of(context)
-                                                                            .accentColor),
+                                                                    .copyWith(color: Theme.of(context).accentColor),
                                                               ),
                                                             ),
                                                           ],
                                                         ),
-                                                        const SizedBox(
-                                                            height: 5),
+                                                        const SizedBox(height: 5),
                                                         Row(
                                                           children: [
                                                             Icon(
-                                                              JamIcons
-                                                                  .set_square,
+                                                              JamIcons.set_square,
                                                               size: 20,
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor
-                                                                  .withOpacity(
-                                                                      .7),
+                                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                                             ),
-                                                            const SizedBox(
-                                                                width: 10),
+                                                            const SizedBox(width: 10),
                                                             Text(
-                                                              Provider.of<FavouriteProvider>(
-                                                                      context,
-                                                                      listen:
-                                                                          false)
-                                                                  .liked![index]
-                                                                      [
-                                                                      "resolution"]
+                                                              Provider.of<FavouriteProvider>(context, listen: false)
+                                                                  .liked![index]["resolution"]
                                                                   .toString(),
-                                                              style: Theme.of(
-                                                                      context)
+                                                              style: Theme.of(context)
                                                                   .textTheme
                                                                   .bodyText2!
-                                                                  .copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .accentColor),
+                                                                  .copyWith(color: Theme.of(context).accentColor),
                                                             ),
                                                           ],
                                                         ),
                                                       ],
                                                     ),
                                                     Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .end,
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      crossAxisAlignment: CrossAxisAlignment.end,
                                                       children: <Widget>[
                                                         Row(
                                                           children: [
                                                             Text(
-                                                              Provider.of<FavouriteProvider>(
-                                                                      context,
-                                                                      listen:
-                                                                          false)
-                                                                  .liked![index]
-                                                                      ["id"]
+                                                              Provider.of<FavouriteProvider>(context, listen: false)
+                                                                  .liked![index]["id"]
                                                                   .toString(),
-                                                              style: Theme.of(
-                                                                      context)
+                                                              style: Theme.of(context)
                                                                   .textTheme
                                                                   .bodyText2!
-                                                                  .copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .accentColor),
+                                                                  .copyWith(color: Theme.of(context).accentColor),
                                                             ),
-                                                            const SizedBox(
-                                                                width: 10),
+                                                            const SizedBox(width: 10),
                                                             Icon(
                                                               JamIcons.info,
                                                               size: 20,
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor
-                                                                  .withOpacity(
-                                                                      .7),
+                                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                                             ),
                                                           ],
                                                         ),
-                                                        const SizedBox(
-                                                            height: 5),
+                                                        const SizedBox(height: 5),
                                                         Row(
                                                           children: [
                                                             Text(
-                                                              Provider.of<FavouriteProvider>(
-                                                                      context,
-                                                                      listen:
-                                                                          false)
-                                                                  .liked![index]
-                                                                      [
-                                                                      "provider"]
+                                                              Provider.of<FavouriteProvider>(context, listen: false)
+                                                                  .liked![index]["provider"]
                                                                   .toString(),
-                                                              style: Theme.of(
-                                                                      context)
+                                                              style: Theme.of(context)
                                                                   .textTheme
                                                                   .bodyText2!
-                                                                  .copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .accentColor),
+                                                                  .copyWith(color: Theme.of(context).accentColor),
                                                             ),
-                                                            const SizedBox(
-                                                                width: 10),
+                                                            const SizedBox(width: 10),
                                                             Icon(
                                                               JamIcons.database,
                                                               size: 20,
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor
-                                                                  .withOpacity(
-                                                                      .7),
+                                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                                             ),
                                                           ],
                                                         ),
@@ -930,16 +720,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             Expanded(
                               flex: 5,
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: <Widget>[
                                   DownloadButton(
                                     colorChanged: colorChanged,
                                     link: screenshotTaken
                                         ? _imageFile.path
-                                        : Provider.of<FavouriteProvider>(
-                                                context,
-                                                listen: false)
+                                        : Provider.of<FavouriteProvider>(context, listen: false)
                                             .liked![index]["url"]
                                             .toString(),
                                   ),
@@ -947,48 +734,34 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     colorChanged: colorChanged,
                                     url: screenshotTaken
                                         ? _imageFile.path
-                                        : Provider.of<FavouriteProvider>(
-                                                context,
-                                                listen: false)
+                                        : Provider.of<FavouriteProvider>(context, listen: false)
                                             .liked![index]["url"]
                                             .toString(),
                                   ),
                                   FavouriteWallpaperButton(
-                                    id: Provider.of<FavouriteProvider>(context,
-                                            listen: false)
+                                    id: Provider.of<FavouriteProvider>(context, listen: false)
                                         .liked![index]["id"]
                                         .toString(),
-                                    provider: Provider.of<FavouriteProvider>(
-                                            context,
-                                            listen: false)
+                                    provider: Provider.of<FavouriteProvider>(context, listen: false)
                                         .liked![index]["provider"]
                                         .toString(),
                                     trash: true,
                                   ),
                                   ShareButton(
-                                      id: Provider.of<FavouriteProvider>(
-                                              context,
-                                              listen: false)
+                                      id: Provider.of<FavouriteProvider>(context, listen: false)
                                           .liked![index]["id"]
                                           .toString(),
-                                      provider: Provider.of<FavouriteProvider>(
-                                              context,
-                                              listen: false)
+                                      provider: Provider.of<FavouriteProvider>(context, listen: false)
                                           .liked![index]["provider"]
                                           .toString(),
-                                      url: Provider.of<FavouriteProvider>(
-                                              context,
-                                              listen: false)
+                                      url: Provider.of<FavouriteProvider>(context, listen: false)
                                           .liked![index]["url"]
                                           .toString(),
-                                      thumbUrl: Provider.of<FavouriteProvider>(
-                                              context,
-                                              listen: false)
+                                      thumbUrl: Provider.of<FavouriteProvider>(context, listen: false)
                                           .liked![index]["thumb"]
                                           .toString()),
                                   EditButton(
-                                    url: Provider.of<FavouriteProvider>(context,
-                                            listen: false)
+                                    url: Provider.of<FavouriteProvider>(context, listen: false)
                                         .liked![index]["url"]
                                         .toString(),
                                   ),
@@ -1029,33 +802,25 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
-                              imageUrl: Provider.of<FavouriteProvider>(context,
-                                      listen: false)
+                              imageUrl: Provider.of<FavouriteProvider>(context, listen: false)
                                   .liked![index]["url"]
                                   .toString(),
-                              imageBuilder: (context, imageProvider) =>
-                                  Screenshot(
+                              imageBuilder: (context, imageProvider) => Screenshot(
                                 controller: screenshotController,
                                 child: Container(
                                   margin: EdgeInsets.symmetric(
-                                      vertical: offsetAnimation.value * 1.25,
-                                      horizontal: offsetAnimation.value / 2),
+                                      vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(
-                                        offsetAnimation.value),
+                                    borderRadius: BorderRadius.circular(offsetAnimation.value),
                                     image: DecorationImage(
-                                      colorFilter: colorChanged
-                                          ? ColorFilter.mode(
-                                              accent!, BlendMode.hue)
-                                          : null,
+                                      colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
                                       image: imageProvider,
                                       fit: BoxFit.cover,
                                     ),
                                   ),
                                 ),
                               ),
-                              progressIndicatorBuilder:
-                                  (context, url, downloadProgress) => Stack(
+                              progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
                                 children: <Widget>[
                                   const SizedBox.expand(child: Text("")),
                                   Center(
@@ -1083,8 +848,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     Align(
                       alignment: Alignment.topLeft,
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize! + 8, 8, 8),
+                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
@@ -1105,22 +869,16 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize! + 8, 8, 8),
+                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
-                            final link = Provider.of<FavouriteProvider>(context,
-                                    listen: false)
-                                .liked![index]["url"];
+                            final link = Provider.of<FavouriteProvider>(context, listen: false).liked![index]["url"];
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                    transitionDuration:
-                                        const Duration(milliseconds: 300),
-                                    pageBuilder: (context, animation,
-                                        secondaryAnimation) {
-                                      animation = Tween(begin: 0.0, end: 1.0)
-                                          .animate(animation);
+                                    transitionDuration: const Duration(milliseconds: 300),
+                                    pageBuilder: (context, animation, secondaryAnimation) {
+                                      animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                       return FadeTransition(
                                           opacity: animation,
                                           child: ClockOverlay(
@@ -1150,8 +908,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
             )
           : Scaffold(
               key: _scaffoldKey,
-              backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : accent,
+              backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   setState(() {
@@ -1261,34 +1018,26 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             Expanded(
                               flex: 8,
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                                padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: <Widget>[
                                     Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: <Widget>[
                                         Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              0, 5, 0, 10),
+                                          padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                           child: Text(
-                                            Provider.of<FavouriteProvider>(
-                                                    context,
-                                                    listen: false)
+                                            Provider.of<FavouriteProvider>(context, listen: false)
                                                 .liked![index]["id"]
                                                 .toString()
                                                 .toUpperCase(),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText1!
-                                                .copyWith(
-                                                    color: Theme.of(context)
-                                                        .accentColor),
+                                                .copyWith(color: Theme.of(context).accentColor),
                                           ),
                                         ),
                                         Row(
@@ -1296,9 +1045,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                             Icon(
                                               JamIcons.eye,
                                               size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
+                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
@@ -1306,9 +1053,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                           ],
                                         ),
@@ -1318,9 +1063,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                             Icon(
                                               JamIcons.heart_f,
                                               size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
+                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
@@ -1328,9 +1071,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                           ],
                                         ),
@@ -1338,8 +1079,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     ),
                                     Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
+                                      crossAxisAlignment: CrossAxisAlignment.end,
                                       children: <Widget>[
                                         const SizedBox(height: 5),
                                         Row(
@@ -1349,17 +1089,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
                                               JamIcons.set_square,
                                               size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
+                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                             ),
                                           ],
                                         ),
@@ -1371,17 +1107,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2!
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
+                                                  .copyWith(color: Theme.of(context).accentColor),
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
                                               JamIcons.save,
                                               size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
+                                              color: Theme.of(context).accentColor.withOpacity(.7),
                                             ),
                                           ],
                                         ),
@@ -1394,12 +1126,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             Expanded(
                               flex: 5,
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: Provider.of<FavouriteProvider>(
-                                                context,
-                                                listen: false)
-                                            .liked![index]["provider"] ==
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: Provider.of<FavouriteProvider>(context, listen: false).liked![index]
+                                            ["provider"] ==
                                         null
                                     ? downloadLinkBackwards == null
                                         ? <Widget>[
@@ -1407,63 +1136,38 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               colorChanged: colorChanged,
                                               url: screenshotTaken
                                                   ? _imageFile.path
-                                                  : Provider.of<FavouriteProvider>(
-                                                                      context,
-                                                                      listen: false)
-                                                                  .liked![index]
+                                                  : Provider.of<FavouriteProvider>(context, listen: false).liked![index]
                                                               ["provider"] ==
                                                           null
                                                       ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.png"
-                                                      : Provider.of<
-                                                                  FavouriteProvider>(
-                                                              context,
-                                                              listen: false)
+                                                      : Provider.of<FavouriteProvider>(context, listen: false)
                                                           .liked![index]["url"]
                                                           .toString(),
                                             ),
                                             FavouriteWallpaperButton(
-                                              id: Provider.of<
-                                                          FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
+                                              id: Provider.of<FavouriteProvider>(context, listen: false)
                                                   .liked![index]["id"]
                                                   .toString(),
-                                              provider: Provider.of<
-                                                          FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
+                                              provider: Provider.of<FavouriteProvider>(context, listen: false)
                                                   .liked![index]["provider"]
                                                   .toString(),
                                               trash: true,
                                             ),
                                             ShareButton(
-                                                id: Provider.of<FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
+                                                id: Provider.of<FavouriteProvider>(context, listen: false)
                                                     .liked![index]["id"]
                                                     .toString(),
-                                                provider: Provider.of<
-                                                            FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
+                                                provider: Provider.of<FavouriteProvider>(context, listen: false)
                                                     .liked![index]["provider"]
                                                     .toString(),
-                                                url: Provider.of<FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
+                                                url: Provider.of<FavouriteProvider>(context, listen: false)
                                                     .liked![index]["url"]
                                                     .toString(),
-                                                thumbUrl:
-                                                    Provider.of<FavouriteProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .liked![index]["thumb"]
-                                                        .toString()),
+                                                thumbUrl: Provider.of<FavouriteProvider>(context, listen: false)
+                                                    .liked![index]["thumb"]
+                                                    .toString()),
                                             EditButton(
-                                              url: Provider.of<
-                                                          FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
+                                              url: Provider.of<FavouriteProvider>(context, listen: false)
                                                   .liked![index]["url"]
                                                   .toString(),
                                             ),
@@ -1471,75 +1175,49 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                         : <Widget>[
                                             DownloadButton(
                                               colorChanged: colorChanged,
-                                              link: screenshotTaken
-                                                  ? _imageFile.path
-                                                  : downloadLinkBackwards,
+                                              link: screenshotTaken ? _imageFile.path : downloadLinkBackwards,
                                             ),
                                             SetWallpaperButton(
                                               colorChanged: colorChanged,
                                               url: screenshotTaken
                                                   ? _imageFile.path
-                                                  : Provider.of<FavouriteProvider>(
-                                                                      context,
-                                                                      listen: false)
-                                                                  .liked![index]
+                                                  : Provider.of<FavouriteProvider>(context, listen: false).liked![index]
                                                               ["provider"] ==
                                                           null
                                                       ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.png"
-                                                      : Provider.of<
-                                                                  FavouriteProvider>(
-                                                              context,
-                                                              listen: false)
+                                                      : Provider.of<FavouriteProvider>(context, listen: false)
                                                           .liked![index]["url"]
                                                           .toString(),
                                             ),
                                             FavouriteWallpaperButton(
-                                              id: Provider.of<
-                                                          FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
+                                              id: Provider.of<FavouriteProvider>(context, listen: false)
                                                   .liked![index]["id"]
                                                   .toString(),
-                                              provider: Provider.of<
-                                                          FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
+                                              provider: Provider.of<FavouriteProvider>(context, listen: false)
                                                   .liked![index]["provider"]
                                                   .toString(),
                                               trash: true,
                                             ),
                                             ShareButton(
-                                                id: Provider.of<FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
+                                                id: Provider.of<FavouriteProvider>(context, listen: false)
                                                     .liked![index]["id"]
                                                     .toString(),
-                                                provider: Provider.of<
-                                                            FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
+                                                provider: Provider.of<FavouriteProvider>(context, listen: false)
                                                     .liked![index]["provider"]
                                                     .toString(),
-                                                url: Provider.of<FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
+                                                url: Provider.of<FavouriteProvider>(context, listen: false)
                                                     .liked![index]["url"]
                                                     .toString(),
-                                                thumbUrl:
-                                                    Provider.of<FavouriteProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .liked![index]["thumb"]
-                                                        .toString())
+                                                thumbUrl: Provider.of<FavouriteProvider>(context, listen: false)
+                                                    .liked![index]["thumb"]
+                                                    .toString())
                                           ]
                                     : <Widget>[
                                         DownloadButton(
                                           colorChanged: colorChanged,
                                           link: screenshotTaken
                                               ? _imageFile.path
-                                              : Provider.of<FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
+                                              : Provider.of<FavouriteProvider>(context, listen: false)
                                                   .liked![index]["url"]
                                                   .toString(),
                                         ),
@@ -1547,57 +1225,36 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                           colorChanged: colorChanged,
                                           url: screenshotTaken
                                               ? _imageFile.path
-                                              : Provider.of<FavouriteProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .liked![index]
+                                              : Provider.of<FavouriteProvider>(context, listen: false).liked![index]
                                                           ["provider"] ==
                                                       null
                                                   ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.png"
-                                                  : Provider.of<
-                                                              FavouriteProvider>(
-                                                          context,
-                                                          listen: false)
+                                                  : Provider.of<FavouriteProvider>(context, listen: false)
                                                       .liked![index]["url"]
                                                       .toString(),
                                         ),
                                         FavouriteWallpaperButton(
-                                          id: Provider.of<FavouriteProvider>(
-                                                  context,
-                                                  listen: false)
+                                          id: Provider.of<FavouriteProvider>(context, listen: false)
                                               .liked![index]["id"]
                                               .toString(),
-                                          provider:
-                                              Provider.of<FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked![index]["provider"]
-                                                  .toString(),
+                                          provider: Provider.of<FavouriteProvider>(context, listen: false)
+                                              .liked![index]["provider"]
+                                              .toString(),
                                           trash: true,
                                         ),
                                         ShareButton(
-                                            id: Provider.of<FavouriteProvider>(
-                                                    context,
-                                                    listen: false)
+                                            id: Provider.of<FavouriteProvider>(context, listen: false)
                                                 .liked![index]["id"]
                                                 .toString(),
-                                            provider:
-                                                Provider.of<FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .liked![index]["provider"]
-                                                    .toString(),
-                                            url: Provider.of<FavouriteProvider>(
-                                                    context,
-                                                    listen: false)
+                                            provider: Provider.of<FavouriteProvider>(context, listen: false)
+                                                .liked![index]["provider"]
+                                                .toString(),
+                                            url: Provider.of<FavouriteProvider>(context, listen: false)
                                                 .liked![index]["url"]
                                                 .toString(),
-                                            thumbUrl:
-                                                Provider.of<FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .liked![index]["thumb"]
-                                                    .toString())
+                                            thumbUrl: Provider.of<FavouriteProvider>(context, listen: false)
+                                                .liked![index]["thumb"]
+                                                .toString())
                                       ],
                               ),
                             ),
@@ -1644,16 +1301,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                   controller: screenshotController,
                                   child: Container(
                                     margin: EdgeInsets.symmetric(
-                                        vertical: offsetAnimation.value * 1.25,
-                                        horizontal: offsetAnimation.value / 2),
+                                        vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(
-                                          offsetAnimation.value),
+                                      borderRadius: BorderRadius.circular(offsetAnimation.value),
                                       image: DecorationImage(
-                                        colorFilter: colorChanged
-                                            ? ColorFilter.mode(
-                                                accent!, BlendMode.hue)
-                                            : null,
+                                        colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
                                         image: imageProvider,
                                         fit: BoxFit.cover,
                                       ),
@@ -1661,8 +1313,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                   ),
                                 );
                               },
-                              progressIndicatorBuilder:
-                                  (context, url, downloadProgress) => Stack(
+                              progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
                                 children: <Widget>[
                                   const SizedBox.expand(child: Text("")),
                                   Center(
@@ -1674,8 +1325,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                   ),
                                 ],
                               ),
-                              errorWidget: (context, url, error) =>
-                                  CachedNetworkImage(
+                              errorWidget: (context, url, error) => CachedNetworkImage(
                                 imageUrl:
                                     "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.png",
                                 imageBuilder: (context, imageProvider) {
@@ -1685,18 +1335,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     controller: screenshotController,
                                     child: Container(
                                       margin: EdgeInsets.symmetric(
-                                          vertical:
-                                              offsetAnimation.value * 1.25,
-                                          horizontal:
-                                              offsetAnimation.value / 2),
+                                          vertical: offsetAnimation.value * 1.25,
+                                          horizontal: offsetAnimation.value / 2),
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                            offsetAnimation.value),
+                                        borderRadius: BorderRadius.circular(offsetAnimation.value),
                                         image: DecorationImage(
-                                          colorFilter: colorChanged
-                                              ? ColorFilter.mode(
-                                                  accent!, BlendMode.hue)
-                                              : null,
+                                          colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
                                           image: imageProvider,
                                           fit: BoxFit.cover,
                                         ),
@@ -1704,8 +1348,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     ),
                                   );
                                 },
-                                progressIndicatorBuilder:
-                                    (context, url, downloadProgress) => Center(
+                                progressIndicatorBuilder: (context, url, downloadProgress) => Center(
                                   child: CircularProgressIndicator(
                                       valueColor: AlwaysStoppedAnimation(
                                         Theme.of(context).errorColor,
@@ -1729,8 +1372,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     Align(
                       alignment: Alignment.topLeft,
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize! + 8, 8, 8),
+                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
@@ -1751,8 +1393,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize! + 8, 8, 8),
+                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             final link =
@@ -1760,12 +1401,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                    transitionDuration:
-                                        const Duration(milliseconds: 300),
-                                    pageBuilder: (context, animation,
-                                        secondaryAnimation) {
-                                      animation = Tween(begin: 0.0, end: 1.0)
-                                          .animate(animation);
+                                    transitionDuration: const Duration(milliseconds: 300),
+                                    pageBuilder: (context, animation, secondaryAnimation) {
+                                      animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                       return FadeTransition(
                                           opacity: animation,
                                           child: ClockOverlay(

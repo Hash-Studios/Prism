@@ -31,6 +31,16 @@ class AddRewardUseCase implements UseCase<AdsEntity, AddRewardParams> {
 }
 
 @lazySingleton
+class ShowRewardedAdUseCase implements UseCase<AdsEntity, NoParams> {
+  ShowRewardedAdUseCase(this._repository);
+
+  final AdsRepository _repository;
+
+  @override
+  Future<Result<AdsEntity>> call(NoParams params) => _repository.showRewardedAd();
+}
+
+@lazySingleton
 class ResetAdsUseCase implements UseCase<AdsEntity, NoParams> {
   ResetAdsUseCase(this._repository);
 

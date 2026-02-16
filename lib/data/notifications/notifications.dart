@@ -11,9 +11,7 @@ Future<QuerySnapshot> getLastMonthNotifs(String modifier) async {
   return databaseReference
       .collection("notifications")
       .orderBy("createdAt", descending: true)
-      .where("createdAt",
-          isGreaterThan:
-              DateTime.now().toUtc().subtract(const Duration(days: 30)))
+      .where("createdAt", isGreaterThan: DateTime.now().toUtc().subtract(const Duration(days: 30)))
       .where('modifier', isEqualTo: modifier)
       .get();
 }

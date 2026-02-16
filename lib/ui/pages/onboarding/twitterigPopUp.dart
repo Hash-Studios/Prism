@@ -628,8 +628,7 @@ class OptionalInfo3 extends StatefulWidget {
 class _OptionalInfo3State extends State<OptionalInfo3> {
   Image? image1;
   Future<bool> onWillPop(BuildContext ctx) async {
-    Navigator.pushReplacement(
-        ctx, MaterialPageRoute(builder: (context) => SplashWidget()));
+    Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (context) => SplashWidget()));
     return false;
   }
 
@@ -701,8 +700,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       ),
                       FollowHeaderCard(
                         email: "hk3ToN_Prism@gmail.com",
-                        url:
-                            "https://pbs.twimg.com/profile_images/1278264820450680833/LKoAc7nh_400x400.jpg",
+                        url: "https://pbs.twimg.com/profile_images/1278264820450680833/LKoAc7nh_400x400.jpg",
                         name: "Hk3ToN",
                         img1: user3Image1,
                         img2: user3Image2,
@@ -728,8 +726,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       ),
                       FollowHeaderCard(
                         email: "inderpalsansoa.1993@gmail.com",
-                        url:
-                            "https://lh3.googleusercontent.com/a-/AOh14GjUOpZ14V9UdM58LCz1nx87N_3SDYSHQwTOec-I=s96-c",
+                        url: "https://lh3.googleusercontent.com/a-/AOh14GjUOpZ14V9UdM58LCz1nx87N_3SDYSHQwTOec-I=s96-c",
                         name: "ShankyGotThatArt",
                         img1: user4Image1,
                         img2: user4Image2,
@@ -737,8 +734,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       ),
                       FollowHeaderCard(
                         email: "yyo17341@gmail.com",
-                        url:
-                            "https://lh3.googleusercontent.com/a-/AOh14GizSGAXOap5UIqWKX16JNSKe56y1X_mKNb0Snaf=s96-c",
+                        url: "https://lh3.googleusercontent.com/a-/AOh14GizSGAXOap5UIqWKX16JNSKe56y1X_mKNb0Snaf=s96-c",
                         name: "Megh Dave",
                         img1: user5Image1,
                         img2: user5Image2,
@@ -761,14 +757,9 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                   children: [
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SplashWidget()));
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SplashWidget()));
                       },
-                      style: ButtonStyle(
-                          overlayColor: MaterialStateColor.resolveWith(
-                              (states) => Colors.white10)),
+                      style: ButtonStyle(overlayColor: MaterialStateColor.resolveWith((states) => Colors.white10)),
                       child: SizedBox(
                         width: 75,
                         child: Text(
@@ -785,14 +776,10 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SplashWidget()));
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SplashWidget()));
                       },
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateColor.resolveWith(
-                            (states) => Colors.white),
+                        backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
                       ),
                       child: SizedBox(
                         width: 60,
@@ -816,14 +803,10 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SplashWidget()));
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SplashWidget()));
                       },
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateColor.resolveWith(
-                            (states) => Colors.white),
+                        backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
                       ),
                       child: const SizedBox(
                         width: 60,
@@ -855,8 +838,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
           elevation: 0,
           mini: true,
           onPressed: () {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => SplashWidget()));
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SplashWidget()));
           },
           child: const Icon(
             JamIcons.close,
@@ -926,17 +908,12 @@ class FollowHeaderCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   StreamBuilder<QuerySnapshot>(
-                    stream: users
-                        .where("email", isEqualTo: globals.prismUser.email)
-                        .snapshots(),
-                    builder: (BuildContext context,
-                        AsyncSnapshot<QuerySnapshot> snapshot) {
+                    stream: users.where("email", isEqualTo: globals.prismUser.email).snapshots(),
+                    builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                       if (!snapshot.hasData) {
                         return Container();
                       } else {
-                        final List following = snapshot.data!.docs[0]
-                                .data()['following'] as List? ??
-                            [];
+                        final List following = snapshot.data!.docs[0].data()['following'] as List? ?? [];
                         if (following.contains(email)) {
                           return Padding(
                             padding: const EdgeInsets.all(8.0),
@@ -944,11 +921,8 @@ class FollowHeaderCard extends StatelessWidget {
                               onPressed: () {},
                               style: ButtonStyle(
                                 shape: MaterialStateProperty.resolveWith(
-                                    (states) => RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10))),
-                                backgroundColor: MaterialStateColor.resolveWith(
-                                    (states) => Colors.white),
+                                    (states) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
                               ),
                               child: const SizedBox(
                                 width: 65,
@@ -965,21 +939,13 @@ class FollowHeaderCard extends StatelessWidget {
                             child: ElevatedButton(
                               onPressed: () {
                                 following.add(email);
-                                snapshot.data!.docs[0].reference
-                                    .update({'following': following});
-                                users
-                                    .where("email", isEqualTo: email)
-                                    .get()
-                                    .then((value) {
-                                  if (value.docs.isEmpty ||
-                                      value.docs == null) {
+                                snapshot.data!.docs[0].reference.update({'following': following});
+                                users.where("email", isEqualTo: email).get().then((value) {
+                                  if (value.docs.isEmpty || value.docs == null) {
                                   } else {
-                                    final List followers = value.docs[0]
-                                            .data()['followers'] as List? ??
-                                        [];
+                                    final List followers = value.docs[0].data()['followers'] as List? ?? [];
                                     followers.add(globals.prismUser.email);
-                                    value.docs[0].reference
-                                        .update({'followers': followers});
+                                    value.docs[0].reference.update({'followers': followers});
                                   }
                                 });
                                 http.post(
@@ -994,19 +960,16 @@ class FollowHeaderCard extends StatelessWidget {
                                     <String, dynamic>{
                                       'notification': <String, dynamic>{
                                         'title': '🎉 New Follower!',
-                                        'body':
-                                            '${globals.prismUser.username} is now following you.',
+                                        'body': '${globals.prismUser.username} is now following you.',
                                         'color': "#e57697",
                                         'image': globals.prismUser.profilePhoto,
                                         'android_channel_id': "followers",
-                                        'tag':
-                                            '${globals.prismUser.username} Follow',
+                                        'tag': '${globals.prismUser.username} Follow',
                                         'icon': '@drawable/ic_follow',
                                       },
                                       'priority': 'high',
                                       'data': <String, dynamic>{
-                                        'click_action':
-                                            'FLUTTER_NOTIFICATION_CLICK',
+                                        'click_action': 'FLUTTER_NOTIFICATION_CLICK',
                                         'id': '1',
                                         'status': 'done'
                                       },
@@ -1018,11 +981,8 @@ class FollowHeaderCard extends StatelessWidget {
                               },
                               style: ButtonStyle(
                                 shape: MaterialStateProperty.resolveWith(
-                                    (states) => RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10))),
-                                backgroundColor: MaterialStateColor.resolveWith(
-                                    (states) => const Color(0xFFE57697)),
+                                    (states) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                backgroundColor: MaterialStateColor.resolveWith((states) => const Color(0xFFE57697)),
                               ),
                               child: const SizedBox(
                                 width: 65,

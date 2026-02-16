@@ -123,9 +123,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
                     child: Icon(
                       Icons.brightness_1,
                       size: 9.0,
-                      color: Theme.of(context).errorColor == Colors.black
-                          ? Colors.white24
-                          : Theme.of(context).errorColor,
+                      color:
+                          Theme.of(context).errorColor == Colors.black ? Colors.white24 : Theme.of(context).errorColor,
                     ),
                   )
                 ]),
@@ -141,12 +140,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
       title: Align(
         child: SizedBox(
           height: 24,
-          width: Provider.of<CategorySupplier>(context).getCurrentChoice ==
-                  "Community"
-              ? 110
-              : 260,
-          child: Provider.of<CategorySupplier>(context).getCurrentChoice ==
-                  "Community"
+          width: Provider.of<CategorySupplier>(context).getCurrentChoice == "Community" ? 110 : 260,
+          child: Provider.of<CategorySupplier>(context).getCurrentChoice == "Community"
               ? SvgPicture.string(
                   prismTextLogo.replaceAll(
                     "black",
@@ -158,15 +153,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                     analytics.logEvent(
                       name: 'categories_checked',
                     );
-                    showCategories(
-                        context,
-                        Provider.of<CategorySupplier>(context, listen: false)
-                            .selectedChoice);
+                    showCategories(context, Provider.of<CategorySupplier>(context, listen: false).selectedChoice);
                   },
                   child: Text(
-                    Provider.of<CategorySupplier>(context)
-                        .getCurrentChoice!
-                        .toUpperCase(),
+                    Provider.of<CategorySupplier>(context).getCurrentChoice!.toUpperCase(),
                     maxLines: 1,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.clip,
@@ -190,10 +180,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
             analytics.logEvent(
               name: 'categories_checked',
             );
-            showCategories(
-                context,
-                Provider.of<CategorySupplier>(context, listen: false)
-                    .selectedChoice);
+            showCategories(context, Provider.of<CategorySupplier>(context, listen: false).selectedChoice);
           },
           tooltip: 'Categories',
         )

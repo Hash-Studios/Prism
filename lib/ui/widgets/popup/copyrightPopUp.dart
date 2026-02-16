@@ -11,20 +11,14 @@ class CopyrightPopUp extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       title: Text(
         "LICENSE",
-        style: Theme.of(context)
-            .textTheme
-            .headline6!
-            .copyWith(color: Theme.of(context).accentColor),
+        style: Theme.of(context).textTheme.headline6!.copyWith(color: Theme.of(context).accentColor),
       ),
       content: SingleChildScrollView(
         child: Text(
           setup == true
               ? "This setup is a property of their respective owner. You can use it for your personal use only. Any distribution or sharing is not allowed without the permission of the owner."
               : "This wallpaper is a property of their respective owner. You can use it for your personal use only. Any distribution or sharing is not allowed without the permission of the owner.",
-          style: Theme.of(context)
-              .textTheme
-              .headline6!
-              .copyWith(color: Theme.of(context).accentColor),
+          style: Theme.of(context).textTheme.headline6!.copyWith(color: Theme.of(context).accentColor),
         ),
       ),
       actions: [
@@ -41,9 +35,7 @@ class CopyrightPopUp extends StatelessWidget {
           },
           child: Text("REPORT",
               style: TextStyle(
-                color: Theme.of(context).errorColor == Colors.black
-                    ? Colors.white
-                    : Theme.of(context).errorColor,
+                color: Theme.of(context).errorColor == Colors.black ? Colors.white : Theme.of(context).errorColor,
               )),
         ),
         FlatButton(

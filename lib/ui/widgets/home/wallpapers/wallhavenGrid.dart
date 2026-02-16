@@ -1,5 +1,4 @@
-import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as wData;
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
@@ -24,8 +23,7 @@ class WallHavenGrid extends StatefulWidget {
 
 class _WallHavenGridState extends State<WallHavenGrid> {
   int _current = 0;
-  GlobalKey<RefreshIndicatorState> refreshHomeKey =
-      GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
   @override
@@ -36,15 +34,13 @@ class _WallHavenGridState extends State<WallHavenGrid> {
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
     wData.walls = [];
-    Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(
-        Provider.of<CategorySupplier>(context, listen: false).selectedChoice,
-        "r");
+    Provider.of<CategorySupplier>(context, listen: false)
+        .changeWallpaperFuture(Provider.of<CategorySupplier>(context, listen: false).selectedChoice, "r");
   }
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller =
-        InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     final CarouselController carouselController = CarouselController();
     return Padding(
       padding: const EdgeInsets.only(top: 5.0),
@@ -85,19 +81,14 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Provider.of<ThemeModeExtended>(
-                                                    context)
-                                                .getCurrentModeStyle(
-                                                    MediaQuery.of(context)
-                                                        .platformBrightness) ==
+                                    color: Provider.of<ThemeModeExtended>(context)
+                                                .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                             "Dark"
                                         ? Colors.white10
                                         : Colors.black.withOpacity(.1),
                                     borderRadius: BorderRadius.circular(20),
                                     image: DecorationImage(
-                                        image: CachedNetworkImageProvider(
-                                            globals.topImageLink),
-                                        fit: BoxFit.cover)),
+                                        image: CachedNetworkImageProvider(globals.topImageLink), fit: BoxFit.cover)),
                                 child: Center(
                                   child: Container(
                                     width: MediaQuery.of(context).size.width,
@@ -107,18 +98,13 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Text(
-                                        globals.bannerTextOn == "true"
-                                            ? globals.bannerText.toUpperCase()
-                                            : "",
+                                        globals.bannerTextOn == "true" ? globals.bannerText.toUpperCase() : "",
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         style: Theme.of(context)
                                             .textTheme
                                             .headline2!
-                                            .copyWith(
-                                                fontSize: 20,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
+                                            .copyWith(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ),
@@ -133,22 +119,18 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                               onTap: () {
                                 if (wData.walls == []) {
                                 } else {
-                                  Navigator.pushNamed(context, wallpaperRoute,
-                                      arguments: [
-                                        widget.provider,
-                                        i,
-                                        wData.walls[i].thumbs!["small"],
-                                      ]);
+                                  Navigator.pushNamed(context, wallpaperRoute, arguments: [
+                                    widget.provider,
+                                    i,
+                                    wData.walls[i].thumbs!["small"],
+                                  ]);
                                 }
                               },
                               child: wData.walls.isEmpty
                                   ? Container(
                                       decoration: BoxDecoration(
-                                        color: Provider.of<ThemeModeExtended>(
-                                                        context)
-                                                    .getCurrentModeStyle(
-                                                        MediaQuery.of(context)
-                                                            .platformBrightness) ==
+                                        color: Provider.of<ThemeModeExtended>(context)
+                                                    .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                                 "Dark"
                                             ? Colors.white10
                                             : Colors.black.withOpacity(.1),
@@ -157,26 +139,19 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                     )
                                   : Container(
                                       decoration: BoxDecoration(
-                                          color: Provider.of<ThemeModeExtended>(
-                                                          context)
-                                                      .getCurrentModeStyle(
-                                                          MediaQuery.of(context)
-                                                              .platformBrightness) ==
+                                          color: Provider.of<ThemeModeExtended>(context)
+                                                      .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                                   "Dark"
                                               ? Colors.white10
                                               : Colors.black.withOpacity(.1),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(20),
                                           image: DecorationImage(
                                               image: CachedNetworkImageProvider(
-                                                  wData.walls[i]
-                                                      .thumbs!["original"]
-                                                      .toString()),
+                                                  wData.walls[i].thumbs!["original"].toString()),
                                               fit: BoxFit.cover)),
                                       child: Center(
                                         child: Container(
-                                          width:
-                                              MediaQuery.of(context).size.width,
+                                          width: MediaQuery.of(context).size.width,
                                           color: Colors.transparent,
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
@@ -184,14 +159,8 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                               "",
                                               textAlign: TextAlign.center,
                                               maxLines: 1,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .headline2!
-                                                  .copyWith(
-                                                      color: Colors.white,
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.bold),
+                                              style: Theme.of(context).textTheme.headline2!.copyWith(
+                                                  color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -212,19 +181,14 @@ class _WallHavenGridState extends State<WallHavenGrid> {
           onRefresh: refreshList,
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
-              if (scrollInfo.metrics.pixels ==
-                  scrollInfo.metrics.maxScrollExtent) {
+              if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
                 if (!seeMoreLoader) {
                   Provider.of<CategorySupplier>(context, listen: false)
-                      .changeWallpaperFuture(
-                          Provider.of<CategorySupplier>(context, listen: false)
-                              .selectedChoice,
-                          "s");
+                      .changeWallpaperFuture(Provider.of<CategorySupplier>(context, listen: false).selectedChoice, "s");
 
                   setState(() {
                     seeMoreLoader = true;
-                    Future.delayed(const Duration(seconds: 2))
-                        .then((value) => seeMoreLoader = false);
+                    Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
                   });
                 }
               }
@@ -235,10 +199,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
               itemCount: wData.walls.isEmpty ? 20 : wData.walls.length - 4,
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent:
-                      MediaQuery.of(context).orientation == Orientation.portrait
-                          ? 300
-                          : 250,
+                  maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                   childAspectRatio: 0.6625,
                   mainAxisSpacing: 8,
                   crossAxisSpacing: 8),
@@ -249,18 +210,13 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                     seeMoreLoader: seeMoreLoader,
                     func: () {
                       if (!seeMoreLoader) {
-                        Provider.of<CategorySupplier>(context, listen: false)
-                            .changeWallpaperFuture(
-                                Provider.of<CategorySupplier>(context,
-                                        listen: false)
-                                    .selectedChoice,
-                                "s");
+                        Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(
+                            Provider.of<CategorySupplier>(context, listen: false).selectedChoice, "s");
 
                         setState(
                           () {
                             seeMoreLoader = true;
-                            Future.delayed(const Duration(seconds: 2))
-                                .then((value) => seeMoreLoader = false);
+                            Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
                           },
                         );
                       }

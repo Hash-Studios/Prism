@@ -62,9 +62,7 @@ Color showColors(BuildContext context) {
   final AlertDialog colorPopUp = AlertDialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     content: Container(
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: Theme.of(context).primaryColor),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .78,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -74,9 +72,7 @@ Color showColors(BuildContext context) {
             height: 150,
             width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10)),
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
                 color: Theme.of(context).hintColor),
             child: const FlareActor(
               "assets/animations/Color.flr",
@@ -89,10 +85,7 @@ Color showColors(BuildContext context) {
                 padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
                 child: Text(
                   "Select a color",
-                  style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      color: Theme.of(context).accentColor),
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).accentColor),
                 ),
               ),
             ],
@@ -114,8 +107,7 @@ Color showColors(BuildContext context) {
                       arguments: [
                         color
                             .toString()
-                            .replaceAll(
-                                "MaterialColor(primary value: Color(0xff", "")
+                            .replaceAll("MaterialColor(primary value: Color(0xff", "")
                             .replaceAll("Color(0xff", "")
                             .replaceAll(")", ""),
                       ],

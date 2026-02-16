@@ -23,18 +23,13 @@ class ShowUpTransition extends StatefulWidget {
   final SlideFromSlide slideSide;
 
   const ShowUpTransition(
-      {required this.child,
-      this.duration,
-      this.delay,
-      this.slideSide = SlideFromSlide.left,
-      required this.forward});
+      {required this.child, this.duration, this.delay, this.slideSide = SlideFromSlide.left, required this.forward});
 
   @override
   _ShowUpTransitionState createState() => _ShowUpTransitionState();
 }
 
-class _ShowUpTransitionState extends State<ShowUpTransition>
-    with SingleTickerProviderStateMixin {
+class _ShowUpTransitionState extends State<ShowUpTransition> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<Offset> _animOffset;
 
@@ -49,9 +44,7 @@ class _ShowUpTransitionState extends State<ShowUpTransition>
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-        vsync: this,
-        duration: widget.duration ?? const Duration(milliseconds: 400));
+    _animController = AnimationController(vsync: this, duration: widget.duration ?? const Duration(milliseconds: 400));
     switch (widget.slideSide) {
       case SlideFromSlide.left:
         selectedSlide = slideSides[0];
@@ -66,9 +59,8 @@ class _ShowUpTransitionState extends State<ShowUpTransition>
         selectedSlide = slideSides[3];
         break;
     }
-    _animOffset = Tween<Offset>(begin: selectedSlide, end: Offset.zero).animate(
-        CurvedAnimation(
-            curve: Curves.fastLinearToSlowEaseIn, parent: _animController));
+    _animOffset = Tween<Offset>(begin: selectedSlide, end: Offset.zero)
+        .animate(CurvedAnimation(curve: Curves.fastLinearToSlowEaseIn, parent: _animController));
   }
 
   @override

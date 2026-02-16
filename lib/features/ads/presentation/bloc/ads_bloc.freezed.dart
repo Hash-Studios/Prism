@@ -50,7 +50,9 @@ extension AdsEventPatterns on AdsEvent {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(_Started value)? started,
+    TResult Function(_WatchAdRequested value)? watchAdRequested,
     TResult Function(_RewardEarned value)? rewardEarned,
+    TResult Function(_TransientStateCleared value)? transientStateCleared,
     TResult Function(_ResetRequested value)? resetRequested,
     required TResult orElse(),
   }) {
@@ -58,8 +60,12 @@ extension AdsEventPatterns on AdsEvent {
     switch (_that) {
       case _Started() when started != null:
         return started(_that);
+      case _WatchAdRequested() when watchAdRequested != null:
+        return watchAdRequested(_that);
       case _RewardEarned() when rewardEarned != null:
         return rewardEarned(_that);
+      case _TransientStateCleared() when transientStateCleared != null:
+        return transientStateCleared(_that);
       case _ResetRequested() when resetRequested != null:
         return resetRequested(_that);
       case _:
@@ -83,15 +89,21 @@ extension AdsEventPatterns on AdsEvent {
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(_Started value) started,
+    required TResult Function(_WatchAdRequested value) watchAdRequested,
     required TResult Function(_RewardEarned value) rewardEarned,
+    required TResult Function(_TransientStateCleared value) transientStateCleared,
     required TResult Function(_ResetRequested value) resetRequested,
   }) {
     final _that = this;
     switch (_that) {
       case _Started():
         return started(_that);
+      case _WatchAdRequested():
+        return watchAdRequested(_that);
       case _RewardEarned():
         return rewardEarned(_that);
+      case _TransientStateCleared():
+        return transientStateCleared(_that);
       case _ResetRequested():
         return resetRequested(_that);
       case _:
@@ -114,15 +126,21 @@ extension AdsEventPatterns on AdsEvent {
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(_Started value)? started,
+    TResult? Function(_WatchAdRequested value)? watchAdRequested,
     TResult? Function(_RewardEarned value)? rewardEarned,
+    TResult? Function(_TransientStateCleared value)? transientStateCleared,
     TResult? Function(_ResetRequested value)? resetRequested,
   }) {
     final _that = this;
     switch (_that) {
       case _Started() when started != null:
         return started(_that);
+      case _WatchAdRequested() when watchAdRequested != null:
+        return watchAdRequested(_that);
       case _RewardEarned() when rewardEarned != null:
         return rewardEarned(_that);
+      case _TransientStateCleared() when transientStateCleared != null:
+        return transientStateCleared(_that);
       case _ResetRequested() when resetRequested != null:
         return resetRequested(_that);
       case _:
@@ -145,7 +163,9 @@ extension AdsEventPatterns on AdsEvent {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? started,
+    TResult Function(num unlockThreshold)? watchAdRequested,
     TResult Function(num rewardAmount, num unlockThreshold)? rewardEarned,
+    TResult Function()? transientStateCleared,
     TResult Function()? resetRequested,
     required TResult orElse(),
   }) {
@@ -153,8 +173,12 @@ extension AdsEventPatterns on AdsEvent {
     switch (_that) {
       case _Started() when started != null:
         return started();
+      case _WatchAdRequested() when watchAdRequested != null:
+        return watchAdRequested(_that.unlockThreshold);
       case _RewardEarned() when rewardEarned != null:
         return rewardEarned(_that.rewardAmount, _that.unlockThreshold);
+      case _TransientStateCleared() when transientStateCleared != null:
+        return transientStateCleared();
       case _ResetRequested() when resetRequested != null:
         return resetRequested();
       case _:
@@ -178,15 +202,21 @@ extension AdsEventPatterns on AdsEvent {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function() started,
+    required TResult Function(num unlockThreshold) watchAdRequested,
     required TResult Function(num rewardAmount, num unlockThreshold) rewardEarned,
+    required TResult Function() transientStateCleared,
     required TResult Function() resetRequested,
   }) {
     final _that = this;
     switch (_that) {
       case _Started():
         return started();
+      case _WatchAdRequested():
+        return watchAdRequested(_that.unlockThreshold);
       case _RewardEarned():
         return rewardEarned(_that.rewardAmount, _that.unlockThreshold);
+      case _TransientStateCleared():
+        return transientStateCleared();
       case _ResetRequested():
         return resetRequested();
       case _:
@@ -209,15 +239,21 @@ extension AdsEventPatterns on AdsEvent {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? started,
+    TResult? Function(num unlockThreshold)? watchAdRequested,
     TResult? Function(num rewardAmount, num unlockThreshold)? rewardEarned,
+    TResult? Function()? transientStateCleared,
     TResult? Function()? resetRequested,
   }) {
     final _that = this;
     switch (_that) {
       case _Started() when started != null:
         return started();
+      case _WatchAdRequested() when watchAdRequested != null:
+        return watchAdRequested(_that.unlockThreshold);
       case _RewardEarned() when rewardEarned != null:
         return rewardEarned(_that.rewardAmount, _that.unlockThreshold);
+      case _TransientStateCleared() when transientStateCleared != null:
+        return transientStateCleared();
       case _ResetRequested() when resetRequested != null:
         return resetRequested();
       case _:
@@ -242,6 +278,68 @@ class _Started implements AdsEvent {
   @override
   String toString() {
     return 'AdsEvent.started()';
+  }
+}
+
+/// @nodoc
+
+class _WatchAdRequested implements AdsEvent {
+  const _WatchAdRequested({this.unlockThreshold = 10});
+
+  @JsonKey()
+  final num unlockThreshold;
+
+  /// Create a copy of AdsEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  _$WatchAdRequestedCopyWith<_WatchAdRequested> get copyWith =>
+      __$WatchAdRequestedCopyWithImpl<_WatchAdRequested>(this, _$identity);
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _WatchAdRequested &&
+            (identical(other.unlockThreshold, unlockThreshold) || other.unlockThreshold == unlockThreshold));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, unlockThreshold);
+
+  @override
+  String toString() {
+    return 'AdsEvent.watchAdRequested(unlockThreshold: $unlockThreshold)';
+  }
+}
+
+/// @nodoc
+abstract mixin class _$WatchAdRequestedCopyWith<$Res> implements $AdsEventCopyWith<$Res> {
+  factory _$WatchAdRequestedCopyWith(_WatchAdRequested value, $Res Function(_WatchAdRequested) _then) =
+      __$WatchAdRequestedCopyWithImpl;
+  @useResult
+  $Res call({num unlockThreshold});
+}
+
+/// @nodoc
+class __$WatchAdRequestedCopyWithImpl<$Res> implements _$WatchAdRequestedCopyWith<$Res> {
+  __$WatchAdRequestedCopyWithImpl(this._self, this._then);
+
+  final _WatchAdRequested _self;
+  final $Res Function(_WatchAdRequested) _then;
+
+  /// Create a copy of AdsEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? unlockThreshold = null,
+  }) {
+    return _then(_WatchAdRequested(
+      unlockThreshold: null == unlockThreshold
+          ? _self.unlockThreshold
+          : unlockThreshold // ignore: cast_nullable_to_non_nullable
+              as num,
+    ));
   }
 }
 
@@ -309,6 +407,25 @@ class __$RewardEarnedCopyWithImpl<$Res> implements _$RewardEarnedCopyWith<$Res> 
           : unlockThreshold // ignore: cast_nullable_to_non_nullable
               as num,
     ));
+  }
+}
+
+/// @nodoc
+
+class _TransientStateCleared implements AdsEvent {
+  const _TransientStateCleared();
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _TransientStateCleared);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+
+  @override
+  String toString() {
+    return 'AdsEvent.transientStateCleared()';
   }
 }
 

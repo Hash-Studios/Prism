@@ -53,9 +53,7 @@ class PrismTransactionAdapter extends TypeAdapter<PrismTransaction> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is PrismTransactionAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
+      other is PrismTransactionAdapter && runtimeType == other.runtimeType && typeId == other.typeId;
 }
 
 // **************************************************************************
@@ -74,8 +72,7 @@ PrismTransaction _$PrismTransactionFromJson(Map<String, dynamic> json) {
   );
 }
 
-Map<String, dynamic> _$PrismTransactionToJson(PrismTransaction instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$PrismTransactionToJson(PrismTransaction instance) => <String, dynamic>{
       'name': instance.name,
       'by': instance.by,
       'id': instance.id,

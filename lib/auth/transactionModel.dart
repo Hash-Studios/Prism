@@ -37,7 +37,6 @@ class PrismTransaction {
     logger.d("Default constructor !!!!");
   }
 
-  factory PrismTransaction.fromJson(Map<String, dynamic> json) =>
-      _$PrismTransactionFromJson(json);
+  factory PrismTransaction.fromJson(Map<String, dynamic> json) => _$PrismTransactionFromJson(json);
   Map<String, dynamic> toJson() => _$PrismTransactionToJson(this);
 }

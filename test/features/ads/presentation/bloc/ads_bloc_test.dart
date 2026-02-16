@@ -10,6 +10,8 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockCreateRewardedAdUseCase extends Mock implements CreateRewardedAdUseCase {}
 
+class _MockShowRewardedAdUseCase extends Mock implements ShowRewardedAdUseCase {}
+
 class _MockAddRewardUseCase extends Mock implements AddRewardUseCase {}
 
 class _MockResetAdsUseCase extends Mock implements ResetAdsUseCase {}
@@ -20,11 +22,13 @@ void main() {
   });
 
   late _MockCreateRewardedAdUseCase createUseCase;
+  late _MockShowRewardedAdUseCase showUseCase;
   late _MockAddRewardUseCase addRewardUseCase;
   late _MockResetAdsUseCase resetUseCase;
 
   setUp(() {
     createUseCase = _MockCreateRewardedAdUseCase();
+    showUseCase = _MockShowRewardedAdUseCase();
     addRewardUseCase = _MockAddRewardUseCase();
     resetUseCase = _MockResetAdsUseCase();
 
@@ -53,9 +57,20 @@ void main() {
     when(() => resetUseCase(const NoParams())).thenAnswer(
       (_) async => Result.success(AdsEntity.empty),
     );
+
+    when(() => showUseCase(const NoParams())).thenAnswer(
+      (_) async => Result.success(
+        const AdsEntity(
+          downloadCoins: 0,
+          loadingAd: false,
+          adLoaded: false,
+          adFailed: false,
+        ),
+      ),
+    );
   });
 
-  AdsBloc buildBloc() => AdsBloc(createUseCase, addRewardUseCase, resetUseCase);
+  AdsBloc buildBloc() => AdsBloc(createUseCase, showUseCase, addRewardUseCase, resetUseCase);
 
   blocTest<AdsBloc, AdsState>(
     'rewardEarned unlocks when threshold is met',

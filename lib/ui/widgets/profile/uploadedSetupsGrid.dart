@@ -22,12 +22,10 @@ class UploadedSetupsGrid extends StatefulWidget {
   _UploadedSetupsGridState createState() => _UploadedSetupsGridState();
 }
 
-class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
-    with SingleTickerProviderStateMixin {
+class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTickerProviderStateMixin {
   AnimationController? _controller;
   late Animation<Color?> animation;
-  GlobalKey<RefreshIndicatorState> refreshProfileSetupKey =
-      GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshProfileSetupKey = GlobalKey<RefreshIndicatorState>();
   PaletteGenerator? paletteGenerator;
   List<Color>? colors;
   bool seeMoreLoader = false;
@@ -40,8 +38,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
       vsync: this,
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(
-                    SchedulerBinding.instance!.window.platformBrightness) ==
+                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color?>(
             [
@@ -93,8 +90,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
 
   Future<void> refreshList() async {
     refreshProfileSetupKey.currentState?.show();
-    Provider.of<ProfileSetupProvider>(context, listen: false)
-        .getProfileSetups();
+    Provider.of<ProfileSetupProvider>(context, listen: false).getProfileSetups();
   }
 
   @override
@@ -103,31 +99,20 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileSetupKey,
         onRefresh: refreshList,
-        child: Provider.of<ProfileSetupProvider>(context, listen: false)
-                    .profileSetups !=
-                null
-            ? Provider.of<ProfileSetupProvider>(context, listen: false)
-                    .profileSetups!
-                    .isEmpty
+        child: Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups != null
+            ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       SizedBox(
                         width: MediaQuery.of(context).size.width * 0.7,
                         child: Provider.of<ThemeModeExtended>(context)
-                                    .getCurrentModeStyle(MediaQuery.of(context)
-                                        .platformBrightness) ==
+                                    .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                 "Dark"
                             ? SvgPicture.string(
                                 postsDark
-                                    .replaceAll(
-                                        "181818",
-                                        Theme.of(context)
-                                            .primaryColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -135,49 +120,19 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2F2F",
-                                        Theme.of(context)
-                                            .hintColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2)),
+                                    .replaceAll("F0F0F0",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2E41",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("3F3D56",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
                               )
                             : SvgPicture.string(
                                 postsLight
-                                    .replaceAll(
-                                        "181818",
-                                        Theme.of(context)
-                                            .primaryColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -185,38 +140,14 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2F2F",
-                                        Theme.of(context)
-                                            .hintColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2)),
+                                    .replaceAll("F0F0F0",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2E41",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("3F3D56",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
                               ),
                       ),
                       SizedBox(
@@ -228,30 +159,16 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                 : GridView.builder(
                     shrinkWrap: true,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: Provider.of<ProfileSetupProvider>(context)
-                        .profileSetups!
-                        .length,
+                    itemCount: Provider.of<ProfileSetupProvider>(context).profileSetups!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent:
-                            MediaQuery.of(context).orientation ==
-                                    Orientation.portrait
-                                ? 300
-                                : 250,
+                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                         childAspectRatio: 0.5025,
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
                       if (index ==
-                              Provider.of<ProfileSetupProvider>(context,
-                                          listen: false)
-                                      .profileSetups!
-                                      .length -
-                                  1 &&
-                          !(Provider.of<ProfileSetupProvider>(context,
-                                      listen: false)
-                                  .profileSetups!
-                                  .length <
-                              8)) {
+                              Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups!.length - 1 &&
+                          !(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups!.length < 8)) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
                           func: () {
@@ -259,12 +176,9 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                               setState(() {
                                 seeMoreLoader = true;
                               });
-                              Provider.of<ProfileSetupProvider>(context,
-                                      listen: false)
-                                  .seeMoreProfileSetups();
+                              Provider.of<ProfileSetupProvider>(context, listen: false).seeMoreProfileSetups();
                               setState(() {
-                                Future.delayed(const Duration(seconds: 1))
-                                    .then((value) => seeMoreLoader = false);
+                                Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
                               });
                             }
                           },
@@ -289,21 +203,12 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                splashColor: Theme.of(context)
-                                    .accentColor
-                                    .withOpacity(0.3),
-                                highlightColor: Theme.of(context)
-                                    .accentColor
-                                    .withOpacity(0.1),
+                                splashColor: Theme.of(context).accentColor.withOpacity(0.3),
+                                highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
                                 onTap: () {
-                                  if (Provider.of<ProfileSetupProvider>(context,
-                                              listen: false)
-                                          .profileSetups ==
-                                      []) {
+                                  if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups == []) {
                                   } else {
-                                    Navigator.pushNamed(
-                                        context, profileSetupViewRoute,
-                                        arguments: [index]);
+                                    Navigator.pushNamed(context, profileSetupViewRoute, arguments: [index]);
                                   }
                                 },
                               ),

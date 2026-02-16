@@ -26,12 +26,10 @@ class UserProfileGrid extends StatefulWidget {
   _UserProfileGridState createState() => _UserProfileGridState();
 }
 
-class _UserProfileGridState extends State<UserProfileGrid>
-    with SingleTickerProviderStateMixin {
+class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProviderStateMixin {
   AnimationController? _controller;
   Animation<Color?>? animation;
-  GlobalKey<RefreshIndicatorState> refreshProfileKey =
-      GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshProfileKey = GlobalKey<RefreshIndicatorState>();
   bool seeMoreLoader = false;
 
   @override
@@ -42,8 +40,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
       vsync: this,
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
-                .getCurrentModeStyle(
-                    SchedulerBinding.instance!.window.platformBrightness) ==
+                .getCurrentModeStyle(SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color?>(
             [
@@ -95,8 +92,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
 
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
-    Provider.of<UserProfileProvider>(context, listen: false)
-        .getuserProfileWalls(widget.email);
+    Provider.of<UserProfileProvider>(context, listen: false).getuserProfileWalls(widget.email);
   }
 
   @override
@@ -105,30 +101,20 @@ class _UserProfileGridState extends State<UserProfileGrid>
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileKey,
         onRefresh: refreshList,
-        child: Provider.of<UserProfileProvider>(context).userProfileWalls !=
-                null
-            ? Provider.of<UserProfileProvider>(context)
-                    .userProfileWalls!
-                    .isEmpty
+        child: Provider.of<UserProfileProvider>(context).userProfileWalls != null
+            ? Provider.of<UserProfileProvider>(context).userProfileWalls!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
                         child: Provider.of<ThemeModeExtended>(context)
-                                    .getCurrentModeStyle(MediaQuery.of(context)
-                                        .platformBrightness) ==
+                                    .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                 "Dark"
                             ? SvgPicture.string(
                                 postsDark
-                                    .replaceAll(
-                                        "181818",
-                                        Theme.of(context)
-                                            .primaryColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -136,49 +122,19 @@ class _UserProfileGridState extends State<UserProfileGrid>
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2F2F",
-                                        Theme.of(context)
-                                            .hintColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2)),
+                                    .replaceAll("F0F0F0",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2E41",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("3F3D56",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
                               )
                             : SvgPicture.string(
                                 postsLight
-                                    .replaceAll(
-                                        "181818",
-                                        Theme.of(context)
-                                            .primaryColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.value.toRadixString(16).toString().substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -186,38 +142,14 @@ class _UserProfileGridState extends State<UserProfileGrid>
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .accentColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2F2F",
-                                        Theme.of(context)
-                                            .hintColor
-                                            .value
-                                            .toRadixString(16)
-                                            .toString()
-                                            .substring(2)),
+                                    .replaceAll("F0F0F0",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2E41",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("3F3D56",
+                                        Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.value.toRadixString(16).toString().substring(2)),
                               ),
                       ),
                       SizedBox(
@@ -229,30 +161,16 @@ class _UserProfileGridState extends State<UserProfileGrid>
                 : GridView.builder(
                     shrinkWrap: true,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: Provider.of<UserProfileProvider>(context)
-                        .userProfileWalls!
-                        .length,
+                    itemCount: Provider.of<UserProfileProvider>(context).userProfileWalls!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent:
-                            MediaQuery.of(context).orientation ==
-                                    Orientation.portrait
-                                ? 300
-                                : 250,
+                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                         childAspectRatio: 0.6625,
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
                       if (index ==
-                              Provider.of<UserProfileProvider>(context,
-                                          listen: false)
-                                      .userProfileWalls!
-                                      .length -
-                                  1 &&
-                          !(Provider.of<UserProfileProvider>(context,
-                                      listen: false)
-                                  .userProfileWalls!
-                                  .length <
-                              12)) {
+                              Provider.of<UserProfileProvider>(context, listen: false).userProfileWalls!.length - 1 &&
+                          !(Provider.of<UserProfileProvider>(context, listen: false).userProfileWalls!.length < 12)) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
                           func: () {
@@ -260,12 +178,10 @@ class _UserProfileGridState extends State<UserProfileGrid>
                               setState(() {
                                 seeMoreLoader = true;
                               });
-                              Provider.of<UserProfileProvider>(context,
-                                      listen: false)
+                              Provider.of<UserProfileProvider>(context, listen: false)
                                   .seeMoreUserProfileWalls(widget.email);
                               setState(() {
-                                Future.delayed(const Duration(seconds: 1))
-                                    .then((value) => seeMoreLoader = false);
+                                Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
                               });
                             }
                           },
@@ -282,8 +198,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
                               defaultChild: FocusedMenuHolder(
                                 provider: "UserProfileWall",
                                 index: index,
-                                child: PhotographerWallTile(
-                                    animation: animation, index: index),
+                                child: PhotographerWallTile(animation: animation, index: index),
                               ),
                               trueChild: PhotographerWallTile(
                                 animation: animation,
@@ -293,8 +208,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
                           : FocusedMenuHolder(
                               provider: "UserProfileWall",
                               index: index,
-                              child: PhotographerWallTile(
-                                  animation: animation, index: index),
+                              child: PhotographerWallTile(animation: animation, index: index),
                             );
                     })
             : const LoadingCards());
@@ -345,14 +259,11 @@ class PhotographerWallTile extends StatelessWidget {
               splashColor: Theme.of(context).accentColor.withOpacity(0.3),
               highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
               onTap: () {
-                if (Provider.of<UserProfileProvider>(context, listen: false)
-                        .userProfileWalls ==
-                    []) {
+                if (Provider.of<UserProfileProvider>(context, listen: false).userProfileWalls == []) {
                 } else {
                   globals.isPremiumWall(
                                   globals.premiumCollections,
-                                  Provider.of<UserProfileProvider>(context,
-                                              listen: false)
+                                  Provider.of<UserProfileProvider>(context, listen: false)
                                           .userProfileWalls![index]
                                           .data()["collections"] as List? ??
                                       []) ==
@@ -364,14 +275,12 @@ class PhotographerWallTile extends StatelessWidget {
                             premiumRoute,
                           );
                         })
-                      : Navigator.pushNamed(context, userProfileWallViewRoute,
-                          arguments: [
-                              index,
-                              Provider.of<UserProfileProvider>(context,
-                                      listen: false)
-                                  .userProfileWalls![index]
-                                  .data()["wallpaper_thumb"],
-                            ]);
+                      : Navigator.pushNamed(context, userProfileWallViewRoute, arguments: [
+                          index,
+                          Provider.of<UserProfileProvider>(context, listen: false)
+                              .userProfileWalls![index]
+                              .data()["wallpaper_thumb"],
+                        ]);
                 }
               },
             ),

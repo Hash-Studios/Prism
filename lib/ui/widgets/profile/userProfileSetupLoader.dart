@@ -17,8 +17,7 @@ class _UserProfileSetupLoaderState extends State<UserProfileSetupLoader> {
 
   @override
   void initState() {
-    _future = Provider.of<UserProfileProvider>(context, listen: false)
-        .getUserProfileSetups(widget.email);
+    _future = Provider.of<UserProfileProvider>(context, listen: false).getUserProfileSetups(widget.email);
     super.initState();
   }
 
@@ -33,8 +32,7 @@ class _UserProfileSetupLoaderState extends State<UserProfileSetupLoader> {
             logger.d("snapshot null");
             return const LoadingSetupCards();
           }
-          if (snapshot.connectionState == ConnectionState.waiting ||
-              snapshot.connectionState == ConnectionState.none) {
+          if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
             logger.d("snapshot none, waiting");
             return const LoadingSetupCards();
           } else {

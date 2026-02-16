@@ -39,9 +39,7 @@ void showNoLoadLinksPopUp(BuildContext context, Map link) {
       ),
     ],
     content: Container(
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: Theme.of(context).primaryColor),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .78,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

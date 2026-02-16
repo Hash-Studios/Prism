@@ -52,14 +52,10 @@ class _FollowersScreenState extends State<FollowersScreen> {
                     ),
                     title: Text(
                       followers![index].toString(),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyText2!
-                          .copyWith(color: Theme.of(context).accentColor),
+                      style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).accentColor),
                     ),
                     onTap: () {
-                      Navigator.pushNamed(context, followerProfileRoute,
-                          arguments: [followers![index].toString()]);
+                      Navigator.pushNamed(context, followerProfileRoute, arguments: [followers![index].toString()]);
                     },
                   );
                 })));

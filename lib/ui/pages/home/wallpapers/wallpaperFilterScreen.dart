@@ -140,34 +140,28 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     bool? result;
     try {
       if (url.contains("com.hash.prism")) {
-        result = await platform
-            .invokeMethod("set_both_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_both_wallpaper_file", <String, dynamic>{
           'url': url,
         });
       } else if (url.contains("/0/")) {
-        result = await platform
-            .invokeMethod("set_both_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_both_wallpaper_file", <String, dynamic>{
           'url': "/${url.replaceAll("/0//", "/0/")}",
         });
       } else {
-        result =
-            await platform.invokeMethod("set_both_wallpaper", <String, dynamic>{
+        result = await platform.invokeMethod("set_both_wallpaper", <String, dynamic>{
           'url': url,
         });
       }
       if (result!) {
         logger.d("Success");
-        analytics.logEvent(
-            name: 'set_wall',
-            parameters: {'type': 'Both', 'result': 'Success'});
+        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
       }
     } catch (e) {
-      analytics.logEvent(
-          name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
+      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       logger.d(e.toString());
     }
     Navigator.of(context).pop();
@@ -177,26 +171,21 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     bool? result;
     try {
       if (url.contains("com.hash.prism")) {
-        result = await platform
-            .invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
           'url': url,
         });
       } else if (url.contains("/0/")) {
-        result = await platform
-            .invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
           'url': "/${url.replaceAll("/0//", "/0/")}",
         });
       } else {
-        result =
-            await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
+        result = await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
           'url': url,
         });
       }
       if (result!) {
         logger.d("Success");
-        analytics.logEvent(
-            name: 'set_wall',
-            parameters: {'type': 'Lock', 'result': 'Success'});
+        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -204,8 +193,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(
-          name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
+      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
     }
     Navigator.of(context).pop();
   }
@@ -214,26 +202,21 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     bool? result;
     try {
       if (url.contains("com.hash.prism")) {
-        result = await platform
-            .invokeMethod("set_home_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_home_wallpaper_file", <String, dynamic>{
           'url': url,
         });
       } else if (url.contains("/0/")) {
-        result = await platform
-            .invokeMethod("set_home_wallpaper_file", <String, dynamic>{
+        result = await platform.invokeMethod("set_home_wallpaper_file", <String, dynamic>{
           'url': "/${url.replaceAll("/0//", "/0/")}",
         });
       } else {
-        result =
-            await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
+        result = await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
           'url': url,
         });
       }
       if (result!) {
         logger.d("Success");
-        analytics.logEvent(
-            name: 'set_wall',
-            parameters: {'type': 'Home', 'result': 'Success'});
+        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -241,8 +224,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(
-          name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
+      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
     }
     Navigator.of(context).pop();
   }
@@ -291,10 +273,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
             else if (isLoading)
               Center(
                 child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        color: Theme.of(context).errorColor)),
+                    width: 20, height: 20, child: CircularProgressIndicator(color: Theme.of(context).errorColor)),
               )
             else
               IconButton(
@@ -309,11 +288,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   setState(() {
                     isLoading = true;
                   });
-                  GallerySaver.saveImage(imageFile.path, albumName: "Prism")
-                      .then((value) {
-                    analytics.logEvent(
-                        name: 'download_wallpaper',
-                        parameters: {'link': imageFile.path});
+                  GallerySaver.saveImage(imageFile.path, albumName: "Prism").then((value) {
+                    analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
                     toasts.codeSend("Wall Saved in Pictures!");
                     setState(() {
                       isLoading = false;
@@ -405,15 +381,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                     Stack(
                                       alignment: Alignment.center,
                                       children: [
-                                        _buildFilterThumbnail(
-                                            selectedFilters[index],
-                                            image,
-                                            filename),
+                                        _buildFilterThumbnail(selectedFilters[index], image, filename),
                                         if (_filter == selectedFilters[index])
                                           Container(
                                               decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(500),
+                                                borderRadius: BorderRadius.circular(500),
                                                 color: Colors.white,
                                               ),
                                               child: const Icon(
@@ -432,9 +404,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyText2!
-                                          .copyWith(
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                          .copyWith(color: Theme.of(context).accentColor),
                                     )
                                   ],
                                 ),
@@ -451,8 +421,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     );
   }
 
-  Widget _buildFilterThumbnail(
-      Filter filter, imagelib.Image? image, String? filename) {
+  Widget _buildFilterThumbnail(Filter filter, imagelib.Image? image, String? filename) {
     if (cachedFilters[filter.name ?? "_"] == null) {
       return FutureBuilder<List<int>>(
         future: compute(applyFilter, <String, dynamic>{
@@ -529,8 +498,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<File> saveFilteredImage() async {
     final imageFile = await _localFile;
-    final List<int> finalFilterImageBytes =
-        await compute(applyFilter, <String, dynamic>{
+    final List<int> finalFilterImageBytes = await compute(applyFilter, <String, dynamic>{
       "filter": _filter,
       "image": finalImage,
       "filename": finalFilename,
@@ -539,8 +507,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     return imageFile;
   }
 
-  Widget _buildFilteredImage(
-      Filter? filter, imagelib.Image? image, String? filename) {
+  Widget _buildFilteredImage(Filter? filter, imagelib.Image? image, String? filename) {
     return FutureBuilder<List<int>>(
       future: compute(applyFilter, <String, dynamic>{
         "filter": filter,
@@ -574,23 +541,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                               child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation(
                                   Provider.of<ThemeModeExtended>(context)
-                                                  .getCurrentModeStyle(
-                                                      MediaQuery.of(context)
-                                                          .platformBrightness) ==
+                                                  .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                               "Dark" &&
-                                          Provider.of<DarkThemeModel>(context)
-                                                  .currentTheme ==
-                                              kDarkTheme2
-                                      ? Theme.of(context).errorColor ==
-                                              Colors.black
+                                          Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
+                                      ? Theme.of(context).errorColor == Colors.black
                                           ? Theme.of(context).accentColor
                                           : Theme.of(context).errorColor
                                       : Theme.of(context).errorColor,
                                 ),
                               ),
                             ),
-                            Icon(Icons.high_quality_rounded,
-                                color: Theme.of(context).accentColor),
+                            Icon(Icons.high_quality_rounded, color: Theme.of(context).accentColor),
                           ],
                         ),
                       ),
@@ -622,23 +583,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                               child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation(
                                   Provider.of<ThemeModeExtended>(context)
-                                                  .getCurrentModeStyle(
-                                                      MediaQuery.of(context)
-                                                          .platformBrightness) ==
+                                                  .getCurrentModeStyle(MediaQuery.of(context).platformBrightness) ==
                                               "Dark" &&
-                                          Provider.of<DarkThemeModel>(context)
-                                                  .currentTheme ==
-                                              kDarkTheme2
-                                      ? Theme.of(context).errorColor ==
-                                              Colors.black
+                                          Provider.of<DarkThemeModel>(context).currentTheme == kDarkTheme2
+                                      ? Theme.of(context).errorColor == Colors.black
                                           ? Theme.of(context).accentColor
                                           : Theme.of(context).errorColor
                                       : Theme.of(context).errorColor,
                                 ),
                               ),
                             ),
-                            Icon(Icons.high_quality_rounded,
-                                color: Theme.of(context).accentColor),
+                            Icon(Icons.high_quality_rounded, color: Theme.of(context).accentColor),
                           ],
                         ),
                       ),
@@ -672,8 +627,7 @@ List<int> applyFilter(Map<String, dynamic> params) {
   if (filter != null) {
     filter.apply(_bytes as Uint8List, image.width, image.height);
   }
-  final imagelib.Image _image =
-      imagelib.Image.fromBytes(image.width, image.height, _bytes);
+  final imagelib.Image _image = imagelib.Image.fromBytes(image.width, image.height, _bytes);
 
   return _bytes = imagelib.encodeNamedImage(_image, filename)!;
 }
@@ -681,7 +635,6 @@ List<int> applyFilter(Map<String, dynamic> params) {
 ///The global buildThumbnail function
 List<int> buildThumbnail(Map<String, dynamic> params) {
   final int width = params["width"] as int;
-  params["image"] =
-      imagelib.copyResize(params["image"] as imagelib.Image, width: width);
+  params["image"] = imagelib.copyResize(params["image"] as imagelib.Image, width: width);
   return applyFilter(params);
 }

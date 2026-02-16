@@ -49,8 +49,7 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
                 .where("review", isEqualTo: false)
                 .orderBy('created_at', descending: true)
                 .snapshots(),
-            builder:
-                (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
               if (!snapshot.hasData) {
                 return Center(
                   child: Loader(),
@@ -59,8 +58,7 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
                 if (snapshot.data!.docs.isNotEmpty) {
                   return ListView.builder(
                     itemCount: snapshot.data!.docs.length ?? 0,
-                    itemBuilder: (context, index) =>
-                        SetupTile(snapshot.data!.docs[index], true),
+                    itemBuilder: (context, index) => SetupTile(snapshot.data!.docs[index], true),
                   );
                 } else {
                   return const Padding(

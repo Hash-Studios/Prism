@@ -23,9 +23,7 @@ class PrismList extends StatelessWidget {
             title: Text(
               "What's new?",
               style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Check out the changelog",
@@ -41,9 +39,7 @@ class PrismList extends StatelessWidget {
             title: Text(
               "Share Prism!",
               style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Quick link to pass on to your friends and enemies",
@@ -60,17 +56,14 @@ class PrismList extends StatelessWidget {
             title: Text(
               "Privacy Policy",
               style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Read Prism's Privacy Policy.",
               style: TextStyle(fontSize: 12),
             ),
             onTap: () {
-              launch(
-                  "https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md");
+              launch("https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md");
             }),
         // ListTile(
         //     leading: const Icon(
@@ -109,9 +102,7 @@ class PrismList extends StatelessWidget {
             title: Text(
               "API",
               style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Prism uses Wallhaven and Pexels API for wallpapers",
@@ -172,14 +163,12 @@ class PrismList extends StatelessWidget {
                                           ? () async {
                                               HapticFeedback.vibrate();
                                               Navigator.of(context).pop();
-                                              launch(
-                                                  "https://unsplash.com/developers");
+                                              launch("https://unsplash.com/developers");
                                             }
                                           : () async {
                                               HapticFeedback.vibrate();
                                               Navigator.of(context).pop();
-                                              launch(
-                                                  "https://developer.github.com/v3/");
+                                              launch("https://developer.github.com/v3/");
                                             },
                             );
                           }),
@@ -195,9 +184,7 @@ class PrismList extends StatelessWidget {
             title: Text(
               "Report a bug",
               style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).accentColor, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
             ),
             subtitle: const Text(
               "Tell us if you found out a bug",
@@ -210,8 +197,7 @@ class PrismList extends StatelessWidget {
                 final sdkInt = androidInfo.version.sdkInt;
                 final manufacturer = androidInfo.manufacturer;
                 final model = androidInfo.model;
-                logger
-                    .d('Android $release (SDK $sdkInt), $manufacturer $model');
+                logger.d('Android $release (SDK $sdkInt), $manufacturer $model');
                 final String zipPath = await zipLogs();
                 final String encryptedZipPath = zipPath.split("::::").last;
                 final String encryptedZipKey = zipPath.split("::::").first;
@@ -226,8 +212,7 @@ class PrismList extends StatelessWidget {
                   ],
                   appSchema: 'com.google.android.gm',
                 );
-                final MailerResponse response =
-                    await FlutterMailer.send(mailOptions);
+                final MailerResponse response = await FlutterMailer.send(mailOptions);
                 if (response != MailerResponse.android) {
                   final MailOptions mailOptions = MailOptions(
                     body:
