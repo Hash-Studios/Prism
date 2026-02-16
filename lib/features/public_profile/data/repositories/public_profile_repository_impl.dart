@@ -13,28 +13,17 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   PublicProfileRepositoryImpl(this._firestore);
 
   final FirebaseFirestore _firestore;
-  final Map<String, DocumentSnapshot<Map<String, dynamic>>> _wallCursorByEmail =
-      {};
-  final Map<String, DocumentSnapshot<Map<String, dynamic>>>
-      _setupCursorByEmail = {};
+  final Map<String, DocumentSnapshot<Map<String, dynamic>>> _wallCursorByEmail = {};
+  final Map<String, DocumentSnapshot<Map<String, dynamic>>> _setupCursorByEmail = {};
 
-  Future<DocumentSnapshot<Map<String, dynamic>>?> _findUser(
-      String email) async {
-    final usersv2 = await _firestore
-        .collection('usersv2')
-        .where('email', isEqualTo: email)
-        .limit(1)
-        .get();
+  Future<DocumentSnapshot<Map<String, dynamic>>?> _findUser(String email) async {
+    final usersv2 = await _firestore.collection('usersv2').where('email', isEqualTo: email).limit(1).get();
 
     if (usersv2.docs.isNotEmpty) {
       return usersv2.docs.first;
     }
 
-    final users = await _firestore
-        .collection('users')
-        .where('email', isEqualTo: email)
-        .limit(1)
-        .get();
+    final users = await _firestore.collection('users').where('email', isEqualTo: email).limit(1).get();
     if (users.docs.isNotEmpty) {
       return users.docs.first;
     }
@@ -53,16 +42,14 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       bio: (data['bio'] ?? '').toString(),
       followers: data['followers'] as List<dynamic>? ?? const <dynamic>[],
       following: data['following'] as List<dynamic>? ?? const <dynamic>[],
-      links:
-          data['links'] as Map<String, dynamic>? ?? const <String, dynamic>{},
+      links: data['links'] as Map<String, dynamic>? ?? const <String, dynamic>{},
       premium: (data['premium'] ?? false) as bool,
       coverPhoto: (data['coverPhoto'] ?? '').toString(),
     );
   }
 
   @override
-  Future<Result<PublicProfileEntity>> fetchProfile(
-      {required String email}) async {
+  Future<Result<PublicProfileEntity>> fetchProfile({required String email}) async {
     try {
       final doc = await _findUser(email);
       if (doc == null) {
@@ -113,8 +100,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
         ),
       );
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to fetch profile walls: $error'));
+      return Result.error(ServerFailure('Unable to fetch profile walls: $error'));
     }
   }
 
@@ -157,8 +143,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
         ),
       );
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to fetch profile setups: $error'));
+      return Result.error(ServerFailure('Unable to fetch profile setups: $error'));
     }
   }
 
@@ -210,10 +195,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required Map<String, String> links,
   }) async {
     try {
-      await _firestore
-          .collection('usersv2')
-          .doc(userId)
-          .update({'links': links});
+      await _firestore.collection('usersv2').doc(userId).update({'links': links});
 
       final updated = await _firestore.collection('usersv2').doc(userId).get();
       return Result.success(_toEntity(updated));

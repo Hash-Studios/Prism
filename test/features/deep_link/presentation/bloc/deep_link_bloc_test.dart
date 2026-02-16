@@ -10,11 +10,9 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockGetInitialDeepLinkActionUseCase extends Mock
-    implements GetInitialDeepLinkActionUseCase {}
+class _MockGetInitialDeepLinkActionUseCase extends Mock implements GetInitialDeepLinkActionUseCase {}
 
-class _MockObserveDeepLinkActionsUseCase extends Mock
-    implements ObserveDeepLinkActionsUseCase {}
+class _MockObserveDeepLinkActionsUseCase extends Mock implements ObserveDeepLinkActionsUseCase {}
 
 void main() {
   late _MockGetInitialDeepLinkActionUseCase getInitialUseCase;

@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$ConnectivityEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is ConnectivityEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is ConnectivityEvent);
   }
 
   @override
@@ -31,8 +30,7 @@ mixin _$ConnectivityEvent {
 
 /// @nodoc
 class $ConnectivityEventCopyWith<$Res> {
-  $ConnectivityEventCopyWith(
-      ConnectivityEvent _, $Res Function(ConnectivityEvent) __);
+  $ConnectivityEventCopyWith(ConnectivityEvent _, $Res Function(ConnectivityEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [ConnectivityEvent].
@@ -235,8 +233,7 @@ class _Started implements ConnectivityEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _Started);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
   }
 
   @override
@@ -267,8 +264,7 @@ class _StatusChanged implements ConnectivityEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _StatusChanged &&
-            (identical(other.connectivity, connectivity) ||
-                other.connectivity == connectivity));
+            (identical(other.connectivity, connectivity) || other.connectivity == connectivity));
   }
 
   @override
@@ -281,18 +277,15 @@ class _StatusChanged implements ConnectivityEvent {
 }
 
 /// @nodoc
-abstract mixin class _$StatusChangedCopyWith<$Res>
-    implements $ConnectivityEventCopyWith<$Res> {
-  factory _$StatusChangedCopyWith(
-          _StatusChanged value, $Res Function(_StatusChanged) _then) =
+abstract mixin class _$StatusChangedCopyWith<$Res> implements $ConnectivityEventCopyWith<$Res> {
+  factory _$StatusChangedCopyWith(_StatusChanged value, $Res Function(_StatusChanged) _then) =
       __$StatusChangedCopyWithImpl;
   @useResult
   $Res call({ConnectivityEntity connectivity});
 }
 
 /// @nodoc
-class __$StatusChangedCopyWithImpl<$Res>
-    implements _$StatusChangedCopyWith<$Res> {
+class __$StatusChangedCopyWithImpl<$Res> implements _$StatusChangedCopyWith<$Res> {
   __$StatusChangedCopyWithImpl(this._self, this._then);
 
   final _StatusChanged _self;
@@ -320,8 +313,7 @@ class _RecheckRequested implements ConnectivityEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _RecheckRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _RecheckRequested);
   }
 
   @override
@@ -345,8 +337,7 @@ mixin _$ConnectivityState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $ConnectivityStateCopyWith<ConnectivityState> get copyWith =>
-      _$ConnectivityStateCopyWithImpl<ConnectivityState>(
-          this as ConnectivityState, _$identity);
+      _$ConnectivityStateCopyWithImpl<ConnectivityState>(this as ConnectivityState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -354,16 +345,13 @@ mixin _$ConnectivityState {
         (other.runtimeType == runtimeType &&
             other is ConnectivityState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
-            (identical(other.connectivity, connectivity) ||
-                other.connectivity == connectivity) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.connectivity, connectivity) || other.connectivity == connectivity) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, connectivity, failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, connectivity, failure);
 
   @override
   String toString() {
@@ -373,20 +361,14 @@ mixin _$ConnectivityState {
 
 /// @nodoc
 abstract mixin class $ConnectivityStateCopyWith<$Res> {
-  factory $ConnectivityStateCopyWith(
-          ConnectivityState value, $Res Function(ConnectivityState) _then) =
+  factory $ConnectivityStateCopyWith(ConnectivityState value, $Res Function(ConnectivityState) _then) =
       _$ConnectivityStateCopyWithImpl;
   @useResult
-  $Res call(
-      {LoadStatus status,
-      ActionStatus actionStatus,
-      ConnectivityEntity connectivity,
-      Failure? failure});
+  $Res call({LoadStatus status, ActionStatus actionStatus, ConnectivityEntity connectivity, Failure? failure});
 }
 
 /// @nodoc
-class _$ConnectivityStateCopyWithImpl<$Res>
-    implements $ConnectivityStateCopyWith<$Res> {
+class _$ConnectivityStateCopyWithImpl<$Res> implements $ConnectivityStateCopyWith<$Res> {
   _$ConnectivityStateCopyWithImpl(this._self, this._then);
 
   final ConnectivityState _self;
@@ -516,16 +498,14 @@ extension ConnectivityStatePatterns on ConnectivityState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus,
-            ConnectivityEntity connectivity, Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus, ConnectivityEntity connectivity, Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _ConnectivityState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.connectivity,
-            _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.connectivity, _that.failure);
       case _:
         return orElse();
     }
@@ -546,15 +526,13 @@ extension ConnectivityStatePatterns on ConnectivityState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus,
-            ConnectivityEntity connectivity, Failure? failure)
+    TResult Function(LoadStatus status, ActionStatus actionStatus, ConnectivityEntity connectivity, Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ConnectivityState():
-        return $default(_that.status, _that.actionStatus, _that.connectivity,
-            _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.connectivity, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -574,15 +552,13 @@ extension ConnectivityStatePatterns on ConnectivityState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(LoadStatus status, ActionStatus actionStatus,
-            ConnectivityEntity connectivity, Failure? failure)?
+    TResult? Function(LoadStatus status, ActionStatus actionStatus, ConnectivityEntity connectivity, Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ConnectivityState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.connectivity,
-            _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.connectivity, _that.failure);
       case _:
         return null;
     }
@@ -593,10 +569,7 @@ extension ConnectivityStatePatterns on ConnectivityState {
 
 class _ConnectivityState implements ConnectivityState {
   const _ConnectivityState(
-      {required this.status,
-      required this.actionStatus,
-      required this.connectivity,
-      this.failure});
+      {required this.status, required this.actionStatus, required this.connectivity, this.failure});
 
   @override
   final LoadStatus status;
@@ -621,16 +594,13 @@ class _ConnectivityState implements ConnectivityState {
         (other.runtimeType == runtimeType &&
             other is _ConnectivityState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
-            (identical(other.connectivity, connectivity) ||
-                other.connectivity == connectivity) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.connectivity, connectivity) || other.connectivity == connectivity) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, connectivity, failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, connectivity, failure);
 
   @override
   String toString() {
@@ -639,23 +609,16 @@ class _ConnectivityState implements ConnectivityState {
 }
 
 /// @nodoc
-abstract mixin class _$ConnectivityStateCopyWith<$Res>
-    implements $ConnectivityStateCopyWith<$Res> {
-  factory _$ConnectivityStateCopyWith(
-          _ConnectivityState value, $Res Function(_ConnectivityState) _then) =
+abstract mixin class _$ConnectivityStateCopyWith<$Res> implements $ConnectivityStateCopyWith<$Res> {
+  factory _$ConnectivityStateCopyWith(_ConnectivityState value, $Res Function(_ConnectivityState) _then) =
       __$ConnectivityStateCopyWithImpl;
   @override
   @useResult
-  $Res call(
-      {LoadStatus status,
-      ActionStatus actionStatus,
-      ConnectivityEntity connectivity,
-      Failure? failure});
+  $Res call({LoadStatus status, ActionStatus actionStatus, ConnectivityEntity connectivity, Failure? failure});
 }
 
 /// @nodoc
-class __$ConnectivityStateCopyWithImpl<$Res>
-    implements _$ConnectivityStateCopyWith<$Res> {
+class __$ConnectivityStateCopyWithImpl<$Res> implements _$ConnectivityStateCopyWith<$Res> {
   __$ConnectivityStateCopyWithImpl(this._self, this._then);
 
   final _ConnectivityState _self;

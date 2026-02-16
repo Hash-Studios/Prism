@@ -12,21 +12,18 @@ class LoadCategoriesUseCase implements UseCase<List<CategoryEntity>, NoParams> {
   final CategoryFeedRepository _repository;
 
   @override
-  Future<Result<List<CategoryEntity>>> call(NoParams params) =>
-      _repository.getCategories();
+  Future<Result<List<CategoryEntity>>> call(NoParams params) => _repository.getCategories();
 }
 
 class FetchCategoryFeedParams {
-  const FetchCategoryFeedParams(
-      {required this.category, required this.refresh});
+  const FetchCategoryFeedParams({required this.category, required this.refresh});
 
   final CategoryEntity category;
   final bool refresh;
 }
 
 @lazySingleton
-class FetchCategoryFeedUseCase
-    implements UseCase<CategoryFeedPage, FetchCategoryFeedParams> {
+class FetchCategoryFeedUseCase implements UseCase<CategoryFeedPage, FetchCategoryFeedParams> {
   FetchCategoryFeedUseCase(this._repository);
 
   final CategoryFeedRepository _repository;

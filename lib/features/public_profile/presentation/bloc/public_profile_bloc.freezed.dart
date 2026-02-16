@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$PublicProfileEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is PublicProfileEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is PublicProfileEvent);
   }
 
   @override
@@ -31,8 +30,7 @@ mixin _$PublicProfileEvent {
 
 /// @nodoc
 class $PublicProfileEventCopyWith<$Res> {
-  $PublicProfileEventCopyWith(
-      PublicProfileEvent _, $Res Function(PublicProfileEvent) __);
+  $PublicProfileEventCopyWith(PublicProfileEvent _, $Res Function(PublicProfileEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [PublicProfileEvent].
@@ -98,10 +96,8 @@ extension PublicProfileEventPatterns on PublicProfileEvent {
   TResult map<TResult extends Object?>({
     required TResult Function(_Started value) started,
     required TResult Function(_RefreshRequested value) refreshRequested,
-    required TResult Function(_FetchMoreWallsRequested value)
-        fetchMoreWallsRequested,
-    required TResult Function(_FetchMoreSetupsRequested value)
-        fetchMoreSetupsRequested,
+    required TResult Function(_FetchMoreWallsRequested value) fetchMoreWallsRequested,
+    required TResult Function(_FetchMoreSetupsRequested value) fetchMoreSetupsRequested,
     required TResult Function(_FollowRequested value) followRequested,
     required TResult Function(_UnfollowRequested value) unfollowRequested,
     required TResult Function(_LinksUpdated value) linksUpdated,
@@ -144,8 +140,7 @@ extension PublicProfileEventPatterns on PublicProfileEvent {
     TResult? Function(_Started value)? started,
     TResult? Function(_RefreshRequested value)? refreshRequested,
     TResult? Function(_FetchMoreWallsRequested value)? fetchMoreWallsRequested,
-    TResult? Function(_FetchMoreSetupsRequested value)?
-        fetchMoreSetupsRequested,
+    TResult? Function(_FetchMoreSetupsRequested value)? fetchMoreSetupsRequested,
     TResult? Function(_FollowRequested value)? followRequested,
     TResult? Function(_UnfollowRequested value)? unfollowRequested,
     TResult? Function(_LinksUpdated value)? linksUpdated,
@@ -189,10 +184,8 @@ extension PublicProfileEventPatterns on PublicProfileEvent {
     TResult Function()? refreshRequested,
     TResult Function()? fetchMoreWallsRequested,
     TResult Function()? fetchMoreSetupsRequested,
-    TResult Function(String currentUserId, String currentUserEmail)?
-        followRequested,
-    TResult Function(String currentUserId, String currentUserEmail)?
-        unfollowRequested,
+    TResult Function(String currentUserId, String currentUserEmail)? followRequested,
+    TResult Function(String currentUserId, String currentUserEmail)? unfollowRequested,
     TResult Function(String userId, Map<String, String> links)? linksUpdated,
     required TResult orElse(),
   }) {
@@ -236,12 +229,9 @@ extension PublicProfileEventPatterns on PublicProfileEvent {
     required TResult Function() refreshRequested,
     required TResult Function() fetchMoreWallsRequested,
     required TResult Function() fetchMoreSetupsRequested,
-    required TResult Function(String currentUserId, String currentUserEmail)
-        followRequested,
-    required TResult Function(String currentUserId, String currentUserEmail)
-        unfollowRequested,
-    required TResult Function(String userId, Map<String, String> links)
-        linksUpdated,
+    required TResult Function(String currentUserId, String currentUserEmail) followRequested,
+    required TResult Function(String currentUserId, String currentUserEmail) unfollowRequested,
+    required TResult Function(String userId, Map<String, String> links) linksUpdated,
   }) {
     final _that = this;
     switch (_that) {
@@ -282,10 +272,8 @@ extension PublicProfileEventPatterns on PublicProfileEvent {
     TResult? Function()? refreshRequested,
     TResult? Function()? fetchMoreWallsRequested,
     TResult? Function()? fetchMoreSetupsRequested,
-    TResult? Function(String currentUserId, String currentUserEmail)?
-        followRequested,
-    TResult? Function(String currentUserId, String currentUserEmail)?
-        unfollowRequested,
+    TResult? Function(String currentUserId, String currentUserEmail)? followRequested,
+    TResult? Function(String currentUserId, String currentUserEmail)? unfollowRequested,
     TResult? Function(String userId, Map<String, String> links)? linksUpdated,
   }) {
     final _that = this;
@@ -321,8 +309,7 @@ class _Started implements PublicProfileEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$StartedCopyWith<_Started> get copyWith =>
-      __$StartedCopyWithImpl<_Started>(this, _$identity);
+  _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -342,10 +329,8 @@ class _Started implements PublicProfileEvent {
 }
 
 /// @nodoc
-abstract mixin class _$StartedCopyWith<$Res>
-    implements $PublicProfileEventCopyWith<$Res> {
-  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) =
-      __$StartedCopyWithImpl;
+abstract mixin class _$StartedCopyWith<$Res> implements $PublicProfileEventCopyWith<$Res> {
+  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
   @useResult
   $Res call({String email});
 }
@@ -379,8 +364,7 @@ class _RefreshRequested implements PublicProfileEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _RefreshRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _RefreshRequested);
   }
 
   @override
@@ -399,8 +383,7 @@ class _FetchMoreWallsRequested implements PublicProfileEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _FetchMoreWallsRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _FetchMoreWallsRequested);
   }
 
   @override
@@ -419,9 +402,7 @@ class _FetchMoreSetupsRequested implements PublicProfileEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _FetchMoreSetupsRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _FetchMoreSetupsRequested);
   }
 
   @override
@@ -436,8 +417,7 @@ class _FetchMoreSetupsRequested implements PublicProfileEvent {
 /// @nodoc
 
 class _FollowRequested implements PublicProfileEvent {
-  const _FollowRequested(
-      {required this.currentUserId, required this.currentUserEmail});
+  const _FollowRequested({required this.currentUserId, required this.currentUserEmail});
 
   final String currentUserId;
   final String currentUserEmail;
@@ -454,10 +434,8 @@ class _FollowRequested implements PublicProfileEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _FollowRequested &&
-            (identical(other.currentUserId, currentUserId) ||
-                other.currentUserId == currentUserId) &&
-            (identical(other.currentUserEmail, currentUserEmail) ||
-                other.currentUserEmail == currentUserEmail));
+            (identical(other.currentUserId, currentUserId) || other.currentUserId == currentUserId) &&
+            (identical(other.currentUserEmail, currentUserEmail) || other.currentUserEmail == currentUserEmail));
   }
 
   @override
@@ -470,18 +448,15 @@ class _FollowRequested implements PublicProfileEvent {
 }
 
 /// @nodoc
-abstract mixin class _$FollowRequestedCopyWith<$Res>
-    implements $PublicProfileEventCopyWith<$Res> {
-  factory _$FollowRequestedCopyWith(
-          _FollowRequested value, $Res Function(_FollowRequested) _then) =
+abstract mixin class _$FollowRequestedCopyWith<$Res> implements $PublicProfileEventCopyWith<$Res> {
+  factory _$FollowRequestedCopyWith(_FollowRequested value, $Res Function(_FollowRequested) _then) =
       __$FollowRequestedCopyWithImpl;
   @useResult
   $Res call({String currentUserId, String currentUserEmail});
 }
 
 /// @nodoc
-class __$FollowRequestedCopyWithImpl<$Res>
-    implements _$FollowRequestedCopyWith<$Res> {
+class __$FollowRequestedCopyWithImpl<$Res> implements _$FollowRequestedCopyWith<$Res> {
   __$FollowRequestedCopyWithImpl(this._self, this._then);
 
   final _FollowRequested _self;
@@ -510,8 +485,7 @@ class __$FollowRequestedCopyWithImpl<$Res>
 /// @nodoc
 
 class _UnfollowRequested implements PublicProfileEvent {
-  const _UnfollowRequested(
-      {required this.currentUserId, required this.currentUserEmail});
+  const _UnfollowRequested({required this.currentUserId, required this.currentUserEmail});
 
   final String currentUserId;
   final String currentUserEmail;
@@ -528,10 +502,8 @@ class _UnfollowRequested implements PublicProfileEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _UnfollowRequested &&
-            (identical(other.currentUserId, currentUserId) ||
-                other.currentUserId == currentUserId) &&
-            (identical(other.currentUserEmail, currentUserEmail) ||
-                other.currentUserEmail == currentUserEmail));
+            (identical(other.currentUserId, currentUserId) || other.currentUserId == currentUserId) &&
+            (identical(other.currentUserEmail, currentUserEmail) || other.currentUserEmail == currentUserEmail));
   }
 
   @override
@@ -544,18 +516,15 @@ class _UnfollowRequested implements PublicProfileEvent {
 }
 
 /// @nodoc
-abstract mixin class _$UnfollowRequestedCopyWith<$Res>
-    implements $PublicProfileEventCopyWith<$Res> {
-  factory _$UnfollowRequestedCopyWith(
-          _UnfollowRequested value, $Res Function(_UnfollowRequested) _then) =
+abstract mixin class _$UnfollowRequestedCopyWith<$Res> implements $PublicProfileEventCopyWith<$Res> {
+  factory _$UnfollowRequestedCopyWith(_UnfollowRequested value, $Res Function(_UnfollowRequested) _then) =
       __$UnfollowRequestedCopyWithImpl;
   @useResult
   $Res call({String currentUserId, String currentUserEmail});
 }
 
 /// @nodoc
-class __$UnfollowRequestedCopyWithImpl<$Res>
-    implements _$UnfollowRequestedCopyWith<$Res> {
+class __$UnfollowRequestedCopyWithImpl<$Res> implements _$UnfollowRequestedCopyWith<$Res> {
   __$UnfollowRequestedCopyWithImpl(this._self, this._then);
 
   final _UnfollowRequested _self;
@@ -584,9 +553,7 @@ class __$UnfollowRequestedCopyWithImpl<$Res>
 /// @nodoc
 
 class _LinksUpdated implements PublicProfileEvent {
-  const _LinksUpdated(
-      {required this.userId, required final Map<String, String> links})
-      : _links = links;
+  const _LinksUpdated({required this.userId, required final Map<String, String> links}) : _links = links;
 
   final String userId;
   final Map<String, String> _links;
@@ -600,8 +567,7 @@ class _LinksUpdated implements PublicProfileEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$LinksUpdatedCopyWith<_LinksUpdated> get copyWith =>
-      __$LinksUpdatedCopyWithImpl<_LinksUpdated>(this, _$identity);
+  _$LinksUpdatedCopyWith<_LinksUpdated> get copyWith => __$LinksUpdatedCopyWithImpl<_LinksUpdated>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -613,8 +579,7 @@ class _LinksUpdated implements PublicProfileEvent {
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType, userId, const DeepCollectionEquality().hash(_links));
+  int get hashCode => Object.hash(runtimeType, userId, const DeepCollectionEquality().hash(_links));
 
   @override
   String toString() {
@@ -623,18 +588,14 @@ class _LinksUpdated implements PublicProfileEvent {
 }
 
 /// @nodoc
-abstract mixin class _$LinksUpdatedCopyWith<$Res>
-    implements $PublicProfileEventCopyWith<$Res> {
-  factory _$LinksUpdatedCopyWith(
-          _LinksUpdated value, $Res Function(_LinksUpdated) _then) =
-      __$LinksUpdatedCopyWithImpl;
+abstract mixin class _$LinksUpdatedCopyWith<$Res> implements $PublicProfileEventCopyWith<$Res> {
+  factory _$LinksUpdatedCopyWith(_LinksUpdated value, $Res Function(_LinksUpdated) _then) = __$LinksUpdatedCopyWithImpl;
   @useResult
   $Res call({String userId, Map<String, String> links});
 }
 
 /// @nodoc
-class __$LinksUpdatedCopyWithImpl<$Res>
-    implements _$LinksUpdatedCopyWith<$Res> {
+class __$LinksUpdatedCopyWithImpl<$Res> implements _$LinksUpdatedCopyWith<$Res> {
   __$LinksUpdatedCopyWithImpl(this._self, this._then);
 
   final _LinksUpdated _self;
@@ -681,8 +642,7 @@ mixin _$PublicProfileState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $PublicProfileStateCopyWith<PublicProfileState> get copyWith =>
-      _$PublicProfileStateCopyWithImpl<PublicProfileState>(
-          this as PublicProfileState, _$identity);
+      _$PublicProfileStateCopyWithImpl<PublicProfileState>(this as PublicProfileState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -690,20 +650,15 @@ mixin _$PublicProfileState {
         (other.runtimeType == runtimeType &&
             other is PublicProfileState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.email, email) || other.email == email) &&
             (identical(other.profile, profile) || other.profile == profile) &&
             const DeepCollectionEquality().equals(other.walls, walls) &&
             const DeepCollectionEquality().equals(other.setups, setups) &&
-            (identical(other.hasMoreWalls, hasMoreWalls) ||
-                other.hasMoreWalls == hasMoreWalls) &&
-            (identical(other.hasMoreSetups, hasMoreSetups) ||
-                other.hasMoreSetups == hasMoreSetups) &&
-            (identical(other.wallsCursor, wallsCursor) ||
-                other.wallsCursor == wallsCursor) &&
-            (identical(other.setupsCursor, setupsCursor) ||
-                other.setupsCursor == setupsCursor) &&
+            (identical(other.hasMoreWalls, hasMoreWalls) || other.hasMoreWalls == hasMoreWalls) &&
+            (identical(other.hasMoreSetups, hasMoreSetups) || other.hasMoreSetups == hasMoreSetups) &&
+            (identical(other.wallsCursor, wallsCursor) || other.wallsCursor == wallsCursor) &&
+            (identical(other.setupsCursor, setupsCursor) || other.setupsCursor == setupsCursor) &&
             (identical(other.isFetchingMoreWalls, isFetchingMoreWalls) ||
                 other.isFetchingMoreWalls == isFetchingMoreWalls) &&
             (identical(other.isFetchingMoreSetups, isFetchingMoreSetups) ||
@@ -736,8 +691,7 @@ mixin _$PublicProfileState {
 
 /// @nodoc
 abstract mixin class $PublicProfileStateCopyWith<$Res> {
-  factory $PublicProfileStateCopyWith(
-          PublicProfileState value, $Res Function(PublicProfileState) _then) =
+  factory $PublicProfileStateCopyWith(PublicProfileState value, $Res Function(PublicProfileState) _then) =
       _$PublicProfileStateCopyWithImpl;
   @useResult
   $Res call(
@@ -757,8 +711,7 @@ abstract mixin class $PublicProfileStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$PublicProfileStateCopyWithImpl<$Res>
-    implements $PublicProfileStateCopyWith<$Res> {
+class _$PublicProfileStateCopyWithImpl<$Res> implements $PublicProfileStateCopyWith<$Res> {
   _$PublicProfileStateCopyWithImpl(this._self, this._then);
 
   final PublicProfileState _self;
@@ -1151,20 +1104,15 @@ class _PublicProfileState implements PublicProfileState {
         (other.runtimeType == runtimeType &&
             other is _PublicProfileState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.email, email) || other.email == email) &&
             (identical(other.profile, profile) || other.profile == profile) &&
             const DeepCollectionEquality().equals(other._walls, _walls) &&
             const DeepCollectionEquality().equals(other._setups, _setups) &&
-            (identical(other.hasMoreWalls, hasMoreWalls) ||
-                other.hasMoreWalls == hasMoreWalls) &&
-            (identical(other.hasMoreSetups, hasMoreSetups) ||
-                other.hasMoreSetups == hasMoreSetups) &&
-            (identical(other.wallsCursor, wallsCursor) ||
-                other.wallsCursor == wallsCursor) &&
-            (identical(other.setupsCursor, setupsCursor) ||
-                other.setupsCursor == setupsCursor) &&
+            (identical(other.hasMoreWalls, hasMoreWalls) || other.hasMoreWalls == hasMoreWalls) &&
+            (identical(other.hasMoreSetups, hasMoreSetups) || other.hasMoreSetups == hasMoreSetups) &&
+            (identical(other.wallsCursor, wallsCursor) || other.wallsCursor == wallsCursor) &&
+            (identical(other.setupsCursor, setupsCursor) || other.setupsCursor == setupsCursor) &&
             (identical(other.isFetchingMoreWalls, isFetchingMoreWalls) ||
                 other.isFetchingMoreWalls == isFetchingMoreWalls) &&
             (identical(other.isFetchingMoreSetups, isFetchingMoreSetups) ||
@@ -1196,10 +1144,8 @@ class _PublicProfileState implements PublicProfileState {
 }
 
 /// @nodoc
-abstract mixin class _$PublicProfileStateCopyWith<$Res>
-    implements $PublicProfileStateCopyWith<$Res> {
-  factory _$PublicProfileStateCopyWith(
-          _PublicProfileState value, $Res Function(_PublicProfileState) _then) =
+abstract mixin class _$PublicProfileStateCopyWith<$Res> implements $PublicProfileStateCopyWith<$Res> {
+  factory _$PublicProfileStateCopyWith(_PublicProfileState value, $Res Function(_PublicProfileState) _then) =
       __$PublicProfileStateCopyWithImpl;
   @override
   @useResult
@@ -1220,8 +1166,7 @@ abstract mixin class _$PublicProfileStateCopyWith<$Res>
 }
 
 /// @nodoc
-class __$PublicProfileStateCopyWithImpl<$Res>
-    implements _$PublicProfileStateCopyWith<$Res> {
+class __$PublicProfileStateCopyWithImpl<$Res> implements _$PublicProfileStateCopyWith<$Res> {
   __$PublicProfileStateCopyWithImpl(this._self, this._then);
 
   final _PublicProfileState _self;

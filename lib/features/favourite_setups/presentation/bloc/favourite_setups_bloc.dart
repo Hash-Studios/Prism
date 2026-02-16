@@ -11,8 +11,7 @@ part 'favourite_setups_state.dart';
 part 'favourite_setups_bloc.freezed.dart';
 
 @injectable
-class FavouriteSetupsBloc
-    extends Bloc<FavouriteSetupsEvent, FavouriteSetupsState> {
+class FavouriteSetupsBloc extends Bloc<FavouriteSetupsEvent, FavouriteSetupsState> {
   FavouriteSetupsBloc(
     this._fetchFavouriteSetupsUseCase,
     this._toggleFavouriteSetupUseCase,
@@ -31,8 +30,7 @@ class FavouriteSetupsBloc
   final RemoveFavouriteSetupUseCase _removeFavouriteSetupUseCase;
   final ClearFavouriteSetupsUseCase _clearFavouriteSetupsUseCase;
 
-  Future<void> _onStarted(
-      _Started event, Emitter<FavouriteSetupsState> emit) async {
+  Future<void> _onStarted(_Started event, Emitter<FavouriteSetupsState> emit) async {
     emit(state.copyWith(
       status: LoadStatus.loading,
       actionStatus: ActionStatus.inProgress,
@@ -46,8 +44,7 @@ class FavouriteSetupsBloc
     _RefreshRequested event,
     Emitter<FavouriteSetupsState> emit,
   ) {
-    emit(state.copyWith(
-        status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
+    emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
     return _fetch(emit);
   }
 

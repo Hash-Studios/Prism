@@ -36,8 +36,7 @@ void main() {
   blocTest<StartupBloc, StartupState>(
     'marks app as obsolete when current version is lower',
     build: () => StartupBloc(bootstrapUseCase),
-    act: (bloc) =>
-        bloc.add(const StartupEvent.started(currentVersion: '2.6.8')),
+    act: (bloc) => bloc.add(const StartupEvent.started(currentVersion: '2.6.8')),
     verify: (bloc) {
       expect(bloc.state.status, LoadStatus.success);
       expect(bloc.state.isObsoleteVersion, isTrue);

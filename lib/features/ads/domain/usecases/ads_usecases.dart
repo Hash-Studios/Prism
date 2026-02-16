@@ -11,8 +11,7 @@ class CreateRewardedAdUseCase implements UseCase<AdsEntity, NoParams> {
   final AdsRepository _repository;
 
   @override
-  Future<Result<AdsEntity>> call(NoParams params) =>
-      _repository.createRewardedAd();
+  Future<Result<AdsEntity>> call(NoParams params) => _repository.createRewardedAd();
 }
 
 class AddRewardParams {
@@ -28,8 +27,7 @@ class AddRewardUseCase implements UseCase<AdsEntity, AddRewardParams> {
   final AdsRepository _repository;
 
   @override
-  Future<Result<AdsEntity>> call(AddRewardParams params) =>
-      _repository.addReward(rewardAmount: params.rewardAmount);
+  Future<Result<AdsEntity>> call(AddRewardParams params) => _repository.addReward(rewardAmount: params.rewardAmount);
 }
 
 @lazySingleton

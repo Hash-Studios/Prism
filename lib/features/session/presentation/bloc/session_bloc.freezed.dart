@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$SessionEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is SessionEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is SessionEvent);
   }
 
   @override
@@ -84,8 +83,7 @@ extension SessionEventPatterns on SessionEvent {
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(_Started value) started,
-    required TResult Function(_PremiumRefreshRequested value)
-        premiumRefreshRequested,
+    required TResult Function(_PremiumRefreshRequested value) premiumRefreshRequested,
     required TResult Function(_SignOutRequested value) signOutRequested,
   }) {
     final _that = this;
@@ -235,8 +233,7 @@ class _Started implements SessionEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _Started);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
   }
 
   @override
@@ -255,8 +252,7 @@ class _PremiumRefreshRequested implements SessionEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _PremiumRefreshRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _PremiumRefreshRequested);
   }
 
   @override
@@ -275,8 +271,7 @@ class _SignOutRequested implements SessionEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _SignOutRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _SignOutRequested);
   }
 
   @override
@@ -300,8 +295,7 @@ mixin _$SessionState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $SessionStateCopyWith<SessionState> get copyWith =>
-      _$SessionStateCopyWithImpl<SessionState>(
-          this as SessionState, _$identity);
+      _$SessionStateCopyWithImpl<SessionState>(this as SessionState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -309,15 +303,13 @@ mixin _$SessionState {
         (other.runtimeType == runtimeType &&
             other is SessionState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.session, session) || other.session == session) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, session, failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, session, failure);
 
   @override
   String toString() {
@@ -327,15 +319,9 @@ mixin _$SessionState {
 
 /// @nodoc
 abstract mixin class $SessionStateCopyWith<$Res> {
-  factory $SessionStateCopyWith(
-          SessionState value, $Res Function(SessionState) _then) =
-      _$SessionStateCopyWithImpl;
+  factory $SessionStateCopyWith(SessionState value, $Res Function(SessionState) _then) = _$SessionStateCopyWithImpl;
   @useResult
-  $Res call(
-      {LoadStatus status,
-      ActionStatus actionStatus,
-      SessionEntity session,
-      Failure? failure});
+  $Res call({LoadStatus status, ActionStatus actionStatus, SessionEntity session, Failure? failure});
 }
 
 /// @nodoc
@@ -469,16 +455,13 @@ extension SessionStatePatterns on SessionState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus,
-            SessionEntity session, Failure? failure)?
-        $default, {
+    TResult Function(LoadStatus status, ActionStatus actionStatus, SessionEntity session, Failure? failure)? $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _SessionState() when $default != null:
-        return $default(
-            _that.status, _that.actionStatus, _that.session, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.session, _that.failure);
       case _:
         return orElse();
     }
@@ -499,15 +482,12 @@ extension SessionStatePatterns on SessionState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus,
-            SessionEntity session, Failure? failure)
-        $default,
+    TResult Function(LoadStatus status, ActionStatus actionStatus, SessionEntity session, Failure? failure) $default,
   ) {
     final _that = this;
     switch (_that) {
       case _SessionState():
-        return $default(
-            _that.status, _that.actionStatus, _that.session, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.session, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -527,15 +507,12 @@ extension SessionStatePatterns on SessionState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(LoadStatus status, ActionStatus actionStatus,
-            SessionEntity session, Failure? failure)?
-        $default,
+    TResult? Function(LoadStatus status, ActionStatus actionStatus, SessionEntity session, Failure? failure)? $default,
   ) {
     final _that = this;
     switch (_that) {
       case _SessionState() when $default != null:
-        return $default(
-            _that.status, _that.actionStatus, _that.session, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.session, _that.failure);
       case _:
         return null;
     }
@@ -545,11 +522,7 @@ extension SessionStatePatterns on SessionState {
 /// @nodoc
 
 class _SessionState implements SessionState {
-  const _SessionState(
-      {required this.status,
-      required this.actionStatus,
-      required this.session,
-      this.failure});
+  const _SessionState({required this.status, required this.actionStatus, required this.session, this.failure});
 
   @override
   final LoadStatus status;
@@ -565,8 +538,7 @@ class _SessionState implements SessionState {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$SessionStateCopyWith<_SessionState> get copyWith =>
-      __$SessionStateCopyWithImpl<_SessionState>(this, _$identity);
+  _$SessionStateCopyWith<_SessionState> get copyWith => __$SessionStateCopyWithImpl<_SessionState>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -574,15 +546,13 @@ class _SessionState implements SessionState {
         (other.runtimeType == runtimeType &&
             other is _SessionState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.session, session) || other.session == session) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, session, failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, session, failure);
 
   @override
   String toString() {
@@ -591,23 +561,15 @@ class _SessionState implements SessionState {
 }
 
 /// @nodoc
-abstract mixin class _$SessionStateCopyWith<$Res>
-    implements $SessionStateCopyWith<$Res> {
-  factory _$SessionStateCopyWith(
-          _SessionState value, $Res Function(_SessionState) _then) =
-      __$SessionStateCopyWithImpl;
+abstract mixin class _$SessionStateCopyWith<$Res> implements $SessionStateCopyWith<$Res> {
+  factory _$SessionStateCopyWith(_SessionState value, $Res Function(_SessionState) _then) = __$SessionStateCopyWithImpl;
   @override
   @useResult
-  $Res call(
-      {LoadStatus status,
-      ActionStatus actionStatus,
-      SessionEntity session,
-      Failure? failure});
+  $Res call({LoadStatus status, ActionStatus actionStatus, SessionEntity session, Failure? failure});
 }
 
 /// @nodoc
-class __$SessionStateCopyWithImpl<$Res>
-    implements _$SessionStateCopyWith<$Res> {
+class __$SessionStateCopyWithImpl<$Res> implements _$SessionStateCopyWith<$Res> {
   __$SessionStateCopyWithImpl(this._self, this._then);
 
   final _SessionState _self;

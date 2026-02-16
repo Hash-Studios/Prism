@@ -13,9 +13,7 @@ class Result<T> {
 
   static Result<T> error<T>(Failure failure) => Result<T>._(failure: failure);
 
-  R fold<R>(
-      {required R Function(T data) onSuccess,
-      required R Function(Failure failure) onFailure}) {
+  R fold<R>({required R Function(T data) onSuccess, required R Function(Failure failure) onFailure}) {
     if (isSuccess && data != null) {
       return onSuccess(data as T);
     }

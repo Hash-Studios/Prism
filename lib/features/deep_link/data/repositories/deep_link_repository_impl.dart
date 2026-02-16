@@ -13,8 +13,7 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
   DeepLinkRepositoryImpl(this._dynamicLinks);
 
   final FirebaseDynamicLinks _dynamicLinks;
-  final StreamController<DeepLinkActionEntity> _controller =
-      StreamController<DeepLinkActionEntity>.broadcast();
+  final StreamController<DeepLinkActionEntity> _controller = StreamController<DeepLinkActionEntity>.broadcast();
   bool _isInitialized = false;
 
   DeepLinkActionEntity _parseUri(Uri uri) {
@@ -111,8 +110,7 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
       }
       return Result.success(_parseUri(uri));
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to get initial deep link: $error'));
+      return Result.error(ServerFailure('Unable to get initial deep link: $error'));
     }
   }
 

@@ -5,15 +5,13 @@ import 'package:Prism/features/deep_link/domain/repositories/deep_link_repositor
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
-class GetInitialDeepLinkActionUseCase
-    implements UseCase<DeepLinkActionEntity?, NoParams> {
+class GetInitialDeepLinkActionUseCase implements UseCase<DeepLinkActionEntity?, NoParams> {
   GetInitialDeepLinkActionUseCase(this._repository);
 
   final DeepLinkRepository _repository;
 
   @override
-  Future<Result<DeepLinkActionEntity?>> call(NoParams params) =>
-      _repository.getInitialAction();
+  Future<Result<DeepLinkActionEntity?>> call(NoParams params) => _repository.getInitialAction();
 }
 
 @lazySingleton

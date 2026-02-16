@@ -28,8 +28,7 @@ class AdsBloc extends Bloc<AdsEvent, AdsState> {
   final ResetAdsUseCase _resetAdsUseCase;
 
   Future<void> _onStarted(_Started event, Emitter<AdsState> emit) async {
-    emit(state.copyWith(
-        status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
+    emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
     final result = await _createRewardedAdUseCase(const NoParams());
     result.fold(
       onSuccess: (ads) => emit(state.copyWith(
@@ -51,8 +50,7 @@ class AdsBloc extends Bloc<AdsEvent, AdsState> {
     Emitter<AdsState> emit,
   ) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-    final result = await _addRewardUseCase(
-        AddRewardParams(rewardAmount: event.rewardAmount));
+    final result = await _addRewardUseCase(AddRewardParams(rewardAmount: event.rewardAmount));
     result.fold(
       onSuccess: (ads) => emit(state.copyWith(
         actionStatus: ActionStatus.success,

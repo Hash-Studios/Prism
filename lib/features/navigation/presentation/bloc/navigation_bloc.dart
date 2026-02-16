@@ -46,8 +46,7 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
     Emitter<NavigationState> emit,
   ) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress));
-    final result =
-        await _pushRouteUseCase(PushRouteParams(routeName: event.routeName));
+    final result = await _pushRouteUseCase(PushRouteParams(routeName: event.routeName));
     _emitResult(emit, result);
   }
 
@@ -76,8 +75,7 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
     Emitter<NavigationState> emit,
   ) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress));
-    final result = await _replaceNavigationStackUseCase(
-        ReplaceNavigationStackParams(stack: event.stack));
+    final result = await _replaceNavigationStackUseCase(ReplaceNavigationStackParams(stack: event.stack));
     _emitResult(emit, result);
   }
 

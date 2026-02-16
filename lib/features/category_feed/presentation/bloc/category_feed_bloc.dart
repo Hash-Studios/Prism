@@ -27,8 +27,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
   final LoadCategoriesUseCase _loadCategoriesUseCase;
   final FetchCategoryFeedUseCase _fetchCategoryFeedUseCase;
 
-  Future<void> _onStarted(
-      _Started event, Emitter<CategoryFeedState> emit) async {
+  Future<void> _onStarted(_Started event, Emitter<CategoryFeedState> emit) async {
     emit(state.copyWith(status: LoadStatus.loading, failure: null));
 
     final categoriesResult = await _loadCategoriesUseCase(const NoParams());
@@ -47,8 +46,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
         }
 
         final selected = categories.first;
-        emit(
-            state.copyWith(categories: categories, selectedCategory: selected));
+        emit(state.copyWith(categories: categories, selectedCategory: selected));
         add(CategoryFeedEvent.categorySelected(category: selected));
       },
       onFailure: (failure) {
@@ -95,18 +93,14 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     _FetchMoreRequested event,
     Emitter<CategoryFeedState> emit,
   ) async {
-    if (state.isFetchingMore ||
-        !state.hasMore ||
-        state.selectedCategory == null) {
+    if (state.isFetchingMore || !state.hasMore || state.selectedCategory == null) {
       return;
     }
 
-    emit(state.copyWith(
-        isFetchingMore: true, actionStatus: ActionStatus.inProgress));
+    emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress));
 
     final result = await _fetchCategoryFeedUseCase(
-      FetchCategoryFeedParams(
-          category: state.selectedCategory!, refresh: false),
+      FetchCategoryFeedParams(category: state.selectedCategory!, refresh: false),
     );
 
     result.fold(

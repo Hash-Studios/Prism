@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$DeepLinkEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is DeepLinkEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is DeepLinkEvent);
   }
 
   @override
@@ -234,8 +233,7 @@ class _Started implements DeepLinkEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _Started);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
   }
 
   @override
@@ -279,18 +277,15 @@ class _ActionReceived implements DeepLinkEvent {
 }
 
 /// @nodoc
-abstract mixin class _$ActionReceivedCopyWith<$Res>
-    implements $DeepLinkEventCopyWith<$Res> {
-  factory _$ActionReceivedCopyWith(
-          _ActionReceived value, $Res Function(_ActionReceived) _then) =
+abstract mixin class _$ActionReceivedCopyWith<$Res> implements $DeepLinkEventCopyWith<$Res> {
+  factory _$ActionReceivedCopyWith(_ActionReceived value, $Res Function(_ActionReceived) _then) =
       __$ActionReceivedCopyWithImpl;
   @useResult
   $Res call({DeepLinkActionEntity action});
 }
 
 /// @nodoc
-class __$ActionReceivedCopyWithImpl<$Res>
-    implements _$ActionReceivedCopyWith<$Res> {
+class __$ActionReceivedCopyWithImpl<$Res> implements _$ActionReceivedCopyWith<$Res> {
   __$ActionReceivedCopyWithImpl(this._self, this._then);
 
   final _ActionReceived _self;
@@ -318,8 +313,7 @@ class _HistoryCleared implements DeepLinkEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _HistoryCleared);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _HistoryCleared);
   }
 
   @override
@@ -345,8 +339,7 @@ mixin _$DeepLinkState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $DeepLinkStateCopyWith<DeepLinkState> get copyWith =>
-      _$DeepLinkStateCopyWithImpl<DeepLinkState>(
-          this as DeepLinkState, _$identity);
+      _$DeepLinkStateCopyWithImpl<DeepLinkState>(this as DeepLinkState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -354,25 +347,16 @@ mixin _$DeepLinkState {
         (other.runtimeType == runtimeType &&
             other is DeepLinkState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
-            (identical(other.initialAction, initialAction) ||
-                other.initialAction == initialAction) &&
-            (identical(other.latestAction, latestAction) ||
-                other.latestAction == latestAction) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.initialAction, initialAction) || other.initialAction == initialAction) &&
+            (identical(other.latestAction, latestAction) || other.latestAction == latestAction) &&
             const DeepCollectionEquality().equals(other.history, history) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      status,
-      actionStatus,
-      initialAction,
-      latestAction,
-      const DeepCollectionEquality().hash(history),
-      failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, initialAction, latestAction,
+      const DeepCollectionEquality().hash(history), failure);
 
   @override
   String toString() {
@@ -382,9 +366,7 @@ mixin _$DeepLinkState {
 
 /// @nodoc
 abstract mixin class $DeepLinkStateCopyWith<$Res> {
-  factory $DeepLinkStateCopyWith(
-          DeepLinkState value, $Res Function(DeepLinkState) _then) =
-      _$DeepLinkStateCopyWithImpl;
+  factory $DeepLinkStateCopyWith(DeepLinkState value, $Res Function(DeepLinkState) _then) = _$DeepLinkStateCopyWithImpl;
   @useResult
   $Res call(
       {LoadStatus status,
@@ -396,8 +378,7 @@ abstract mixin class $DeepLinkStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$DeepLinkStateCopyWithImpl<$Res>
-    implements $DeepLinkStateCopyWith<$Res> {
+class _$DeepLinkStateCopyWithImpl<$Res> implements $DeepLinkStateCopyWith<$Res> {
   _$DeepLinkStateCopyWithImpl(this._self, this._then);
 
   final DeepLinkState _self;
@@ -537,21 +518,16 @@ extension DeepLinkStatePatterns on DeepLinkState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            DeepLinkActionEntity? initialAction,
-            DeepLinkActionEntity? latestAction,
-            List<DeepLinkActionEntity> history,
-            Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus, DeepLinkActionEntity? initialAction,
+            DeepLinkActionEntity? latestAction, List<DeepLinkActionEntity> history, Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _DeepLinkState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.initialAction,
-            _that.latestAction, _that.history, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.initialAction, _that.latestAction, _that.history, _that.failure);
       case _:
         return orElse();
     }
@@ -572,20 +548,15 @@ extension DeepLinkStatePatterns on DeepLinkState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            DeepLinkActionEntity? initialAction,
-            DeepLinkActionEntity? latestAction,
-            List<DeepLinkActionEntity> history,
-            Failure? failure)
+    TResult Function(LoadStatus status, ActionStatus actionStatus, DeepLinkActionEntity? initialAction,
+            DeepLinkActionEntity? latestAction, List<DeepLinkActionEntity> history, Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _DeepLinkState():
-        return $default(_that.status, _that.actionStatus, _that.initialAction,
-            _that.latestAction, _that.history, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.initialAction, _that.latestAction, _that.history, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -605,20 +576,15 @@ extension DeepLinkStatePatterns on DeepLinkState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            DeepLinkActionEntity? initialAction,
-            DeepLinkActionEntity? latestAction,
-            List<DeepLinkActionEntity> history,
-            Failure? failure)?
+    TResult? Function(LoadStatus status, ActionStatus actionStatus, DeepLinkActionEntity? initialAction,
+            DeepLinkActionEntity? latestAction, List<DeepLinkActionEntity> history, Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _DeepLinkState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.initialAction,
-            _that.latestAction, _that.history, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.initialAction, _that.latestAction, _that.history, _that.failure);
       case _:
         return null;
     }
@@ -670,25 +636,16 @@ class _DeepLinkState implements DeepLinkState {
         (other.runtimeType == runtimeType &&
             other is _DeepLinkState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
-            (identical(other.initialAction, initialAction) ||
-                other.initialAction == initialAction) &&
-            (identical(other.latestAction, latestAction) ||
-                other.latestAction == latestAction) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.initialAction, initialAction) || other.initialAction == initialAction) &&
+            (identical(other.latestAction, latestAction) || other.latestAction == latestAction) &&
             const DeepCollectionEquality().equals(other._history, _history) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      status,
-      actionStatus,
-      initialAction,
-      latestAction,
-      const DeepCollectionEquality().hash(_history),
-      failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, initialAction, latestAction,
+      const DeepCollectionEquality().hash(_history), failure);
 
   @override
   String toString() {
@@ -697,10 +654,8 @@ class _DeepLinkState implements DeepLinkState {
 }
 
 /// @nodoc
-abstract mixin class _$DeepLinkStateCopyWith<$Res>
-    implements $DeepLinkStateCopyWith<$Res> {
-  factory _$DeepLinkStateCopyWith(
-          _DeepLinkState value, $Res Function(_DeepLinkState) _then) =
+abstract mixin class _$DeepLinkStateCopyWith<$Res> implements $DeepLinkStateCopyWith<$Res> {
+  factory _$DeepLinkStateCopyWith(_DeepLinkState value, $Res Function(_DeepLinkState) _then) =
       __$DeepLinkStateCopyWithImpl;
   @override
   @useResult
@@ -714,8 +669,7 @@ abstract mixin class _$DeepLinkStateCopyWith<$Res>
 }
 
 /// @nodoc
-class __$DeepLinkStateCopyWithImpl<$Res>
-    implements _$DeepLinkStateCopyWith<$Res> {
+class __$DeepLinkStateCopyWithImpl<$Res> implements _$DeepLinkStateCopyWith<$Res> {
   __$DeepLinkStateCopyWithImpl(this._self, this._then);
 
   final _DeepLinkState _self;

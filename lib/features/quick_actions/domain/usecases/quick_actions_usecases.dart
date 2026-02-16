@@ -21,8 +21,7 @@ class SetQuickActionShortcutsUseCase implements UseCase<void, NoParams> {
   final QuickActionsRepository _repository;
 
   @override
-  Future<Result<void>> call(NoParams params) =>
-      _repository.setDefaultShortcuts();
+  Future<Result<void>> call(NoParams params) => _repository.setDefaultShortcuts();
 }
 
 @lazySingleton

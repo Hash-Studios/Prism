@@ -11,8 +11,7 @@ part 'favourite_walls_state.dart';
 part 'favourite_walls_bloc.freezed.dart';
 
 @injectable
-class FavouriteWallsBloc
-    extends Bloc<FavouriteWallsEvent, FavouriteWallsState> {
+class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> {
   FavouriteWallsBloc(
     this._fetchFavouriteWallsUseCase,
     this._toggleFavouriteWallUseCase,
@@ -31,8 +30,7 @@ class FavouriteWallsBloc
   final RemoveFavouriteWallUseCase _removeFavouriteWallUseCase;
   final ClearFavouriteWallsUseCase _clearFavouriteWallsUseCase;
 
-  Future<void> _onStarted(
-      _Started event, Emitter<FavouriteWallsState> emit) async {
+  Future<void> _onStarted(_Started event, Emitter<FavouriteWallsState> emit) async {
     emit(state.copyWith(
       status: LoadStatus.loading,
       actionStatus: ActionStatus.inProgress,
@@ -46,8 +44,7 @@ class FavouriteWallsBloc
     _RefreshRequested event,
     Emitter<FavouriteWallsState> emit,
   ) {
-    emit(state.copyWith(
-        status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
+    emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
     return _fetch(emit);
   }
 

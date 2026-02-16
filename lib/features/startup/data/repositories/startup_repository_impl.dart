@@ -28,20 +28,14 @@ class StartupRepositoryImpl implements StartupRepository {
     if (normalized.trim().isEmpty) {
       return <String>[];
     }
-    return normalized
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList(growable: false);
+    return normalized.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(growable: false);
   }
 
   List<Map<String, dynamic>> _parseCategories(String raw) {
     try {
       final decoded = json.decode(raw);
       if (decoded is List) {
-        return decoded
-            .whereType<Map<String, dynamic>>()
-            .toList(growable: false);
+        return decoded.whereType<Map<String, dynamic>>().toList(growable: false);
       }
     } catch (_) {
       // Fallback to legacy parser below.
@@ -60,9 +54,7 @@ class StartupRepositoryImpl implements StartupRepository {
     }
 
     if (parsed.isEmpty) {
-      return category_data.categories
-          .whereType<Map<String, dynamic>>()
-          .toList(growable: false);
+      return category_data.categories.whereType<Map<String, dynamic>>().toList(growable: false);
     }
 
     return parsed;
@@ -96,15 +88,11 @@ class StartupRepositoryImpl implements StartupRepository {
       final bannerTextOn = _remoteConfig.getString('bannerTextOn');
       final bannerUrl = _remoteConfig.getString('bannerURL');
       final obsoleteVersion = _remoteConfig.getString('obsoleteVersion');
-      final verifiedUsers =
-          _parseStringList(_remoteConfig.getString('verifiedUsers'));
-      final premiumCollections =
-          _parseStringList(_remoteConfig.getString('premiumCollections'));
-      final topTitleText =
-          _parseStringList(_remoteConfig.getString('topTitleText'));
+      final verifiedUsers = _parseStringList(_remoteConfig.getString('verifiedUsers'));
+      final premiumCollections = _parseStringList(_remoteConfig.getString('premiumCollections'));
+      final topTitleText = _parseStringList(_remoteConfig.getString('topTitleText'));
       topTitleText.shuffle();
-      final categories =
-          _parseCategories(_remoteConfig.getString('latestCategories'));
+      final categories = _parseCategories(_remoteConfig.getString('latestCategories'));
       categories.removeWhere((element) => element['name'] == 'Trending');
 
       globals.topImageLink = topImageLink;
@@ -117,8 +105,7 @@ class StartupRepositoryImpl implements StartupRepository {
       globals.topTitleText = topTitleText;
       category_data.categories = categories;
 
-      final followersTab =
-          (_prefsBox.get('followersTab', defaultValue: true) as bool?) ?? true;
+      final followersTab = (_prefsBox.get('followersTab', defaultValue: true) as bool?) ?? true;
       globals.followersTab = followersTab;
       await getNotifs();
 

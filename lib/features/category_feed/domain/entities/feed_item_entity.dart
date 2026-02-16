@@ -1,6 +1,5 @@
 class FeedItemEntity {
-  const FeedItemEntity(
-      {required this.id, required this.provider, required this.payload});
+  const FeedItemEntity({required this.id, required this.provider, required this.payload});
 
   final String id;
   final String provider;

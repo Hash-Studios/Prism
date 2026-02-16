@@ -11,8 +11,7 @@ class CheckConnectionUseCase implements UseCase<ConnectivityEntity, NoParams> {
   final ConnectivityRepository _repository;
 
   @override
-  Future<Result<ConnectivityEntity>> call(NoParams params) =>
-      _repository.checkConnection();
+  Future<Result<ConnectivityEntity>> call(NoParams params) => _repository.checkConnection();
 }
 
 @lazySingleton

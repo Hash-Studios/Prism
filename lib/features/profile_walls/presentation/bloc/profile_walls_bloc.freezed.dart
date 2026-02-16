@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$ProfileWallsEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is ProfileWallsEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is ProfileWallsEvent);
   }
 
   @override
@@ -31,8 +30,7 @@ mixin _$ProfileWallsEvent {
 
 /// @nodoc
 class $ProfileWallsEventCopyWith<$Res> {
-  $ProfileWallsEventCopyWith(
-      ProfileWallsEvent _, $Res Function(ProfileWallsEvent) __);
+  $ProfileWallsEventCopyWith(ProfileWallsEvent _, $Res Function(ProfileWallsEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [ProfileWallsEvent].
@@ -239,8 +237,7 @@ class _Started implements ProfileWallsEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$StartedCopyWith<_Started> get copyWith =>
-      __$StartedCopyWithImpl<_Started>(this, _$identity);
+  _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -260,10 +257,8 @@ class _Started implements ProfileWallsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$StartedCopyWith<$Res>
-    implements $ProfileWallsEventCopyWith<$Res> {
-  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) =
-      __$StartedCopyWithImpl;
+abstract mixin class _$StartedCopyWith<$Res> implements $ProfileWallsEventCopyWith<$Res> {
+  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
   @useResult
   $Res call({String email});
 }
@@ -297,8 +292,7 @@ class _RefreshRequested implements ProfileWallsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _RefreshRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _RefreshRequested);
   }
 
   @override
@@ -317,8 +311,7 @@ class _FetchMoreRequested implements ProfileWallsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _FetchMoreRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _FetchMoreRequested);
   }
 
   @override
@@ -346,8 +339,7 @@ mixin _$ProfileWallsState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $ProfileWallsStateCopyWith<ProfileWallsState> get copyWith =>
-      _$ProfileWallsStateCopyWithImpl<ProfileWallsState>(
-          this as ProfileWallsState, _$identity);
+      _$ProfileWallsStateCopyWithImpl<ProfileWallsState>(this as ProfileWallsState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -355,29 +347,18 @@ mixin _$ProfileWallsState {
         (other.runtimeType == runtimeType &&
             other is ProfileWallsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.email, email) || other.email == email) &&
             const DeepCollectionEquality().equals(other.items, items) &&
             (identical(other.hasMore, hasMore) || other.hasMore == hasMore) &&
-            (identical(other.nextCursor, nextCursor) ||
-                other.nextCursor == nextCursor) &&
-            (identical(other.isFetchingMore, isFetchingMore) ||
-                other.isFetchingMore == isFetchingMore) &&
+            (identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor) &&
+            (identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      status,
-      actionStatus,
-      email,
-      const DeepCollectionEquality().hash(items),
-      hasMore,
-      nextCursor,
-      isFetchingMore,
-      failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, email, const DeepCollectionEquality().hash(items),
+      hasMore, nextCursor, isFetchingMore, failure);
 
   @override
   String toString() {
@@ -387,8 +368,7 @@ mixin _$ProfileWallsState {
 
 /// @nodoc
 abstract mixin class $ProfileWallsStateCopyWith<$Res> {
-  factory $ProfileWallsStateCopyWith(
-          ProfileWallsState value, $Res Function(ProfileWallsState) _then) =
+  factory $ProfileWallsStateCopyWith(ProfileWallsState value, $Res Function(ProfileWallsState) _then) =
       _$ProfileWallsStateCopyWithImpl;
   @useResult
   $Res call(
@@ -403,8 +383,7 @@ abstract mixin class $ProfileWallsStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$ProfileWallsStateCopyWithImpl<$Res>
-    implements $ProfileWallsStateCopyWith<$Res> {
+class _$ProfileWallsStateCopyWithImpl<$Res> implements $ProfileWallsStateCopyWith<$Res> {
   _$ProfileWallsStateCopyWithImpl(this._self, this._then);
 
   final ProfileWallsState _self;
@@ -554,30 +533,16 @@ extension ProfileWallsStatePatterns on ProfileWallsState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            String email,
-            List<ProfileWallEntity> items,
-            bool hasMore,
-            String? nextCursor,
-            bool isFetchingMore,
-            Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus, String email, List<ProfileWallEntity> items,
+            bool hasMore, String? nextCursor, bool isFetchingMore, Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _ProfileWallsState() when $default != null:
-        return $default(
-            _that.status,
-            _that.actionStatus,
-            _that.email,
-            _that.items,
-            _that.hasMore,
-            _that.nextCursor,
-            _that.isFetchingMore,
-            _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.email, _that.items, _that.hasMore, _that.nextCursor,
+            _that.isFetchingMore, _that.failure);
       case _:
         return orElse();
     }
@@ -598,29 +563,15 @@ extension ProfileWallsStatePatterns on ProfileWallsState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            String email,
-            List<ProfileWallEntity> items,
-            bool hasMore,
-            String? nextCursor,
-            bool isFetchingMore,
-            Failure? failure)
+    TResult Function(LoadStatus status, ActionStatus actionStatus, String email, List<ProfileWallEntity> items,
+            bool hasMore, String? nextCursor, bool isFetchingMore, Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ProfileWallsState():
-        return $default(
-            _that.status,
-            _that.actionStatus,
-            _that.email,
-            _that.items,
-            _that.hasMore,
-            _that.nextCursor,
-            _that.isFetchingMore,
-            _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.email, _that.items, _that.hasMore, _that.nextCursor,
+            _that.isFetchingMore, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -640,29 +591,15 @@ extension ProfileWallsStatePatterns on ProfileWallsState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            String email,
-            List<ProfileWallEntity> items,
-            bool hasMore,
-            String? nextCursor,
-            bool isFetchingMore,
-            Failure? failure)?
+    TResult? Function(LoadStatus status, ActionStatus actionStatus, String email, List<ProfileWallEntity> items,
+            bool hasMore, String? nextCursor, bool isFetchingMore, Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ProfileWallsState() when $default != null:
-        return $default(
-            _that.status,
-            _that.actionStatus,
-            _that.email,
-            _that.items,
-            _that.hasMore,
-            _that.nextCursor,
-            _that.isFetchingMore,
-            _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.email, _that.items, _that.hasMore, _that.nextCursor,
+            _that.isFetchingMore, _that.failure);
       case _:
         return null;
     }
@@ -720,29 +657,18 @@ class _ProfileWallsState implements ProfileWallsState {
         (other.runtimeType == runtimeType &&
             other is _ProfileWallsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.email, email) || other.email == email) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.hasMore, hasMore) || other.hasMore == hasMore) &&
-            (identical(other.nextCursor, nextCursor) ||
-                other.nextCursor == nextCursor) &&
-            (identical(other.isFetchingMore, isFetchingMore) ||
-                other.isFetchingMore == isFetchingMore) &&
+            (identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor) &&
+            (identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      status,
-      actionStatus,
-      email,
-      const DeepCollectionEquality().hash(_items),
-      hasMore,
-      nextCursor,
-      isFetchingMore,
-      failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, email, const DeepCollectionEquality().hash(_items),
+      hasMore, nextCursor, isFetchingMore, failure);
 
   @override
   String toString() {
@@ -751,10 +677,8 @@ class _ProfileWallsState implements ProfileWallsState {
 }
 
 /// @nodoc
-abstract mixin class _$ProfileWallsStateCopyWith<$Res>
-    implements $ProfileWallsStateCopyWith<$Res> {
-  factory _$ProfileWallsStateCopyWith(
-          _ProfileWallsState value, $Res Function(_ProfileWallsState) _then) =
+abstract mixin class _$ProfileWallsStateCopyWith<$Res> implements $ProfileWallsStateCopyWith<$Res> {
+  factory _$ProfileWallsStateCopyWith(_ProfileWallsState value, $Res Function(_ProfileWallsState) _then) =
       __$ProfileWallsStateCopyWithImpl;
   @override
   @useResult
@@ -770,8 +694,7 @@ abstract mixin class _$ProfileWallsStateCopyWith<$Res>
 }
 
 /// @nodoc
-class __$ProfileWallsStateCopyWithImpl<$Res>
-    implements _$ProfileWallsStateCopyWith<$Res> {
+class __$ProfileWallsStateCopyWithImpl<$Res> implements _$ProfileWallsStateCopyWith<$Res> {
   __$ProfileWallsStateCopyWithImpl(this._self, this._then);
 
   final _ProfileWallsState _self;

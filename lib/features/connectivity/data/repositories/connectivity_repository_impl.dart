@@ -17,15 +17,12 @@ class ConnectivityRepositoryImpl implements ConnectivityRepository {
       final hasConnection = await _connectivityService.hasConnection();
       return Result.success(ConnectivityEntity(isConnected: hasConnection));
     } catch (error) {
-      return Result.error(
-          NetworkFailure('Unable to check connectivity: $error'));
+      return Result.error(NetworkFailure('Unable to check connectivity: $error'));
     }
   }
 
   @override
   Stream<ConnectivityEntity> watchConnection() {
-    return _connectivityService
-        .watchConnection()
-        .map((isConnected) => ConnectivityEntity(isConnected: isConnected));
+    return _connectivityService.watchConnection().map((isConnected) => ConnectivityEntity(isConnected: isConnected));
   }
 }

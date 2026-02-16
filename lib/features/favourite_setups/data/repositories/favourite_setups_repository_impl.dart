@@ -43,13 +43,11 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
   }
 
   @override
-  Future<Result<List<FavouriteSetupEntity>>> fetchFavourites(
-      {required String userId}) async {
+  Future<Result<List<FavouriteSetupEntity>>> fetchFavourites({required String userId}) async {
     try {
       return Result.success(await _read(userId));
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to fetch favourite setups: $error'));
+      return Result.error(ServerFailure('Unable to fetch favourite setups: $error'));
     }
   }
 
@@ -73,8 +71,7 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
       }
       return Result.success(await _read(userId));
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to toggle favourite setup: $error'));
+      return Result.error(ServerFailure('Unable to toggle favourite setup: $error'));
     }
   }
 
@@ -88,14 +85,12 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
       await _localFavBox.delete(setupId);
       return Result.success(await _read(userId));
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to remove favourite setup: $error'));
+      return Result.error(ServerFailure('Unable to remove favourite setup: $error'));
     }
   }
 
   @override
-  Future<Result<List<FavouriteSetupEntity>>> clearAll(
-      {required String userId}) async {
+  Future<Result<List<FavouriteSetupEntity>>> clearAll({required String userId}) async {
     try {
       final snapshot = await _collection(userId).get();
       for (final doc in snapshot.docs) {
@@ -103,8 +98,7 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
       }
       return Result.success(const <FavouriteSetupEntity>[]);
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to clear favourite setups: $error'));
+      return Result.error(ServerFailure('Unable to clear favourite setups: $error'));
     }
   }
 }

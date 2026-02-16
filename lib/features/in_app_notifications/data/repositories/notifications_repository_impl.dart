@@ -41,14 +41,12 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       }
       return Result.success(_readAll());
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to fetch notifications: $error'));
+      return Result.error(ServerFailure('Unable to fetch notifications: $error'));
     }
   }
 
   @override
-  Future<Result<List<InAppNotificationEntity>>> markAsRead(
-      {required int index}) async {
+  Future<Result<List<InAppNotificationEntity>>> markAsRead({required int index}) async {
     try {
       if (index < 0 || index >= _box.length) {
         return Result.error(const ValidationFailure('Invalid index'));
@@ -73,14 +71,12 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
 
       return Result.success(_readAll());
     } catch (error) {
-      return Result.error(
-          CacheFailure('Unable to mark notification as read: $error'));
+      return Result.error(CacheFailure('Unable to mark notification as read: $error'));
     }
   }
 
   @override
-  Future<Result<List<InAppNotificationEntity>>> deleteAt(
-      {required int index}) async {
+  Future<Result<List<InAppNotificationEntity>>> deleteAt({required int index}) async {
     try {
       if (index < 0 || index >= _box.length) {
         return Result.error(const ValidationFailure('Invalid index'));
@@ -88,8 +84,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       await _box.deleteAt(index);
       return Result.success(_readAll());
     } catch (error) {
-      return Result.error(
-          CacheFailure('Unable to delete notification: $error'));
+      return Result.error(CacheFailure('Unable to delete notification: $error'));
     }
   }
 
@@ -99,8 +94,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       await _box.clear();
       return Result.success(const <InAppNotificationEntity>[]);
     } catch (error) {
-      return Result.error(
-          CacheFailure('Unable to clear notifications: $error'));
+      return Result.error(CacheFailure('Unable to clear notifications: $error'));
     }
   }
 }

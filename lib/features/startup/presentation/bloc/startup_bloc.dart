@@ -33,8 +33,8 @@ class StartupBloc extends Bloc<StartupEvent, StartupState> {
     result.fold(
       onSuccess: (config) {
         final currentVersion = event.currentVersion ?? '0.0.0';
-        final isObsolete = int.parse(currentVersion.replaceAll('.', '')) <
-            int.parse(config.obsoleteAppVersion.replaceAll('.', ''));
+        final isObsolete =
+            int.parse(currentVersion.replaceAll('.', '')) < int.parse(config.obsoleteAppVersion.replaceAll('.', ''));
 
         emit(state.copyWith(
           status: LoadStatus.success,

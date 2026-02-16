@@ -17,15 +17,13 @@ abstract class AppModule {
   FirebaseAuth get firebaseAuth => FirebaseAuth.instance;
 
   @lazySingleton
-  FirebaseDynamicLinks get firebaseDynamicLinks =>
-      FirebaseDynamicLinks.instance;
+  FirebaseDynamicLinks get firebaseDynamicLinks => FirebaseDynamicLinks.instance;
 
   @lazySingleton
   FirebaseRemoteConfig get remoteConfig => FirebaseRemoteConfig.instance;
 
   @lazySingleton
-  InternetConnectionChecker get internetConnectionChecker =>
-      InternetConnectionChecker.instance;
+  InternetConnectionChecker get internetConnectionChecker => InternetConnectionChecker.instance;
 
   @lazySingleton
   QuickActions get quickActions => const QuickActions();
@@ -40,6 +38,5 @@ abstract class AppModule {
 
   @Named('inAppNotificationsBox')
   @lazySingleton
-  Box<InAppNotif> get inAppNotificationsBox =>
-      Hive.box<InAppNotif>('inAppNotifs');
+  Box<InAppNotif> get inAppNotificationsBox => Hive.box<InAppNotif>('inAppNotifs');
 }

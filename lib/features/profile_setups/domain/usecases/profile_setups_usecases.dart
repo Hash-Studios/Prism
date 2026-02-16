@@ -12,15 +12,13 @@ class FetchProfileSetupsParams {
 }
 
 @lazySingleton
-class FetchProfileSetupsUseCase
-    implements UseCase<ProfileSetupsPage, FetchProfileSetupsParams> {
+class FetchProfileSetupsUseCase implements UseCase<ProfileSetupsPage, FetchProfileSetupsParams> {
   FetchProfileSetupsUseCase(this._repository);
 
   final ProfileSetupsRepository _repository;
 
   @override
   Future<Result<ProfileSetupsPage>> call(FetchProfileSetupsParams params) {
-    return _repository.fetchProfileSetups(
-        email: params.email, refresh: params.refresh);
+    return _repository.fetchProfileSetups(email: params.email, refresh: params.refresh);
   }
 }

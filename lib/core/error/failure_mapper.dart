@@ -7,8 +7,7 @@ Failure mapExceptionToFailure(Object error) {
     return ServerFailure(error.message ?? 'Firebase error', code: error.code);
   }
   if (error is FirebaseAuthException) {
-    return ValidationFailure(error.message ?? 'Authentication error',
-        code: error.code);
+    return ValidationFailure(error.message ?? 'Authentication error', code: error.code);
   }
   if (error is PlatformException) {
     return UnknownFailure(error.message ?? 'Platform error', code: error.code);

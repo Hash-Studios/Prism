@@ -38,8 +38,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   final UnfollowUserUseCase _unfollowUserUseCase;
   final UpdatePublicProfileLinksUseCase _updatePublicProfileLinksUseCase;
 
-  Future<void> _onStarted(
-      _Started event, Emitter<PublicProfileState> emit) async {
+  Future<void> _onStarted(_Started event, Emitter<PublicProfileState> emit) async {
     emit(state.copyWith(email: event.email));
     await _loadAll(emit: emit, refresh: true);
   }
@@ -70,8 +69,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       failure: null,
     ));
 
-    final profileResult = await _fetchPublicProfileUseCase(
-        FetchPublicProfileParams(email: state.email));
+    final profileResult = await _fetchPublicProfileUseCase(FetchPublicProfileParams(email: state.email));
     final wallsResult = await _fetchPublicProfileWallsUseCase(
       FetchPublicProfileWallsParams(email: state.email, refresh: refresh),
     );
@@ -116,8 +114,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     if (state.isFetchingMoreWalls || !state.hasMoreWalls) {
       return;
     }
-    emit(state.copyWith(
-        isFetchingMoreWalls: true, actionStatus: ActionStatus.inProgress));
+    emit(state.copyWith(isFetchingMoreWalls: true, actionStatus: ActionStatus.inProgress));
 
     final result = await _fetchPublicProfileWallsUseCase(
       FetchPublicProfileWallsParams(email: state.email, refresh: false),
@@ -154,8 +151,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     if (state.isFetchingMoreSetups || !state.hasMoreSetups) {
       return;
     }
-    emit(state.copyWith(
-        isFetchingMoreSetups: true, actionStatus: ActionStatus.inProgress));
+    emit(state.copyWith(isFetchingMoreSetups: true, actionStatus: ActionStatus.inProgress));
 
     final result = await _fetchPublicProfileSetupsUseCase(
       FetchPublicProfileSetupsParams(email: state.email, refresh: false),
@@ -163,10 +159,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
 
     result.fold(
       onSuccess: (page) {
-        final merged = <PublicProfileSetupEntity>[
-          ...state.setups,
-          ...page.items
-        ];
+        final merged = <PublicProfileSetupEntity>[...state.setups, ...page.items];
         final deduped = <String, PublicProfileSetupEntity>{
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);

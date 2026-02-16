@@ -1,12 +1,9 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/categories/categories.dart' as category_data;
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart'
-    as pexels_data;
-import 'package:Prism/data/prism/provider/prismWithoutProvider.dart'
-    as prism_data;
-import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as wallhaven_data;
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pexels_data;
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as prism_data;
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wallhaven_data;
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_feed_page.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -53,8 +50,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
             (_prefsBox.get('WHpurity', defaultValue: 100) as int?) ?? 100,
           );
         } else {
-          rawItems =
-              await pexels_data.categoryDataFetcherP(category.name, mode);
+          rawItems = await pexels_data.categoryDataFetcherP(category.name, mode);
         }
       } else {
         if (category.name == 'Popular') {
@@ -83,8 +79,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
 
         final id = item.hashCode.toString();
         final payload = <String, dynamic>{'raw': item, 'id': id};
-        return FeedItemEntity(
-            id: id, provider: category.provider, payload: payload);
+        return FeedItemEntity(id: id, provider: category.provider, payload: payload);
       }).toList(growable: false);
 
       return Result.success(
@@ -95,8 +90,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         ),
       );
     } catch (error) {
-      return Result.error(
-          ServerFailure('Failed to fetch category feed: $error'));
+      return Result.error(ServerFailure('Failed to fetch category feed: $error'));
     }
   }
 }

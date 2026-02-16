@@ -12,8 +12,7 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
   QuickActionsRepositoryImpl(this._quickActions);
 
   final QuickActions _quickActions;
-  final StreamController<QuickActionEntity> _controller =
-      StreamController<QuickActionEntity>.broadcast();
+  final StreamController<QuickActionEntity> _controller = StreamController<QuickActionEntity>.broadcast();
   bool _isInitialized = false;
 
   QuickActionEntity _mapAction(String action) {
@@ -39,8 +38,7 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
           rawValue: 'Downloads',
         );
       default:
-        return QuickActionEntity(
-            type: QuickActionType.unknown, rawValue: action);
+        return QuickActionEntity(type: QuickActionType.unknown, rawValue: action);
     }
   }
 
@@ -56,8 +54,7 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
       });
       return Result.success(null);
     } catch (error) {
-      return Result.error(
-          UnknownFailure('Unable to initialize quick actions: $error'));
+      return Result.error(UnknownFailure('Unable to initialize quick actions: $error'));
     }
   }
 
@@ -88,8 +85,7 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
       ]);
       return Result.success(null);
     } catch (error) {
-      return Result.error(
-          UnknownFailure('Unable to set quick actions: $error'));
+      return Result.error(UnknownFailure('Unable to set quick actions: $error'));
     }
   }
 

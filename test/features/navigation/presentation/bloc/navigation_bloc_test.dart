@@ -8,25 +8,21 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockGetNavigationStackUseCase extends Mock
-    implements GetNavigationStackUseCase {}
+class _MockGetNavigationStackUseCase extends Mock implements GetNavigationStackUseCase {}
 
 class _MockPushRouteUseCase extends Mock implements PushRouteUseCase {}
 
 class _MockPopRouteUseCase extends Mock implements PopRouteUseCase {}
 
-class _MockResetNavigationUseCase extends Mock
-    implements ResetNavigationUseCase {}
+class _MockResetNavigationUseCase extends Mock implements ResetNavigationUseCase {}
 
-class _MockReplaceNavigationStackUseCase extends Mock
-    implements ReplaceNavigationStackUseCase {}
+class _MockReplaceNavigationStackUseCase extends Mock implements ReplaceNavigationStackUseCase {}
 
 void main() {
   setUpAll(() {
     registerFallbackValue(const PushRouteParams(routeName: 'Home'));
     registerFallbackValue(const ResetNavigationParams(initialRoute: 'Home'));
-    registerFallbackValue(
-        const ReplaceNavigationStackParams(stack: <String>['Home']));
+    registerFallbackValue(const ReplaceNavigationStackParams(stack: <String>['Home']));
   });
 
   late _MockGetNavigationStackUseCase getUseCase;
@@ -43,23 +39,19 @@ void main() {
     replaceUseCase = _MockReplaceNavigationStackUseCase();
 
     when(() => getUseCase(const NoParams())).thenAnswer(
-      (_) async =>
-          Result.success(const NavigationStackEntity(stack: <String>['Home'])),
+      (_) async => Result.success(const NavigationStackEntity(stack: <String>['Home'])),
     );
 
     when(() => pushUseCase(any())).thenAnswer(
-      (_) async => Result.success(
-          const NavigationStackEntity(stack: <String>['Home', 'Setups'])),
+      (_) async => Result.success(const NavigationStackEntity(stack: <String>['Home', 'Setups'])),
     );
 
     when(() => popUseCase(const NoParams())).thenAnswer(
-      (_) async =>
-          Result.success(const NavigationStackEntity(stack: <String>['Home'])),
+      (_) async => Result.success(const NavigationStackEntity(stack: <String>['Home'])),
     );
 
     when(() => resetUseCase(any())).thenAnswer(
-      (_) async =>
-          Result.success(const NavigationStackEntity(stack: <String>['Home'])),
+      (_) async => Result.success(const NavigationStackEntity(stack: <String>['Home'])),
     );
 
     when(() => replaceUseCase(any())).thenAnswer(
