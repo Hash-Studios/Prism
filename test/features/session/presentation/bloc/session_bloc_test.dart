@@ -1,9 +1,9 @@
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/domain/usecases/session_usecases.dart';
-import 'package:Prism/features/session/presentation/bloc/session_bloc.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

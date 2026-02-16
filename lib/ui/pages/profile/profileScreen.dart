@@ -108,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     }
                     final doc = snapshot.data!.docs[0];
-                    final data = doc.data() as Map<String, dynamic>;
+                    final data = doc.data()! as Map<String, dynamic>;
                     return ProfileChild(
                       ownProfile: false,
                       id: doc.id,

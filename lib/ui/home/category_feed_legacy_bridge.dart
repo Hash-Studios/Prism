@@ -1,6 +1,6 @@
 import 'package:Prism/data/categories/categories.dart' as category_data;
+import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
-import 'package:Prism/features/category_feed/presentation/bloc/category_feed_bloc.dart';
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

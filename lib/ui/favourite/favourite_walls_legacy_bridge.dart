@@ -2,7 +2,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
-import 'package:Prism/features/favourite_walls/presentation/bloc/favourite_walls_bloc.dart';
+import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

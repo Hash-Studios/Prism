@@ -1,9 +1,9 @@
-import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';

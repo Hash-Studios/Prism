@@ -7,7 +7,7 @@ import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
-import 'package:Prism/features/palette/presentation/bloc/palette_bloc.dart';
+import 'package:Prism/features/palette/palette.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';

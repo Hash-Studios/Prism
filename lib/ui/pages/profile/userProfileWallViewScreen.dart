@@ -2,12 +2,12 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:Prism/data/informatics/dataManager.dart';
-import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/profile/public_profile_legacy_bridge.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';

@@ -1,9 +1,9 @@
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/usecases/bootstrap_app_usecase.dart';
-import 'package:Prism/features/startup/presentation/bloc/startup_bloc.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

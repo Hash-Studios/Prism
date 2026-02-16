@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
-import 'package:Prism/ui/setup/setups_legacy_bridge.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
@@ -11,6 +10,7 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
+import 'package:Prism/ui/setup/setups_legacy_bridge.dart';
 import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';

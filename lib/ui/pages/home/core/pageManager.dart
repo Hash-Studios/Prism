@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:Prism/features/ads/presentation/bloc/ads_bloc.dart';
+import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;

@@ -1,5 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/features/ads/presentation/bloc/ads_bloc.dart';
+import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/routing_constants.dart';
