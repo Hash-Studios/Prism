@@ -3,7 +3,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/pages/adsNotLoading.dart';
-// import 'package:Prism/ui/pages/profile/photographerProfile.dart';
 import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/download/downloadScreen.dart';
 import 'package:Prism/ui/pages/download/downloadWallpaperViewScreen.dart';

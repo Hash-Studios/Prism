@@ -5,6 +5,7 @@ analyzer:
     # unused_import: ignore
     # deprecated_member_use: ignore
     missing_return: ignore
+    parameter_assignments: ignore
     # library_prefixes: ignore
     file_names: ignore
     # prefer_if_elements_to_conditional_expressions: ignore

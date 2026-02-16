@@ -440,7 +440,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                             FavouriteWallpaperButton(
                                               id: WData.wall.id.toString(),
                                               provider: "WallHaven",
-                                              wallhaven: WData.wall ?? WallPaper(),
+                                              wallhaven: WData.wall,
                                               trash: false,
                                             ),
                                             ShareButton(
@@ -1029,7 +1029,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   FavouriteWallpaperButton(
                                                     id: Data.wall["id"].toString(),
                                                     provider: "Prism",
-                                                    prism: Data.wall ?? {},
+                                                    prism: Data.wall,
                                                     trash: false,
                                                   ),
                                                   ShareButton(

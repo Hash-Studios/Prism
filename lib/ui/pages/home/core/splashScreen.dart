@@ -59,7 +59,7 @@ class _SplashWidgetState extends State<SplashWidget> {
       });
       logger.d("Started Fetching Values from rc");
       await remoteConfig.fetch();
-      final rcBool = await remoteConfig.activate();
+      await remoteConfig.activate();
       logger.d("Fetched Values from rc");
       globals.topImageLink = remoteConfig.getString('topImageLink');
       globals.bannerText = remoteConfig.getString('bannerText');
