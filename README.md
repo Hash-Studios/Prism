@@ -98,12 +98,13 @@ You can also report bugs, upload your setups/walls on our telegram channel
 3. [Demo](#demo)
 4. [Support](#support)
 5. [Dependencies](#dependencies)
-6. [Usage](#usage)
-7. [Contributing](#contributing)
-8. [License](#license)
-9. [Privacy Policy](#privacy)
-10. [Contributors](#contributors)
-11. [To-Do](#to-do)
+6. [Development Setup (FVM)](#development-setup-fvm)
+7. [Usage](#usage)
+8. [Contributing](#contributing)
+9. [License](#license)
+10. [Privacy Policy](#privacy)
+11. [Contributors](#contributors)
+12. [To-Do](#to-do)
 
 ## Features
 
@@ -259,6 +260,29 @@ The following packages are needed for the development of this application.
 - `url_launcher: ^6.0.3` for launching urls
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
+
+## Development Setup (FVM)
+
+This repository pins Flutter via FVM in [`.fvmrc`](.fvmrc) (`3.41.0`).
+
+Run this single command from the project root:
+
+```sh
+make setup
+```
+
+This will:
+- install the pinned Flutter SDK with FVM
+- link the project SDK
+- run `pub get` using the pinned SDK
+
+To update the pinned Flutter version later:
+
+```sh
+make update-flutter VERSION=3.42.0
+```
+
+Then commit the updated [`.fvmrc`](.fvmrc).
 
 ## Usage
 
