@@ -21,7 +21,7 @@ import 'package:provider/provider.dart';
 // import 'package:smooth_star_rating/smooth_star_rating.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:quick_actions/quick_actions.dart';
@@ -74,7 +74,7 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
 
   Future<void> saveFavToLocal() async {
     if (globals.prismUser.loggedIn) {
-      await Provider.of<FavouriteProvider>(context, listen: false).getDataBase().then(
+      await context.favouriteWallsLegacyProvider(listen: false).getDataBase().then(
         (value) {
           for (final element in value!) {
             box.put(element['id'].toString(), true);

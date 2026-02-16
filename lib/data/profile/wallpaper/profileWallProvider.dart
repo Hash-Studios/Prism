@@ -1,3 +1,6 @@
+// LEGACY SNAPSHOT (Phase-2 cutover): ProfileWallProvider -> ProfileWallsBloc.
+// This file is intentionally commented out for traceability.
+/*
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -41,3 +44,4 @@ class ProfileWallProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+*/

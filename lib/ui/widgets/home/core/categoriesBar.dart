@@ -1,5 +1,5 @@
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/ui/home/category_feed_legacy_bridge.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/categoryPopUp.dart';
@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:in_app_update/in_app_update.dart';
-import 'package:provider/provider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -140,8 +139,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
       title: Align(
         child: SizedBox(
           height: 24,
-          width: Provider.of<CategorySupplier>(context).getCurrentChoice == "Community" ? 110 : 260,
-          child: Provider.of<CategorySupplier>(context).getCurrentChoice == "Community"
+          width: context.categoryCurrentChoice() == "Community" ? 110 : 260,
+          child: context.categoryCurrentChoice() == "Community"
               ? SvgPicture.string(
                   prismTextLogo.replaceAll(
                     "black",
@@ -153,10 +152,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                     analytics.logEvent(
                       name: 'categories_checked',
                     );
-                    showCategories(context, Provider.of<CategorySupplier>(context, listen: false).selectedChoice);
+                    showCategories(context, context.categorySelectedChoice(listen: false));
                   },
                   child: Text(
-                    Provider.of<CategorySupplier>(context).getCurrentChoice!.toUpperCase(),
+                    context.categoryCurrentChoice()!.toUpperCase(),
                     maxLines: 1,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.clip,
@@ -180,7 +179,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
             analytics.logEvent(
               name: 'categories_checked',
             );
-            showCategories(context, Provider.of<CategorySupplier>(context, listen: false).selectedChoice);
+            showCategories(context, context.categorySelectedChoice(listen: false));
           },
           tooltip: 'Categories',
         )

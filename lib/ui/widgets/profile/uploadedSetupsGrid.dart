@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
+import 'package:Prism/ui/profile/profile_setups_legacy_bridge.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:palette_generator/palette_generator.dart';
-import 'package:provider/provider.dart';
 
 class UploadedSetupsGrid extends StatefulWidget {
   const UploadedSetupsGrid({
@@ -88,7 +87,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
 
   Future<void> refreshList() async {
     refreshProfileSetupKey.currentState?.show();
-    Provider.of<ProfileSetupProvider>(context, listen: false).getProfileSetups();
+    context.profileSetupsLegacyProvider(listen: false).getProfileSetups();
   }
 
   @override
@@ -97,8 +96,8 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileSetupKey,
         onRefresh: refreshList,
-        child: Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups != null
-            ? Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups!.isEmpty
+        child: context.profileSetupsLegacyProvider(listen: false).profileSetups != null
+            ? context.profileSetupsLegacyProvider(listen: false).profileSetups!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -155,16 +154,15 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
                 : GridView.builder(
                     shrinkWrap: true,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: Provider.of<ProfileSetupProvider>(context).profileSetups!.length,
+                    itemCount: context.profileSetupsLegacyProvider().profileSetups!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                         childAspectRatio: 0.5025,
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      if (index ==
-                              Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups!.length - 1 &&
-                          !(Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups!.length < 8)) {
+                      if (index == context.profileSetupsLegacyProvider(listen: false).profileSetups!.length - 1 &&
+                          !(context.profileSetupsLegacyProvider(listen: false).profileSetups!.length < 8)) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
                           func: () {
@@ -172,7 +170,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
                               setState(() {
                                 seeMoreLoader = true;
                               });
-                              Provider.of<ProfileSetupProvider>(context, listen: false).seeMoreProfileSetups();
+                              context.profileSetupsLegacyProvider(listen: false).seeMoreProfileSetups();
                               setState(() {
                                 Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
                               });
@@ -188,9 +186,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      Provider.of<ProfileSetupProvider>(context)
-                                          .profileSetups![index]["image"]
-                                          .toString(),
+                                      context.profileSetupsLegacyProvider().profileSetups![index]["image"].toString(),
                                     ),
                                     fit: BoxFit.cover)),
                           ),
@@ -202,7 +198,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
                                 splashColor: Theme.of(context).accentColor.withOpacity(0.3),
                                 highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
                                 onTap: () {
-                                  if (Provider.of<ProfileSetupProvider>(context, listen: false).profileSetups == []) {
+                                  if (context.profileSetupsLegacyProvider(listen: false).profileSetups == []) {
                                   } else {
                                     Navigator.pushNamed(context, profileSetupViewRoute, arguments: [index]);
                                   }

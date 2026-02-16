@@ -1,3 +1,6 @@
+// LEGACY SNAPSHOT (Phase-2 cutover): CategorySupplier provider -> CategoryFeedBloc.
+// This file is intentionally commented out for traceability.
+/*
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
@@ -63,3 +66,4 @@ class CategorySupplier extends ChangeNotifier {
     return [];
   }
 }
+*/

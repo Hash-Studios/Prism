@@ -21,7 +21,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
+import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
@@ -82,7 +82,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
     setState(() {
       isLoading = true;
     });
-    Provider.of<FavouriteSetupProvider>(context, listen: false).favCheck(id, setupMap).then((value) {
+    context.favouriteSetupsLegacyProvider(listen: false).favCheck(id, setupMap).then((value) {
       analytics.logEvent(name: 'setup_fav_status_changed', parameters: {
         'id': id,
       });

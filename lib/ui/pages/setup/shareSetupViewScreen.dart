@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
+import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart' as sdata;
 import 'package:Prism/routes/router.dart';
@@ -22,7 +22,6 @@ import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
-import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -81,7 +80,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
     setState(() {
       isLoading = true;
     });
-    Provider.of<FavouriteSetupProvider>(context, listen: false).favCheck(id, setupMap).then((value) {
+    context.favouriteSetupsLegacyProvider(listen: false).favCheck(id, setupMap).then((value) {
       analytics.logEvent(name: 'setup_fav_status_changed', parameters: {
         'id': id,
       });

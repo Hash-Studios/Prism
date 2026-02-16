@@ -1,8 +1,8 @@
 import 'dart:ui';
-import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
-import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/ui/profile/profile_walls_legacy_bridge.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as WData;
 import 'package:Prism/global/svgAssets.dart';
@@ -466,13 +466,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               ),
                                               backgroundColor: Colors.black,
                                               label: Text(
-                                                Provider.of<ProfileWallProvider>(context, listen: false)
-                                                        .profileWalls![widget.index]
+                                                context
+                                                        .profileWallsLegacy(listen: false)![widget.index]
                                                         .data()["by"]
                                                         .toString()[0]
                                                         .toUpperCase() +
-                                                    Provider.of<ProfileWallProvider>(context, listen: false)
-                                                        .profileWalls![widget.index]
+                                                    context
+                                                        .profileWallsLegacy(listen: false)![widget.index]
                                                         .data()["by"]
                                                         .toString()
                                                         .substring(1),
@@ -484,8 +484,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                             child: Text(
-                                              Provider.of<ProfileWallProvider>(context, listen: false)
-                                                  .profileWalls![widget.index]
+                                              context
+                                                  .profileWallsLegacy(listen: false)![widget.index]
                                                   .data()["id"]
                                                   .toString()
                                                   .toUpperCase(),
@@ -504,8 +504,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                Provider.of<ProfileWallProvider>(context, listen: false)
-                                                    .profileWalls![widget.index]
+                                                context
+                                                    .profileWallsLegacy(listen: false)![widget.index]
                                                     .data()["size"]
                                                     .toString(),
                                                 style: Theme.of(context)
@@ -524,8 +524,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                Provider.of<ProfileWallProvider>(context, listen: false)
-                                                    .profileWalls![widget.index]
+                                                context
+                                                    .profileWallsLegacy(listen: false)![widget.index]
                                                     .data()["resolution"]
                                                     .toString(),
                                                 style: Theme.of(context)
@@ -854,7 +854,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                   ),
                                 )
                               : widget.provider == "Liked"
-                                  ? Provider.of<FavouriteProvider>(context, listen: false).liked![widget.index]
+                                  ? context.favouriteWallsLegacyProvider(listen: false).liked![widget.index]
                                               ["provider"] ==
                                           "WallHaven"
                                       ? Positioned(
@@ -898,12 +898,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                               ),
                                                               backgroundColor: Colors.black,
                                                               label: Text(
-                                                                Provider.of<FavouriteProvider>(context, listen: false)
+                                                                context
+                                                                        .favouriteWallsLegacyProvider(listen: false)
                                                                         .liked![widget.index]["category"]
                                                                         .toString()[0]
                                                                         .toUpperCase() +
-                                                                    Provider.of<FavouriteProvider>(context,
-                                                                            listen: false)
+                                                                    context
+                                                                        .favouriteWallsLegacyProvider(listen: false)
                                                                         .liked![widget.index]["category"]
                                                                         .toString()
                                                                         .substring(1),
@@ -915,7 +916,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                           Padding(
                                                             padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                             child: Text(
-                                                              Provider.of<FavouriteProvider>(context, listen: false)
+                                                              context
+                                                                  .favouriteWallsLegacyProvider(listen: false)
                                                                   .liked![widget.index]["id"]
                                                                   .toString()
                                                                   .toUpperCase(),
@@ -934,7 +936,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                               ),
                                                               const SizedBox(width: 10),
                                                               Text(
-                                                                "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked![widget.index]["views"].toString()}",
+                                                                "Views: ${context.favouriteWallsLegacyProvider(listen: false).liked![widget.index]["views"].toString()}",
                                                                 style: Theme.of(context)
                                                                     .textTheme
                                                                     .bodyText2!
@@ -951,7 +953,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                               ),
                                                               const SizedBox(width: 10),
                                                               Text(
-                                                                Provider.of<FavouriteProvider>(context, listen: false)
+                                                                context
+                                                                    .favouriteWallsLegacyProvider(listen: false)
                                                                     .liked![widget.index]["resolution"]
                                                                     .toString(),
                                                                 style: Theme.of(context)
@@ -993,7 +996,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             ),
                                           ),
                                         )
-                                      : Provider.of<FavouriteProvider>(context, listen: false).liked![widget.index]
+                                      : context.favouriteWallsLegacyProvider(listen: false).liked![widget.index]
                                                   ["provider"] ==
                                               "Prism"
                                           ? Positioned(
@@ -1037,13 +1040,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   ),
                                                                   backgroundColor: Colors.black,
                                                                   label: Text(
-                                                                    Provider.of<FavouriteProvider>(context,
-                                                                                listen: false)
+                                                                    context
+                                                                            .favouriteWallsLegacyProvider(listen: false)
                                                                             .liked![widget.index]["photographer"]
                                                                             .toString()[0]
                                                                             .toUpperCase() +
-                                                                        Provider.of<FavouriteProvider>(context,
-                                                                                listen: false)
+                                                                        context
+                                                                            .favouriteWallsLegacyProvider(listen: false)
                                                                             .liked![widget.index]["photographer"]
                                                                             .toString()
                                                                             .substring(1),
@@ -1056,7 +1059,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                               Padding(
                                                                 padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                                 child: Text(
-                                                                  Provider.of<FavouriteProvider>(context, listen: false)
+                                                                  context
+                                                                      .favouriteWallsLegacyProvider(listen: false)
                                                                       .liked![widget.index]["id"]
                                                                       .toString()
                                                                       .toUpperCase(),
@@ -1075,8 +1079,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   ),
                                                                   const SizedBox(width: 10),
                                                                   Text(
-                                                                    Provider.of<FavouriteProvider>(context,
-                                                                            listen: false)
+                                                                    context
+                                                                        .favouriteWallsLegacyProvider(listen: false)
                                                                         .liked![widget.index]["size"]
                                                                         .toString(),
                                                                     style: Theme.of(context)
@@ -1095,8 +1099,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   ),
                                                                   const SizedBox(width: 10),
                                                                   Text(
-                                                                    Provider.of<FavouriteProvider>(context,
-                                                                            listen: false)
+                                                                    context
+                                                                        .favouriteWallsLegacyProvider(listen: false)
                                                                         .liked![widget.index]["resolution"]
                                                                         .toString(),
                                                                     style: Theme.of(context)
@@ -1138,7 +1142,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 ),
                                               ),
                                             )
-                                          : Provider.of<FavouriteProvider>(context, listen: false).liked![widget.index]
+                                          : context.favouriteWallsLegacyProvider(listen: false).liked![widget.index]
                                                       ["provider"] ==
                                                   "Pexels"
                                               ? Positioned(
@@ -1180,8 +1184,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       avatar: const Icon(JamIcons.camera,
                                                                           color: Colors.white, size: 20),
                                                                       label: Text(
-                                                                        Provider.of<FavouriteProvider>(context,
-                                                                                listen: false)
+                                                                        context
+                                                                            .favouriteWallsLegacyProvider(listen: false)
                                                                             .liked![widget.index]["photographer"]
                                                                             .toString(),
                                                                         style: Theme.of(context)
@@ -1201,8 +1205,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       ),
                                                                       const SizedBox(width: 5),
                                                                       Text(
-                                                                        Provider.of<FavouriteProvider>(context,
-                                                                                listen: false)
+                                                                        context
+                                                                            .favouriteWallsLegacyProvider(listen: false)
                                                                             .liked![widget.index]["resolution"]
                                                                             .toString(),
                                                                         style: Theme.of(context)
@@ -1285,7 +1289,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       ),
                                                                       const SizedBox(width: 5),
                                                                       Text(
-                                                                        "Likes: ${Provider.of<FavouriteProvider>(context, listen: false).liked![widget.index]["fav"]}",
+                                                                        "Likes: ${context.favouriteWallsLegacyProvider(listen: false).liked![widget.index]["fav"]}",
                                                                         style: Theme.of(context)
                                                                             .textTheme
                                                                             .headline6!
@@ -1303,7 +1307,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       ),
                                                                       const SizedBox(width: 5),
                                                                       Text(
-                                                                        "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked![widget.index]["views"]}",
+                                                                        "Views: ${context.favouriteWallsLegacyProvider(listen: false).liked![widget.index]["views"]}",
                                                                         style: Theme.of(context)
                                                                             .textTheme
                                                                             .headline6!
@@ -1321,8 +1325,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       ),
                                                                       const SizedBox(width: 5),
                                                                       Text(
-                                                                        Provider.of<FavouriteProvider>(context,
-                                                                                listen: false)
+                                                                        context
+                                                                            .favouriteWallsLegacyProvider(listen: false)
                                                                             .liked![widget.index]["resolution"]
                                                                             .toString(),
                                                                         style: Theme.of(context)
@@ -1518,9 +1522,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                     : widget.provider == "Prism"
                         ? Data.subPrismWalls![widget.index]["wallpaper_url"].toString()
                         : widget.provider == "ProfileWall"
-                            ? Provider.of<ProfileWallProvider>(context, listen: false)
-                                .profileWalls![widget.index]["wallpaper_url"]
-                                .toString()
+                            ? context.profileWallsLegacy(listen: false)![widget.index]["wallpaper_url"].toString()
                             : widget.provider == "UserProfileWall"
                                 ? Provider.of<UserData.UserProfileProvider>(context)
                                     .userProfileWalls![widget.index]
@@ -1529,7 +1531,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                 : widget.provider == "Pexels"
                                     ? PData.wallsP[widget.index].src!["original"].toString()
                                     : widget.provider == "Liked"
-                                        ? Provider.of<FavouriteProvider>(context, listen: false)
+                                        ? context
+                                            .favouriteWallsLegacyProvider(listen: false)
                                             .liked![widget.index]["url"]
                                             .toString()
                                         : PData.wallsC[widget.index].src!["original"].toString(),
@@ -1554,13 +1557,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                         )
                       : widget.provider == "ProfileWall"
                           ? FavouriteWallpaperButton(
-                              id: Provider.of<ProfileWallProvider>(context, listen: false)
-                                  .profileWalls![widget.index]["id"]
-                                  .toString(),
+                              id: context.profileWallsLegacy(listen: false)![widget.index]["id"].toString(),
                               provider: "Prism",
-                              prism: Provider.of<ProfileWallProvider>(context, listen: false)
-                                  .profileWalls![widget.index]
-                                  .data(),
+                              prism: context.profileWallsLegacy(listen: false)![widget.index].data(),
                               trash: false,
                             )
                           : widget.provider == "UserProfileWall"
@@ -1583,10 +1582,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     )
                                   : widget.provider == "Liked"
                                       ? FavouriteWallpaperButton(
-                                          id: Provider.of<FavouriteProvider>(context, listen: false)
+                                          id: context
+                                              .favouriteWallsLegacyProvider(listen: false)
                                               .liked![widget.index]["id"]
                                               .toString(),
-                                          provider: Provider.of<FavouriteProvider>(context, listen: false)
+                                          provider: context
+                                              .favouriteWallsLegacyProvider(listen: false)
                                               .liked![widget.index]["provider"]
                                               .toString(),
                                           trash: true,
@@ -1608,9 +1609,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                     : widget.provider == "Prism"
                         ? Data.subPrismWalls![widget.index]["wallpaper_url"].toString()
                         : widget.provider == "ProfileWall"
-                            ? Provider.of<ProfileWallProvider>(context, listen: false)
-                                .profileWalls![widget.index]["wallpaper_url"]
-                                .toString()
+                            ? context.profileWallsLegacy(listen: false)![widget.index]["wallpaper_url"].toString()
                             : widget.provider == "UserProfileWall"
                                 ? Provider.of<UserData.UserProfileProvider>(context)
                                     .userProfileWalls![widget.index]
@@ -1619,7 +1618,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                 : widget.provider == "Pexels"
                                     ? PData.wallsP[widget.index].src!["original"].toString()
                                     : widget.provider == "Liked"
-                                        ? Provider.of<FavouriteProvider>(context, listen: false)
+                                        ? context
+                                            .favouriteWallsLegacyProvider(listen: false)
                                             .liked![widget.index]["url"]
                                             .toString()
                                         : PData.wallsC[widget.index].src!["original"].toString(),

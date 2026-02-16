@@ -1,4 +1,4 @@
-import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
@@ -9,7 +9,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 
 class FavouriteGrid extends StatefulWidget {
   const FavouriteGrid({
@@ -83,7 +82,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
 
   Future<void> refreshList() async {
     refreshFavKey.currentState?.show();
-    Provider.of<FavouriteProvider>(context, listen: false).getDataBase();
+    context.favouriteWallsLegacyProvider(listen: false).getDataBase();
   }
 
   @override
@@ -93,8 +92,8 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshFavKey,
         onRefresh: refreshList,
-        child: Provider.of<FavouriteProvider>(context, listen: false).liked != null
-            ? Provider.of<FavouriteProvider>(context, listen: false).liked!.isEmpty
+        child: context.favouriteWallsLegacyProvider(listen: false).liked != null
+            ? context.favouriteWallsLegacyProvider(listen: false).liked!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -153,7 +152,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                     cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
                     controller: controller,
-                    itemCount: Provider.of<FavouriteProvider>(context).liked!.length,
+                    itemCount: context.favouriteWallsLegacyProvider().liked!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                         childAspectRatio: 0.6625,
@@ -171,7 +170,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        Provider.of<FavouriteProvider>(context).liked![index]["thumb"].toString(),
+                                        context.favouriteWallsLegacyProvider().liked![index]["thumb"].toString(),
                                       ),
                                       fit: BoxFit.cover)),
                             ),
@@ -183,11 +182,11 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                   splashColor: Theme.of(context).accentColor.withOpacity(0.3),
                                   highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
                                   onTap: () {
-                                    if (Provider.of<FavouriteProvider>(context, listen: false).liked == []) {
+                                    if (context.favouriteWallsLegacyProvider(listen: false).liked == []) {
                                     } else {
                                       Navigator.pushNamed(context, favWallViewRoute, arguments: [
                                         index,
-                                        Provider.of<FavouriteProvider>(context, listen: false).liked![index]["thumb"],
+                                        context.favouriteWallsLegacyProvider(listen: false).liked![index]["thumb"],
                                       ]);
                                     }
                                   },
