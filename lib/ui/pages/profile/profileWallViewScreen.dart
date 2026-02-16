@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:Prism/data/informatics/dataManager.dart';
-import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/ui/profile/profile_walls_legacy_bridge.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
@@ -17,7 +17,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
-import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
@@ -111,16 +110,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
     index = widget.arguments![0] as int;
     thumb = widget.arguments![1].toString();
     isLoading = true;
-    updateViews(Provider.of<ProfileWallProvider>(context, listen: false)
-        .profileWalls![index]
-        .data()["id"]
-        .toString()
-        .toUpperCase());
-    _futureView = getViews(Provider.of<ProfileWallProvider>(context, listen: false)
-        .profileWalls![index]
-        .data()["id"]
-        .toString()
-        .toUpperCase());
+    updateViews(context.profileWallsLegacy(listen: false)![index].data()["id"].toString().toUpperCase());
+    _futureView = getViews(context.profileWallsLegacy(listen: false)![index].data()["id"].toString().toUpperCase());
     _updatePaletteGenerator();
     super.initState();
   }
@@ -269,8 +260,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                         child: Row(
                                           children: [
                                             Text(
-                                              Provider.of<ProfileWallProvider>(context, listen: false)
-                                                  .profileWalls![index]
+                                              context
+                                                  .profileWallsLegacy(listen: false)![index]
                                                   .data()["id"]
                                                   .toString()
                                                   .toUpperCase(),
@@ -339,10 +330,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          Provider.of<ProfileWallProvider>(context, listen: false)
-                                              .profileWalls![index]
-                                              .data()["by"]
-                                              .toString(),
+                                          context.profileWallsLegacy(listen: false)![index].data()["by"].toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
@@ -360,10 +348,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          Provider.of<ProfileWallProvider>(context, listen: false)
-                                              .profileWalls![index]
-                                              .data()["desc"]
-                                              .toString(),
+                                          context.profileWallsLegacy(listen: false)![index].data()["desc"].toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
@@ -381,10 +366,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
-                                          Provider.of<ProfileWallProvider>(context, listen: false)
-                                              .profileWalls![index]
-                                              .data()["size"]
-                                              .toString(),
+                                          context.profileWallsLegacy(listen: false)![index].data()["size"].toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2!
@@ -401,8 +383,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                     Row(
                                       children: [
                                         Text(
-                                          Provider.of<ProfileWallProvider>(context, listen: false)
-                                              .profileWalls![index]
+                                          context
+                                              .profileWallsLegacy(listen: false)![index]
                                               .data()["resolution"]
                                               .toString(),
                                           style: Theme.of(context)
@@ -422,8 +404,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                     Row(
                                       children: [
                                         Text(
-                                          Provider.of<ProfileWallProvider>(context, listen: false)
-                                              .profileWalls![index]
+                                          context
+                                              .profileWallsLegacy(listen: false)![index]
                                               .data()["wallpaper_provider"]
                                               .toString(),
                                           style: Theme.of(context)
@@ -454,8 +436,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                 colorChanged: colorChanged,
                                 link: screenshotTaken
                                     ? _imageFile.path
-                                    : Provider.of<ProfileWallProvider>(context, listen: false)
-                                        .profileWalls![index]
+                                    : context
+                                        .profileWallsLegacy(listen: false)![index]
                                         .data()["wallpaper_url"]
                                         .toString(),
                               ),
@@ -463,45 +445,37 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                 colorChanged: colorChanged,
                                 url: screenshotTaken
                                     ? _imageFile.path
-                                    : Provider.of<ProfileWallProvider>(context, listen: false)
-                                        .profileWalls![index]
+                                    : context
+                                        .profileWallsLegacy(listen: false)![index]
                                         .data()["wallpaper_url"]
                                         .toString(),
                               ),
                               FavouriteWallpaperButton(
-                                id: Provider.of<ProfileWallProvider>(context, listen: false)
-                                    .profileWalls![index]
-                                    .data()["id"]
-                                    .toString(),
-                                provider: Provider.of<ProfileWallProvider>(context, listen: false)
-                                    .profileWalls![index]
+                                id: context.profileWallsLegacy(listen: false)![index].data()["id"].toString(),
+                                provider: context
+                                    .profileWallsLegacy(listen: false)![index]
                                     .data()["wallpaper_provider"]
                                     .toString(),
-                                prism: Provider.of<ProfileWallProvider>(context, listen: false)
-                                    .profileWalls![index]
-                                    .data(),
+                                prism: context.profileWallsLegacy(listen: false)![index].data(),
                                 trash: false,
                               ),
                               ShareButton(
-                                  id: Provider.of<ProfileWallProvider>(context, listen: false)
-                                      .profileWalls![index]
-                                      .data()["id"]
-                                      .toString(),
-                                  provider: Provider.of<ProfileWallProvider>(context, listen: false)
-                                      .profileWalls![index]
+                                  id: context.profileWallsLegacy(listen: false)![index].data()["id"].toString(),
+                                  provider: context
+                                      .profileWallsLegacy(listen: false)![index]
                                       .data()["wallpaper_provider"]
                                       .toString(),
-                                  url: Provider.of<ProfileWallProvider>(context, listen: false)
-                                      .profileWalls![index]
+                                  url: context
+                                      .profileWallsLegacy(listen: false)![index]
                                       .data()["wallpaper_url"]
                                       .toString(),
-                                  thumbUrl: Provider.of<ProfileWallProvider>(context, listen: false)
-                                      .profileWalls![index]
+                                  thumbUrl: context
+                                      .profileWallsLegacy(listen: false)![index]
                                       .data()["wallpaper_thumb"]
                                       .toString()),
                               EditButton(
-                                url: Provider.of<ProfileWallProvider>(context, listen: false)
-                                    .profileWalls![index]
+                                url: context
+                                    .profileWallsLegacy(listen: false)![index]
                                     .data()["wallpaper_url"]
                                     .toString(),
                               ),
@@ -541,10 +515,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                           shakeController.forward(from: 0.0);
                         },
                         child: CachedNetworkImage(
-                          imageUrl: Provider.of<ProfileWallProvider>(context, listen: false)
-                              .profileWalls![index]
-                              .data()["wallpaper_url"]
-                              .toString(),
+                          imageUrl:
+                              context.profileWallsLegacy(listen: false)![index].data()["wallpaper_url"].toString(),
                           imageBuilder: (context, imageProvider) => Screenshot(
                             controller: screenshotController,
                             child: Container(
@@ -610,9 +582,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                     padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                     child: IconButton(
                       onPressed: () {
-                        final link = Provider.of<ProfileWallProvider>(context, listen: false)
-                            .profileWalls![index]
-                            .data()["wallpaper_url"];
+                        final link = context.profileWallsLegacy(listen: false)![index].data()["wallpaper_url"];
                         Navigator.push(
                             context,
                             PageRouteBuilder(

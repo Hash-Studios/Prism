@@ -7,22 +7,22 @@ import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
-import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
-import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
-import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/features/ads/presentation/bloc/ads_bloc.dart';
+import 'package:Prism/features/category_feed/presentation/bloc/category_feed_bloc.dart';
+import 'package:Prism/features/favourite_setups/presentation/bloc/favourite_setups_bloc.dart';
+import 'package:Prism/features/favourite_walls/presentation/bloc/favourite_walls_bloc.dart';
 import 'package:Prism/features/palette/presentation/bloc/palette_bloc.dart';
+import 'package:Prism/features/profile_setups/presentation/bloc/profile_setups_bloc.dart';
+import 'package:Prism/features/profile_walls/presentation/bloc/profile_walls_bloc.dart';
 import 'package:Prism/features/theme_dark/presentation/bloc/theme_dark_bloc.dart';
 import 'package:Prism/features/theme_light/presentation/bloc/theme_light_bloc.dart';
 import 'package:Prism/features/theme_mode/presentation/bloc/theme_mode_bloc.dart';
 import 'package:Prism/features/user_search/presentation/bloc/user_search_bloc.dart';
-import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/payments/upgrade.dart';
-import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
@@ -134,23 +134,8 @@ Future<void> main() async {
                       ChangeNotifierProvider<UserProfileProvider>(
                         create: (context) => UserProfileProvider(),
                       ),
-                      ChangeNotifierProvider<FavouriteProvider>(
-                        create: (context) => FavouriteProvider(),
-                      ),
-                      ChangeNotifierProvider<FavouriteSetupProvider>(
-                        create: (context) => FavouriteSetupProvider(),
-                      ),
-                      ChangeNotifierProvider<CategorySupplier>(
-                        create: (context) => CategorySupplier(),
-                      ),
                       ChangeNotifierProvider<SetupProvider>(
                         create: (context) => SetupProvider(),
-                      ),
-                      ChangeNotifierProvider<ProfileWallProvider>(
-                        create: (context) => ProfileWallProvider(),
-                      ),
-                      ChangeNotifierProvider<ProfileSetupProvider>(
-                        create: (context) => ProfileSetupProvider(),
                       ),
                     ],
                     child: MultiBlocProvider(
@@ -163,6 +148,21 @@ Future<void> main() async {
                         ),
                         BlocProvider<UserSearchBloc>(
                           create: (_) => getIt<UserSearchBloc>(),
+                        ),
+                        BlocProvider<CategoryFeedBloc>(
+                          create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
+                        ),
+                        BlocProvider<ProfileWallsBloc>(
+                          create: (_) => getIt<ProfileWallsBloc>(),
+                        ),
+                        BlocProvider<FavouriteWallsBloc>(
+                          create: (_) => getIt<FavouriteWallsBloc>(),
+                        ),
+                        BlocProvider<FavouriteSetupsBloc>(
+                          create: (_) => getIt<FavouriteSetupsBloc>(),
+                        ),
+                        BlocProvider<ProfileSetupsBloc>(
+                          create: (_) => getIt<ProfileSetupsBloc>(),
                         ),
                         BlocProvider<ThemeLightBloc>(
                           create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),

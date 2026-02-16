@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
+import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
@@ -57,9 +57,9 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments![0] as int;
     updateViewsSetup(
-        Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["id"].toString().toUpperCase());
+        context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["id"].toString().toUpperCase());
     _futureView = getViewsSetup(
-        Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["id"].toString().toUpperCase());
+        context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["id"].toString().toUpperCase());
     isLoading = true;
     box = Hive.box('localFav');
     super.initState();
@@ -78,7 +78,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
     navStack.removeLast();
     logger.d(navStack.toString());
     Navigator.pop(context);
-    Provider.of<FavouriteSetupProvider>(context, listen: false).favCheck(id, setupMap).then((value) {
+    context.favouriteSetupsLegacyProvider(listen: false).favCheck(id, setupMap).then((value) {
       analytics.logEvent(name: 'setup_fav_status_changed', parameters: {
         'id': id,
       });
@@ -204,7 +204,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                       forward: true,
                                       slideSide: SlideFromSlide.bottom,
                                       child: Text(
-                                        Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                        context
+                                            .favouriteSetupsLegacyProvider(listen: false)
                                             .liked![index!]["name"]
                                             .toString()
                                             .toUpperCase(),
@@ -226,7 +227,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                       slideSide: SlideFromSlide.bottom,
                                       delay: const Duration(milliseconds: 50),
                                       child: Text(
-                                        Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                        context
+                                            .favouriteSetupsLegacyProvider(listen: false)
                                             .liked![index!]["desc"]
                                             .toString(),
                                         maxLines: 2,
@@ -266,7 +268,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                               child: Row(
                                                 children: [
                                                   Text(
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                    context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["id"]
                                                         .toString()
                                                         .toUpperCase(),
@@ -327,10 +330,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                             onTap: () async {
                                               await createCopyrightLink(true, context,
                                                   index: index.toString(),
-                                                  name: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                  name: context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["name"]
                                                       .toString(),
-                                                  thumbUrl: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                  thumbUrl: context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["image"]
                                                       .toString());
                                             },
@@ -368,7 +373,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                     alignment: Alignment.topRight,
                                                     child: ActionChip(
                                                         label: Text(
-                                                          Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                          context
+                                                              .favouriteSetupsLegacyProvider(listen: false)
                                                               .liked![index!]["by"]
                                                               .toString(),
                                                           overflow: TextOverflow.fade,
@@ -379,26 +385,25 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                         ),
                                                         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                         avatar: CircleAvatar(
-                                                          backgroundImage: CachedNetworkImageProvider(
-                                                              Provider.of<FavouriteSetupProvider>(context,
-                                                                      listen: false)
-                                                                  .liked![index!]["userPhoto"]
-                                                                  .toString()),
+                                                          backgroundImage: CachedNetworkImageProvider(context
+                                                              .favouriteSetupsLegacyProvider(listen: false)
+                                                              .liked![index!]["userPhoto"]
+                                                              .toString()),
                                                         ),
                                                         labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                         onPressed: () {
                                                           Navigator.pushNamed(context, followerProfileRoute,
                                                               arguments: [
-                                                                Provider.of<FavouriteSetupProvider>(context,
-                                                                        listen: false)
+                                                                context
+                                                                    .favouriteSetupsLegacyProvider(listen: false)
                                                                     .liked![index!]["email"],
                                                               ]);
                                                         }),
                                                   ),
-                                                  if (globals.verifiedUsers.contains(
-                                                      Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                          .liked![index!]["email"]
-                                                          .toString()))
+                                                  if (globals.verifiedUsers.contains(context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
+                                                      .liked![index!]["email"]
+                                                      .toString()))
                                                     Align(
                                                       alignment: Alignment.topRight,
                                                       child: SizedBox(
@@ -432,11 +437,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                         flex: 16,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                          child: Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["widget"] ==
-                                      "" ||
-                                  Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]
-                                          ["widget"] ==
-                                      null
+                          child: context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["widget"] == "" ||
+                                  context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["widget"] == null
                               ? Column(
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   mainAxisSize: MainAxisSize.min,
@@ -444,99 +446,112 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        if (Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                        if (context
+                                                .favouriteSetupsLegacyProvider(listen: false)
                                                 .liked![index!]["wallpaper_url"]
                                                 .toString()[0] !=
                                             "[") {
-                                          if (Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]
+                                          if (context.favouriteSetupsLegacyProvider(listen: false).liked![index!]
                                                       ["wall_id"] ==
                                                   null ||
-                                              Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]
+                                              context.favouriteSetupsLegacyProvider(listen: false).liked![index!]
                                                       ["wall_id"] ==
                                                   "") {
                                             logger.d("Id Not Found!");
-                                            launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                            launch(context
+                                                .favouriteSetupsLegacyProvider(listen: false)
                                                 .liked![index!]["wallpaper_url"]
                                                 .toString());
                                           } else {
                                             Navigator.pushNamed(context, shareRoute, arguments: [
-                                              Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["wall_id"]
                                                   .toString(),
-                                              Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["wallpaper_provider"]
                                                   .toString(),
-                                              Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["wallpaper_url"]
                                                   .toString(),
-                                              Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["wallpaper_url"]
                                                   .toString(),
                                             ]);
                                           }
                                         } else {
-                                          launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                          launch(context
+                                              .favouriteSetupsLegacyProvider(listen: false)
                                               .liked![index!]["wallpaper_url"][1]
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                      tileText: context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
-                                          ? (Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]
+                                          ? (context.favouriteSetupsLegacyProvider(listen: false).liked![index!]
                                                           ["wall_id"] ==
                                                       null ||
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                          .liked![index!]["wall_id"] ==
+                                                  context.favouriteSetupsLegacyProvider(listen: false).liked![index!]
+                                                          ["wall_id"] ==
                                                       "")
                                               ? "Wall Link"
-                                              : "Prism (${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"]})"
-                                          : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
+                                              : "Prism (${context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wall_id"]})"
+                                          : "${context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"][0]} - ${(context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                      isInstalled: context
+                                              .favouriteSetupsLegacyProvider(listen: false)
                                               .liked![index!]["icon_url"]
                                               .toString()
                                               .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
-                                              Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                          ? DeviceApps.isAppInstalled(context
+                                              .favouriteSetupsLegacyProvider(listen: false)
+                                              .liked![index!]["icon_url"]
+                                              .toString()
+                                              .split("details?id=")[1]
+                                              .split("&")[0])
+                                          : Future.value(false),
+                                      onTap: () async {
+                                        if (context
+                                            .favouriteSetupsLegacyProvider(listen: false)
+                                            .liked![index!]["icon_url"]
+                                            .toString()
+                                            .contains('play.google.com/store/apps/details?id=')) {
+                                          final isInstalled = await DeviceApps.isAppInstalled(context
+                                              .favouriteSetupsLegacyProvider(listen: false)
+                                              .liked![index!]["icon_url"]
+                                              .toString()
+                                              .split("details?id=")[1]
+                                              .split("&")[0]);
+                                          isInstalled
+                                              ? DeviceApps.openApp(context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0])
-                                          : Future.value(false),
-                                      onTap: () async {
-                                        if (Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                            .liked![index!]["icon_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                              Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                  .liked![index!]["icon_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0]);
-                                          isInstalled
-                                              ? DeviceApps.openApp(
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                      .liked![index!]["icon_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0])
-                                              : launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              : launch(context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["icon_url"]
                                                   .toString());
                                         } else {
-                                          launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                          launch(context
+                                              .favouriteSetupsLegacyProvider(listen: false)
                                               .liked![index!]["icon_url"]
                                               .toString());
                                         }
                                       },
-                                      tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                      tileText: context
+                                          .favouriteSetupsLegacyProvider(listen: false)
                                           .liked![index!]["icon"]
                                           .toString(),
                                       tileType: "Icons",
@@ -545,10 +560,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     ),
                                   ],
                                 )
-                              : Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["widget2"] ==
-                                          "" ||
-                                      Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]
-                                              ["widget2"] ==
+                              : context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["widget2"] == "" ||
+                                      context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["widget2"] ==
                                           null
                                   ? Column(
                                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -557,99 +570,113 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                         SetupDetailsTile(
                                           isInstalled: Future.value(false),
                                           onTap: () async {
-                                            if (Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                            if (context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
                                                     .liked![index!]["wallpaper_url"]
                                                     .toString()[0] !=
                                                 "[") {
-                                              if (Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                          .liked![index!]["wall_id"] ==
+                                              if (context.favouriteSetupsLegacyProvider(listen: false).liked![index!]
+                                                          ["wall_id"] ==
                                                       null ||
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                          .liked![index!]["wall_id"] ==
+                                                  context.favouriteSetupsLegacyProvider(listen: false).liked![index!]
+                                                          ["wall_id"] ==
                                                       "") {
                                                 logger.d("Id Not Found!");
-                                                launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                launch(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
                                                     .liked![index!]["wallpaper_url"]
                                                     .toString());
                                               } else {
                                                 Navigator.pushNamed(context, shareRoute, arguments: [
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                  context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["wall_id"]
                                                       .toString(),
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                  context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["wallpaper_provider"]
                                                       .toString(),
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                  context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["wallpaper_url"]
                                                       .toString(),
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                  context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["wallpaper_url"]
                                                       .toString(),
                                                 ]);
                                               }
                                             } else {
-                                              launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              launch(context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["wallpaper_url"][1]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                          tileText: context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
-                                              ? (Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                              .liked![index!]["wall_id"] ==
+                                              ? (context.favouriteSetupsLegacyProvider(listen: false).liked![index!]
+                                                              ["wall_id"] ==
                                                           null ||
-                                                      Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                      context
+                                                              .favouriteSetupsLegacyProvider(listen: false)
                                                               .liked![index!]["wall_id"] ==
                                                           "")
                                                   ? "Wall Link"
-                                                  : "Prism (${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"]})"
-                                              : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
+                                                  : "Prism (${context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wall_id"]})"
+                                              : "${context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"][0]} - ${(context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay: const Duration(milliseconds: 150),
                                         ),
                                         SetupDetailsTile(
-                                          isInstalled: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                          isInstalled: context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["icon_url"]
                                                   .toString()
                                                   .contains('play.google.com/store/apps/details?id=')
-                                              ? DeviceApps.isAppInstalled(
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              ? DeviceApps.isAppInstalled(context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
+                                                  .liked![index!]["icon_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0])
+                                              : Future.value(false),
+                                          onTap: () async {
+                                            if (context
+                                                .favouriteSetupsLegacyProvider(listen: false)
+                                                .liked![index!]["icon_url"]
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
+                                                  .liked![index!]["icon_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
-                                              : Future.value(false),
-                                          onTap: () async {
-                                            if (Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                .liked![index!]["icon_url"]
-                                                .toString()
-                                                .contains('play.google.com/store/apps/details?id=')) {
-                                              final isInstalled = await DeviceApps.isAppInstalled(
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                      .liked![index!]["icon_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(
-                                                      Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                          .liked![index!]["icon_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0])
-                                                  : launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                  : launch(context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["icon_url"]
                                                       .toString());
                                             } else {
-                                              launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              launch(context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["icon_url"]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                          tileText: context
+                                              .favouriteSetupsLegacyProvider(listen: false)
                                               .liked![index!]["icon"]
                                               .toString(),
                                           tileType: "Icons",
@@ -657,45 +684,50 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                           delay: const Duration(milliseconds: 200),
                                         ),
                                         SetupDetailsTile(
-                                          isInstalled: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                          isInstalled: context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["widget_url"]
                                                   .toString()
                                                   .contains('play.google.com/store/apps/details?id=')
-                                              ? DeviceApps.isAppInstalled(
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              ? DeviceApps.isAppInstalled(context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
+                                                  .liked![index!]["widget_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0])
+                                              : Future.value(false),
+                                          onTap: () async {
+                                            if (context
+                                                .favouriteSetupsLegacyProvider(listen: false)
+                                                .liked![index!]["widget_url"]
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
+                                                  .liked![index!]["widget_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
-                                              : Future.value(false),
-                                          onTap: () async {
-                                            if (Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                .liked![index!]["widget_url"]
-                                                .toString()
-                                                .contains('play.google.com/store/apps/details?id=')) {
-                                              final isInstalled = await DeviceApps.isAppInstalled(
-                                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                      .liked![index!]["widget_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(
-                                                      Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                          .liked![index!]["widget_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0])
-                                                  : launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                  : launch(context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["widget_url"]
                                                       .toString());
                                             } else {
-                                              launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              launch(context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
                                                   .liked![index!]["widget_url"]
                                                   .toString());
                                             }
                                           },
-                                          tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                          tileText: context
+                                              .favouriteSetupsLegacyProvider(listen: false)
                                               .liked![index!]["widget"]
                                               .toString(),
                                           tileType: "Widget",
@@ -712,99 +744,113 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                           SetupDetailsTile(
                                             isInstalled: Future.value(false),
                                             onTap: () async {
-                                              if (Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                              if (context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "[") {
-                                                if (Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                            .liked![index!]["wall_id"] ==
+                                                if (context.favouriteSetupsLegacyProvider(listen: false).liked![index!]
+                                                            ["wall_id"] ==
                                                         null ||
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                            .liked![index!]["wall_id"] ==
+                                                    context.favouriteSetupsLegacyProvider(listen: false).liked![index!]
+                                                            ["wall_id"] ==
                                                         "") {
                                                   logger.d("Id Not Found!");
-                                                  launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                  launch(context
+                                                      .favouriteSetupsLegacyProvider(listen: false)
                                                       .liked![index!]["wallpaper_url"]
                                                       .toString());
                                                 } else {
                                                   Navigator.pushNamed(context, shareRoute, arguments: [
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                    context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["wall_id"]
                                                         .toString(),
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                    context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["wallpaper_provider"]
                                                         .toString(),
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                    context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["wallpaper_url"]
                                                         .toString(),
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                    context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["wallpaper_url"]
                                                         .toString(),
                                                   ]);
                                                 }
                                               } else {
-                                                launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                launch(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
                                                     .liked![index!]["wallpaper_url"][1]
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                            tileText: context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
-                                                ? (Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                                .liked![index!]["wall_id"] ==
+                                                ? (context.favouriteSetupsLegacyProvider(listen: false).liked![index!]
+                                                                ["wall_id"] ==
                                                             null ||
-                                                        Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                        context
+                                                                .favouriteSetupsLegacyProvider(listen: false)
                                                                 .liked![index!]["wall_id"] ==
                                                             "")
                                                     ? "Wall Link"
-                                                    : "Prism (${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"]})"
-                                                : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
+                                                    : "Prism (${context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wall_id"]})"
+                                                : "${context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"][0]} - ${(context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(milliseconds: 150),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                            isInstalled: context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
                                                     .liked![index!]["icon_url"]
                                                     .toString()
                                                     .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                ? DeviceApps.isAppInstalled(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
+                                                    .liked![index!]["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
+                                                : Future.value(false),
+                                            onTap: () async {
+                                              if (context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
+                                                  .liked![index!]["icon_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps.isAppInstalled(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
+                                                    .liked![index!]["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                : Future.value(false),
-                                            onTap: () async {
-                                              if (Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                  .liked![index!]["icon_url"]
-                                                  .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                        .liked![index!]["icon_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(
-                                                        Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                            .liked![index!]["icon_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0])
-                                                    : launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                    : launch(context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["icon_url"]
                                                         .toString());
                                               } else {
-                                                launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                launch(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
                                                     .liked![index!]["icon_url"]
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                            tileText: context
+                                                .favouriteSetupsLegacyProvider(listen: false)
                                                 .liked![index!]["icon"]
                                                 .toString(),
                                             tileType: "Icons",
@@ -812,45 +858,50 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                             delay: const Duration(milliseconds: 200),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                            isInstalled: context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
                                                     .liked![index!]["widget_url"]
                                                     .toString()
                                                     .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                ? DeviceApps.isAppInstalled(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
+                                                    .liked![index!]["widget_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
+                                                : Future.value(false),
+                                            onTap: () async {
+                                              if (context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
+                                                  .liked![index!]["widget_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps.isAppInstalled(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
+                                                    .liked![index!]["widget_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                : Future.value(false),
-                                            onTap: () async {
-                                              if (Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                  .liked![index!]["widget_url"]
-                                                  .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                        .liked![index!]["widget_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(
-                                                        Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                            .liked![index!]["widget_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0])
-                                                    : launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                    : launch(context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["widget_url"]
                                                         .toString());
                                               } else {
-                                                launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                launch(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
                                                     .liked![index!]["widget_url"]
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                            tileText: context
+                                                .favouriteSetupsLegacyProvider(listen: false)
                                                 .liked![index!]["widget"]
                                                 .toString(),
                                             tileType: "Widget",
@@ -858,45 +909,50 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                             delay: const Duration(milliseconds: 250),
                                           ),
                                           SetupDetailsTile(
-                                            isInstalled: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                            isInstalled: context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
                                                     .liked![index!]["widget_url2"]
                                                     .toString()
                                                     .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                ? DeviceApps.isAppInstalled(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
+                                                    .liked![index!]["widget_url2"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
+                                                : Future.value(false),
+                                            onTap: () async {
+                                              if (context
+                                                  .favouriteSetupsLegacyProvider(listen: false)
+                                                  .liked![index!]["widget_url2"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps.isAppInstalled(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
+                                                    .liked![index!]["widget_url2"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
-                                                : Future.value(false),
-                                            onTap: () async {
-                                              if (Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                  .liked![index!]["widget_url2"]
-                                                  .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(
-                                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                        .liked![index!]["widget_url2"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(
-                                                        Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                            .liked![index!]["widget_url2"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0])
-                                                    : launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                    : launch(context
+                                                        .favouriteSetupsLegacyProvider(listen: false)
                                                         .liked![index!]["widget_url2"]
                                                         .toString());
                                               } else {
-                                                launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                launch(context
+                                                    .favouriteSetupsLegacyProvider(listen: false)
                                                     .liked![index!]["widget_url2"]
                                                     .toString());
                                               }
                                             },
-                                            tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                            tileText: context
+                                                .favouriteSetupsLegacyProvider(listen: false)
                                                 .liked![index!]["widget2"]
                                                 .toString(),
                                             tileType: "Widget",
@@ -930,29 +986,30 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                   if (globals.prismUser.loggedIn == false) {
                                     googleSignInPopUp(context, () {
                                       onFavSetup(
-                                          Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                          context
+                                              .favouriteSetupsLegacyProvider(listen: false)
                                               .liked![index!]
                                               .data()["id"]
                                               .toString(),
-                                          Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                              .liked![index!]
-                                              .data() as Map);
+                                          context.favouriteSetupsLegacyProvider(listen: false).liked![index!].data()
+                                              as Map);
                                     });
                                   } else {
                                     onFavSetup(
-                                        Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                        context
+                                            .favouriteSetupsLegacyProvider(listen: false)
                                             .liked![index!]
                                             .data()["id"]
                                             .toString(),
-                                        Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                            .liked![index!]
-                                            .data() as Map);
+                                        context.favouriteSetupsLegacyProvider(listen: false).liked![index!].data()
+                                            as Map);
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,
                                 iconSize: 30,
                                 isFavorite: box.get(
-                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                    context
+                                        .favouriteSetupsLegacyProvider(listen: false)
                                         .liked![index!]["id"]
                                         .toString(),
                                     defaultValue: false) as bool,
@@ -962,10 +1019,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                               onTap: () {
                                 createSetupDynamicLink(
                                     index.toString(),
-                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                    context
+                                        .favouriteSetupsLegacyProvider(listen: false)
                                         .liked![index!]["name"]
                                         .toString(),
-                                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                    context
+                                        .favouriteSetupsLegacyProvider(listen: false)
                                         .liked![index!]["image"]
                                         .toString());
                               },
@@ -1019,9 +1078,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                         shakeController.forward(from: 0.0);
                       },
                       child: CachedNetworkImage(
-                        imageUrl: Provider.of<FavouriteSetupProvider>(context, listen: false)
-                            .liked![index!]["image"]
-                            .toString(),
+                        imageUrl:
+                            context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["image"].toString(),
                         imageBuilder: (context, imageProvider) => Container(
                           margin: EdgeInsets.symmetric(
                               vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
@@ -1088,7 +1146,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                 return FadeTransition(
                                     opacity: animation,
                                     child: SetupOverlay(
-                                      link: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                      link: context
+                                          .favouriteSetupsLegacyProvider(listen: false)
                                           .liked![index!]["image"]
                                           .toString(),
                                     ));
@@ -1230,21 +1289,17 @@ class ModifiedDownloadButton extends StatelessWidget {
   const ModifiedDownloadButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"].toString()[0] !=
-            "["
-        ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"] != null &&
-                Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"] != ""
+    return context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"].toString()[0] != "["
+        ? context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wall_id"] != null &&
+                context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wall_id"] != ""
             ? DownloadButton(
-                link: Provider.of<FavouriteSetupProvider>(context, listen: false)
-                    .liked![index!]["wallpaper_url"]
-                    .toString(),
+                link: context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"].toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
-                      .liked![index!]["wallpaper_url"]
-                      .toString());
+                  launch(
+                      context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"].toString());
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -1264,9 +1319,8 @@ class ModifiedDownloadButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
-                  .liked![index!]["wallpaper_url"][1]
-                  .toString());
+              launch(
+                  context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"][1].toString());
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1290,21 +1344,17 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"].toString()[0] !=
-            "["
-        ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"] != null &&
-                Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wall_id"] != ""
+    return context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"].toString()[0] != "["
+        ? context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wall_id"] != null &&
+                context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wall_id"] != ""
             ? SetWallpaperButton(
-                url: Provider.of<FavouriteSetupProvider>(context, listen: false)
-                    .liked![index!]["wallpaper_url"]
-                    .toString(),
+                url: context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"].toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
-                      .liked![index!]["wallpaper_url"]
-                      .toString());
+                  launch(
+                      context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"].toString());
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -1324,9 +1374,8 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
-                  .liked![index!]["wallpaper_url"][1]
-                  .toString());
+              launch(
+                  context.favouriteSetupsLegacyProvider(listen: false).liked![index!]["wallpaper_url"][1].toString());
             },
             child: Container(
               decoration: BoxDecoration(

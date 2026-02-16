@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
+import 'package:Prism/ui/favourite/favourite_setups_legacy_bridge.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
@@ -75,7 +75,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
     setState(() {
       isLoading = true;
     });
-    Provider.of<FavouriteSetupProvider>(context, listen: false).favCheck(id, setupMap).then((value) {
+    context.favouriteSetupsLegacyProvider(listen: false).favCheck(id, setupMap).then((value) {
       analytics.logEvent(name: 'setup_fav_status_changed', parameters: {
         'id': id,
       });

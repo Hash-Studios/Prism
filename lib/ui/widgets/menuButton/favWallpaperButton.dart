@@ -1,12 +1,11 @@
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/ui/favourite/favourite_walls_legacy_bridge.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:provider/provider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
@@ -83,9 +82,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     setState(() {
       isLoading = true;
     });
-    Provider.of<FavouriteProvider>(context, listen: false)
-        .favCheck(id, provider, wallhaven, pexels, prism)
-        .then((value) {
+    context.favouriteWallsLegacyProvider(listen: false).favCheck(id, provider, wallhaven, pexels, prism).then((value) {
       analytics.logEvent(name: 'fav_status_changed', parameters: {'id': id, 'provider': provider});
       setState(() {
         isLoading = false;

@@ -1,5 +1,6 @@
-import 'package:Prism/global/categoryMenu.dart';
-import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/category_feed/presentation/bloc/category_feed_bloc.dart';
+import 'package:Prism/ui/home/category_feed_legacy_bridge.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
@@ -9,8 +10,8 @@ import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:provider/provider.dart';
 
 final FirebaseMessaging f = FirebaseMessaging.instance;
 
@@ -24,13 +25,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Future<List?>? _future;
-
   Future<bool> onWillPop() async {
-    final choice = choices[0];
-    if (Provider.of<CategorySupplier>(context, listen: false).selectedChoice != choice) {
-      Provider.of<CategorySupplier>(context, listen: false).changeSelectedChoice(choice as CategoryMenu);
-      Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(choice, "r");
+    final choice = categoryChoices[0];
+    if (context.categorySelectedChoice(listen: false).name != choice.name) {
+      await context.categoryChangeWallpaperFuture(choice, "r");
       return false;
     }
     if (navStack.length > 1) navStack.removeLast();
@@ -51,8 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     isNew = true;
     _updateToken();
-    _future = Future.delayed(const Duration())
-        .then((value) => Provider.of<CategorySupplier>(context, listen: false).wallpaperFutureRefresh);
   }
 
   void _updateToken() {
@@ -80,39 +76,35 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return WillPopScope(
       onWillPop: onWillPop,
-      child: FutureBuilder<List?>(
-        future: _future, // async work
-        builder: (BuildContext context, AsyncSnapshot<List?> snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.waiting:
-              return const LoadingCards();
-            case ConnectionState.none:
-              return const LoadingCards();
-            default:
-              if (snapshot.hasError) {
-                return RefreshIndicator(
-                    onRefresh: () async {
-                      // ignore: unnecessary_statements
-                      _future;
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const <Widget>[
-                        Spacer(),
-                        Center(child: Text("Can't connect to the Servers!")),
-                        Spacer(),
-                      ],
-                    ));
-              } else {
-                if (Provider.of<CategorySupplier>(context).selectedChoice.provider == "WallHaven") {
-                  return WallHavenGrid(provider: Provider.of<CategorySupplier>(context).selectedChoice.provider);
-                } else if (Provider.of<CategorySupplier>(context).selectedChoice.provider == "Pexels") {
-                  return PexelsGrid(provider: Provider.of<CategorySupplier>(context).selectedChoice.provider);
-                } else {
-                  return WallpaperGrid(provider: Provider.of<CategorySupplier>(context).selectedChoice.provider);
-                }
-              }
+      child: BlocBuilder<CategoryFeedBloc, CategoryFeedState>(
+        builder: (context, state) {
+          if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
+            return const LoadingCards();
           }
+          if (state.status == LoadStatus.failure) {
+            return RefreshIndicator(
+              onRefresh: () async {
+                final choice = context.categorySelectedChoice(listen: false);
+                await context.categoryChangeWallpaperFuture(choice, "r");
+              },
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const <Widget>[
+                  Spacer(),
+                  Center(child: Text("Can't connect to the Servers!")),
+                  Spacer(),
+                ],
+              ),
+            );
+          }
+          final provider = context.categorySelectedChoice().provider;
+          if (provider == "WallHaven") {
+            return WallHavenGrid(provider: provider);
+          }
+          if (provider == "Pexels") {
+            return PexelsGrid(provider: provider);
+          }
+          return WallpaperGrid(provider: provider);
         },
       ),
     );

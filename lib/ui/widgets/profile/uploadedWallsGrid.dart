@@ -1,4 +1,4 @@
-import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/ui/profile/profile_walls_legacy_bridge.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
@@ -9,7 +9,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 
 class ProfileGrid extends StatefulWidget {
   const ProfileGrid({
@@ -84,7 +83,7 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
 
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
-    Provider.of<ProfileWallProvider>(context, listen: false).getProfileWalls();
+    context.loadProfileWalls();
   }
 
   @override
@@ -93,8 +92,8 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileKey,
         onRefresh: refreshList,
-        child: Provider.of<ProfileWallProvider>(context, listen: false).profileWalls != null
-            ? Provider.of<ProfileWallProvider>(context, listen: false).profileWalls!.isEmpty
+        child: context.profileWallsLegacy(listen: false) != null
+            ? context.profileWallsLegacy(listen: false)!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -151,15 +150,15 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                 : GridView.builder(
                     shrinkWrap: true,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: Provider.of<ProfileWallProvider>(context).profileWalls!.length,
+                    itemCount: context.profileWallsLegacy()!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                         childAspectRatio: 0.6625,
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      if (index == Provider.of<ProfileWallProvider>(context, listen: false).profileWalls!.length - 1 &&
-                          !(Provider.of<ProfileWallProvider>(context, listen: false).profileWalls!.length < 12)) {
+                      if (index == context.profileWallsLegacy(listen: false)!.length - 1 &&
+                          !(context.profileWallsLegacy(listen: false)!.length < 12)) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
                           func: () {
@@ -167,7 +166,7 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                               setState(() {
                                 seeMoreLoader = true;
                               });
-                              Provider.of<ProfileWallProvider>(context, listen: false).seeMoreProfileWalls();
+                              context.fetchMoreProfileWalls();
                               setState(() {
                                 Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
                               });
@@ -186,10 +185,7 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        Provider.of<ProfileWallProvider>(context)
-                                            .profileWalls![index]
-                                            .data()["wallpaper_thumb"]
-                                            .toString(),
+                                        context.profileWallsLegacy()![index].data()["wallpaper_thumb"].toString(),
                                       ),
                                       fit: BoxFit.cover)),
                             ),
@@ -201,13 +197,11 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                                   splashColor: Theme.of(context).accentColor.withOpacity(0.3),
                                   highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
                                   onTap: () {
-                                    if (Provider.of<ProfileWallProvider>(context, listen: false).profileWalls == []) {
+                                    if (context.profileWallsLegacy(listen: false) == []) {
                                     } else {
                                       Navigator.pushNamed(context, profileWallViewRoute, arguments: [
                                         index,
-                                        Provider.of<ProfileWallProvider>(context, listen: false)
-                                            .profileWalls![index]
-                                            .data()["wallpaper_thumb"],
+                                        context.profileWallsLegacy(listen: false)![index].data()["wallpaper_thumb"],
                                       ]);
                                     }
                                   },

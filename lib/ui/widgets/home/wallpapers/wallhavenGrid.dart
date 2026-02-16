@@ -1,5 +1,5 @@
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
-import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/ui/home/category_feed_legacy_bridge.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
@@ -11,7 +11,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
 class WallHavenGrid extends StatefulWidget {
@@ -34,8 +33,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
     wData.walls = [];
-    Provider.of<CategorySupplier>(context, listen: false)
-        .changeWallpaperFuture(Provider.of<CategorySupplier>(context, listen: false).selectedChoice, "r");
+    await context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "r");
   }
 
   @override
@@ -177,8 +175,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
             onNotification: (ScrollNotification scrollInfo) {
               if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
                 if (!seeMoreLoader) {
-                  Provider.of<CategorySupplier>(context, listen: false)
-                      .changeWallpaperFuture(Provider.of<CategorySupplier>(context, listen: false).selectedChoice, "s");
+                  context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
 
                   setState(() {
                     seeMoreLoader = true;
@@ -204,8 +201,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                     seeMoreLoader: seeMoreLoader,
                     func: () {
                       if (!seeMoreLoader) {
-                        Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(
-                            Provider.of<CategorySupplier>(context, listen: false).selectedChoice, "s");
+                        context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
 
                         setState(
                           () {

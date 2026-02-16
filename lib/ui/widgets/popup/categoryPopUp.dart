@@ -1,10 +1,9 @@
 import 'package:Prism/global/categoryMenu.dart';
-import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/ui/home/category_feed_legacy_bridge.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
 import 'package:Prism/logger/logger.dart';
 
@@ -37,9 +36,9 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
               isAlwaysShown: true,
               child: ListView.builder(
                 controller: controller,
-                itemCount: choices.length,
+                itemCount: categoryChoices.length,
                 itemBuilder: (BuildContext context, int index) {
-                  final choice = choices[index];
+                  final choice = categoryChoices[index];
                   return Center(
                     child: Container(
                       margin: const EdgeInsets.all(10),
@@ -59,9 +58,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                           padding: EdgeInsets.zero,
                           onPressed: () {
                             Navigator.pop(context);
-                            Provider.of<CategorySupplier>(context, listen: false)
-                                .changeSelectedChoice(choice as CategoryMenu);
-                            Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(choice, "r");
+                            context.categoryChangeWallpaperFuture(choice, "r");
                             PM.tabController!
                                 .animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeInCubic);
                           },
@@ -69,7 +66,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                             height: 100,
                             width: MediaQuery.of(context).size.width * .7,
                             decoration: BoxDecoration(
-                              color: initialValue == choice as CategoryMenu
+                              color: initialValue == choice
                                   ? Theme.of(context).primaryColor.withOpacity(0.7)
                                   : Theme.of(context).primaryColor.withOpacity(0.4),
                               borderRadius: BorderRadius.circular(10),
