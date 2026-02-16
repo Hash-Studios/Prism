@@ -1,3 +1,6 @@
+// LEGACY SNAPSHOT (Phase-2 cutover): Palette Provider -> PaletteBloc.
+// This file is intentionally commented out for traceability.
+/*
 import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -23,3 +26,4 @@ class PaletteNotifier extends ChangeNotifier {
     return paletteGenerator;
   }
 }
+*/
