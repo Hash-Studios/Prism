@@ -5,14 +5,15 @@ import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/data/ads/adsNotifier.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:Prism/data/palette/paletteNotifier.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/data/user/user_notifier.dart';
+import 'package:Prism/features/palette/presentation/bloc/palette_bloc.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/locator/locator.dart';
 import 'package:Prism/logger/logger.dart';
@@ -34,6 +35,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
@@ -134,6 +136,7 @@ Future<void> main() async {
         } else {
           prefs.put('WHpurity', 110);
         }
+        configureDependencies();
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
           systemNavigationBarColor:
               Color(prefs.get('systemOverlayColor') as int),
@@ -148,9 +151,6 @@ Future<void> main() async {
                 RestartWidget(
                   child: MultiProvider(
                     providers: [
-                      ChangeNotifierProvider<PaletteNotifier>(
-                        create: (context) => PaletteNotifier(),
-                      ),
                       ChangeNotifierProvider<AdsNotifier>(
                         create: (context) => AdsNotifier(),
                       ),
@@ -190,7 +190,14 @@ Future<void> main() async {
                             ThemeModeExtended(modes[currentMode!]),
                       ),
                     ],
-                    child: MyApp(),
+                    child: MultiBlocProvider(
+                      providers: [
+                        BlocProvider<PaletteBloc>(
+                          create: (_) => getIt<PaletteBloc>(),
+                        ),
+                      ],
+                      child: MyApp(),
+                    ),
                   ),
                 ),
               );
