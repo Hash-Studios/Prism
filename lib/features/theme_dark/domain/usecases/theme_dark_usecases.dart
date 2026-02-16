@@ -11,8 +11,7 @@ class LoadThemeDarkUseCase implements UseCase<ThemeDarkEntity, NoParams> {
   final ThemeRepository _repository;
 
   @override
-  Future<Result<ThemeDarkEntity>> call(NoParams params) =>
-      _repository.getDarkTheme();
+  Future<Result<ThemeDarkEntity>> call(NoParams params) => _repository.getDarkTheme();
 }
 
 class UpdateThemeDarkParams {
@@ -22,15 +21,13 @@ class UpdateThemeDarkParams {
 }
 
 @lazySingleton
-class UpdateThemeDarkUseCase
-    implements UseCase<ThemeDarkEntity, UpdateThemeDarkParams> {
+class UpdateThemeDarkUseCase implements UseCase<ThemeDarkEntity, UpdateThemeDarkParams> {
   UpdateThemeDarkUseCase(this._repository);
 
   final ThemeRepository _repository;
 
   @override
-  Future<Result<ThemeDarkEntity>> call(UpdateThemeDarkParams params) =>
-      _repository.setDarkTheme(params.themeId);
+  Future<Result<ThemeDarkEntity>> call(UpdateThemeDarkParams params) => _repository.setDarkTheme(params.themeId);
 }
 
 class UpdateThemeDarkAccentParams {
@@ -40,8 +37,7 @@ class UpdateThemeDarkAccentParams {
 }
 
 @lazySingleton
-class UpdateThemeDarkAccentUseCase
-    implements UseCase<ThemeDarkEntity, UpdateThemeDarkAccentParams> {
+class UpdateThemeDarkAccentUseCase implements UseCase<ThemeDarkEntity, UpdateThemeDarkAccentParams> {
   UpdateThemeDarkAccentUseCase(this._repository);
 
   final ThemeRepository _repository;

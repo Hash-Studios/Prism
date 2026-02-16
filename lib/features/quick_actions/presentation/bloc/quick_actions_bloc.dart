@@ -30,8 +30,7 @@ class QuickActionsBloc extends Bloc<QuickActionsEvent, QuickActionsState> {
   final ObserveQuickActionsUseCase _observeQuickActionsUseCase;
   StreamSubscription<QuickActionEntity>? _subscription;
 
-  Future<void> _onStarted(
-      _Started event, Emitter<QuickActionsState> emit) async {
+  Future<void> _onStarted(_Started event, Emitter<QuickActionsState> emit) async {
     emit(state.copyWith(status: LoadStatus.loading, failure: null));
 
     final initResult = await _initializeQuickActionsUseCase(const NoParams());
@@ -45,8 +44,7 @@ class QuickActionsBloc extends Bloc<QuickActionsEvent, QuickActionsState> {
     }
 
     if (event.setupShortcuts) {
-      final shortcutResult =
-          await _setQuickActionShortcutsUseCase(const NoParams());
+      final shortcutResult = await _setQuickActionShortcutsUseCase(const NoParams());
       if (shortcutResult.isFailure) {
         emit(state.copyWith(
           status: LoadStatus.failure,
@@ -77,8 +75,7 @@ class QuickActionsBloc extends Bloc<QuickActionsEvent, QuickActionsState> {
 
     final result = await _setQuickActionShortcutsUseCase(const NoParams());
     result.fold(
-      onSuccess: (_) =>
-          emit(state.copyWith(actionStatus: ActionStatus.success)),
+      onSuccess: (_) => emit(state.copyWith(actionStatus: ActionStatus.success)),
       onFailure: (failure) => emit(state.copyWith(
         actionStatus: ActionStatus.failure,
         failure: failure,
@@ -86,8 +83,7 @@ class QuickActionsBloc extends Bloc<QuickActionsEvent, QuickActionsState> {
     );
   }
 
-  void _onActionReceived(
-      _ActionReceived event, Emitter<QuickActionsState> emit) {
+  void _onActionReceived(_ActionReceived event, Emitter<QuickActionsState> emit) {
     emit(state.copyWith(
       actionStatus: ActionStatus.success,
       latestAction: event.action,
@@ -96,8 +92,7 @@ class QuickActionsBloc extends Bloc<QuickActionsEvent, QuickActionsState> {
     ));
   }
 
-  void _onHistoryCleared(
-      _HistoryCleared event, Emitter<QuickActionsState> emit) {
+  void _onHistoryCleared(_HistoryCleared event, Emitter<QuickActionsState> emit) {
     emit(state.copyWith(history: const <QuickActionEntity>[]));
   }
 

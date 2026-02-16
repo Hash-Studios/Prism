@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$FavouriteSetupsEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is FavouriteSetupsEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is FavouriteSetupsEvent);
   }
 
   @override
@@ -31,8 +30,7 @@ mixin _$FavouriteSetupsEvent {
 
 /// @nodoc
 class $FavouriteSetupsEventCopyWith<$Res> {
-  $FavouriteSetupsEventCopyWith(
-      FavouriteSetupsEvent _, $Res Function(FavouriteSetupsEvent) __);
+  $FavouriteSetupsEventCopyWith(FavouriteSetupsEvent _, $Res Function(FavouriteSetupsEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [FavouriteSetupsEvent].
@@ -275,8 +273,7 @@ class _Started implements FavouriteSetupsEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$StartedCopyWith<_Started> get copyWith =>
-      __$StartedCopyWithImpl<_Started>(this, _$identity);
+  _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -296,10 +293,8 @@ class _Started implements FavouriteSetupsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$StartedCopyWith<$Res>
-    implements $FavouriteSetupsEventCopyWith<$Res> {
-  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) =
-      __$StartedCopyWithImpl;
+abstract mixin class _$StartedCopyWith<$Res> implements $FavouriteSetupsEventCopyWith<$Res> {
+  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
   @useResult
   $Res call({String userId});
 }
@@ -333,8 +328,7 @@ class _RefreshRequested implements FavouriteSetupsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _RefreshRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _RefreshRequested);
   }
 
   @override
@@ -378,18 +372,15 @@ class _ToggleRequested implements FavouriteSetupsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$ToggleRequestedCopyWith<$Res>
-    implements $FavouriteSetupsEventCopyWith<$Res> {
-  factory _$ToggleRequestedCopyWith(
-          _ToggleRequested value, $Res Function(_ToggleRequested) _then) =
+abstract mixin class _$ToggleRequestedCopyWith<$Res> implements $FavouriteSetupsEventCopyWith<$Res> {
+  factory _$ToggleRequestedCopyWith(_ToggleRequested value, $Res Function(_ToggleRequested) _then) =
       __$ToggleRequestedCopyWithImpl;
   @useResult
   $Res call({FavouriteSetupEntity setup});
 }
 
 /// @nodoc
-class __$ToggleRequestedCopyWithImpl<$Res>
-    implements _$ToggleRequestedCopyWith<$Res> {
+class __$ToggleRequestedCopyWithImpl<$Res> implements _$ToggleRequestedCopyWith<$Res> {
   __$ToggleRequestedCopyWithImpl(this._self, this._then);
 
   final _ToggleRequested _self;
@@ -442,18 +433,15 @@ class _RemoveRequested implements FavouriteSetupsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$RemoveRequestedCopyWith<$Res>
-    implements $FavouriteSetupsEventCopyWith<$Res> {
-  factory _$RemoveRequestedCopyWith(
-          _RemoveRequested value, $Res Function(_RemoveRequested) _then) =
+abstract mixin class _$RemoveRequestedCopyWith<$Res> implements $FavouriteSetupsEventCopyWith<$Res> {
+  factory _$RemoveRequestedCopyWith(_RemoveRequested value, $Res Function(_RemoveRequested) _then) =
       __$RemoveRequestedCopyWithImpl;
   @useResult
   $Res call({String setupId});
 }
 
 /// @nodoc
-class __$RemoveRequestedCopyWithImpl<$Res>
-    implements _$RemoveRequestedCopyWith<$Res> {
+class __$RemoveRequestedCopyWithImpl<$Res> implements _$RemoveRequestedCopyWith<$Res> {
   __$RemoveRequestedCopyWithImpl(this._self, this._then);
 
   final _RemoveRequested _self;
@@ -481,8 +469,7 @@ class _ClearRequested implements FavouriteSetupsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _ClearRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _ClearRequested);
   }
 
   @override
@@ -507,8 +494,7 @@ mixin _$FavouriteSetupsState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $FavouriteSetupsStateCopyWith<FavouriteSetupsState> get copyWith =>
-      _$FavouriteSetupsStateCopyWithImpl<FavouriteSetupsState>(
-          this as FavouriteSetupsState, _$identity);
+      _$FavouriteSetupsStateCopyWithImpl<FavouriteSetupsState>(this as FavouriteSetupsState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -516,16 +502,15 @@ mixin _$FavouriteSetupsState {
         (other.runtimeType == runtimeType &&
             other is FavouriteSetupsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.userId, userId) || other.userId == userId) &&
             const DeepCollectionEquality().equals(other.items, items) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, userId,
-      const DeepCollectionEquality().hash(items), failure);
+  int get hashCode =>
+      Object.hash(runtimeType, status, actionStatus, userId, const DeepCollectionEquality().hash(items), failure);
 
   @override
   String toString() {
@@ -535,8 +520,7 @@ mixin _$FavouriteSetupsState {
 
 /// @nodoc
 abstract mixin class $FavouriteSetupsStateCopyWith<$Res> {
-  factory $FavouriteSetupsStateCopyWith(FavouriteSetupsState value,
-          $Res Function(FavouriteSetupsState) _then) =
+  factory $FavouriteSetupsStateCopyWith(FavouriteSetupsState value, $Res Function(FavouriteSetupsState) _then) =
       _$FavouriteSetupsStateCopyWithImpl;
   @useResult
   $Res call(
@@ -548,8 +532,7 @@ abstract mixin class $FavouriteSetupsStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$FavouriteSetupsStateCopyWithImpl<$Res>
-    implements $FavouriteSetupsStateCopyWith<$Res> {
+class _$FavouriteSetupsStateCopyWithImpl<$Res> implements $FavouriteSetupsStateCopyWith<$Res> {
   _$FavouriteSetupsStateCopyWithImpl(this._self, this._then);
 
   final FavouriteSetupsState _self;
@@ -684,16 +667,15 @@ extension FavouriteSetupsStatePatterns on FavouriteSetupsState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus,
-            String userId, List<FavouriteSetupEntity> items, Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus, String userId, List<FavouriteSetupEntity> items,
+            Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _FavouriteSetupsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.userId,
-            _that.items, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.userId, _that.items, _that.failure);
       case _:
         return orElse();
     }
@@ -714,15 +696,14 @@ extension FavouriteSetupsStatePatterns on FavouriteSetupsState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus,
-            String userId, List<FavouriteSetupEntity> items, Failure? failure)
+    TResult Function(LoadStatus status, ActionStatus actionStatus, String userId, List<FavouriteSetupEntity> items,
+            Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _FavouriteSetupsState():
-        return $default(_that.status, _that.actionStatus, _that.userId,
-            _that.items, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.userId, _that.items, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -742,15 +723,14 @@ extension FavouriteSetupsStatePatterns on FavouriteSetupsState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(LoadStatus status, ActionStatus actionStatus,
-            String userId, List<FavouriteSetupEntity> items, Failure? failure)?
+    TResult? Function(LoadStatus status, ActionStatus actionStatus, String userId, List<FavouriteSetupEntity> items,
+            Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _FavouriteSetupsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.userId,
-            _that.items, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.userId, _that.items, _that.failure);
       case _:
         return null;
     }
@@ -791,8 +771,7 @@ class _FavouriteSetupsState implements FavouriteSetupsState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   _$FavouriteSetupsStateCopyWith<_FavouriteSetupsState> get copyWith =>
-      __$FavouriteSetupsStateCopyWithImpl<_FavouriteSetupsState>(
-          this, _$identity);
+      __$FavouriteSetupsStateCopyWithImpl<_FavouriteSetupsState>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -800,16 +779,15 @@ class _FavouriteSetupsState implements FavouriteSetupsState {
         (other.runtimeType == runtimeType &&
             other is _FavouriteSetupsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.userId, userId) || other.userId == userId) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, userId,
-      const DeepCollectionEquality().hash(_items), failure);
+  int get hashCode =>
+      Object.hash(runtimeType, status, actionStatus, userId, const DeepCollectionEquality().hash(_items), failure);
 
   @override
   String toString() {
@@ -818,10 +796,8 @@ class _FavouriteSetupsState implements FavouriteSetupsState {
 }
 
 /// @nodoc
-abstract mixin class _$FavouriteSetupsStateCopyWith<$Res>
-    implements $FavouriteSetupsStateCopyWith<$Res> {
-  factory _$FavouriteSetupsStateCopyWith(_FavouriteSetupsState value,
-          $Res Function(_FavouriteSetupsState) _then) =
+abstract mixin class _$FavouriteSetupsStateCopyWith<$Res> implements $FavouriteSetupsStateCopyWith<$Res> {
+  factory _$FavouriteSetupsStateCopyWith(_FavouriteSetupsState value, $Res Function(_FavouriteSetupsState) _then) =
       __$FavouriteSetupsStateCopyWithImpl;
   @override
   @useResult
@@ -834,8 +810,7 @@ abstract mixin class _$FavouriteSetupsStateCopyWith<$Res>
 }
 
 /// @nodoc
-class __$FavouriteSetupsStateCopyWithImpl<$Res>
-    implements _$FavouriteSetupsStateCopyWith<$Res> {
+class __$FavouriteSetupsStateCopyWithImpl<$Res> implements _$FavouriteSetupsStateCopyWith<$Res> {
   __$FavouriteSetupsStateCopyWithImpl(this._self, this._then);
 
   final _FavouriteSetupsState _self;

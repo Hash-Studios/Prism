@@ -1,4 +1,7 @@
-.PHONY: setup ensure-fvm get update-flutter
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check
+
+DART_FORMAT_LINE_LENGTH ?= 120
+DART_FORMAT_PATHS ?= lib test
 
 setup: ensure-fvm
 	@echo "Installing Flutter SDK from .fvmrc..."
@@ -11,6 +14,14 @@ setup: ensure-fvm
 
 get: ensure-fvm
 	@fvm flutter pub get
+
+format: ensure-fvm
+	@fvm dart format --line-length $(DART_FORMAT_LINE_LENGTH) $(DART_FORMAT_PATHS)
+
+fmt: format
+
+format-check: ensure-fvm
+	@fvm dart format --line-length $(DART_FORMAT_LINE_LENGTH) --set-exit-if-changed -o none $(DART_FORMAT_PATHS)
 
 ensure-fvm:
 	@command -v fvm >/dev/null 2>&1 || { \

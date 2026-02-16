@@ -7,8 +7,7 @@ abstract class NotificationsRepository {
     required bool syncRemote,
   });
 
-  Future<Result<List<InAppNotificationEntity>>> markAsRead(
-      {required int index});
+  Future<Result<List<InAppNotificationEntity>>> markAsRead({required int index});
 
   Future<Result<List<InAppNotificationEntity>>> deleteAt({required int index});
 

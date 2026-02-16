@@ -10,8 +10,7 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockGetSessionUseCase extends Mock implements GetSessionUseCase {}
 
-class _MockRefreshPremiumUseCase extends Mock
-    implements RefreshPremiumUseCase {}
+class _MockRefreshPremiumUseCase extends Mock implements RefreshPremiumUseCase {}
 
 class _MockSignOutUseCase extends Mock implements SignOutUseCase {}
 
@@ -58,8 +57,7 @@ void main() {
 
   blocTest<SessionBloc, SessionState>(
     'loads session and refreshes premium flag',
-    build: () =>
-        SessionBloc(getSessionUseCase, refreshPremiumUseCase, signOutUseCase),
+    build: () => SessionBloc(getSessionUseCase, refreshPremiumUseCase, signOutUseCase),
     act: (bloc) => bloc
       ..add(const SessionEvent.started())
       ..add(const SessionEvent.premiumRefreshRequested()),

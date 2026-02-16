@@ -20,23 +20,15 @@ class ThemeRepositoryImpl implements ThemeRepository {
 
   ThemeLightEntity _readLightTheme() {
     return ThemeLightEntity(
-      themeId: (_prefsBox.get('lightThemeID', defaultValue: _defaultLightTheme)
-              as String?) ??
-          _defaultLightTheme,
-      accentColorValue: (_prefsBox.get('lightAccent',
-              defaultValue: _defaultAccent) as int?) ??
-          _defaultAccent,
+      themeId: (_prefsBox.get('lightThemeID', defaultValue: _defaultLightTheme) as String?) ?? _defaultLightTheme,
+      accentColorValue: (_prefsBox.get('lightAccent', defaultValue: _defaultAccent) as int?) ?? _defaultAccent,
     );
   }
 
   ThemeDarkEntity _readDarkTheme() {
     return ThemeDarkEntity(
-      themeId: (_prefsBox.get('darkThemeID', defaultValue: _defaultDarkTheme)
-              as String?) ??
-          _defaultDarkTheme,
-      accentColorValue:
-          (_prefsBox.get('darkAccent', defaultValue: _defaultAccent) as int?) ??
-              _defaultAccent,
+      themeId: (_prefsBox.get('darkThemeID', defaultValue: _defaultDarkTheme) as String?) ?? _defaultDarkTheme,
+      accentColorValue: (_prefsBox.get('darkAccent', defaultValue: _defaultAccent) as int?) ?? _defaultAccent,
     );
   }
 
@@ -101,9 +93,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
   @override
   Future<Result<ThemeModeEntity>> getThemeMode() async {
     try {
-      final mode =
-          (_prefsBox.get('themeMode', defaultValue: _defaultMode) as String?) ??
-              _defaultMode;
+      final mode = (_prefsBox.get('themeMode', defaultValue: _defaultMode) as String?) ?? _defaultMode;
       return Result.success(ThemeModeEntity(mode: mode));
     } catch (error) {
       return Result.error(CacheFailure('Unable to read mode: $error'));
@@ -114,8 +104,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
   Future<Result<ThemeModeEntity>> setThemeMode(String mode) async {
     const allowedModes = <String>{'Light', 'Dark', 'System'};
     if (!allowedModes.contains(mode)) {
-      return Result.error(
-          const ValidationFailure('Theme mode must be Light, Dark, or System'));
+      return Result.error(const ValidationFailure('Theme mode must be Light, Dark, or System'));
     }
 
     try {

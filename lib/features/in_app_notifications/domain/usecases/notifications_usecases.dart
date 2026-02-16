@@ -11,16 +11,13 @@ class FetchNotificationsParams {
 }
 
 @lazySingleton
-class FetchNotificationsUseCase
-    implements
-        UseCase<List<InAppNotificationEntity>, FetchNotificationsParams> {
+class FetchNotificationsUseCase implements UseCase<List<InAppNotificationEntity>, FetchNotificationsParams> {
   FetchNotificationsUseCase(this._repository);
 
   final NotificationsRepository _repository;
 
   @override
-  Future<Result<List<InAppNotificationEntity>>> call(
-      FetchNotificationsParams params) {
+  Future<Result<List<InAppNotificationEntity>>> call(FetchNotificationsParams params) {
     return _repository.fetchNotifications(syncRemote: params.syncRemote);
   }
 }
@@ -32,9 +29,7 @@ class MarkNotificationAsReadParams {
 }
 
 @lazySingleton
-class MarkNotificationAsReadUseCase
-    implements
-        UseCase<List<InAppNotificationEntity>, MarkNotificationAsReadParams> {
+class MarkNotificationAsReadUseCase implements UseCase<List<InAppNotificationEntity>, MarkNotificationAsReadParams> {
   MarkNotificationAsReadUseCase(this._repository);
 
   final NotificationsRepository _repository;
@@ -54,23 +49,19 @@ class DeleteNotificationParams {
 }
 
 @lazySingleton
-class DeleteNotificationUseCase
-    implements
-        UseCase<List<InAppNotificationEntity>, DeleteNotificationParams> {
+class DeleteNotificationUseCase implements UseCase<List<InAppNotificationEntity>, DeleteNotificationParams> {
   DeleteNotificationUseCase(this._repository);
 
   final NotificationsRepository _repository;
 
   @override
-  Future<Result<List<InAppNotificationEntity>>> call(
-      DeleteNotificationParams params) {
+  Future<Result<List<InAppNotificationEntity>>> call(DeleteNotificationParams params) {
     return _repository.deleteAt(index: params.index);
   }
 }
 
 @lazySingleton
-class ClearNotificationsUseCase
-    implements UseCase<List<InAppNotificationEntity>, NoParams> {
+class ClearNotificationsUseCase implements UseCase<List<InAppNotificationEntity>, NoParams> {
   ClearNotificationsUseCase(this._repository);
 
   final NotificationsRepository _repository;

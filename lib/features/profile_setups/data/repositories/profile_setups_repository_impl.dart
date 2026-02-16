@@ -38,8 +38,7 @@ class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
 
       final items = snapshot.docs.map((doc) {
         final data = doc.data();
-        return ProfileSetupEntity(
-            id: (data['id'] ?? doc.id).toString(), payload: data);
+        return ProfileSetupEntity(id: (data['id'] ?? doc.id).toString(), payload: data);
       }).toList(growable: false);
 
       return Result.success(
@@ -50,8 +49,7 @@ class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
         ),
       );
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to load profile setups: $error'));
+      return Result.error(ServerFailure('Unable to load profile setups: $error'));
     }
   }
 }

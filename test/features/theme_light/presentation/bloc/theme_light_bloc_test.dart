@@ -8,19 +8,15 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockLoadThemeLightUseCase extends Mock
-    implements LoadThemeLightUseCase {}
+class _MockLoadThemeLightUseCase extends Mock implements LoadThemeLightUseCase {}
 
-class _MockUpdateThemeLightUseCase extends Mock
-    implements UpdateThemeLightUseCase {}
+class _MockUpdateThemeLightUseCase extends Mock implements UpdateThemeLightUseCase {}
 
-class _MockUpdateThemeLightAccentUseCase extends Mock
-    implements UpdateThemeLightAccentUseCase {}
+class _MockUpdateThemeLightAccentUseCase extends Mock implements UpdateThemeLightAccentUseCase {}
 
 void main() {
   setUpAll(() {
-    registerFallbackValue(
-        const UpdateThemeLightParams(themeId: 'kLFrost White'));
+    registerFallbackValue(const UpdateThemeLightParams(themeId: 'kLFrost White'));
     registerFallbackValue(
       const UpdateThemeLightAccentParams(accentColorValue: 0xff000000),
     );
@@ -89,8 +85,7 @@ void main() {
     'themeChanged updates theme id',
     build: buildBloc,
     seed: () => ThemeLightState.initial().copyWith(status: LoadStatus.success),
-    act: (bloc) =>
-        bloc.add(const ThemeLightEvent.themeChanged(themeId: 'kLCoffee')),
+    act: (bloc) => bloc.add(const ThemeLightEvent.themeChanged(themeId: 'kLCoffee')),
     expect: () => <ThemeLightState>[
       ThemeLightState.initial().copyWith(
         status: LoadStatus.success,

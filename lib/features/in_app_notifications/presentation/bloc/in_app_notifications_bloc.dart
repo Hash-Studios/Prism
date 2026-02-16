@@ -12,8 +12,7 @@ part 'in_app_notifications_state.dart';
 part 'in_app_notifications_bloc.freezed.dart';
 
 @injectable
-class InAppNotificationsBloc
-    extends Bloc<InAppNotificationsEvent, InAppNotificationsState> {
+class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotificationsState> {
   InAppNotificationsBloc(
     this._fetchNotificationsUseCase,
     this._markNotificationAsReadUseCase,
@@ -46,9 +45,7 @@ class InAppNotificationsBloc
     return _fetch(syncRemote: true, emit: emit);
   }
 
-  Future<void> _fetch(
-      {required bool syncRemote,
-      required Emitter<InAppNotificationsState> emit}) async {
+  Future<void> _fetch({required bool syncRemote, required Emitter<InAppNotificationsState> emit}) async {
     emit(state.copyWith(
       status: LoadStatus.loading,
       actionStatus: ActionStatus.inProgress,
@@ -81,8 +78,7 @@ class InAppNotificationsBloc
   ) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
 
-    final result = await _markNotificationAsReadUseCase(
-        MarkNotificationAsReadParams(index: event.index));
+    final result = await _markNotificationAsReadUseCase(MarkNotificationAsReadParams(index: event.index));
 
     result.fold(
       onSuccess: (items) => emit(state.copyWith(
@@ -105,8 +101,7 @@ class InAppNotificationsBloc
   ) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
 
-    final result = await _deleteNotificationUseCase(
-        DeleteNotificationParams(index: event.index));
+    final result = await _deleteNotificationUseCase(DeleteNotificationParams(index: event.index));
 
     result.fold(
       onSuccess: (items) => emit(state.copyWith(

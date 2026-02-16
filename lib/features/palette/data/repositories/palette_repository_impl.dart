@@ -25,9 +25,7 @@ class PaletteRepositoryImpl implements PaletteRepository {
       );
 
       final dominant = generator.dominantColor?.color.toARGB32() ?? 0xffe57697;
-      final colors = generator.paletteColors
-          .map((color) => color.color.toARGB32())
-          .toList();
+      final colors = generator.paletteColors.map((color) => color.color.toARGB32()).toList();
       return Result.success(
         PaletteEntity(
           imageUrl: imageUrl,

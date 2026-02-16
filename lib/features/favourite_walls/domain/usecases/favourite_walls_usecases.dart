@@ -11,15 +11,13 @@ class FetchFavouriteWallsParams {
 }
 
 @lazySingleton
-class FetchFavouriteWallsUseCase
-    implements UseCase<List<FavouriteWallEntity>, FetchFavouriteWallsParams> {
+class FetchFavouriteWallsUseCase implements UseCase<List<FavouriteWallEntity>, FetchFavouriteWallsParams> {
   FetchFavouriteWallsUseCase(this._repository);
 
   final FavouriteWallsRepository _repository;
 
   @override
-  Future<Result<List<FavouriteWallEntity>>> call(
-      FetchFavouriteWallsParams params) {
+  Future<Result<List<FavouriteWallEntity>>> call(FetchFavouriteWallsParams params) {
     return _repository.fetchFavourites(userId: params.userId);
   }
 }
@@ -32,17 +30,14 @@ class ToggleFavouriteWallParams {
 }
 
 @lazySingleton
-class ToggleFavouriteWallUseCase
-    implements UseCase<List<FavouriteWallEntity>, ToggleFavouriteWallParams> {
+class ToggleFavouriteWallUseCase implements UseCase<List<FavouriteWallEntity>, ToggleFavouriteWallParams> {
   ToggleFavouriteWallUseCase(this._repository);
 
   final FavouriteWallsRepository _repository;
 
   @override
-  Future<Result<List<FavouriteWallEntity>>> call(
-      ToggleFavouriteWallParams params) {
-    return _repository.toggleFavourite(
-        userId: params.userId, wall: params.wall);
+  Future<Result<List<FavouriteWallEntity>>> call(ToggleFavouriteWallParams params) {
+    return _repository.toggleFavourite(userId: params.userId, wall: params.wall);
   }
 }
 
@@ -54,17 +49,14 @@ class RemoveFavouriteWallParams {
 }
 
 @lazySingleton
-class RemoveFavouriteWallUseCase
-    implements UseCase<List<FavouriteWallEntity>, RemoveFavouriteWallParams> {
+class RemoveFavouriteWallUseCase implements UseCase<List<FavouriteWallEntity>, RemoveFavouriteWallParams> {
   RemoveFavouriteWallUseCase(this._repository);
 
   final FavouriteWallsRepository _repository;
 
   @override
-  Future<Result<List<FavouriteWallEntity>>> call(
-      RemoveFavouriteWallParams params) {
-    return _repository.removeFavourite(
-        userId: params.userId, wallId: params.wallId);
+  Future<Result<List<FavouriteWallEntity>>> call(RemoveFavouriteWallParams params) {
+    return _repository.removeFavourite(userId: params.userId, wallId: params.wallId);
   }
 }
 
@@ -75,15 +67,13 @@ class ClearFavouriteWallsParams {
 }
 
 @lazySingleton
-class ClearFavouriteWallsUseCase
-    implements UseCase<List<FavouriteWallEntity>, ClearFavouriteWallsParams> {
+class ClearFavouriteWallsUseCase implements UseCase<List<FavouriteWallEntity>, ClearFavouriteWallsParams> {
   ClearFavouriteWallsUseCase(this._repository);
 
   final FavouriteWallsRepository _repository;
 
   @override
-  Future<Result<List<FavouriteWallEntity>>> call(
-      ClearFavouriteWallsParams params) {
+  Future<Result<List<FavouriteWallEntity>>> call(ClearFavouriteWallsParams params) {
     return _repository.clearAll(userId: params.userId);
   }
 }

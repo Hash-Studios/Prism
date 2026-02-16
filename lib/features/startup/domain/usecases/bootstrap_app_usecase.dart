@@ -11,6 +11,5 @@ class BootstrapAppUseCase implements UseCase<StartupConfigEntity, NoParams> {
   final StartupRepository _repository;
 
   @override
-  Future<Result<StartupConfigEntity>> call(NoParams params) =>
-      _repository.bootstrap();
+  Future<Result<StartupConfigEntity>> call(NoParams params) => _repository.bootstrap();
 }

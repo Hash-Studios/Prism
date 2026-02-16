@@ -33,8 +33,7 @@ class SetupsRepositoryImpl implements SetupsRepository {
 
       final items = snapshot.docs.map((doc) {
         final data = doc.data();
-        return SetupEntity(
-            id: (data['id'] ?? doc.id).toString(), payload: data);
+        return SetupEntity(id: (data['id'] ?? doc.id).toString(), payload: data);
       }).toList(growable: false);
 
       return Result.success(

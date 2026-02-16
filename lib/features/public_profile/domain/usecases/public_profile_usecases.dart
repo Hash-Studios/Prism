@@ -14,8 +14,7 @@ class FetchPublicProfileParams {
 }
 
 @lazySingleton
-class FetchPublicProfileUseCase
-    implements UseCase<PublicProfileEntity, FetchPublicProfileParams> {
+class FetchPublicProfileUseCase implements UseCase<PublicProfileEntity, FetchPublicProfileParams> {
   FetchPublicProfileUseCase(this._repository);
 
   final PublicProfileRepository _repository;
@@ -27,8 +26,7 @@ class FetchPublicProfileUseCase
 }
 
 class FetchPublicProfileWallsParams {
-  const FetchPublicProfileWallsParams(
-      {required this.email, required this.refresh});
+  const FetchPublicProfileWallsParams({required this.email, required this.refresh});
 
   final String email;
   final bool refresh;
@@ -36,9 +34,7 @@ class FetchPublicProfileWallsParams {
 
 @lazySingleton
 class FetchPublicProfileWallsUseCase
-    implements
-        UseCase<PublicProfilePage<PublicProfileWallEntity>,
-            FetchPublicProfileWallsParams> {
+    implements UseCase<PublicProfilePage<PublicProfileWallEntity>, FetchPublicProfileWallsParams> {
   FetchPublicProfileWallsUseCase(this._repository);
 
   final PublicProfileRepository _repository;
@@ -52,8 +48,7 @@ class FetchPublicProfileWallsUseCase
 }
 
 class FetchPublicProfileSetupsParams {
-  const FetchPublicProfileSetupsParams(
-      {required this.email, required this.refresh});
+  const FetchPublicProfileSetupsParams({required this.email, required this.refresh});
 
   final String email;
   final bool refresh;
@@ -61,9 +56,7 @@ class FetchPublicProfileSetupsParams {
 
 @lazySingleton
 class FetchPublicProfileSetupsUseCase
-    implements
-        UseCase<PublicProfilePage<PublicProfileSetupEntity>,
-            FetchPublicProfileSetupsParams> {
+    implements UseCase<PublicProfilePage<PublicProfileSetupEntity>, FetchPublicProfileSetupsParams> {
   FetchPublicProfileSetupsUseCase(this._repository);
 
   final PublicProfileRepository _repository;
@@ -72,8 +65,7 @@ class FetchPublicProfileSetupsUseCase
   Future<Result<PublicProfilePage<PublicProfileSetupEntity>>> call(
     FetchPublicProfileSetupsParams params,
   ) {
-    return _repository.fetchSetups(
-        email: params.email, refresh: params.refresh);
+    return _repository.fetchSetups(email: params.email, refresh: params.refresh);
   }
 }
 
@@ -92,8 +84,7 @@ class FollowUserParams {
 }
 
 @lazySingleton
-class FollowUserUseCase
-    implements UseCase<PublicProfileEntity, FollowUserParams> {
+class FollowUserUseCase implements UseCase<PublicProfileEntity, FollowUserParams> {
   FollowUserUseCase(this._repository);
 
   final PublicProfileRepository _repository;
@@ -124,8 +115,7 @@ class UnfollowUserParams {
 }
 
 @lazySingleton
-class UnfollowUserUseCase
-    implements UseCase<PublicProfileEntity, UnfollowUserParams> {
+class UnfollowUserUseCase implements UseCase<PublicProfileEntity, UnfollowUserParams> {
   UnfollowUserUseCase(this._repository);
 
   final PublicProfileRepository _repository;
@@ -142,23 +132,20 @@ class UnfollowUserUseCase
 }
 
 class UpdatePublicProfileLinksParams {
-  const UpdatePublicProfileLinksParams(
-      {required this.userId, required this.links});
+  const UpdatePublicProfileLinksParams({required this.userId, required this.links});
 
   final String userId;
   final Map<String, String> links;
 }
 
 @lazySingleton
-class UpdatePublicProfileLinksUseCase
-    implements UseCase<PublicProfileEntity, UpdatePublicProfileLinksParams> {
+class UpdatePublicProfileLinksUseCase implements UseCase<PublicProfileEntity, UpdatePublicProfileLinksParams> {
   UpdatePublicProfileLinksUseCase(this._repository);
 
   final PublicProfileRepository _repository;
 
   @override
-  Future<Result<PublicProfileEntity>> call(
-      UpdatePublicProfileLinksParams params) {
+  Future<Result<PublicProfileEntity>> call(UpdatePublicProfileLinksParams params) {
     return _repository.updateLinks(userId: params.userId, links: params.links);
   }
 }

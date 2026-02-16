@@ -38,8 +38,7 @@ class ProfileWallsRepositoryImpl implements ProfileWallsRepository {
 
       final items = snapshot.docs.map((doc) {
         final data = doc.data();
-        return ProfileWallEntity(
-            id: (data['id'] ?? doc.id).toString(), payload: data);
+        return ProfileWallEntity(id: (data['id'] ?? doc.id).toString(), payload: data);
       }).toList(growable: false);
 
       return Result.success(
@@ -50,8 +49,7 @@ class ProfileWallsRepositoryImpl implements ProfileWallsRepository {
         ),
       );
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to load profile walls: $error'));
+      return Result.error(ServerFailure('Unable to load profile walls: $error'));
     }
   }
 }

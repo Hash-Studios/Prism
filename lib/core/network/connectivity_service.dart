@@ -17,8 +17,6 @@ class InternetConnectivityService implements ConnectivityService {
 
   @override
   Stream<bool> watchConnection() {
-    return _checker.onStatusChange
-        .map((status) => status == InternetConnectionStatus.connected)
-        .distinct();
+    return _checker.onStatusChange.map((status) => status == InternetConnectionStatus.connected).distinct();
   }
 }

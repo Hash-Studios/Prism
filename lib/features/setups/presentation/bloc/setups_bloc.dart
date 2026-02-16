@@ -38,13 +38,11 @@ class SetupsBloc extends Bloc<SetupsEvent, SetupsState> {
     if (state.isFetchingMore || !state.hasMore) {
       return;
     }
-    emit(state.copyWith(
-        isFetchingMore: true, actionStatus: ActionStatus.inProgress));
+    emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress));
     await _load(refresh: false, emit: emit);
   }
 
-  Future<void> _load(
-      {required bool refresh, required Emitter<SetupsState> emit}) async {
+  Future<void> _load({required bool refresh, required Emitter<SetupsState> emit}) async {
     if (refresh) {
       emit(state.copyWith(
         status: LoadStatus.loading,
@@ -53,13 +51,11 @@ class SetupsBloc extends Bloc<SetupsEvent, SetupsState> {
       ));
     }
 
-    final result =
-        await _fetchSetupsUseCase(FetchSetupsParams(refresh: refresh));
+    final result = await _fetchSetupsUseCase(FetchSetupsParams(refresh: refresh));
 
     result.fold(
       onSuccess: (page) {
-        final merged =
-            refresh ? page.items : <SetupEntity>[...state.items, ...page.items];
+        final merged = refresh ? page.items : <SetupEntity>[...state.items, ...page.items];
         final uniqueById = <String, SetupEntity>{
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);

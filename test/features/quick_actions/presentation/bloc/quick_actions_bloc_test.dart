@@ -10,14 +10,11 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockInitializeQuickActionsUseCase extends Mock
-    implements InitializeQuickActionsUseCase {}
+class _MockInitializeQuickActionsUseCase extends Mock implements InitializeQuickActionsUseCase {}
 
-class _MockSetQuickActionShortcutsUseCase extends Mock
-    implements SetQuickActionShortcutsUseCase {}
+class _MockSetQuickActionShortcutsUseCase extends Mock implements SetQuickActionShortcutsUseCase {}
 
-class _MockObserveQuickActionsUseCase extends Mock
-    implements ObserveQuickActionsUseCase {}
+class _MockObserveQuickActionsUseCase extends Mock implements ObserveQuickActionsUseCase {}
 
 void main() {
   late _MockInitializeQuickActionsUseCase initUseCase;

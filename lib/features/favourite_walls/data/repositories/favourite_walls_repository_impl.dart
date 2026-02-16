@@ -44,14 +44,12 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>>> fetchFavourites(
-      {required String userId}) async {
+  Future<Result<List<FavouriteWallEntity>>> fetchFavourites({required String userId}) async {
     try {
       final items = await _read(userId);
       return Result.success(items);
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to fetch favourite walls: $error'));
+      return Result.error(ServerFailure('Unable to fetch favourite walls: $error'));
     }
   }
 
@@ -77,8 +75,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
 
       return Result.success(await _read(userId));
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to toggle favourite wall: $error'));
+      return Result.error(ServerFailure('Unable to toggle favourite wall: $error'));
     }
   }
 
@@ -92,14 +89,12 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
       await _localFavBox.delete(wallId);
       return Result.success(await _read(userId));
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to remove favourite wall: $error'));
+      return Result.error(ServerFailure('Unable to remove favourite wall: $error'));
     }
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>>> clearAll(
-      {required String userId}) async {
+  Future<Result<List<FavouriteWallEntity>>> clearAll({required String userId}) async {
     try {
       final snapshot = await _collection(userId).get();
       for (final doc in snapshot.docs) {
@@ -107,8 +102,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
       }
       return Result.success(const <FavouriteWallEntity>[]);
     } catch (error) {
-      return Result.error(
-          ServerFailure('Unable to clear favourite walls: $error'));
+      return Result.error(ServerFailure('Unable to clear favourite walls: $error'));
     }
   }
 }

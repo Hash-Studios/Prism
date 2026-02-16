@@ -27,8 +27,7 @@ class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
   final WatchConnectionUseCase _watchConnectionUseCase;
   StreamSubscription<ConnectivityEntity>? _subscription;
 
-  Future<void> _onStarted(
-      _Started event, Emitter<ConnectivityState> emit) async {
+  Future<void> _onStarted(_Started event, Emitter<ConnectivityState> emit) async {
     emit(state.copyWith(status: LoadStatus.loading, failure: null));
 
     final result = await _checkConnectionUseCase(const NoParams());

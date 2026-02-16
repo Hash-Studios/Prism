@@ -38,9 +38,7 @@ class DeepLinkBloc extends Bloc<DeepLinkEvent, DeepLinkState> {
           actionStatus: ActionStatus.success,
           initialAction: action,
           latestAction: action,
-          history: action == null
-              ? const <DeepLinkActionEntity>[]
-              : <DeepLinkActionEntity>[action],
+          history: action == null ? const <DeepLinkActionEntity>[] : <DeepLinkActionEntity>[action],
           failure: null,
         ));
       },

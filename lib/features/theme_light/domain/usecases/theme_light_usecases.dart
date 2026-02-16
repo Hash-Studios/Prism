@@ -11,8 +11,7 @@ class LoadThemeLightUseCase implements UseCase<ThemeLightEntity, NoParams> {
   final ThemeRepository _repository;
 
   @override
-  Future<Result<ThemeLightEntity>> call(NoParams params) =>
-      _repository.getLightTheme();
+  Future<Result<ThemeLightEntity>> call(NoParams params) => _repository.getLightTheme();
 }
 
 class UpdateThemeLightParams {
@@ -22,15 +21,13 @@ class UpdateThemeLightParams {
 }
 
 @lazySingleton
-class UpdateThemeLightUseCase
-    implements UseCase<ThemeLightEntity, UpdateThemeLightParams> {
+class UpdateThemeLightUseCase implements UseCase<ThemeLightEntity, UpdateThemeLightParams> {
   UpdateThemeLightUseCase(this._repository);
 
   final ThemeRepository _repository;
 
   @override
-  Future<Result<ThemeLightEntity>> call(UpdateThemeLightParams params) =>
-      _repository.setLightTheme(params.themeId);
+  Future<Result<ThemeLightEntity>> call(UpdateThemeLightParams params) => _repository.setLightTheme(params.themeId);
 }
 
 class UpdateThemeLightAccentParams {
@@ -40,8 +37,7 @@ class UpdateThemeLightAccentParams {
 }
 
 @lazySingleton
-class UpdateThemeLightAccentUseCase
-    implements UseCase<ThemeLightEntity, UpdateThemeLightAccentParams> {
+class UpdateThemeLightAccentUseCase implements UseCase<ThemeLightEntity, UpdateThemeLightAccentParams> {
   UpdateThemeLightAccentUseCase(this._repository);
 
   final ThemeRepository _repository;

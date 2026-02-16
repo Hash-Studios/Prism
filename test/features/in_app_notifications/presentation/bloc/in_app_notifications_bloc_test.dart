@@ -8,17 +8,13 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockFetchNotificationsUseCase extends Mock
-    implements FetchNotificationsUseCase {}
+class _MockFetchNotificationsUseCase extends Mock implements FetchNotificationsUseCase {}
 
-class _MockMarkNotificationAsReadUseCase extends Mock
-    implements MarkNotificationAsReadUseCase {}
+class _MockMarkNotificationAsReadUseCase extends Mock implements MarkNotificationAsReadUseCase {}
 
-class _MockDeleteNotificationUseCase extends Mock
-    implements DeleteNotificationUseCase {}
+class _MockDeleteNotificationUseCase extends Mock implements DeleteNotificationUseCase {}
 
-class _MockClearNotificationsUseCase extends Mock
-    implements ClearNotificationsUseCase {}
+class _MockClearNotificationsUseCase extends Mock implements ClearNotificationsUseCase {}
 
 void main() {
   setUpAll(() {

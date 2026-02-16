@@ -7,17 +7,13 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockFetchFavouriteWallsUseCase extends Mock
-    implements FetchFavouriteWallsUseCase {}
+class _MockFetchFavouriteWallsUseCase extends Mock implements FetchFavouriteWallsUseCase {}
 
-class _MockToggleFavouriteWallUseCase extends Mock
-    implements ToggleFavouriteWallUseCase {}
+class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWallUseCase {}
 
-class _MockRemoveFavouriteWallUseCase extends Mock
-    implements RemoveFavouriteWallUseCase {}
+class _MockRemoveFavouriteWallUseCase extends Mock implements RemoveFavouriteWallUseCase {}
 
-class _MockClearFavouriteWallsUseCase extends Mock
-    implements ClearFavouriteWallsUseCase {}
+class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
 void main() {
   setUpAll(() {

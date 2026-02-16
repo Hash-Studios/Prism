@@ -25,9 +25,7 @@ void main() {
       if (params.refresh) {
         return Result.success(
           const SetupsPage(
-            items: <SetupEntity>[
-              SetupEntity(id: '1', payload: <String, dynamic>{})
-            ],
+            items: <SetupEntity>[SetupEntity(id: '1', payload: <String, dynamic>{})],
             hasMore: true,
             nextCursor: '1',
           ),
@@ -35,9 +33,7 @@ void main() {
       }
       return Result.success(
         const SetupsPage(
-          items: <SetupEntity>[
-            SetupEntity(id: '2', payload: <String, dynamic>{})
-          ],
+          items: <SetupEntity>[SetupEntity(id: '2', payload: <String, dynamic>{})],
           hasMore: false,
           nextCursor: '2',
         ),
@@ -56,8 +52,7 @@ void main() {
       expect(bloc.state.status, LoadStatus.success);
       expect(bloc.state.items.length, 2);
       expect(bloc.state.hasMore, isFalse);
-      expect(
-          bloc.state.items.map((e) => e.id), containsAll(<String>['1', '2']));
+      expect(bloc.state.items.map((e) => e.id), containsAll(<String>['1', '2']));
     },
   );
 }

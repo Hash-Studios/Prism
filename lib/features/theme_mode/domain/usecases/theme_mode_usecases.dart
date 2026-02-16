@@ -11,8 +11,7 @@ class LoadThemeModeUseCase implements UseCase<ThemeModeEntity, NoParams> {
   final ThemeRepository _repository;
 
   @override
-  Future<Result<ThemeModeEntity>> call(NoParams params) =>
-      _repository.getThemeMode();
+  Future<Result<ThemeModeEntity>> call(NoParams params) => _repository.getThemeMode();
 }
 
 class UpdateThemeModeParams {
@@ -22,13 +21,11 @@ class UpdateThemeModeParams {
 }
 
 @lazySingleton
-class UpdateThemeModeUseCase
-    implements UseCase<ThemeModeEntity, UpdateThemeModeParams> {
+class UpdateThemeModeUseCase implements UseCase<ThemeModeEntity, UpdateThemeModeParams> {
   UpdateThemeModeUseCase(this._repository);
 
   final ThemeRepository _repository;
 
   @override
-  Future<Result<ThemeModeEntity>> call(UpdateThemeModeParams params) =>
-      _repository.setThemeMode(params.mode);
+  Future<Result<ThemeModeEntity>> call(UpdateThemeModeParams params) => _repository.setThemeMode(params.mode);
 }

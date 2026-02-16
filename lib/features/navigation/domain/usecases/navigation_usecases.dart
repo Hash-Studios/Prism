@@ -5,15 +5,13 @@ import 'package:Prism/features/navigation/domain/repositories/navigation_reposit
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
-class GetNavigationStackUseCase
-    implements UseCase<NavigationStackEntity, NoParams> {
+class GetNavigationStackUseCase implements UseCase<NavigationStackEntity, NoParams> {
   GetNavigationStackUseCase(this._repository);
 
   final NavigationRepository _repository;
 
   @override
-  Future<Result<NavigationStackEntity>> call(NoParams params) =>
-      _repository.getStack();
+  Future<Result<NavigationStackEntity>> call(NoParams params) => _repository.getStack();
 }
 
 class PushRouteParams {
@@ -23,15 +21,13 @@ class PushRouteParams {
 }
 
 @lazySingleton
-class PushRouteUseCase
-    implements UseCase<NavigationStackEntity, PushRouteParams> {
+class PushRouteUseCase implements UseCase<NavigationStackEntity, PushRouteParams> {
   PushRouteUseCase(this._repository);
 
   final NavigationRepository _repository;
 
   @override
-  Future<Result<NavigationStackEntity>> call(PushRouteParams params) =>
-      _repository.push(params.routeName);
+  Future<Result<NavigationStackEntity>> call(PushRouteParams params) => _repository.push(params.routeName);
 }
 
 @lazySingleton
@@ -41,8 +37,7 @@ class PopRouteUseCase implements UseCase<NavigationStackEntity, NoParams> {
   final NavigationRepository _repository;
 
   @override
-  Future<Result<NavigationStackEntity>> call(NoParams params) =>
-      _repository.pop();
+  Future<Result<NavigationStackEntity>> call(NoParams params) => _repository.pop();
 }
 
 class ResetNavigationParams {
@@ -52,8 +47,7 @@ class ResetNavigationParams {
 }
 
 @lazySingleton
-class ResetNavigationUseCase
-    implements UseCase<NavigationStackEntity, ResetNavigationParams> {
+class ResetNavigationUseCase implements UseCase<NavigationStackEntity, ResetNavigationParams> {
   ResetNavigationUseCase(this._repository);
 
   final NavigationRepository _repository;
@@ -70,8 +64,7 @@ class ReplaceNavigationStackParams {
 }
 
 @lazySingleton
-class ReplaceNavigationStackUseCase
-    implements UseCase<NavigationStackEntity, ReplaceNavigationStackParams> {
+class ReplaceNavigationStackUseCase implements UseCase<NavigationStackEntity, ReplaceNavigationStackParams> {
   ReplaceNavigationStackUseCase(this._repository);
 
   final NavigationRepository _repository;

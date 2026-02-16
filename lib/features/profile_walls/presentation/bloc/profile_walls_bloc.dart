@@ -12,8 +12,7 @@ part 'profile_walls_bloc.freezed.dart';
 
 @injectable
 class ProfileWallsBloc extends Bloc<ProfileWallsEvent, ProfileWallsState> {
-  ProfileWallsBloc(this._fetchProfileWallsUseCase)
-      : super(ProfileWallsState.initial()) {
+  ProfileWallsBloc(this._fetchProfileWallsUseCase) : super(ProfileWallsState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
@@ -21,8 +20,7 @@ class ProfileWallsBloc extends Bloc<ProfileWallsEvent, ProfileWallsState> {
 
   final FetchProfileWallsUseCase _fetchProfileWallsUseCase;
 
-  Future<void> _onStarted(
-      _Started event, Emitter<ProfileWallsState> emit) async {
+  Future<void> _onStarted(_Started event, Emitter<ProfileWallsState> emit) async {
     emit(state.copyWith(email: event.email));
     await _load(refresh: true, emit: emit);
   }
@@ -41,13 +39,11 @@ class ProfileWallsBloc extends Bloc<ProfileWallsEvent, ProfileWallsState> {
     if (state.isFetchingMore || !state.hasMore) {
       return;
     }
-    emit(state.copyWith(
-        isFetchingMore: true, actionStatus: ActionStatus.inProgress));
+    emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress));
     await _load(refresh: false, emit: emit);
   }
 
-  Future<void> _load(
-      {required bool refresh, required Emitter<ProfileWallsState> emit}) async {
+  Future<void> _load({required bool refresh, required Emitter<ProfileWallsState> emit}) async {
     if (state.email.isEmpty) {
       emit(state.copyWith(
         status: LoadStatus.failure,
@@ -58,8 +54,7 @@ class ProfileWallsBloc extends Bloc<ProfileWallsEvent, ProfileWallsState> {
     }
 
     if (refresh) {
-      emit(state.copyWith(
-          status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
+      emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
     }
 
     final result = await _fetchProfileWallsUseCase(
@@ -68,9 +63,7 @@ class ProfileWallsBloc extends Bloc<ProfileWallsEvent, ProfileWallsState> {
 
     result.fold(
       onSuccess: (page) {
-        final merged = refresh
-            ? page.items
-            : <ProfileWallEntity>[...state.items, ...page.items];
+        final merged = refresh ? page.items : <ProfileWallEntity>[...state.items, ...page.items];
         final deduped = <String, ProfileWallEntity>{
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);

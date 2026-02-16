@@ -12,8 +12,7 @@ part 'profile_setups_bloc.freezed.dart';
 
 @injectable
 class ProfileSetupsBloc extends Bloc<ProfileSetupsEvent, ProfileSetupsState> {
-  ProfileSetupsBloc(this._fetchProfileSetupsUseCase)
-      : super(ProfileSetupsState.initial()) {
+  ProfileSetupsBloc(this._fetchProfileSetupsUseCase) : super(ProfileSetupsState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
@@ -43,14 +42,11 @@ class ProfileSetupsBloc extends Bloc<ProfileSetupsEvent, ProfileSetupsState> {
     if (state.isFetchingMore || !state.hasMore) {
       return;
     }
-    emit(state.copyWith(
-        isFetchingMore: true, actionStatus: ActionStatus.inProgress));
+    emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress));
     await _load(refresh: false, emit: emit);
   }
 
-  Future<void> _load(
-      {required bool refresh,
-      required Emitter<ProfileSetupsState> emit}) async {
+  Future<void> _load({required bool refresh, required Emitter<ProfileSetupsState> emit}) async {
     if (state.email.isEmpty) {
       emit(state.copyWith(
         status: LoadStatus.failure,
@@ -61,8 +57,7 @@ class ProfileSetupsBloc extends Bloc<ProfileSetupsEvent, ProfileSetupsState> {
     }
 
     if (refresh) {
-      emit(state.copyWith(
-          status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
+      emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
     }
 
     final result = await _fetchProfileSetupsUseCase(
@@ -71,9 +66,7 @@ class ProfileSetupsBloc extends Bloc<ProfileSetupsEvent, ProfileSetupsState> {
 
     result.fold(
       onSuccess: (page) {
-        final merged = refresh
-            ? page.items
-            : <ProfileSetupEntity>[...state.items, ...page.items];
+        final merged = refresh ? page.items : <ProfileSetupEntity>[...state.items, ...page.items];
         final deduped = <String, ProfileSetupEntity>{
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);

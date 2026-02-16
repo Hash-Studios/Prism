@@ -11,15 +11,13 @@ class FetchFavouriteSetupsParams {
 }
 
 @lazySingleton
-class FetchFavouriteSetupsUseCase
-    implements UseCase<List<FavouriteSetupEntity>, FetchFavouriteSetupsParams> {
+class FetchFavouriteSetupsUseCase implements UseCase<List<FavouriteSetupEntity>, FetchFavouriteSetupsParams> {
   FetchFavouriteSetupsUseCase(this._repository);
 
   final FavouriteSetupsRepository _repository;
 
   @override
-  Future<Result<List<FavouriteSetupEntity>>> call(
-      FetchFavouriteSetupsParams params) {
+  Future<Result<List<FavouriteSetupEntity>>> call(FetchFavouriteSetupsParams params) {
     return _repository.fetchFavourites(userId: params.userId);
   }
 }
@@ -32,40 +30,33 @@ class ToggleFavouriteSetupParams {
 }
 
 @lazySingleton
-class ToggleFavouriteSetupUseCase
-    implements UseCase<List<FavouriteSetupEntity>, ToggleFavouriteSetupParams> {
+class ToggleFavouriteSetupUseCase implements UseCase<List<FavouriteSetupEntity>, ToggleFavouriteSetupParams> {
   ToggleFavouriteSetupUseCase(this._repository);
 
   final FavouriteSetupsRepository _repository;
 
   @override
-  Future<Result<List<FavouriteSetupEntity>>> call(
-      ToggleFavouriteSetupParams params) {
-    return _repository.toggleFavourite(
-        userId: params.userId, setup: params.setup);
+  Future<Result<List<FavouriteSetupEntity>>> call(ToggleFavouriteSetupParams params) {
+    return _repository.toggleFavourite(userId: params.userId, setup: params.setup);
   }
 }
 
 class RemoveFavouriteSetupParams {
-  const RemoveFavouriteSetupParams(
-      {required this.userId, required this.setupId});
+  const RemoveFavouriteSetupParams({required this.userId, required this.setupId});
 
   final String userId;
   final String setupId;
 }
 
 @lazySingleton
-class RemoveFavouriteSetupUseCase
-    implements UseCase<List<FavouriteSetupEntity>, RemoveFavouriteSetupParams> {
+class RemoveFavouriteSetupUseCase implements UseCase<List<FavouriteSetupEntity>, RemoveFavouriteSetupParams> {
   RemoveFavouriteSetupUseCase(this._repository);
 
   final FavouriteSetupsRepository _repository;
 
   @override
-  Future<Result<List<FavouriteSetupEntity>>> call(
-      RemoveFavouriteSetupParams params) {
-    return _repository.removeFavourite(
-        userId: params.userId, setupId: params.setupId);
+  Future<Result<List<FavouriteSetupEntity>>> call(RemoveFavouriteSetupParams params) {
+    return _repository.removeFavourite(userId: params.userId, setupId: params.setupId);
   }
 }
 
@@ -76,15 +67,13 @@ class ClearFavouriteSetupsParams {
 }
 
 @lazySingleton
-class ClearFavouriteSetupsUseCase
-    implements UseCase<List<FavouriteSetupEntity>, ClearFavouriteSetupsParams> {
+class ClearFavouriteSetupsUseCase implements UseCase<List<FavouriteSetupEntity>, ClearFavouriteSetupsParams> {
   ClearFavouriteSetupsUseCase(this._repository);
 
   final FavouriteSetupsRepository _repository;
 
   @override
-  Future<Result<List<FavouriteSetupEntity>>> call(
-      ClearFavouriteSetupsParams params) {
+  Future<Result<List<FavouriteSetupEntity>>> call(ClearFavouriteSetupsParams params) {
     return _repository.clearAll(userId: params.userId);
   }
 }

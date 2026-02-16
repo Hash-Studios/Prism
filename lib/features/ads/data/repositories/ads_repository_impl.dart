@@ -18,8 +18,7 @@ class AdsRepositoryImpl implements AdsRepository {
 
   @override
   Future<Result<AdsEntity>> addReward({required num rewardAmount}) async {
-    _state =
-        _state.copyWith(downloadCoins: _state.downloadCoins + rewardAmount);
+    _state = _state.copyWith(downloadCoins: _state.downloadCoins + rewardAmount);
     return Result.success(_state);
   }
 

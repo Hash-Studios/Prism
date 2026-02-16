@@ -30,8 +30,7 @@ class UserSearchBloc extends Bloc<UserSearchEvent, UserSearchState> {
       failure: null,
     ));
 
-    final result =
-        await _searchUsersUseCase(SearchUsersParams(query: event.query));
+    final result = await _searchUsersUseCase(SearchUsersParams(query: event.query));
 
     result.fold(
       onSuccess: (users) => emit(state.copyWith(

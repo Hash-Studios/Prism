@@ -10,11 +10,9 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockCheckConnectionUseCase extends Mock
-    implements CheckConnectionUseCase {}
+class _MockCheckConnectionUseCase extends Mock implements CheckConnectionUseCase {}
 
-class _MockWatchConnectionUseCase extends Mock
-    implements WatchConnectionUseCase {}
+class _MockWatchConnectionUseCase extends Mock implements WatchConnectionUseCase {}
 
 void main() {
   late _MockCheckConnectionUseCase checkUseCase;

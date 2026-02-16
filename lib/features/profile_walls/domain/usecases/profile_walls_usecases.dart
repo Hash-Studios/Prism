@@ -12,15 +12,13 @@ class FetchProfileWallsParams {
 }
 
 @lazySingleton
-class FetchProfileWallsUseCase
-    implements UseCase<ProfileWallsPage, FetchProfileWallsParams> {
+class FetchProfileWallsUseCase implements UseCase<ProfileWallsPage, FetchProfileWallsParams> {
   FetchProfileWallsUseCase(this._repository);
 
   final ProfileWallsRepository _repository;
 
   @override
   Future<Result<ProfileWallsPage>> call(FetchProfileWallsParams params) {
-    return _repository.fetchProfileWalls(
-        email: params.email, refresh: params.refresh);
+    return _repository.fetchProfileWalls(email: params.email, refresh: params.refresh);
   }
 }

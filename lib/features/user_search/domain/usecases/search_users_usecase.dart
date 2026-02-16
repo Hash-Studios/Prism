@@ -11,13 +11,11 @@ class SearchUsersParams {
 }
 
 @lazySingleton
-class SearchUsersUseCase
-    implements UseCase<List<UserSearchUser>, SearchUsersParams> {
+class SearchUsersUseCase implements UseCase<List<UserSearchUser>, SearchUsersParams> {
   SearchUsersUseCase(this._repository);
 
   final UserSearchRepository _repository;
 
   @override
-  Future<Result<List<UserSearchUser>>> call(SearchUsersParams params) =>
-      _repository.searchUsers(params.query);
+  Future<Result<List<UserSearchUser>>> call(SearchUsersParams params) => _repository.searchUsers(params.query);
 }

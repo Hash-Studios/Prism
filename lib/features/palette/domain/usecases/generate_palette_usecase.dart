@@ -11,8 +11,7 @@ class GeneratePaletteParams {
 }
 
 @lazySingleton
-class GeneratePaletteUseCase
-    implements UseCase<PaletteEntity, GeneratePaletteParams> {
+class GeneratePaletteUseCase implements UseCase<PaletteEntity, GeneratePaletteParams> {
   GeneratePaletteUseCase(this._repository);
 
   final PaletteRepository _repository;

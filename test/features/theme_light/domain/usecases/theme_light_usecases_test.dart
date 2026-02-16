@@ -8,12 +8,10 @@ import 'package:Prism/features/theme_mode/domain/entities/theme_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeThemeRepository implements ThemeRepository {
-  ThemeLightEntity _light = const ThemeLightEntity(
-      themeId: 'kLFrost White', accentColorValue: 0xff123456);
+  ThemeLightEntity _light = const ThemeLightEntity(themeId: 'kLFrost White', accentColorValue: 0xff123456);
 
   @override
-  Future<Result<ThemeLightEntity>> getLightTheme() async =>
-      Result.success(_light);
+  Future<Result<ThemeLightEntity>> getLightTheme() async => Result.success(_light);
 
   @override
   Future<Result<ThemeLightEntity>> setLightTheme(String themeId) async {
@@ -26,8 +24,7 @@ class _FakeThemeRepository implements ThemeRepository {
 
   @override
   Future<Result<ThemeLightEntity>> setLightAccent(int colorValue) async {
-    _light =
-        ThemeLightEntity(themeId: _light.themeId, accentColorValue: colorValue);
+    _light = ThemeLightEntity(themeId: _light.themeId, accentColorValue: colorValue);
     return Result.success(_light);
   }
 
@@ -79,8 +76,7 @@ void main() {
     });
 
     test('update theme + accent persists through repository', () async {
-      await updateThemeUseCase(
-          const UpdateThemeLightParams(themeId: 'kLCoffee'));
+      await updateThemeUseCase(const UpdateThemeLightParams(themeId: 'kLCoffee'));
       await updateAccentUseCase(
         const UpdateThemeLightAccentParams(accentColorValue: 0xffabcdef),
       );

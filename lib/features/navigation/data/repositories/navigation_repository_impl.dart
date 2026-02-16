@@ -9,8 +9,7 @@ import 'package:injectable/injectable.dart';
 class NavigationRepositoryImpl implements NavigationRepository {
   List<String> _stack = <String>['Home'];
 
-  NavigationStackEntity _entity() =>
-      NavigationStackEntity(stack: List<String>.from(_stack));
+  NavigationStackEntity _entity() => NavigationStackEntity(stack: List<String>.from(_stack));
 
   void _syncLegacy() {
     legacy_router.navStack = List<String>.from(_stack);
@@ -24,8 +23,7 @@ class NavigationRepositoryImpl implements NavigationRepository {
   @override
   Future<Result<NavigationStackEntity>> push(String routeName) async {
     if (routeName.trim().isEmpty) {
-      return Result.error(
-          const ValidationFailure('Route name cannot be empty'));
+      return Result.error(const ValidationFailure('Route name cannot be empty'));
     }
     _stack = <String>[..._stack, routeName];
     _syncLegacy();
@@ -42,11 +40,9 @@ class NavigationRepositoryImpl implements NavigationRepository {
   }
 
   @override
-  Future<Result<NavigationStackEntity>> reset(
-      {required String initialRoute}) async {
+  Future<Result<NavigationStackEntity>> reset({required String initialRoute}) async {
     if (initialRoute.trim().isEmpty) {
-      return Result.error(
-          const ValidationFailure('Initial route cannot be empty'));
+      return Result.error(const ValidationFailure('Initial route cannot be empty'));
     }
     _stack = <String>[initialRoute];
     _syncLegacy();
