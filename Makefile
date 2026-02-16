@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm update-flutter
+.PHONY: setup ensure-fvm get update-flutter
 
 setup: ensure-fvm
 	@echo "Installing Flutter SDK from .fvmrc..."
@@ -8,6 +8,9 @@ setup: ensure-fvm
 	@fvm flutter --version
 	@fvm flutter pub get
 	@echo "Setup complete. Use 'fvm flutter <command>' for project commands."
+
+get: ensure-fvm
+	@fvm flutter pub get
 
 ensure-fvm:
 	@command -v fvm >/dev/null 2>&1 || { \
