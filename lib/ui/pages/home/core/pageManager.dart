@@ -10,7 +10,7 @@ import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:animations/animations.dart';
-import 'package:data_connection_checker/data_connection_checker.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
@@ -60,7 +60,7 @@ class _PageManagerChildState extends State<PageManagerChild>
   String shortcut = "No Action Set";
 
   Future<void> checkConnection() async {
-    result = await DataConnectionChecker().hasConnection;
+    result = await InternetConnectionChecker.instance.hasConnection;
     if (result) {
       logger.d("Internet working as expected!");
       setState(() {});
