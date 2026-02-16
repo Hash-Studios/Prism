@@ -22,7 +22,7 @@ class CopyrightPopUp extends StatelessWidget {
         ),
       ),
       actions: [
-        FlatButton(
+        MaterialButton(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
           color: Colors.transparent,
           onPressed: () {
@@ -40,7 +40,7 @@ class CopyrightPopUp extends StatelessWidget {
                     : Theme.of(context).colorScheme.error,
               )),
         ),
-        FlatButton(
+        MaterialButton(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
           color: Theme.of(context).colorScheme.error,
           onPressed: () {

@@ -102,7 +102,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
       ),
     ),
     actions: [
-      FlatButton(
+      MaterialButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         color: Theme.of(context).colorScheme.error,
         onPressed: () {

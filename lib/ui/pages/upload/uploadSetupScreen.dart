@@ -942,7 +942,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           onPressed: wallpaperUploaded == true
                               ? null
                               : () async {
-                                  final pickedFile = await ImagePicker().getImage(source: ImageSource.gallery);
+                                  final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
                                   if (pickedFile != null) {
                                     Future.delayed(const Duration()).then((value) async {
                                       final argumentsFromWall = await Navigator.pushNamed(context, uploadWallRoute,

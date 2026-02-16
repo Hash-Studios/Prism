@@ -327,7 +327,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
-                  FlatButton(
+                  MaterialButton(
                     shape: const StadiumBorder(),
                     color: Theme.of(context).colorScheme.error,
                     onPressed: () {
@@ -349,7 +349,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                       ),
                     ),
                   ),
-                  FlatButton(
+                  MaterialButton(
                     shape: const StadiumBorder(),
                     color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
                     onPressed: () {

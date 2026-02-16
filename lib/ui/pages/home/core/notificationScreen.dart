@@ -127,7 +127,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                     ),
                     actions: [
-                      FlatButton(
+                      MaterialButton(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                         color: Theme.of(context).hintColor,
                         onPressed: () {
@@ -145,7 +145,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           ),
                         ),
                       ),
-                      FlatButton(
+                      MaterialButton(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                         color: Theme.of(context).colorScheme.error,
                         onPressed: () {

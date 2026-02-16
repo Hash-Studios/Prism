@@ -311,7 +311,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
-                                                        WData.wall.views,
+                                                        WData.wall.views ?? '',
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyMedium!
@@ -329,7 +329,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
-                                                        WData.wall.favourites,
+                                                        WData.wall.favourites ?? '',
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyMedium!
@@ -387,7 +387,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        WData.wall.resolution,
+                                                        WData.wall.resolution ?? '',
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyMedium!
@@ -813,7 +813,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
-                                                            Data.wall["desc"],
+                                                            Data.wall["desc"]?.toString() ?? "",
                                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                                 color: Theme.of(context).colorScheme.secondary),
                                                           ),
@@ -830,7 +830,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
-                                                            Data.wall["size"],
+                                                            Data.wall["size"]?.toString() ?? "",
                                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                                 color: Theme.of(context).colorScheme.secondary),
                                                           ),
@@ -906,7 +906,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            Data.wall["resolution"],
+                                                            Data.wall["resolution"]?.toString() ?? "",
                                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                                 color: Theme.of(context).colorScheme.secondary),
                                                           ),

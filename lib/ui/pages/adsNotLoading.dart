@@ -137,7 +137,7 @@ class AdsNotLoading extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
-                    FlatButton(
+                    MaterialButton(
                       shape: const StadiumBorder(),
                       color: Theme.of(context).colorScheme.error,
                       onPressed: () {
@@ -159,7 +159,7 @@ class AdsNotLoading extends StatelessWidget {
                         ),
                       ),
                     ),
-                    FlatButton(
+                    MaterialButton(
                       shape: const StadiumBorder(),
                       color: Theme.of(context).colorScheme.error,
                       onPressed: () {

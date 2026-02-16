@@ -406,7 +406,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                   ),
                                   actions: <Widget>[
-                                    FlatButton(
+                                    MaterialButton(
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                       onPressed: () {
                                         Navigator.of(context).pop();
@@ -423,7 +423,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8.0),
-                                      child: FlatButton(
+                                      child: MaterialButton(
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                         color: Theme.of(context).colorScheme.error,
                                         onPressed: () {
@@ -478,7 +478,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                   ),
                                   actions: <Widget>[
-                                    FlatButton(
+                                    MaterialButton(
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                       onPressed: () {
                                         Navigator.of(context).pop();
@@ -495,7 +495,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8.0),
-                                      child: FlatButton(
+                                      child: MaterialButton(
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                         color: Theme.of(context).colorScheme.error,
                                         onPressed: () {

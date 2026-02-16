@@ -207,7 +207,7 @@ class ProfileDrawer extends StatelessWidget {
                       ),
                     ),
                     actions: <Widget>[
-                      FlatButton(
+                      MaterialButton(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                         onPressed: () async {
                           Navigator.of(context).pop();
@@ -257,7 +257,7 @@ class ProfileDrawer extends StatelessWidget {
                       ),
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
-                        child: FlatButton(
+                        child: MaterialButton(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                           color: Theme.of(context).colorScheme.error,
                           onPressed: () {

@@ -11,13 +11,13 @@ class LocalNotification {
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
     );
-    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    flutterLocalNotificationsPlugin.initialize(settings: initializationSettings);
   }
 
   Future<void> fetchNotificationData(BuildContext context) async {
     final NotificationAppLaunchDetails? notificationAppLaunchDetails =
         await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
-    if (notificationAppLaunchDetails!.payload == "downloaded") {
+    if (notificationAppLaunchDetails?.notificationResponse?.payload == "downloaded") {
       Navigator.pushNamed(context, downloadRoute);
     }
   }
@@ -35,7 +35,7 @@ class LocalNotification {
     final androidNotificationChannel = AndroidNotificationChannel(
       id,
       name,
-      description,
+      description: description,
       playSound: playSound,
     );
     await flutterLocalNotificationsPlugin
@@ -47,7 +47,7 @@ class LocalNotification {
     const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'downloads',
       'Downloads',
-      'Get notifications for download progress of wallpapers.',
+      channelDescription: 'Get notifications for download progress of wallpapers.',
       importance: Importance.max,
       priority: Priority.high,
       showProgress: true,
@@ -58,20 +58,20 @@ class LocalNotification {
     );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
     await flutterLocalNotificationsPlugin.show(
-      0,
-      'Downloading Wallpaper',
-      "",
-      platformChannelSpecifics,
+      id: 0,
+      title: 'Downloading Wallpaper',
+      body: "",
+      notificationDetails: platformChannelSpecifics,
       payload: "downloadProgress",
     );
   }
 
   Future<void> cancelDownloadNotification() async {
-    await flutterLocalNotificationsPlugin.cancel(0);
+    await flutterLocalNotificationsPlugin.cancel(id: 0);
     const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'downloads',
       'Downloads',
-      'Get notifications for download progress of wallpapers.',
+      channelDescription: 'Get notifications for download progress of wallpapers.',
       importance: Importance.min,
       priority: Priority.min,
       color: Color(0xFFE57697),
@@ -83,12 +83,12 @@ class LocalNotification {
             ?.getActiveNotifications() ??
         [];
     await flutterLocalNotificationsPlugin.show(
-      1,
-      (activeNotifications.length + 1) == 1
+      id: 1,
+      title: (activeNotifications.length + 1) == 1
           ? '1 wall downloaded.'
           : '${int.parse(activeNotifications[0].title![0]) + 1} walls downloaded.',
-      "Tap to open Prism.",
-      platformChannelSpecifics,
+      body: "Tap to open Prism.",
+      notificationDetails: platformChannelSpecifics,
       payload: "downloaded",
     );
   }

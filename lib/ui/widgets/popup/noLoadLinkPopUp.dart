@@ -23,7 +23,7 @@ void showNoLoadLinksPopUp(BuildContext context, Map link) {
       ),
     ),
     actions: [
-      FlatButton(
+      MaterialButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         color: Theme.of(context).colorScheme.error,
         onPressed: () {
