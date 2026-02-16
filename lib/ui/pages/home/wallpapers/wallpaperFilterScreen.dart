@@ -419,7 +419,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Widget _buildFilterThumbnail(Filter filter, imagelib.Image? image, String? filename) {
-    if (cachedFilters[filter.name ?? "_"] == null) {
+    final String filterName = filter.name;
+    if (cachedFilters[filterName] == null) {
       return FutureBuilder<List<int>>(
         future: compute(applyFilter, <String, dynamic>{
           "filter": filter,
@@ -446,7 +447,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
-              cachedFilters[filter.name ?? "_"] = snapshot.data;
+              cachedFilters[filterName] = snapshot.data;
               return ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
@@ -473,7 +474,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           color: Theme.of(context).primaryColor,
           child: Image(
             image: MemoryImage(
-              (cachedFilters[filter.name ?? "_"] as Uint8List?)!,
+              cachedFilters[filterName]! as Uint8List,
             ),
             fit: BoxFit.cover,
           ),

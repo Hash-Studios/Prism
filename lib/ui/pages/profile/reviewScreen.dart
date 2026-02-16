@@ -984,11 +984,13 @@ class SetupTile extends StatelessWidget {
                                     } else {
                                       launch("${wallpaper.data()!["wallpaper_url"]}").catchError((e) {
                                         toasts.error("Error in link!");
+                                        return false;
                                       });
                                     }
                                   } else {
                                     launch("${wallpaper.data()!["wallpaper_url"][1]}").catchError((e) {
                                       toasts.error("Error in link!");
+                                      return false;
                                     });
                                   }
                                 } else {
@@ -1028,6 +1030,7 @@ class SetupTile extends StatelessWidget {
                                 if ("${wallpaper.data()!["icon_url"]}" != "") {
                                   launch("${wallpaper.data()!["icon_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
+                                    return false;
                                   });
                                 } else {
                                   toasts.error("No icons added!");
@@ -1065,6 +1068,7 @@ class SetupTile extends StatelessWidget {
                                 onTap: () {
                                   launch("${wallpaper.data()!["widget_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
+                                    return false;
                                   });
                                 },
                                 child: Row(
@@ -1101,6 +1105,7 @@ class SetupTile extends StatelessWidget {
                                 onTap: () {
                                   launch("${wallpaper.data()!["widget_url2"]}").catchError((e) {
                                     toasts.error("Error in link!");
+                                    return false;
                                   });
                                 },
                                 child: Row(
@@ -1449,11 +1454,13 @@ class RejectedSetupTile extends StatelessWidget {
                                   } else {
                                     launch("${wallpaper.data()!["wallpaper_url"]}").catchError((e) {
                                       toasts.error("Error in link!");
+                                      return false;
                                     });
                                   }
                                 } else {
                                   launch("${wallpaper.data()!["wallpaper_url"][1]}").catchError((e) {
                                     toasts.error("Error in link!");
+                                    return false;
                                   });
                                 }
                               },
@@ -1487,6 +1494,7 @@ class RejectedSetupTile extends StatelessWidget {
                               onTap: () {
                                 launch("${wallpaper.data()!["icon_url"]}").catchError((e) {
                                   toasts.error("Error in link!");
+                                  return false;
                                 });
                               },
                               child: Row(
@@ -1521,6 +1529,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 onTap: () {
                                   launch("${wallpaper.data()!["widget_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
+                                    return false;
                                   });
                                 },
                                 child: Row(
@@ -1557,6 +1566,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 onTap: () {
                                   launch("${wallpaper.data()!["widget_url2"]}").catchError((e) {
                                     toasts.error("Error in link!");
+                                    return false;
                                   });
                                 },
                                 child: Row(

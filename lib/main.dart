@@ -7,6 +7,7 @@ import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
@@ -26,10 +27,8 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'package:Prism/routes/router.dart' as router;
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/ui/pages/home/core/splashScreen.dart';
-import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
-import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -191,6 +190,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  late final AppRouter _appRouter;
+
   Future<bool> getLoginStatus() async {
     final bool value = await globals.gAuth.isSignedIn();
     if (value) {
@@ -212,6 +213,9 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
+    _appRouter = AppRouter(
+      initialLegacyRoute: ((prefs.get('onboarded_new') as bool?) ?? false) ? splashRoute : onboardingRoute,
+    );
     FlutterDisplayMode.setHighRefreshRate();
     localNotification.createNotificationChannel("followers", "Followers", "Get notifications for new followers.", true);
     localNotification.createNotificationChannel(
@@ -227,17 +231,11 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorObservers: <NavigatorObserver>[observer],
-      onGenerateRoute: router.generateRoute,
-      onUnknownRoute: (settings) => MaterialPageRoute(
-          builder: (context) => UndefinedScreen(
-                name: settings.name,
-              )),
+    return MaterialApp.router(
+      routerConfig: _appRouter.config(),
       theme: context.prismLightTheme(),
       darkTheme: context.prismDarkTheme(),
       themeMode: context.prismThemeMode(),
-      home: ((prefs.get('onboarded_new') as bool?) ?? false) ? const SplashWidget() : OnboardingScreen(),
     );
   }
 }

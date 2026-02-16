@@ -116,19 +116,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
           parallaxEnabled: true,
           parallaxOffset: 0.00,
           color: Colors.transparent,
-          maxHeight:
-              // context.setupsLegacyProvider(listen: false)
-              //                 .setups[index]["widget2"] ==
-              //             "" ||
-              //         context.setupsLegacyProvider(listen: false)
-              //                 .setups[index]["widget2"] ==
-              //             null
-              // ?
-              MediaQuery.of(context).size.height * .70 > 600 ? MediaQuery.of(context).size.height * .70 : 600
-          // : MediaQuery.of(context).size.height * .85 > 650
-          //     ? MediaQuery.of(context).size.height * .85
-          //     : 650
-          ,
+          maxHeight: MediaQuery.of(context).size.height * .70 > 600 ? MediaQuery.of(context).size.height * .70 : 600,
           controller: panelController,
           onPanelOpened: () {
             setState(() {
@@ -142,19 +130,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
           },
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            height:
-                // context.setupsLegacyProvider(listen: false)
-                //                 .setups[index]["widget2"] ==
-                //             "" ||
-                //         context.setupsLegacyProvider(listen: false)
-                //                 .setups[index]["widget2"] ==
-                //             null
-                // ?
-                MediaQuery.of(context).size.height * .70 > 600 ? MediaQuery.of(context).size.height * .70 : 600
-            // : MediaQuery.of(context).size.height * .85 > 650
-            //     ? MediaQuery.of(context).size.height * .85
-            //     : 650
-            ,
+            height: MediaQuery.of(context).size.height * .70 > 600 ? MediaQuery.of(context).size.height * .70 : 600,
             width: MediaQuery.of(context).size.width,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(30),

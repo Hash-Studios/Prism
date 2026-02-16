@@ -346,7 +346,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
     final double radian = action.rotateRadians;
 
     final bool flipHorizontal = action.flipY;
-    const bool flipVertical = false;
     final Uint8List img = state.rawImageData;
 
     final ImageEditorOption option = ImageEditorOption();

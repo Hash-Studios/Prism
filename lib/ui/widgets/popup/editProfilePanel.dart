@@ -276,13 +276,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future processImage() async {
-    final imgList = _pfp!.readAsBytesSync();
     _compressedPFP = await compressFile(_pfp!);
     await uploadFile();
   }
 
   Future processImageCover() async {
-    final imgList = _cover!.readAsBytesSync();
     _compressedCover = await compressFile(_cover!);
     await uploadFileCover();
   }

@@ -548,7 +548,7 @@ class _ThemeViewState extends State<ThemeView> {
 }
 
 class PreferencePanel extends StatefulWidget {
-  int? selectedValue;
+  final int? selectedValue;
   final Function(bool value)? func;
   PreferencePanel({
     super.key,
@@ -561,8 +561,11 @@ class PreferencePanel extends StatefulWidget {
 }
 
 class _PreferencePanelState extends State<PreferencePanel> {
+  late int? _selectedValue;
+
   @override
   void initState() {
+    _selectedValue = widget.selectedValue;
     super.initState();
   }
 
@@ -609,7 +612,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
-                      widget.selectedValue = 0;
+                      _selectedValue = 0;
                     });
                     Navigator.pop(context);
                     context.setPrismThemeMode("System");
@@ -622,11 +625,11 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       width: width - 14,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: widget.selectedValue != 0
+                        color: _selectedValue != 0
                             ? Theme.of(context).colorScheme.secondary.withOpacity(0.2)
                             : Theme.of(context).colorScheme.error.withOpacity(0.2),
                         border: Border.all(
-                            color: widget.selectedValue != 0
+                            color: _selectedValue != 0
                                 ? Theme.of(context).colorScheme.secondary
                                 : Theme.of(context).colorScheme.error,
                             width: 3),
@@ -650,7 +653,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
-                      widget.selectedValue = 1;
+                      _selectedValue = 1;
                     });
                     Navigator.pop(context);
                     context.setPrismThemeMode("Light");
@@ -663,11 +666,11 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       width: width - 14,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: widget.selectedValue != 1
+                        color: _selectedValue != 1
                             ? Theme.of(context).colorScheme.secondary.withOpacity(0.2)
                             : Theme.of(context).colorScheme.error.withOpacity(0.2),
                         border: Border.all(
-                            color: widget.selectedValue != 1
+                            color: _selectedValue != 1
                                 ? Theme.of(context).colorScheme.secondary
                                 : Theme.of(context).colorScheme.error,
                             width: 3),
@@ -691,7 +694,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
-                      widget.selectedValue = 2;
+                      _selectedValue = 2;
                     });
                     Navigator.pop(context);
                     context.setPrismThemeMode("Dark");
@@ -704,11 +707,11 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       width: width - 14,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: widget.selectedValue != 2
+                        color: _selectedValue != 2
                             ? Theme.of(context).colorScheme.secondary.withOpacity(0.2)
                             : Theme.of(context).colorScheme.error.withOpacity(0.2),
                         border: Border.all(
-                            color: widget.selectedValue != 2
+                            color: _selectedValue != 2
                                 ? Theme.of(context).colorScheme.secondary
                                 : Theme.of(context).colorScheme.error,
                             width: 3),

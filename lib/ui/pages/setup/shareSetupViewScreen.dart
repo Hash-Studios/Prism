@@ -966,8 +966,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                     ),
                   );
                 }
-              default:
-                return const Center(child: CircularProgressIndicator());
             }
           },
         ),

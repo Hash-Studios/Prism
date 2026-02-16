@@ -26,7 +26,7 @@ extension ProfileWallsLegacyBridgeX on BuildContext {
   }
 
   Future<void> loadProfileWalls() async {
-    final email = globals.prismUser.email ?? '';
+    final email = globals.prismUser.email;
     _profileWallsBloc(false).add(ProfileWallsEvent.started(email: email));
   }
 

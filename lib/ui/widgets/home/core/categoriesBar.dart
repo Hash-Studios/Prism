@@ -64,7 +64,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
   Future<void> checkForUpdate() async {
     InAppUpdate.checkForUpdate().then((info) {
       if (info.updateAvailability == UpdateAvailability.updateAvailable) {
-        InAppUpdate.performImmediateUpdate().catchError((e) => _showError(e));
+        InAppUpdate.performImmediateUpdate().catchError((e) {
+          _showError(e);
+          return AppUpdateResult.inAppUpdateFailed;
+        });
       }
     }).catchError((e) {
       _showError(e);

@@ -53,6 +53,7 @@ class _GoogleButtonState extends State<GoogleButton> {
                 isError = true;
               });
               Future.delayed(const Duration(milliseconds: 500)).then((value) => Navigator.pop(context));
+              return '';
             });
           },
           child: SizedBox(

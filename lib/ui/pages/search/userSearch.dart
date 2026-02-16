@@ -187,7 +187,7 @@ class _UsersResultListState extends State<UsersResultList> {
                       padding: EdgeInsets.all(_data[widget.users.indexOf(user)] ? 2 : 8.0),
                       child: CircleAvatar(
                         foregroundImage: CachedNetworkImageProvider(
-                          user.profilePhoto ?? "",
+                          user.profilePhoto,
                         ),
                         radius: _data[widget.users.indexOf(user)] ? 0 : 16,
                       ),
@@ -239,8 +239,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     height: MediaQuery.of(context).size.height * 0.19,
                                   )
                                 : CachedNetworkImage(
-                                    imageUrl: user.coverPhoto ??
-                                        "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Headers%2FheaderDefault.png?alt=media&token=1a10b128-c355-45d8-af96-678c13c05b3c",
+                                    imageUrl: user.coverPhoto!,
                                     fit: BoxFit.cover,
                                     width: MediaQuery.of(context).size.width,
                                     height: MediaQuery.of(context).size.height * 0.19,
@@ -253,7 +252,7 @@ class _UsersResultListState extends State<UsersResultList> {
                           Container(
                             padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
                             width: double.maxFinite,
-                            height: (user.links ?? {}).keys.toList().isEmpty
+                            height: user.links.keys.toList().isEmpty
                                 ? MediaQuery.of(context).size.height * 0.21 - 37
                                 : MediaQuery.of(context).size.height * 0.27 - 37,
                             child: Column(
@@ -298,7 +297,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width * 0.7,
                                   child: Text(
-                                    user.bio ?? "",
+                                    user.bio,
                                     textAlign: TextAlign.center,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
@@ -320,7 +319,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     children: [
                                       RichText(
                                         text: TextSpan(
-                                          text: "${(user.following ?? []).length}",
+                                          text: "${user.following.length}",
                                           style: TextStyle(
                                             fontFamily: "Proxima Nova",
                                             color: Theme.of(context).colorScheme.secondary.withOpacity(1),
@@ -344,7 +343,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                       const SizedBox(width: 24),
                                       RichText(
                                         text: TextSpan(
-                                          text: "${(user.followers ?? []).length}",
+                                          text: "${user.followers.length}",
                                           style: TextStyle(
                                             fontFamily: "Proxima Nova",
                                             color: Theme.of(context).colorScheme.secondary.withOpacity(1),
@@ -368,17 +367,16 @@ class _UsersResultListState extends State<UsersResultList> {
                                     ],
                                   ),
                                 ),
-                                if ((user.links ?? {}).keys.toList().isNotEmpty)
+                                if (user.links.keys.toList().isNotEmpty)
                                   const SizedBox(
                                     height: 8,
                                   ),
-                                if ((user.links ?? {}).keys.toList().isNotEmpty)
+                                if (user.links.keys.toList().isNotEmpty)
                                   SizedBox(
                                     width: MediaQuery.of(context).size.width,
                                     height: 48,
                                     child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                      ...(user.links ?? {})
-                                          .keys
+                                      ...user.links.keys
                                           .toList()
                                           .map((e) => IconButton(
                                               padding: const EdgeInsets.all(2),
@@ -403,11 +401,9 @@ class _UsersResultListState extends State<UsersResultList> {
                                           .toList()
                                           .sublist(
                                             0,
-                                            (user.links ?? {}).keys.toList().length > 3
-                                                ? 3
-                                                : (user.links ?? {}).keys.toList().length,
+                                            user.links.keys.toList().length > 3 ? 3 : user.links.keys.toList().length,
                                           ),
-                                      if ((user.links ?? {}).keys.toList().length > 3)
+                                      if (user.links.keys.toList().length > 3)
                                         IconButton(
                                             padding: const EdgeInsets.all(2),
                                             icon: Container(
@@ -423,7 +419,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                               ),
                                             ),
                                             onPressed: () {
-                                              showNoLoadLinksPopUp(context, user.links ?? {});
+                                              showNoLoadLinksPopUp(context, user.links);
                                             }),
                                     ]),
                                   )
@@ -448,7 +444,7 @@ class _UsersResultListState extends State<UsersResultList> {
                               ),
                               child: ClipOval(
                                 child: CachedNetworkImage(
-                                  imageUrl: user.profilePhoto ?? "",
+                                  imageUrl: user.profilePhoto,
                                   width: 78,
                                   height: 78,
                                   fit: BoxFit.cover,
