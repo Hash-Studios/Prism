@@ -4,15 +4,14 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
+import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/payments/upgrade.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 
 const String USER_OLD_COLLECTION = FirebaseCollections.users;
 const String USER_NEW_COLLECTION = FirebaseCollections.usersV2;
@@ -141,7 +140,7 @@ class GoogleAuth {
       final User? currentUser = _auth.currentUser;
       assert(user.uid == currentUser!.uid);
       analytics.logLogin();
-      await checkPremium();
+      await PurchasesService.instance.checkAndPersistPremium();
       await syncSentryUserScope(
         loggedIn: globals.prismUser.loggedIn,
         id: globals.prismUser.id,
@@ -177,7 +176,16 @@ class GoogleAuth {
   Future<bool> signOutGoogle() async {
     final String existingUserId = globals.prismUser.id;
     await _ensureGoogleSignInInitialized();
-    await googleSignIn.signOut();
+    try {
+      await googleSignIn.signOut();
+    } catch (e, st) {
+      logger.w(
+        'Google signOut failed; continuing local sign-out cleanup.',
+        tag: 'GoogleAuth',
+        error: e,
+        stackTrace: st,
+      );
+    }
     globals.prismUser = PrismUsersV2(
       name: "",
       bio: "",
@@ -206,7 +214,16 @@ class GoogleAuth {
     Hive.openBox('prefs').then((value) {
       value.put(main.userHiveKey, globals.prismUser);
     });
-    await Purchases.logOut();
+    try {
+      await PurchasesService.instance.logOut();
+    } catch (e, st) {
+      logger.w(
+        'RevenueCat signOut failed; continuing local sign-out cleanup.',
+        tag: 'GoogleAuth',
+        error: e,
+        stackTrace: st,
+      );
+    }
     try {
       if (existingUserId.isNotEmpty) {
         firestoreClient.updateDoc(
@@ -226,7 +243,11 @@ class GoogleAuth {
 
   Future<bool> isSignedIn() async {
     try {
-      final bool signedInWithFirebase = _auth.currentUser != null;
+      final User? currentUser = _auth.currentUser;
+      final bool signedInWithFirebase = currentUser != null &&
+          !currentUser.isAnonymous &&
+          (currentUser.email ?? '').trim().isNotEmpty &&
+          currentUser.providerData.any((provider) => provider.providerId == GoogleAuthProvider.PROVIDER_ID);
       if (signedInWithFirebase) {
         logger.d('true');
         return true;

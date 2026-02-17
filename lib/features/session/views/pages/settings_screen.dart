@@ -1,3 +1,4 @@
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
@@ -290,8 +291,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     showDialog(
                         barrierDismissible: false, context: context, builder: (BuildContext context) => loaderDialog);
                     try {
-                      await globals.gAuth.signInWithGoogle();
+                      final String signInResult = await globals.gAuth.signInWithGoogle();
                       if (!mounted) {
+                        return;
+                      }
+                      if (signInResult == GoogleAuth.signInCancelledResult) {
+                        Navigator.pop(this.context);
+                        globals.prismUser.loggedIn = false;
+                        main.prefs.put(main.userHiveKey, globals.prismUser);
+                        toasts.codeSend("Sign in cancelled.");
                         return;
                       }
                       toasts.codeSend("Login Successful!");

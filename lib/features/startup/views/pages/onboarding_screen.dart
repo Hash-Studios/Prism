@@ -1,3 +1,4 @@
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/features/startup/views/pages/twitter_ig_popup.dart';
@@ -492,27 +493,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           isLoading = true;
                                         });
                                         try {
-                                          await globals.gAuth.signInWithGoogle();
-                                          toasts.codeSend("Login Successful!");
-                                          globals.prismUser.loggedIn = true;
-                                          main.prefs.put(main.userHiveKey, globals.prismUser);
-                                          await Future.delayed(const Duration(milliseconds: 500));
-                                          if (!context.mounted) {
-                                            return;
-                                          }
-                                          main.prefs.put('onboarded_new', true);
-                                          Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => const OptionalInfo3(
-                                                heading: 'Follow top creators',
-                                                subheading: 'Never miss the latest and greatest',
-                                                showSkip: false,
-                                                skipText: "Skip",
-                                                doneText: "DONE",
+                                          final String signInResult = await globals.gAuth.signInWithGoogle();
+                                          if (signInResult == GoogleAuth.signInCancelledResult) {
+                                            globals.prismUser.loggedIn = false;
+                                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                                            toasts.codeSend("Sign in cancelled.");
+                                          } else {
+                                            toasts.codeSend("Login Successful!");
+                                            globals.prismUser.loggedIn = true;
+                                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                                            await Future.delayed(const Duration(milliseconds: 500));
+                                            if (!context.mounted) {
+                                              return;
+                                            }
+                                            main.prefs.put('onboarded_new', true);
+                                            Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => const OptionalInfo3(
+                                                  heading: 'Follow top creators',
+                                                  subheading: 'Never miss the latest and greatest',
+                                                  showSkip: false,
+                                                  skipText: "Skip",
+                                                  doneText: "DONE",
+                                                ),
                                               ),
-                                            ),
-                                          );
+                                            );
+                                          }
                                         } catch (e, st) {
                                           logger.e(
                                             'Google sign-in failed',

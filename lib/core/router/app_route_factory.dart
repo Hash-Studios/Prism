@@ -42,7 +42,7 @@ import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
-import 'package:Prism/payments/upgrade.dart';
+import 'package:Prism/payments/premium_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image/image.dart' as imagelib;
 
@@ -95,7 +95,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case premiumRoute:
       pushNavStack("Buy Premium");
       analytics.setCurrentScreen(screenName: premiumRoute);
-      return CupertinoPageRoute(builder: (context) => UpgradeScreen());
+      return CupertinoPageRoute(builder: (context) => PremiumScreen());
     case editProfileRoute:
       pushNavStack("Edit Profile");
       analytics.setCurrentScreen(screenName: editProfileRoute);

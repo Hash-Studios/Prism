@@ -1,3 +1,4 @@
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -30,12 +31,25 @@ class UserList extends StatelessWidget {
           if (globals.prismUser.loggedIn == false) {
             showDialog(barrierDismissible: false, context: context, builder: (BuildContext context) => loaderDialog);
             globals.gAuth.signInWithGoogle().then((value) {
+              if (!context.mounted) {
+                return;
+              }
+              if (value == GoogleAuth.signInCancelledResult) {
+                Navigator.pop(context);
+                globals.prismUser.loggedIn = false;
+                main.prefs.put(main.userHiveKey, globals.prismUser);
+                toasts.codeSend("Sign in cancelled.");
+                return;
+              }
               toasts.codeSend("Login Successful!");
               globals.prismUser.loggedIn = true;
               main.prefs.put(main.userHiveKey, globals.prismUser);
               Navigator.pop(context);
               main.RestartWidget.restartApp(context);
             }).catchError((e) {
+              if (!context.mounted) {
+                return;
+              }
               logger.d(e.toString());
               Navigator.pop(context);
               globals.prismUser.loggedIn = false;

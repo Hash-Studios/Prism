@@ -1,10 +1,9 @@
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/payments/upgrade.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: SessionRepository)
@@ -34,8 +33,7 @@ class SessionRepositoryImpl implements SessionRepository {
   Future<Result<SessionEntity>> refreshPremium() async {
     try {
       if (globals.prismUser.loggedIn) {
-        await checkPremium();
-        await main.prefs.put(main.userHiveKey, globals.prismUser);
+        await PurchasesService.instance.checkAndPersistPremium();
       }
       return Result.success(_toEntity());
     } catch (error) {
