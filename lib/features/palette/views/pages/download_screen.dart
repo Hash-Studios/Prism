@@ -1,15 +1,17 @@
 import 'dart:collection';
 import 'dart:io';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+@RoutePage()
 class DownloadScreen extends StatefulWidget {
   @override
   _DownloadScreenState createState() => _DownloadScreenState();
@@ -17,7 +19,6 @@ class DownloadScreen extends StatefulWidget {
 
 class _DownloadScreenState extends State<DownloadScreen> {
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -138,8 +139,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                 splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                 highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                 onTap: () {
-                                  context
-                                      .pushNamedRoute(downloadWallpaperRoute, arguments: ["Downloads", files[index]]);
+                                  context.router.push(DownloadWallpaperRoute(arguments: ["Downloads", files[index]]));
                                 },
                               ),
                             ),

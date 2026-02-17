@@ -4,7 +4,7 @@ import 'package:Prism/features/theme_dark/domain/entities/theme_dark.dart';
 import 'package:Prism/features/theme_light/domain/entities/theme_light.dart';
 import 'package:Prism/features/theme_light/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_mode.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: ThemeRepository)

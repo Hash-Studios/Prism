@@ -1,4 +1,3 @@
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
@@ -11,9 +10,11 @@ import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:intl/intl.dart';
 
+@RoutePage()
 class NotificationScreen extends StatefulWidget {
   @override
   _NotificationScreenState createState() => _NotificationScreenState();
@@ -29,7 +30,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -45,7 +45,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
           leading: IconButton(
             icon: const Icon(JamIcons.close),
             onPressed: () {
-              popNavStackIfPossible();
               Navigator.pop(context);
             },
           ),
@@ -224,7 +223,7 @@ class NotificationCard extends StatelessWidget {
           onTap: () {
             if (notification!.url == "") {
               if (notification!.pageName != null) {
-                context.pushNamedRoute(notification!.pageName!, arguments: notification!.arguments);
+                context.router.pushPath(notification!.pageName!);
               }
             } else {
               launch(notification!.url!);

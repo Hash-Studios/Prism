@@ -1,14 +1,15 @@
 import 'dart:io';
 
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+@RoutePage()
 class DownloadWallpaperScreen extends StatefulWidget {
   final List? arguments;
   const DownloadWallpaperScreen({required this.arguments});
@@ -18,7 +19,6 @@ class DownloadWallpaperScreen extends StatefulWidget {
 
 class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -100,7 +100,6 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
                 padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
-                    popNavStack();
                     Navigator.pop(context);
                   },
                   color: Theme.of(context).colorScheme.secondary,

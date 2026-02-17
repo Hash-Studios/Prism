@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/notifications/notifications.dart';
-import 'package:Prism/features/navigation/views/pages/page_manager.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 
 late FirebaseRemoteConfig remoteConfig;
 
+@RoutePage(name: 'SplashWidgetRoute')
 class SplashWidget extends StatefulWidget {
   const SplashWidget({
     super.key,
@@ -25,6 +26,7 @@ class SplashWidget extends StatefulWidget {
 
 class _SplashWidgetState extends State<SplashWidget> {
   bool notchChecked = false;
+  bool _navigated = false;
   late Future<bool> _future;
 
   @override
@@ -97,7 +99,6 @@ class _SplashWidgetState extends State<SplashWidget> {
       logger.d("splash done");
       logger.d("Current App Version: ${globals.currentAppVersion.replaceAll(".", "")}");
       logger.d("Obsolete App Version: ${globals.obsoleteAppVersion.replaceAll(".", "")}");
-      resetNavStack();
       return true;
     } catch (e) {
       logger.d(e.toString());
@@ -127,7 +128,21 @@ class _SplashWidgetState extends State<SplashWidget> {
               true) {
             return OldVersion();
           }
-          return PageManager();
+          // Check if onboarded, then navigate to dashboard
+          if (!_navigated) {
+            _navigated = true;
+            final isOnboarded = (main.prefs.get('onboarded_new') as bool?) ?? false;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                if (isOnboarded) {
+                  context.router.replaceAll([const DashboardRoute()]);
+                } else {
+                  context.router.replaceAll([const OnboardingRoute()]);
+                }
+              }
+            });
+          }
+          return const SecondarySplash();
         }
         return const SecondarySplash();
       },

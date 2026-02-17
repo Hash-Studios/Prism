@@ -12,7 +12,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 
 const String USER_OLD_COLLECTION = FirebaseCollections.users;
 const String USER_NEW_COLLECTION = FirebaseCollections.usersV2;

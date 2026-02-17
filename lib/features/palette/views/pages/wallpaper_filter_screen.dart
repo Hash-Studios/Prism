@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
@@ -21,19 +21,15 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photofilters/filters/filters.dart';
 import 'package:photofilters/filters/preset_filters.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class WallpaperFilterScreen extends StatefulWidget {
-  final imagelib.Image image;
-  final imagelib.Image finalImage;
-  final String filename;
-  final String finalFilename;
+  final List<dynamic>? arguments;
 
   const WallpaperFilterScreen({
     super.key,
-    required this.image,
-    required this.finalImage,
-    required this.filename,
-    required this.finalFilename,
+    this.arguments,
   });
 
   @override
@@ -110,10 +106,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     loading = false;
     isLoading = false;
     _filter = selectedFilters[0];
-    filename = widget.filename;
-    finalFilename = widget.finalFilename;
-    image = widget.image;
-    finalImage = widget.finalImage;
+    final args = widget.arguments;
+    image = args?[0] as imagelib.Image?;
+    finalImage = args?[1] as imagelib.Image?;
+    filename = args?[2] as String?;
+    finalFilename = args?[3] as String?;
   }
 
   @override
@@ -122,7 +119,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -226,7 +222,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       toasts.codeSend("Editing Wallpaper is a premium feature.");
       googleSignInPopUp(context, () {
         if (globals.prismUser.premium == false) {
-          context.pushNamedRoute(premiumRoute);
+          context.router.push(const UpgradeRoute());
         } else {
           func();
         }
@@ -234,7 +230,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     } else {
       if (globals.prismUser.premium == false) {
         toasts.codeSend("Editing Wallpaper is a premium feature.");
-        context.pushNamedRoute(premiumRoute);
+        context.router.push(const UpgradeRoute());
       } else {
         func();
       }
@@ -254,7 +250,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           leading: IconButton(
               icon: const Icon(JamIcons.close),
               onPressed: () {
-                popNavStack();
                 Navigator.pop(context);
               }),
           backgroundColor: Theme.of(context).primaryColor,

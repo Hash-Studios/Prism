@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_screen.dart';
@@ -8,36 +8,30 @@ import 'package:Prism/features/category_feed/views/pages/following_screen.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart';
 import 'package:Prism/features/category_feed/views/widgets/categories_bar.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
-import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:quick_actions/quick_actions.dart';
 
 TabController? tabController;
 
-class PageManager extends StatelessWidget {
+@RoutePage()
+class HomeTabPage extends StatefulWidget {
+  const HomeTabPage({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    return BottomBar(
-      child: PageManagerChild(),
-    );
-  }
+  State<HomeTabPage> createState() => _HomeTabPageState();
 }
 
-class PageManagerChild extends StatefulWidget {
-  @override
-  _PageManagerChildState createState() => _PageManagerChildState();
-}
-
-class _PageManagerChildState extends State<PageManagerChild> with SingleTickerProviderStateMixin {
+class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStateMixin {
   int page = 0;
   int linkOpened = 0;
   bool result = true;
@@ -50,11 +44,9 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
     if (result) {
       logger.d("Internet working as expected!");
       setState(() {});
-      // return true;
     } else {
       logger.d("Not connected to Internet!");
       setState(() {});
-      // return false;
     }
   }
 
@@ -95,20 +87,15 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
         }
       } else if (shortcutType == 'Setups') {
         logger.d('Setups');
-        currentNavStackEntry == "Setups"
-            ? logger.d("Currently on Setups")
-            : currentNavStackEntry == "Home"
-                ? context.pushNamedRoute(setupRoute)
-                : context.pushNamedRoute(setupRoute);
+        final tabsRouter = AutoTabsRouter.of(context, watch: false);
+        tabsRouter.setActiveIndex(2);
       } else if (shortcutType == 'Downloads') {
         logger.d('Downloads');
-        context.pushNamedRoute(downloadRoute);
+        context.router.push(const DownloadRoute());
       }
     });
 
     quickActions.setShortcutItems(<ShortcutItem>[
-      // NOTE: This second action icon will only work on Android.
-      // In a real world project keep the same file name for both platforms.
       const ShortcutItem(type: 'Follow_Feed', localizedTitle: 'Feed', icon: '@drawable/ic_feed'),
       const ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
       const ShortcutItem(type: 'Setups', localizedTitle: 'Setups', icon: '@drawable/ic_setups'),
@@ -133,21 +120,21 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
       }
       final routeSegment = deepLink.pathSegments[0];
       if (routeSegment == "share") {
-        context.pushNamedRoute(shareRoute, arguments: [
+        context.router.push(ShareWallpaperViewRoute(arguments: [
           deepLink.queryParameters["id"],
           deepLink.queryParameters["provider"],
           deepLink.queryParameters["url"],
           deepLink.queryParameters["thumb"],
-        ]);
+        ]));
       } else if (routeSegment == "user") {
-        context.pushNamedRoute(followerProfileRoute, arguments: [
+        context.router.push(ProfileRoute(arguments: [
           deepLink.queryParameters["email"],
-        ]);
+        ]));
       } else if (routeSegment == "setup") {
-        context.pushNamedRoute(shareSetupViewRoute, arguments: [
+        context.router.push(ShareSetupViewRoute(arguments: [
           deepLink.queryParameters["name"],
           deepLink.queryParameters["thumbUrl"],
-        ]);
+        ]));
       } else if (routeSegment == "refer") {
         // TODO: add referral handling.
       }

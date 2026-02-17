@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/apps/appsData.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/gitkey.dart';
@@ -15,11 +15,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as Path;
 import 'package:photo_view/photo_view.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class UploadSetupScreen extends StatefulWidget {
   final List? arguments;
   const UploadSetupScreen({this.arguments});
@@ -179,13 +181,11 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
     } catch (e) {
       logger.d(e.toString());
       Navigator.pop(context);
-      popNavStack();
       toasts.error("Some uploading issue, please try again.");
     }
   }
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -253,7 +253,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           iconURL.text == "") {
                         toasts.error("Please fill all required fields!");
                       } else {
-                        popNavStack();
                         Navigator.pop(context);
                         analytics.logEvent(name: 'upload_setup', parameters: {'id': id ?? '', 'link': imageURL ?? ''});
                         WallStore.createSetup(
@@ -277,7 +276,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           wallpaperId,
                           review,
                         );
-                        context.pushNamedRoute(reviewRoute);
+                        context.router.push(const ReviewRoute());
                       }
                     }
                   : null,
@@ -941,8 +940,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                   final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
                                   if (pickedFile != null) {
                                     Future.delayed(Duration.zero).then((value) async {
-                                      final argumentsFromWall = await context
-                                          .pushNamedRoute(uploadWallRoute, arguments: [File(pickedFile.path), true]);
+                                      final argumentsFromWall = await context.router
+                                          .push(UploadWallRoute(arguments: [File(pickedFile.path), true]));
                                       if (argumentsFromWall != null) {
                                         final List argsC = argumentsFromWall as List;
                                         if (argsC.length == 2) {

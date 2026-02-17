@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/setupPhotographer.dart';
@@ -32,7 +33,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
 
   void showPremiumPopUp(Function func) {
     if (globals.prismUser.premium == false) {
-      context.pushNamedRoute(premiumRoute);
+      context.router.push(const UpgradeRoute());
     } else {
       func();
     }
@@ -271,7 +272,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                                     if (context.publicProfileAdapter(listen: false).userProfileSetups == []) {
                                     } else {
                                       if (globals.prismUser.premium == true) {
-                                        context.pushNamedRoute(userProfileSetupViewRoute, arguments: [index]);
+                                        context.router.push(UserProfileSetupViewRoute(arguments: [index]));
                                       } else {
                                         showGooglePopUp(() {
                                           showPremiumPopUp(() {

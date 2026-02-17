@@ -1,5 +1,4 @@
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
@@ -7,6 +6,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:auto_route/auto_route.dart';
 
 List<Color> accentColors = [
   const Color(0xFFE57697),
@@ -33,6 +33,7 @@ List<Color> accentColors = [
   const Color(0xFF607d8b),
 ];
 
+@RoutePage(name: 'ThemeViewRoute')
 class ThemeView extends StatefulWidget {
   @override
   _ThemeViewState createState() => _ThemeViewState();
@@ -59,7 +60,6 @@ class _ThemeViewState extends State<ThemeView> {
   }
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -90,7 +90,6 @@ class _ThemeViewState extends State<ThemeView> {
                       .replaceAll(")", "");
                   main.prefs.put("systemOverlayColor", accentColor);
                   analytics.logEvent(name: "accent_changed", parameters: {'color': hexString});
-                  popNavStack();
                   Navigator.pop(context);
                 })
           ],

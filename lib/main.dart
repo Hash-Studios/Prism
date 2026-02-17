@@ -12,8 +12,7 @@ import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/router/nav_stack.dart' as router;
-import 'package:Prism/core/router/route_names.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
@@ -42,9 +41,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 String userHiveKey = "prismUserV2-1";
 late Box prefs;
@@ -439,9 +437,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _appRouter = AppRouter(
-      initialRouteName: ((prefs.get('onboarded_new') as bool?) ?? false) ? splashRoute : onboardingRoute,
-    );
+    _appRouter = AppRouter();
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
     unawaited(getLoginStatus());
@@ -451,7 +447,16 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      routerConfig: _appRouter.config(),
+      routerConfig: _appRouter.config(
+        navigatorObservers: () => [
+          FirebaseAnalyticsObserver(analytics: analytics),
+          if (MonitoringRuntime.reporter.isEnabled)
+            SentryNavigatorObserver(
+              enableAutoTransactions: false,
+              ignoreRoutes: <String>['/'],
+            ),
+        ],
+      ),
       theme: context.prismLightTheme(),
       darkTheme: context.prismDarkTheme(),
       themeMode: context.prismThemeMode(),
@@ -464,7 +469,6 @@ class RestartWidget extends StatefulWidget {
   final Widget? child;
   // ignore: unreachable_from_main
   static void restartApp(BuildContext context) {
-    router.resetNavStack();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       systemNavigationBarColor: Color(
         _colorValueFromPrefs(

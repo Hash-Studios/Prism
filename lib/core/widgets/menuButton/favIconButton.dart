@@ -6,7 +6,7 @@ import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 
 class FavIconButton extends StatefulWidget {
   final String? id;

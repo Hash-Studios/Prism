@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
@@ -34,7 +34,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class ShareWallpaperViewScreen extends StatefulWidget {
   final List? arguments;
   const ShareWallpaperViewScreen({this.arguments});
@@ -139,7 +141,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
   }
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -550,7 +551,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                           padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                           child: IconButton(
                             onPressed: () {
-                              popNavStack();
                               Navigator.pop(context);
                             },
                             color: paletteLoading
@@ -869,10 +869,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                 alignment: Alignment.topRight,
                                                                 child: ActionChip(
                                                                   onPressed: () {
-                                                                    context.pushNamedRoute(followerProfileRoute,
-                                                                        arguments: [
-                                                                          Data.wall["email"],
-                                                                        ]);
+                                                                    context.router.push(ProfileRoute(arguments: [
+                                                                      Data.wall["email"],
+                                                                    ]));
                                                                   },
                                                                   padding: const EdgeInsets.symmetric(
                                                                       vertical: 5, horizontal: 5),
@@ -986,10 +985,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   GestureDetector(
                                                     onTap: () async {
                                                       if (globals.prismUser.loggedIn == true) {
-                                                        context.pushNamedRoute(premiumRoute);
+                                                        context.router.push(const UpgradeRoute());
                                                       } else {
                                                         googleSignInPopUp(context, () {
-                                                          context.pushNamedRoute(premiumRoute);
+                                                          context.router.push(const UpgradeRoute());
                                                         });
                                                       }
                                                       toasts.codeSend("This is a premium wallpaper.");
@@ -1145,7 +1144,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                               padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                               child: IconButton(
                                 onPressed: () {
-                                  popNavStack();
                                   Navigator.pop(context);
                                 },
                                 color: paletteLoading
@@ -1611,7 +1609,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                   padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                                   child: IconButton(
                                     onPressed: () {
-                                      popNavStack();
                                       Navigator.pop(context);
                                     },
                                     color: paletteLoading

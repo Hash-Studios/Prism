@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
@@ -325,9 +326,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                       ),
                                                 ),
                                                 onPressed: () {
-                                                  context.pushNamedRoute(followerProfileRoute, arguments: [
+                                                  context.router.push(ProfileRoute(arguments: [
                                                     Data.subPrismWalls![widget.index]["email"],
-                                                  ]);
+                                                  ]));
                                                 }),
                                             if (globals.verifiedUsers
                                                 .contains(Data.subPrismWalls![widget.index]["email"].toString()))

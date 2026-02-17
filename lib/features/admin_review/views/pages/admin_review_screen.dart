@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -6,6 +7,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+@RoutePage()
 class AdminReviewScreen extends StatefulWidget {
   const AdminReviewScreen({super.key});
 
