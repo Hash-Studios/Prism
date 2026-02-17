@@ -32,7 +32,7 @@ final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
 @RoutePage()
 class ProfileScreen extends StatefulWidget {
   final List? arguments;
-  const ProfileScreen(this.arguments);
+  const ProfileScreen({this.arguments});
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
@@ -42,7 +42,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void initState() {
-    email = widget.arguments![0].toString();
+    email = (widget.arguments != null && widget.arguments!.isNotEmpty)
+        ? widget.arguments![0].toString()
+        : globals.prismUser.email;
     super.initState();
   }
 

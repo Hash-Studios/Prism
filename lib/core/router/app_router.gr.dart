@@ -571,10 +571,8 @@ class OnboardingRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [ProfileScreen]
 class ProfileRoute extends PageRouteInfo<ProfileRouteArgs> {
-  ProfileRoute({
-    required List<dynamic>? arguments,
-    List<PageRouteInfo>? children,
-  }) : super(
+  ProfileRoute({List<dynamic>? arguments, List<PageRouteInfo>? children})
+      : super(
           ProfileRoute.name,
           args: ProfileRouteArgs(arguments: arguments),
           initialChildren: children,
@@ -585,14 +583,16 @@ class ProfileRoute extends PageRouteInfo<ProfileRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<ProfileRouteArgs>();
-      return ProfileScreen(args.arguments);
+      final args = data.argsAs<ProfileRouteArgs>(
+        orElse: () => const ProfileRouteArgs(),
+      );
+      return ProfileScreen(arguments: args.arguments);
     },
   );
 }
 
 class ProfileRouteArgs {
-  const ProfileRouteArgs({required this.arguments});
+  const ProfileRouteArgs({this.arguments});
 
   final List<dynamic>? arguments;
 

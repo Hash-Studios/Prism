@@ -17,8 +17,17 @@ class DashboardPage extends StatelessWidget {
         ProfileTabRoute(),
       ],
       builder: (context, child) {
-        return BottomBar(
-          child: child,
+        final tabsRouter = AutoTabsRouter.of(context);
+        return PopScope(
+          canPop: tabsRouter.activeIndex == 0,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop) {
+              tabsRouter.setActiveIndex(0);
+            }
+          },
+          child: BottomBar(
+            child: child,
+          ),
         );
       },
     );
