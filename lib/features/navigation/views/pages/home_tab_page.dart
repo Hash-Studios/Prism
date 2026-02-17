@@ -52,14 +52,14 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
 
   Future<void> saveFavToLocal() async {
     if (globals.prismUser.loggedIn) {
-      await context.favouriteWallsAdapter(listen: false).getDataBase().then(
-        (value) {
-          for (final element in value!) {
-            box.put(element['id'].toString(), true);
-          }
-          box.put('dataSaved', true);
-        },
-      );
+      final value = await context.favouriteWallsAdapter(listen: false).getDataBase();
+      if (value == null || value.isEmpty) {
+        return;
+      }
+      for (final element in value) {
+        box.put(element['id'].toString(), true);
+      }
+      box.put('dataSaved', true);
     }
   }
 
