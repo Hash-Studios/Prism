@@ -7,7 +7,7 @@ import 'package:Prism/features/category_feed/views/widgets/pexels_tile.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -114,7 +114,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                               onTap: () {
                                 if (PData.wallsP == []) {
                                 } else {
-                                  Navigator.pushNamed(context, wallpaperRoute,
+                                  context.pushNamedRoute(wallpaperRoute,
                                       arguments: [widget.provider, i, PData.wallsP[i].src!["small"]]);
                                 }
                               },

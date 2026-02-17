@@ -4,7 +4,7 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -147,7 +147,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                           splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
                           highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                           onTap: () {
-                            Navigator.pushNamed(context, shareRoute, arguments: [
+                            context.pushNamedRoute(shareRoute, arguments: [
                               anyCollectionWalls![index]["id"],
                               anyCollectionWalls![index]["wallpaper_provider"],
                               anyCollectionWalls![index]["wallpaper_url"],

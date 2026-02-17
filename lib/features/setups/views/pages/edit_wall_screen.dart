@@ -3,8 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
@@ -61,8 +60,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
   }
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -96,8 +94,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
             leading: IconButton(
                 icon: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
                 onPressed: () {
-                  navStack.removeLast();
-                  logger.d(navStack.toString());
+                  popNavStack();
                   Navigator.pop(context);
                 }),
             actions: <Widget>[
@@ -378,10 +375,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
     final Duration diff = DateTime.now().difference(start);
     image!.writeAsBytesSync(result);
     logger.d('image_editor time : $diff');
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     Future.delayed(const Duration())
-        .then((value) => Navigator.pushReplacementNamed(context, uploadWallRoute, arguments: [image, false]));
+        .then((value) => context.pushReplacementNamedRoute(uploadWallRoute, arguments: [image, false]));
   }
 
   void flip() {

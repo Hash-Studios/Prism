@@ -3,8 +3,7 @@ import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:flutter/material.dart';
 
 class CollectionViewScreen extends StatelessWidget {
@@ -17,8 +16,7 @@ class CollectionViewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        if (navStack.length > 1) navStack.removeLast();
-        logger.d(navStack.toString());
+        popNavStackIfPossible();
         return true;
       },
       child: Scaffold(

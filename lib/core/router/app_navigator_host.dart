@@ -1,18 +1,18 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/router/undefined_screen.dart';
-import 'package:Prism/routes/router.dart' as legacy_router;
+import 'package:Prism/core/router/app_route_factory.dart' as app_route_factory;
 import 'package:flutter/cupertino.dart';
 
-class LegacyNavigatorHost extends StatefulWidget {
-  const LegacyNavigatorHost({super.key, required this.initialRouteName});
+class AppNavigatorHost extends StatefulWidget {
+  const AppNavigatorHost({super.key, required this.initialRouteName});
 
   final String initialRouteName;
 
   @override
-  State<LegacyNavigatorHost> createState() => _LegacyNavigatorHostState();
+  State<AppNavigatorHost> createState() => _AppNavigatorHostState();
 }
 
-class _LegacyNavigatorHostState extends State<LegacyNavigatorHost> {
+class _AppNavigatorHostState extends State<AppNavigatorHost> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   Future<bool> _onWillPop() async {
@@ -31,7 +31,7 @@ class _LegacyNavigatorHostState extends State<LegacyNavigatorHost> {
       child: Navigator(
         key: _navigatorKey,
         initialRoute: widget.initialRouteName,
-        onGenerateRoute: legacy_router.generateRoute,
+        onGenerateRoute: app_route_factory.generateRoute,
         onUnknownRoute: (settings) => CupertinoPageRoute(
           builder: (context) => UndefinedScreen(name: settings.name),
         ),

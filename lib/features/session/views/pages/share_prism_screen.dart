@@ -1,7 +1,6 @@
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
@@ -30,8 +29,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   }
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 

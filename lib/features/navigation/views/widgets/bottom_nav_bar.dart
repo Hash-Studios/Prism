@@ -5,8 +5,7 @@ import 'package:Prism/features/navigation/views/widgets/inherited_scroll_control
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/foundation.dart';
@@ -227,34 +226,33 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: navStack.last == "Home" ? 9 : 0,
+                      height: currentNavStackEntry == "Home" ? 9 : 0,
                     ),
                     Icon(JamIcons.home_f, color: Theme.of(context).colorScheme.secondary),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: navStack.last == "Home"
+                        color: currentNavStackEntry == "Home"
                             ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: navStack.last == "Home" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
-                      width: navStack.last == "Home" ? _paddingAnimation.value : 0,
-                      height: navStack.last == "Home" ? 3 : 0,
+                      margin: currentNavStackEntry == "Home" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      width: currentNavStackEntry == "Home" ? _paddingAnimation.value : 0,
+                      height: currentNavStackEntry == "Home" ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  navStack.last == "Home"
+                  currentNavStackEntry == "Home"
                       ? logger.d("Currently on Home")
                       : Navigator.of(context).popUntil((route) {
-                          if (navStack.last != "Home") {
-                            navStack.removeLast();
-                            logger.d(navStack.toString());
+                          if (currentNavStackEntry != "Home") {
+                            popNavStack();
                             return false;
                           } else {
-                            logger.d(navStack.toString());
+                            logNavStack();
                             return true;
                           }
                         });
@@ -271,30 +269,30 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: navStack.last == "Search" ? 9 : 0,
+                      height: currentNavStackEntry == "Search" ? 9 : 0,
                     ),
                     Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: navStack.last == "Search"
+                        color: currentNavStackEntry == "Search"
                             ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: navStack.last == "Search" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
-                      width: navStack.last == "Search" ? _paddingAnimation.value : 0,
-                      height: navStack.last == "Search" ? 3 : 0,
+                      margin: currentNavStackEntry == "Search" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      width: currentNavStackEntry == "Search" ? _paddingAnimation.value : 0,
+                      height: currentNavStackEntry == "Search" ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  navStack.last == "Search"
+                  currentNavStackEntry == "Search"
                       ? logger.d("Currently on Search")
-                      : navStack.last == "Home"
-                          ? Navigator.of(context).pushNamed(searchRoute)
-                          : Navigator.of(context).pushNamed(searchRoute);
+                      : currentNavStackEntry == "Home"
+                          ? context.pushNamedRoute(searchRoute)
+                          : context.pushNamedRoute(searchRoute);
                 },
               ),
             ),
@@ -326,7 +324,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Container(
-                          height: navStack.last == "Add" ? 9 : 0,
+                          height: currentNavStackEntry == "Add" ? 9 : 0,
                         ),
                         Icon(
                           JamIcons.plus,
@@ -337,15 +335,15 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(500),
-                            color: navStack.last == "Add"
+                            color: currentNavStackEntry == "Add"
                                 ? Theme.of(context).colorScheme.error == Colors.black
                                     ? Colors.white24
                                     : Theme.of(context).colorScheme.error
                                 : Theme.of(context).colorScheme.secondary,
                           ),
-                          margin: navStack.last == "Add" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
-                          width: navStack.last == "Add" ? _paddingAnimation.value : 0,
-                          height: navStack.last == "Add" ? 3 : 0,
+                          margin: currentNavStackEntry == "Add" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                          width: currentNavStackEntry == "Add" ? _paddingAnimation.value : 0,
+                          height: currentNavStackEntry == "Add" ? 3 : 0,
                         )
                       ],
                     ),
@@ -372,30 +370,30 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: navStack.last == "Setups" ? 9 : 0,
+                      height: currentNavStackEntry == "Setups" ? 9 : 0,
                     ),
                     Icon(JamIcons.instant_picture_f, color: Theme.of(context).colorScheme.secondary),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: navStack.last == "Setups"
+                        color: currentNavStackEntry == "Setups"
                             ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: navStack.last == "Setups" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
-                      width: navStack.last == "Setups" ? _paddingAnimation.value : 0,
-                      height: navStack.last == "Setups" ? 3 : 0,
+                      margin: currentNavStackEntry == "Setups" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      width: currentNavStackEntry == "Setups" ? _paddingAnimation.value : 0,
+                      height: currentNavStackEntry == "Setups" ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  navStack.last == "Setups"
+                  currentNavStackEntry == "Setups"
                       ? logger.d("Currently on Setups")
-                      : navStack.last == "Home"
-                          ? Navigator.of(context).pushNamed(setupRoute)
-                          : Navigator.of(context).pushNamed(setupRoute);
+                      : currentNavStackEntry == "Home"
+                          ? context.pushNamedRoute(setupRoute)
+                          : context.pushNamedRoute(setupRoute);
                 },
               ),
             ),
@@ -409,7 +407,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: navStack.last == "Profile" ? 9 : 0,
+                      height: currentNavStackEntry == "Profile" ? 9 : 0,
                     ),
                     if (globals.prismUser.loggedIn == true)
                       imageNotFound
@@ -443,37 +441,36 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: navStack.last == "Profile"
+                        color: currentNavStackEntry == "Profile"
                             ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: navStack.last == "Profile" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
-                      width: navStack.last == "Profile" ? _paddingAnimation.value : 0,
-                      height: navStack.last == "Profile" ? 3 : 0,
+                      margin: currentNavStackEntry == "Profile" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      width: currentNavStackEntry == "Profile" ? _paddingAnimation.value : 0,
+                      height: currentNavStackEntry == "Profile" ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  if (navStack.last == "Profile") {
+                  if (currentNavStackEntry == "Profile") {
                     logger.d("Currently on Profile");
                   } else {
-                    if (navStack.last == "Home") {
-                      Navigator.of(context).pushNamed(profileRoute, arguments: [globals.prismUser.email]);
+                    if (currentNavStackEntry == "Home") {
+                      context.pushNamedRoute(profileRoute, arguments: [globals.prismUser.email]);
                     } else {
                       Navigator.of(context).popUntil((route) {
-                        if (navStack.last != "Home" && navStack.last != "Profile") {
-                          navStack.removeLast();
-                          logger.d(navStack.toString());
+                        if (currentNavStackEntry != "Home" && currentNavStackEntry != "Profile") {
+                          popNavStack();
                           return false;
                         } else {
-                          logger.d(navStack.toString());
+                          logNavStack();
                           return true;
                         }
                       });
-                      if ((navStack.last == "Home") == true) {
-                        Navigator.of(context).pushNamed(profileRoute, arguments: [globals.prismUser.email]);
+                      if ((currentNavStackEntry == "Home") == true) {
+                        context.pushNamedRoute(profileRoute, arguments: [globals.prismUser.email]);
                       }
                     }
                   }
@@ -511,8 +508,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
         _wallpaper = File(pickedFile.path);
       });
       Navigator.pop(context);
-      Future.delayed(const Duration())
-          .then((value) => Navigator.pushNamed(context, editWallRoute, arguments: [_wallpaper]));
+      Future.delayed(const Duration()).then((value) => context.pushNamedRoute(editWallRoute, arguments: [_wallpaper]));
     }
   }
 
@@ -583,11 +579,11 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                             if (globals.prismUser.loggedIn == false) {
                               googleSignInPopUp(context, () {
                                 Navigator.of(context).pop();
-                                Navigator.pushNamed(context, premiumRoute);
+                                context.pushNamedRoute(premiumRoute);
                               });
                             } else {
                               Navigator.of(context).pop();
-                              Navigator.pushNamed(context, premiumRoute);
+                              context.pushNamedRoute(premiumRoute);
                             }
                           }
                         } else {
@@ -661,8 +657,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     child: GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
-                        Future.delayed(const Duration())
-                            .then((value) => Navigator.pushNamed(context, setupGuidelinesRoute));
+                        Future.delayed(const Duration()).then((value) => context.pushNamedRoute(setupGuidelinesRoute));
                       },
                       child: SizedBox(
                         width: width / 2 - 20,

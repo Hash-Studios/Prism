@@ -6,8 +6,7 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -33,8 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        if (navStack.length > 1) navStack.removeLast();
-        logger.d(navStack.toString());
+        popNavStackIfPossible();
         return true;
       },
       child: Scaffold(
@@ -77,11 +75,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (globals.prismUser.premium == true) {
                             main.RestartWidget.restartApp(context);
                           } else {
-                            Navigator.pushNamed(context, premiumRoute);
+                            context.pushNamedRoute(premiumRoute);
                           }
                         });
                       } else {
-                        Navigator.pushNamed(context, premiumRoute);
+                        context.pushNamedRoute(premiumRoute);
                       }
                     },
                     leading: const Icon(JamIcons.instant_picture_f),
@@ -117,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             // ListTile(
             //   onTap: () {
-            //     Navigator.pushNamed(context, themeViewRoute);
+            //     context.pushNamedRoute(themeViewRoute);
             //   },
             //   leading: const Icon(JamIcons.wrench),
             //   title: Text(

@@ -14,8 +14,7 @@ import 'package:Prism/features/profile_setups/views/profile_setups_bloc_adapter.
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -40,8 +39,7 @@ class ProfileSetupViewScreen extends StatefulWidget {
 
 class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStack();
     return true;
   }
 
@@ -370,12 +368,11 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                         ),
                                                         labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                         onPressed: () {
-                                                          Navigator.pushNamed(context, followerProfileRoute,
-                                                              arguments: [
-                                                                context
-                                                                    .profileSetupsAdapter(listen: false)
-                                                                    .profileSetups![index!]["email"],
-                                                              ]);
+                                                          context.pushNamedRoute(followerProfileRoute, arguments: [
+                                                            context
+                                                                .profileSetupsAdapter(listen: false)
+                                                                .profileSetups![index!]["email"],
+                                                          ]);
                                                         }),
                                                   ),
                                                   if (globals.verifiedUsers.contains(context
@@ -442,7 +439,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                 .profileSetups![index!]["wallpaper_url"]
                                                 .toString());
                                           } else {
-                                            Navigator.pushNamed(context, shareRoute, arguments: [
+                                            context.pushNamedRoute(shareRoute, arguments: [
                                               context
                                                   .profileSetupsAdapter(listen: false)
                                                   .profileSetups![index!]["wall_id"]
@@ -566,7 +563,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                     .profileSetups![index!]["wallpaper_url"]
                                                     .toString());
                                               } else {
-                                                Navigator.pushNamed(context, shareRoute, arguments: [
+                                                context.pushNamedRoute(shareRoute, arguments: [
                                                   context
                                                       .profileSetupsAdapter(listen: false)
                                                       .profileSetups![index!]["wall_id"]
@@ -739,7 +736,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                       .profileSetups![index!]["wallpaper_url"]
                                                       .toString());
                                                 } else {
-                                                  Navigator.pushNamed(context, shareRoute, arguments: [
+                                                  context.pushNamedRoute(shareRoute, arguments: [
                                                     context
                                                         .profileSetupsAdapter(listen: false)
                                                         .profileSetups![index!]["wall_id"]
@@ -1094,8 +1091,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                   padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                   child: IconButton(
                     onPressed: () {
-                      navStack.removeLast();
-                      logger.d(navStack.toString());
+                      popNavStack();
                       Navigator.pop(context);
                     },
                     color: Theme.of(context).colorScheme.secondary,

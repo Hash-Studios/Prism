@@ -7,6 +7,7 @@ import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/router/nav_stack.dart' as router;
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -26,8 +27,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/payments/upgrade.dart';
-import 'package:Prism/routes/router.dart' as router;
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -213,7 +213,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     _appRouter = AppRouter(
-      initialLegacyRoute: ((prefs.get('onboarded_new') as bool?) ?? false) ? splashRoute : onboardingRoute,
+      initialRouteName: ((prefs.get('onboarded_new') as bool?) ?? false) ? splashRoute : onboardingRoute,
     );
     FlutterDisplayMode.setHighRefreshRate();
     localNotification.createNotificationChannel("followers", "Followers", "Get notifications for new followers.", true);
@@ -243,7 +243,7 @@ class RestartWidget extends StatefulWidget {
   const RestartWidget({this.child});
   final Widget? child;
   static void restartApp(BuildContext context) {
-    router.navStack = ["Home"];
+    router.resetNavStack();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       systemNavigationBarColor: Color(prefs.get('systemOverlayColor') as int),
     ));

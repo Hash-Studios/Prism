@@ -5,8 +5,7 @@ import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
@@ -63,8 +62,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
                   onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels, widget.prism);
                 }
                 if (widget.trash) {
-                  navStack.removeLast();
-                  logger.d(navStack.toString());
+                  popNavStack();
                   Navigator.pop(context);
                 }
               },

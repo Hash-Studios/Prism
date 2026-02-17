@@ -3,7 +3,7 @@ import 'package:Prism/features/profile_setups/views/profile_setups_bloc_adapter.
 import 'package:Prism/features/setups/views/widgets/loading_setup_cards.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -199,7 +199,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
                                 onTap: () {
                                   if (context.profileSetupsAdapter(listen: false).profileSetups == []) {
                                   } else {
-                                    Navigator.pushNamed(context, profileSetupViewRoute, arguments: [index]);
+                                    context.pushNamedRoute(profileSetupViewRoute, arguments: [index]);
                                   }
                                 },
                               ),

@@ -1,16 +1,16 @@
-import 'package:Prism/core/router/legacy_navigator_host.dart';
+import 'package:Prism/core/router/app_navigator_host.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/widgets.dart';
 
 class AppRouter {
-  AppRouter({required this.initialLegacyRoute})
+  AppRouter({required this.initialRouteName})
       : _router = RootStackRouter.build(
           routes: [
             NamedRouteDef(
               name: _appShellRouteName,
               path: '/',
-              builder: (context, data) => LegacyNavigatorHost(
-                initialRouteName: initialLegacyRoute,
+              builder: (context, data) => AppNavigatorHost(
+                initialRouteName: initialRouteName,
               ),
             ),
           ],
@@ -18,7 +18,7 @@ class AppRouter {
 
   static const String _appShellRouteName = 'AppShellRoute';
 
-  final String initialLegacyRoute;
+  final String initialRouteName;
   final RootStackRouter _router;
 
   RouterConfig<Object> config() {

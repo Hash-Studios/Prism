@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/foundation.dart';
@@ -87,7 +87,7 @@ class _EditButtonState extends State<EditButton> {
       imageThumbData = filePathAndNameThumb;
       isLoading = false;
     });
-    Navigator.pushNamed(context, wallpaperFilterRoute, arguments: [
+    context.pushNamedRoute(wallpaperFilterRoute, arguments: [
       imagelib.decodeImage(File(imageThumbData).readAsBytesSync()),
       imagelib.decodeImage(File(imageData).readAsBytesSync()),
       path.basename(File(imageThumbData).path),

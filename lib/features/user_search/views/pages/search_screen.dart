@@ -8,7 +8,7 @@ import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -20,8 +20,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -212,7 +211,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       return Container();
                       // return IconButton(
                       //   onPressed: () {
-                      //     Navigator.pushNamed(context, userSearchRoute);
+                      //     context.pushNamedRoute(userSearchRoute);
                       //   },
                       //   icon: const Icon(
                       //     JamIcons.users,

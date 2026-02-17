@@ -3,7 +3,7 @@ import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -59,8 +59,7 @@ class _ThemeViewState extends State<ThemeView> {
   }
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -91,8 +90,7 @@ class _ThemeViewState extends State<ThemeView> {
                       .replaceAll(")", "");
                   main.prefs.put("systemOverlayColor", accentColor);
                   analytics.logEvent(name: "accent_changed", parameters: {'color': hexString});
-                  navStack.removeLast();
-                  logger.d(navStack.toString());
+                  popNavStack();
                   Navigator.pop(context);
                 })
           ],

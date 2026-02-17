@@ -4,9 +4,7 @@ import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -26,8 +24,7 @@ class _UserSearchState extends State<UserSearch> {
   late bool isSubmitted;
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -457,7 +454,7 @@ class _UsersResultListState extends State<UsersResultList> {
                       Positioned(
                         child: IconButton(
                           onPressed: () {
-                            Navigator.pushNamed(context, followerProfileRoute, arguments: [
+                            context.pushNamedRoute(followerProfileRoute, arguments: [
                               user.email,
                             ]);
                           },

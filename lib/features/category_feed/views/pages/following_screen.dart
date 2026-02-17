@@ -8,8 +8,7 @@ import 'package:Prism/features/navigation/views/widgets/inherited_scroll_control
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -34,8 +33,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
   final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
   CollectionReference? walls;
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     logger.d("Bye! Have a good day!");
     return true;
   }
@@ -167,12 +165,11 @@ class _FollowingTileState extends State<FollowingTile> {
                                 true &&
                             globals.prismUser.premium != true
                         ? showGooglePopUp(context, () {
-                            Navigator.pushNamed(
-                              context,
+                            context.pushNamedRoute(
                               premiumRoute,
                             );
                           })
-                        : Navigator.pushNamed(context, shareRoute, arguments: [
+                        : context.pushNamedRoute(shareRoute, arguments: [
                             widget.finalDocs[widget.index]["id"],
                             widget.finalDocs[widget.index]["wallpaper_provider"],
                             widget.finalDocs[widget.index]["wallpaper_url"],
@@ -201,7 +198,7 @@ class _FollowingTileState extends State<FollowingTile> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    Navigator.pushNamed(context, followerProfileRoute, arguments: [
+                    context.pushNamedRoute(followerProfileRoute, arguments: [
                       widget.finalDocs[widget.index]["email"],
                     ]);
                   },

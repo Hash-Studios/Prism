@@ -3,7 +3,7 @@ import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:http/http.dart' as http;
 
 List<WallPaperP> wallsP = [];
@@ -27,7 +27,7 @@ Future<List<WallPaperP>> categoryDataFetcherP(String categoryName, String mode) 
     final int origPageNumber = pageNumbersP[index][categoryName]!;
     pageNumbersP[index] = {categoryName: origPageNumber + 1};
   }
-  if (navStack.last == "Home") {
+  if (currentNavStackEntry == "Home") {
     logger.d(
         "https://api.pexels.com/v1/search?query=$categoryName&per_page=80&page=${pageNumbersP[index][categoryName]}");
     http.get(
@@ -67,7 +67,7 @@ Future<List<WallPaperP>> getDataP(String mode) async {
   } else {
     pageGetDataP = pageGetDataP + 1;
   }
-  if (navStack.last == "Home") {
+  if (currentNavStackEntry == "Home") {
     http.get(Uri.parse("https://api.pexels.com/v1/curated?per_page=24&page=$pageGetDataP"),
         headers: {"Authorization": pexelApiKey}).then(
       (http.Response response) {

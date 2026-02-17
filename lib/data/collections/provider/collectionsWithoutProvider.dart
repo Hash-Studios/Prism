@@ -1,5 +1,5 @@
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
@@ -8,7 +8,7 @@ List<QueryDocumentSnapshot>? anyCollectionWalls;
 String? currentCollectionName;
 
 Future<List?> getCollections() async {
-  if (navStack.last == "Home") {
+  if (currentNavStackEntry == "Home") {
     logger.d("Fetching collections!");
     collections = [];
     await databaseReference.collection("collections").orderBy("lastEditTime", descending: true).get().then((value) {

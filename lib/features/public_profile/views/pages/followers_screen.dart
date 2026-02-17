@@ -1,7 +1,5 @@
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -27,8 +25,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
         onWillPop: () async {
-          if (navStack.length > 1) navStack.removeLast();
-          logger.d(navStack.toString());
+          popNavStackIfPossible();
           return true;
         },
         child: Scaffold(
@@ -57,7 +54,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
                           .copyWith(color: Theme.of(context).colorScheme.secondary),
                     ),
                     onTap: () {
-                      Navigator.pushNamed(context, followerProfileRoute, arguments: [followers![index].toString()]);
+                      context.pushNamedRoute(followerProfileRoute, arguments: [followers![index].toString()]);
                     },
                   );
                 })));

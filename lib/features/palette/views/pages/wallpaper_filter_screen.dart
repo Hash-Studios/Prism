@@ -9,8 +9,7 @@ import 'package:Prism/features/palette/views/pages/custom_filters.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/foundation.dart';
@@ -124,8 +123,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -229,7 +227,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       toasts.codeSend("Editing Wallpaper is a premium feature.");
       googleSignInPopUp(context, () {
         if (globals.prismUser.premium == false) {
-          Navigator.pushNamed(context, premiumRoute);
+          context.pushNamedRoute(premiumRoute);
         } else {
           func();
         }
@@ -237,7 +235,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     } else {
       if (globals.prismUser.premium == false) {
         toasts.codeSend("Editing Wallpaper is a premium feature.");
-        Navigator.pushNamed(context, premiumRoute);
+        context.pushNamedRoute(premiumRoute);
       } else {
         func();
       }
@@ -257,8 +255,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           leading: IconButton(
               icon: const Icon(JamIcons.close),
               onPressed: () {
-                navStack.removeLast();
-                logger.d(navStack.toString());
+                popNavStack();
                 Navigator.pop(context);
               }),
           backgroundColor: Theme.of(context).primaryColor,

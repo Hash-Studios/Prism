@@ -4,7 +4,7 @@ import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/wallhaven/model/tag.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:http/http.dart' as http;
 
 List<WallPaper> walls = [];
@@ -28,7 +28,7 @@ Future<List<WallPaper>> categoryDataFetcher(String categoryName, String mode, in
     final int origPageNumber = pageNumbers[index][categoryName]!;
     pageNumbers[index] = {categoryName: origPageNumber + 1};
   }
-  if (navStack.last == "Home") {
+  if (currentNavStackEntry == "Home") {
     http
         .get(
       Uri.parse(
@@ -75,7 +75,7 @@ Future<List<WallPaper>> getData(String mode, int? categories, int? purity) async
   } else {
     pageGetData = pageGetData + 1;
   }
-  if (navStack.last == "Home") {
+  if (currentNavStackEntry == "Home") {
     http
         .get(
       Uri.parse(

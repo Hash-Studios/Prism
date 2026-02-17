@@ -10,7 +10,7 @@ import 'package:Prism/features/navigation/views/widgets/inherited_scroll_control
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -132,12 +132,11 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                               true &&
                                           globals.prismUser.premium != true
                                       ? showGooglePopUp(context, () {
-                                          Navigator.pushNamed(
-                                            context,
+                                          context.pushNamedRoute(
                                             premiumRoute,
                                           );
                                         })
-                                      : Navigator.pushNamed(context, wallpaperRoute, arguments: [
+                                      : context.pushNamedRoute(wallpaperRoute, arguments: [
                                           widget.provider,
                                           i,
                                           Data.subPrismWalls![i]["wallpaper_thumb"],

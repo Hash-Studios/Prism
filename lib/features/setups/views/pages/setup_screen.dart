@@ -7,8 +7,7 @@ import 'package:Prism/features/setups/views/widgets/arrow_animation.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -25,8 +24,7 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   Future<bool> onWillPop() async {
-    navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStack();
     return true;
   }
 
@@ -78,14 +76,14 @@ class _SetupPageState extends State<SetupPage> {
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, () {
         if (globals.prismUser.premium == false) {
-          Navigator.pushNamed(context, premiumRoute);
+          context.pushNamedRoute(premiumRoute);
         } else {
           func();
         }
       });
     } else {
       if (globals.prismUser.premium == false) {
-        Navigator.pushNamed(context, premiumRoute);
+        context.pushNamedRoute(premiumRoute);
       } else {
         func();
       }
@@ -168,10 +166,10 @@ class _SetupPageState extends State<SetupPage> {
                               onTap: () {
                                 if (pageNumber >= 5) {
                                   showPremiumPopUp(() {
-                                    Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
+                                    context.pushNamedRoute(setupViewRoute, arguments: [pageNumber]);
                                   });
                                 } else {
-                                  Navigator.pushNamed(context, setupViewRoute, arguments: [pageNumber]);
+                                  context.pushNamedRoute(setupViewRoute, arguments: [pageNumber]);
                                 }
                               },
                               child: AnimatedContainer(

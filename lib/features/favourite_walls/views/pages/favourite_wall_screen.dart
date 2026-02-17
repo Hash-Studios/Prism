@@ -2,8 +2,7 @@ import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/fav_loader.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:flutter/material.dart';
 
 class FavouriteWallpaperScreen extends StatelessWidget {
@@ -15,8 +14,7 @@ class FavouriteWallpaperScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        if (navStack.length > 1) navStack.removeLast();
-        logger.d(navStack.toString());
+        popNavStackIfPossible();
         return true;
       },
       child: Scaffold(

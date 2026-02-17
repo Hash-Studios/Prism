@@ -14,7 +14,7 @@ import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -33,8 +33,7 @@ class FavWallpaperViewScreen extends StatefulWidget {
 
 class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -853,8 +852,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
-                            navStack.removeLast();
-                            logger.d(navStack.toString());
+                            popNavStack();
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -1398,8 +1396,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
-                            navStack.removeLast();
-                            logger.d(navStack.toString());
+                            popNavStack();
                             Navigator.pop(context);
                           },
                           color: isLoading
