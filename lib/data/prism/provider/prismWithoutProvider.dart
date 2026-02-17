@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
@@ -13,7 +13,7 @@ List? subSortedData;
 late List wallsDataL;
 Map wall = {};
 Future<List?> getPrismWalls() async {
-  if (navStack.last == "Home") {
+  if (currentNavStackEntry == "Home") {
     logger.d("Fetching first 24 walls!");
     prismWalls = [];
     subPrismWalls = [];

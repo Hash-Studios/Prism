@@ -14,7 +14,7 @@ import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -33,8 +33,7 @@ class UserProfileWallViewScreen extends StatefulWidget {
 
 class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -590,8 +589,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                     padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                     child: IconButton(
                       onPressed: () {
-                        navStack.removeLast();
-                        logger.d(navStack.toString());
+                        popNavStack();
                         Navigator.pop(context);
                       },
                       color: isLoading

@@ -7,7 +7,7 @@ import 'package:Prism/features/navigation/views/widgets/inherited_scroll_control
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -237,7 +237,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                     if (widget.selectedProvider == "WallHaven") {
                                       if (wData.wallsS == []) {
                                       } else {
-                                        Navigator.pushNamed(context, wallpaperRoute, arguments: [
+                                        context.pushNamedRoute(wallpaperRoute, arguments: [
                                           widget.query,
                                           index,
                                           wData.wallsS[index].thumbs!["small"],
@@ -246,7 +246,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                     } else if (widget.selectedProvider == "Pexels") {
                                       if (pData.wallsPS == []) {
                                       } else {
-                                        Navigator.pushNamed(context, searchWallpaperRoute, arguments: [
+                                        context.pushNamedRoute(searchWallpaperRoute, arguments: [
                                           widget.selectedProvider,
                                           widget.query,
                                           index,

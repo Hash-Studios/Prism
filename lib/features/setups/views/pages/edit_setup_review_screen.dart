@@ -7,8 +7,7 @@ import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -210,15 +209,13 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
     } catch (e) {
       logger.d(e.toString());
       Navigator.pop(context);
-      navStack.removeLast();
-      logger.d(navStack.toString());
+      popNavStack();
       toasts.error("Some uploading issue, please try again.");
     }
   }
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -246,8 +243,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           iconURL.text == "") {
                         toasts.error("Please fill all required fields!");
                       } else {
-                        navStack.removeLast();
-                        logger.d(navStack.toString());
+                        popNavStack();
                         Navigator.pop(context);
                         analytics.logEvent(name: 'edit_setup', parameters: {'id': id, 'link': imageURL});
                         WallStore.updateSetup(
@@ -924,8 +920,8 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
                             if (pickedFile != null) {
                               Future.delayed(const Duration()).then((value) async {
-                                final argumentsFromWall = await Navigator.pushNamed(context, uploadWallRoute,
-                                    arguments: [File(pickedFile.path), true]);
+                                final argumentsFromWall = await context
+                                    .pushNamedRoute(uploadWallRoute, arguments: [File(pickedFile.path), true]);
                                 if (argumentsFromWall != null) {
                                   final List argsC = argumentsFromWall as List;
                                   if (argsC.length == 2) {

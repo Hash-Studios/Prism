@@ -8,7 +8,7 @@ import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -261,12 +261,11 @@ class PhotographerWallTile extends StatelessWidget {
                               true &&
                           globals.prismUser.premium != true
                       ? showGooglePopUp(context, () {
-                          Navigator.pushNamed(
-                            context,
+                          context.pushNamedRoute(
                             premiumRoute,
                           );
                         })
-                      : Navigator.pushNamed(context, userProfileWallViewRoute, arguments: [
+                      : context.pushNamedRoute(userProfileWallViewRoute, arguments: [
                           index,
                           context
                               .publicProfileAdapter(listen: false)

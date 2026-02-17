@@ -8,7 +8,7 @@ import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -83,7 +83,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
 
   void showPremiumPopUp(Function func) {
     if (globals.prismUser.premium == false) {
-      Navigator.pushNamed(context, premiumRoute);
+      context.pushNamedRoute(premiumRoute);
     } else {
       func();
     }
@@ -132,15 +132,13 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           return GestureDetector(
             onTap: () {
               if (CData.collections![index]['premium'] == false) {
-                Navigator.pushNamed(
-                  context,
+                context.pushNamedRoute(
                   collectionViewRoute,
                   arguments: [CData.collections![index]['name'].toString().trim().toLowerCase()],
                 );
               } else {
                 if (globals.prismUser.premium == true) {
-                  Navigator.pushNamed(
-                    context,
+                  context.pushNamedRoute(
                     collectionViewRoute,
                     arguments: [CData.collections![index]['name'].toString().trim().toLowerCase()],
                   );

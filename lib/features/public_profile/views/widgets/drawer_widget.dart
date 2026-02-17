@@ -6,7 +6,7 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -128,7 +128,7 @@ class ProfileDrawer extends StatelessWidget {
                   text: 'Buy Premium',
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.pushNamed(context, premiumRoute);
+                    context.pushNamedRoute(premiumRoute);
                   },
                   context: context),
             if (globals.prismUser.premium == true) Container() else const Divider(),
@@ -138,7 +138,7 @@ class ProfileDrawer extends StatelessWidget {
                 text: 'Wallpapers',
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, favWallRoute);
+                  context.pushNamedRoute(favWallRoute);
                 },
                 context: context),
             createDrawerBodyItem(
@@ -146,7 +146,7 @@ class ProfileDrawer extends StatelessWidget {
                 text: 'Setups',
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, favSetupRoute);
+                  context.pushNamedRoute(favSetupRoute);
                 },
                 context: context),
             const Divider(),
@@ -156,7 +156,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Downloaded Walls',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, downloadRoute);
+                context.pushNamedRoute(downloadRoute);
               },
               context: context,
             ),
@@ -263,7 +263,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Review Status',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, reviewRoute);
+                context.pushNamedRoute(reviewRoute);
               },
               context: context,
             ),
@@ -274,8 +274,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Themes',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(
-                  context,
+                context.pushNamedRoute(
                   themeViewRoute,
                 );
               },
@@ -330,7 +329,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Settings',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, settingsRoute);
+                context.pushNamedRoute(settingsRoute);
               },
               context: context,
             ),
@@ -339,7 +338,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'About Prism',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, aboutRoute);
+                context.pushNamedRoute(aboutRoute);
               },
               context: context,
             ),

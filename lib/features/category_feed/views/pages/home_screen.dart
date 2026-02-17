@@ -4,7 +4,7 @@ import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,8 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await context.categoryChangeWallpaperFuture(choice, "r");
       return false;
     }
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     logger.d("Bye! Have a good day!");
     return true;
   }

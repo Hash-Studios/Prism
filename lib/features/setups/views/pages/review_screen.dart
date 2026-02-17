@@ -3,8 +3,7 @@ import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -28,8 +27,7 @@ class ReviewScreen extends StatefulWidget {
 class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderStateMixin {
   TabController? tabController;
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -73,8 +71,7 @@ class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderSt
             leading: IconButton(
                 icon: const Icon(JamIcons.chevron_left),
                 onPressed: () {
-                  navStack.removeLast();
-                  logger.d(navStack.toString());
+                  popNavStack();
                   Navigator.pop(context);
                 }),
             backgroundColor: Theme.of(context).primaryColor,
@@ -1162,7 +1159,7 @@ class SetupTile extends StatelessWidget {
                                   child: IconButton(
                                     icon: Icon(JamIcons.pencil, color: Theme.of(context).primaryColor),
                                     onPressed: () {
-                                      Navigator.pushNamed(context, editSetupDetailsRoute, arguments: [wallpaper]);
+                                      context.pushNamedRoute(editSetupDetailsRoute, arguments: [wallpaper]);
                                     },
                                   ),
                                 ),

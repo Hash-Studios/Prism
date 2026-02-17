@@ -8,7 +8,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -334,8 +334,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -402,8 +401,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           leading: IconButton(
               icon: const Icon(JamIcons.close),
               onPressed: () {
-                navStack.removeLast();
-                logger.d(navStack.toString());
+                popNavStack();
                 Navigator.pop(context);
               }),
           title: Text(
@@ -1017,8 +1015,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               isLoading = false;
                             });
                             Navigator.pop(context);
-                            navStack.removeLast();
-                            logger.d(navStack.toString());
+                            popNavStack();
                             toasts.codeSend("Details updated!");
                           }
                         : (usernameEdit && enabled)
@@ -1072,8 +1069,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   isLoading = false;
                                 });
                                 Navigator.pop(context);
-                                navStack.removeLast();
-                                logger.d(navStack.toString());
+                                popNavStack();
                                 toasts.codeSend("Details updated!");
                               }
                             : null,

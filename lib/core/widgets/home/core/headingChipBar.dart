@@ -1,5 +1,4 @@
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
@@ -21,14 +20,7 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
           icon: Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
           onPressed: () {
             Navigator.pop(context);
-            if (navStack.length > 1) {
-              navStack.removeLast();
-              if ((navStack.last == "Wallpaper") ||
-                  (navStack.last == "Search Wallpaper") ||
-                  (navStack.last == "SharedWallpaper") ||
-                  (navStack.last == "SetupView")) {}
-            }
-            logger.d(navStack.toString());
+            popNavStackIfPossible();
           }),
       title: Text(
         widget.current,

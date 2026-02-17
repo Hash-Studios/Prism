@@ -1,7 +1,7 @@
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
 import 'package:Prism/features/category_feed/views/widgets/wallhaven_grid.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -45,7 +45,7 @@ class WallhavenTile extends StatelessWidget {
               onTap: () {
                 if (wData.walls == []) {
                 } else {
-                  Navigator.pushNamed(context, wallpaperRoute, arguments: [
+                  context.pushNamedRoute(wallpaperRoute, arguments: [
                     widget.provider,
                     index,
                     wData.walls[index].thumbs!["small"].toString(),

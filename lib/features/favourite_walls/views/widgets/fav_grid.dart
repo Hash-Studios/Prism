@@ -4,7 +4,7 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -185,7 +185,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                   onTap: () {
                                     if (context.favouriteWallsAdapter(listen: false).liked == []) {
                                     } else {
-                                      Navigator.pushNamed(context, favWallViewRoute, arguments: [
+                                      context.pushNamedRoute(favWallViewRoute, arguments: [
                                         index,
                                         context.favouriteWallsAdapter(listen: false).liked![index]["thumb"],
                                       ]);

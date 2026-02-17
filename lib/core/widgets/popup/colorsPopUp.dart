@@ -1,6 +1,4 @@
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:animations/animations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flare_flutter/flare_actor.dart';
@@ -100,10 +98,9 @@ Color showColors(BuildContext context) {
                 GestureDetector(
                   onTap: () {
                     currentColor = color;
-                    logger.d(navStack.toString());
+                    logNavStack();
                     Navigator.pop(context);
-                    Navigator.pushNamed(
-                      context,
+                    context.pushNamedRoute(
                       colorRoute,
                       arguments: [
                         color

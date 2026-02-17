@@ -4,7 +4,7 @@ import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -23,8 +23,7 @@ class AboutScreen extends StatelessWidget {
   }
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -37,8 +36,7 @@ class AboutScreen extends StatelessWidget {
           leading: IconButton(
               icon: const Icon(JamIcons.close),
               onPressed: () {
-                navStack.removeLast();
-                logger.d(navStack.toString());
+                popNavStack();
                 Navigator.pop(context);
               }),
           title: Text(

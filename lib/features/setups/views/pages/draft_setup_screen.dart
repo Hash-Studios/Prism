@@ -1,8 +1,7 @@
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/features/setups/views/pages/review_screen.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -15,8 +14,7 @@ class DraftSetupScreen extends StatefulWidget {
 
 class _DraftSetupScreenState extends State<DraftSetupScreen> {
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 

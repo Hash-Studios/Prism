@@ -8,7 +8,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -32,7 +32,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
 
   void showPremiumPopUp(Function func) {
     if (globals.prismUser.premium == false) {
-      Navigator.pushNamed(context, premiumRoute);
+      context.pushNamedRoute(premiumRoute);
     } else {
       func();
     }
@@ -227,7 +227,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                                     if (context.publicProfileAdapter(listen: false).userProfileSetups == []) {
                                     } else {
                                       if (globals.prismUser.premium == true) {
-                                        Navigator.pushNamed(context, userProfileSetupViewRoute, arguments: [index]);
+                                        context.pushNamedRoute(userProfileSetupViewRoute, arguments: [index]);
                                       } else {
                                         showGooglePopUp(() {
                                           showPremiumPopUp(() {

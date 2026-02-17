@@ -10,8 +10,7 @@ import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
@@ -103,14 +102,14 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
         }
       } else if (shortcutType == 'Setups') {
         logger.d('Setups');
-        navStack.last == "Setups"
+        currentNavStackEntry == "Setups"
             ? logger.d("Currently on Setups")
-            : navStack.last == "Home"
-                ? Navigator.of(context).pushNamed(setupRoute)
-                : Navigator.of(context).pushNamed(setupRoute);
+            : currentNavStackEntry == "Home"
+                ? context.pushNamedRoute(setupRoute)
+                : context.pushNamedRoute(setupRoute);
       } else if (shortcutType == 'Downloads') {
         logger.d('Downloads');
-        Navigator.pushNamed(context, downloadRoute);
+        context.pushNamedRoute(downloadRoute);
       }
     });
 
@@ -127,17 +126,6 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
       saveFavToLocal();
     }
     checkConnection();
-    // WidgetsBinding.instance!.addPostFrameCallback((_) async {
-    //   // await rateMyApp.init();
-    //   if (mounted &&
-    //       rateMyApp.shouldOpenDialog &&
-    //       (main.prefs.get("ratedApp", defaultValue: false) == false)) {
-    //     showModal(
-    //         context: context,
-    //         configuration: const FadeScaleTransitionConfiguration(),
-    //         builder: (_) => RatePopUp());
-    //   }
-    // });
   }
 
   Future<bool> initDynamicLinks(BuildContext context) async {
@@ -147,18 +135,18 @@ class _PageManagerChildState extends State<PageManagerChild> with SingleTickerPr
       }
       final routeSegment = deepLink.pathSegments[0];
       if (routeSegment == "share") {
-        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareRoute, arguments: [
+        Future.delayed(const Duration()).then((value) => context.pushNamedRoute(shareRoute, arguments: [
               deepLink.queryParameters["id"],
               deepLink.queryParameters["provider"],
               deepLink.queryParameters["url"],
               deepLink.queryParameters["thumb"],
             ]));
       } else if (routeSegment == "user") {
-        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, followerProfileRoute, arguments: [
+        Future.delayed(const Duration()).then((value) => context.pushNamedRoute(followerProfileRoute, arguments: [
               deepLink.queryParameters["email"],
             ]));
       } else if (routeSegment == "setup") {
-        Future.delayed(const Duration()).then((value) => Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
+        Future.delayed(const Duration()).then((value) => context.pushNamedRoute(shareSetupViewRoute, arguments: [
               deepLink.queryParameters["name"],
               deepLink.queryParameters["thumbUrl"],
             ]));

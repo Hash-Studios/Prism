@@ -6,7 +6,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -137,7 +137,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
           setState(() {
             noNotification = true;
           });
-          Navigator.pushNamed(context, notificationsRoute);
+          context.pushNamedRoute(notificationsRoute);
         },
       ),
       title: Align(

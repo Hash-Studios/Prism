@@ -2,9 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -23,8 +21,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
   final picker2 = ImagePicker();
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -35,10 +32,8 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
         _setup = File(pickedFile.path);
       });
       Navigator.pop(context);
-      if (navStack.length > 1) navStack.removeLast();
-      logger.d(navStack.toString());
-      Future.delayed(const Duration())
-          .then((value) => Navigator.pushNamed(context, uploadSetupRoute, arguments: [_setup]));
+      popNavStackIfPossible();
+      Future.delayed(const Duration()).then((value) => context.pushNamedRoute(uploadSetupRoute, arguments: [_setup]));
     }
   }
 
@@ -56,8 +51,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(
-                    context,
+                  context.pushNamedRoute(
                     draftSetupRoute,
                   );
                 },

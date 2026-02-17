@@ -4,7 +4,7 @@ import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/features/profile_walls/views/profile_walls_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -200,7 +200,7 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                                   onTap: () {
                                     if (context.profileWallsSnapshots(listen: false) == []) {
                                     } else {
-                                      Navigator.pushNamed(context, profileWallViewRoute, arguments: [
+                                      context.pushNamedRoute(profileWallViewRoute, arguments: [
                                         index,
                                         context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_thumb"],
                                       ]);

@@ -1,9 +1,8 @@
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/routes/router.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -29,8 +28,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    logger.d(navStack.toString());
+    popNavStackIfPossible();
     return true;
   }
 
@@ -46,8 +44,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           leading: IconButton(
             icon: const Icon(JamIcons.close),
             onPressed: () {
-              if (navStack.length > 1) navStack.removeLast();
-              logger.d(navStack.toString());
+              popNavStackIfPossible();
               Navigator.pop(context);
             },
           ),
@@ -226,7 +223,7 @@ class NotificationCard extends StatelessWidget {
           onTap: () {
             if (notification!.url == "") {
               if (notification!.pageName != null) {
-                Navigator.pushNamed(context, notification!.pageName!, arguments: notification!.arguments);
+                context.pushNamedRoute(notification!.pageName!, arguments: notification!.arguments);
               }
             } else {
               launch(notification!.url!);
