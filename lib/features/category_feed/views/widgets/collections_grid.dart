@@ -81,7 +81,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     super.dispose();
   }
 
-  void showPremiumPopUp(Function func) {
+  void showPremiumPopUp(VoidCallback func) {
     if (globals.prismUser.premium == false) {
       context.pushNamedRoute(premiumRoute);
     } else {
@@ -95,7 +95,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     });
   }
 
-  void showGooglePopUp(Function func) {
+  void showGooglePopUp(VoidCallback func) {
     logger.d(globals.prismUser.loggedIn.toString());
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
@@ -106,12 +106,161 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
 
   Future<void> refreshList() async {
     refreshKey.currentState?.show();
-    CData.getCollections();
+    await CData.getCollections();
   }
 
   @override
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final List<dynamic> rawCollections = CData.collections ?? <dynamic>[];
+    final bool isLoading = rawCollections.isEmpty;
+    final int itemCount = isLoading ? 8 : rawCollections.length;
+
+    Map<String, dynamic> asMap(dynamic raw) {
+      if (raw is Map<String, dynamic>) {
+        return raw;
+      }
+      if (raw is Map) {
+        return raw.cast<String, dynamic>();
+      }
+      return <String, dynamic>{};
+    }
+
+    Widget buildCollectionCard(Map<String, dynamic>? collection) {
+      final bool loading = collection == null;
+      final bool isPremium = !loading && (collection['premium'] == true);
+      final String name = loading ? "LOADING" : collection['name'].toString().toUpperCase();
+      final String thumb1 = loading ? '' : collection['thumb1'].toString();
+      final String thumb2 = loading ? '' : collection['thumb2'].toString();
+      return GestureDetector(
+        onTap: loading
+            ? null
+            : () {
+                if (!isPremium) {
+                  context.pushNamedRoute(
+                    collectionViewRoute,
+                    arguments: [collection['name'].toString().trim().toLowerCase()],
+                  );
+                  return;
+                }
+                if (globals.prismUser.premium == true) {
+                  context.pushNamedRoute(
+                    collectionViewRoute,
+                    arguments: [collection['name'].toString().trim().toLowerCase()],
+                  );
+                  return;
+                }
+                showGooglePopUp(() {
+                  showPremiumPopUp(() {
+                    main.RestartWidget.restartApp(context);
+                  });
+                });
+              },
+        child: PremiumBanner(
+          comparator: !isPremium,
+          child: Stack(
+            children: <Widget>[
+              Positioned(
+                  top: 40,
+                  left: 40,
+                  child: Container(
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                                blurRadius: 20,
+                                offset: const Offset(5, 5),
+                                color: context.prismModeStyleForContext() == "Light" ? Colors.black12 : Colors.black54)
+                          ]),
+                      height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 63.5,
+                      width: MediaQuery.of(context).size.width / 2 - 59)),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: 25,
+                    left: 25,
+                  ),
+                  child: Text(
+                    name,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                        fontSize: 16,
+                        color: loading
+                            ? (context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white)
+                            : Theme.of(context).colorScheme.secondary,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              Positioned(
+                  top: 20,
+                  left: 20,
+                  child: Container(
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                                blurRadius: 20,
+                                offset: const Offset(5, 5),
+                                color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54)
+                          ]),
+                      height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
+                      width: MediaQuery.of(context).size.width / 2 - 59)),
+              Positioned(
+                  top: 20,
+                  left: 20,
+                  child: Container(
+                      decoration: loading
+                          ? BoxDecoration(
+                              color: animation.value,
+                              borderRadius: BorderRadius.circular(20),
+                            )
+                          : BoxDecoration(
+                              color: animation.value,
+                              borderRadius: BorderRadius.circular(20),
+                              image: DecorationImage(image: CachedNetworkImageProvider(thumb2), fit: BoxFit.cover)),
+                      height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
+                      width: MediaQuery.of(context).size.width / 2 - 59)),
+              Positioned(
+                  top: 0,
+                  left: 0,
+                  child: Container(
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                                blurRadius: 20,
+                                offset: const Offset(5, 5),
+                                color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54)
+                          ]),
+                      height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
+                      width: MediaQuery.of(context).size.width / 2 - 59)),
+              Positioned(
+                  top: 0,
+                  left: 0,
+                  child: Container(
+                      decoration: loading
+                          ? BoxDecoration(
+                              color: animation.value,
+                              borderRadius: BorderRadius.circular(20),
+                            )
+                          : BoxDecoration(
+                              color: animation.value,
+                              borderRadius: BorderRadius.circular(20),
+                              image: DecorationImage(image: CachedNetworkImageProvider(thumb1), fit: BoxFit.cover)),
+                      height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
+                      width: MediaQuery.of(context).size.width / 2 - 59)),
+            ],
+          ),
+        ),
+      );
+    }
+
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshKey,
@@ -120,7 +269,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         controller: controller,
         physics: const ScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
-        itemCount: CData.collections!.length,
+        itemCount: itemCount,
         shrinkWrap: true,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -129,150 +278,11 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           crossAxisSpacing: 8,
         ),
         itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () {
-              if (CData.collections![index]['premium'] == false) {
-                context.pushNamedRoute(
-                  collectionViewRoute,
-                  arguments: [CData.collections![index]['name'].toString().trim().toLowerCase()],
-                );
-              } else {
-                if (globals.prismUser.premium == true) {
-                  context.pushNamedRoute(
-                    collectionViewRoute,
-                    arguments: [CData.collections![index]['name'].toString().trim().toLowerCase()],
-                  );
-                } else {
-                  showGooglePopUp(() {
-                    showPremiumPopUp(() {
-                      main.RestartWidget.restartApp(context);
-                    });
-                  });
-                }
-              }
-            },
-            child: PremiumBanner(
-              comparator: CData.collections![index]['premium'] == false,
-              child: Stack(
-                children: <Widget>[
-                  Positioned(
-                      top: 40,
-                      left: 40,
-                      child: Container(
-                          decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                    blurRadius: 20,
-                                    offset: const Offset(5, 5),
-                                    color:
-                                        context.prismModeStyleForContext() == "Light" ? Colors.black12 : Colors.black54)
-                              ]),
-                          height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 63.5,
-                          width: MediaQuery.of(context).size.width / 2 - 59)),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: 25,
-                        left: 25,
-                      ),
-                      child: CData.collections!.toList().isNotEmpty
-                          ? Text(
-                              CData.collections![index]['name'].toString().toUpperCase(),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                  fontSize: 16,
-                                  color: Theme.of(context).colorScheme.secondary,
-                                  fontWeight: FontWeight.bold),
-                            )
-                          : Text(
-                              "LOADING",
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                  fontSize: 16,
-                                  color: context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                    ),
-                  ),
-                  Positioned(
-                      top: 20,
-                      left: 20,
-                      child: Container(
-                          decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                    blurRadius: 20,
-                                    offset: const Offset(5, 5),
-                                    color:
-                                        context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54)
-                              ]),
-                          height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                          width: MediaQuery.of(context).size.width / 2 - 59)),
-                  Positioned(
-                      top: 20,
-                      left: 20,
-                      child: Container(
-                          decoration: CData.collections!.isEmpty
-                              ? BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                )
-                              : BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                      image: CachedNetworkImageProvider(
-                                        CData.collections![index]['thumb2'].toString(),
-                                      ),
-                                      fit: BoxFit.cover)),
-                          height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                          width: MediaQuery.of(context).size.width / 2 - 59)),
-                  Positioned(
-                      top: 0,
-                      left: 0,
-                      child: Container(
-                          decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                    blurRadius: 20,
-                                    offset: const Offset(5, 5),
-                                    color:
-                                        context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54)
-                              ]),
-                          height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                          width: MediaQuery.of(context).size.width / 2 - 59)),
-                  Positioned(
-                      top: 0,
-                      left: 0,
-                      child: Container(
-                          decoration: CData.collections!.isEmpty
-                              ? BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                )
-                              : BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                      image: CachedNetworkImageProvider(
-                                        CData.collections![index]['thumb1'].toString(),
-                                      ),
-                                      fit: BoxFit.cover)),
-                          height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                          width: MediaQuery.of(context).size.width / 2 - 59)),
-                ],
-              ),
-            ),
-          );
+          if (isLoading) {
+            return buildCollectionCard(null);
+          }
+          final Map<String, dynamic> collection = asMap(rawCollections[index]);
+          return buildCollectionCard(collection);
         },
       ),
     );

@@ -13,9 +13,11 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FollowingScreen extends StatefulWidget {
@@ -28,9 +30,14 @@ class FollowingScreen extends StatefulWidget {
 }
 
 class _FollowingScreenState extends State<FollowingScreen> {
-  StreamController<List<_FirestoreDoc>>? _streamController;
+  static const int _followingChunkSize = 10;
+  static const int _maxPerChunkLimit = 20;
+  static const int _maxFeedItems = 30;
+
+  StreamSubscription<List<_FirestoreDoc>>? _feedSubscription;
   List<_FirestoreDoc> finalDocs = <_FirestoreDoc>[];
-  List<dynamic> following = <dynamic>[];
+  List<String> following = <String>[];
+
   Future<bool> onWillPop() async {
     popNavStackIfPossible();
     logger.d("Bye! Have a good day!");
@@ -40,56 +47,142 @@ class _FollowingScreenState extends State<FollowingScreen> {
   @override
   void initState() {
     super.initState();
-    _streamController = StreamController.broadcast();
-    _streamController!.stream.listen((p) {
-      setState(() {
-        finalDocs = [];
-        for (final doc in p) {
-          if (following.contains(doc.data()["email"]) && finalDocs.length <= 30) {
-            finalDocs.add(doc);
-          }
-        }
-      });
-    });
-    load(_streamController!);
+    unawaited(_loadFollowingFeed());
   }
 
-  Future<void> load(StreamController<List<_FirestoreDoc>> sc) async {
+  List<String> _normalizeEmails(List<dynamic> raw) {
+    return raw
+        .map((value) => value.toString().trim())
+        .where((value) => value.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+  }
+
+  Future<List<String>> _resolveFollowingEmails() async {
+    final List<String> fromGlobal = _normalizeEmails(globals.prismUser.following);
+    if (fromGlobal.isNotEmpty) {
+      return fromGlobal;
+    }
+    if (globals.prismUser.email.trim().isEmpty) {
+      return <String>[];
+    }
     final currentUserDocs = await firestoreClient.query<Map<String, dynamic>>(
       FirestoreQuerySpec(
         collection: USER_NEW_COLLECTION,
         sourceTag: 'following.currentUser',
         filters: <FirestoreFilter>[
-          FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email),
+          FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email.trim()),
         ],
         limit: 1,
+        cachePolicy: FirestoreCachePolicy.memoryFirst,
+        dedupeWindowMs: 30000,
       ),
       (data, _) => data,
     );
-    following = currentUserDocs.isNotEmpty ? (currentUserDocs.first["following"] as List? ?? <dynamic>[]) : <dynamic>[];
+    if (currentUserDocs.isEmpty) {
+      return <String>[];
+    }
+    final List<String> remote = _normalizeEmails(currentUserDocs.first["following"] as List? ?? <dynamic>[]);
+    globals.prismUser.following = remote;
+    return remote;
+  }
 
-    firestoreClient
-        .watchQuery<_FirestoreDoc>(
-          const FirestoreQuerySpec(
-            collection: FirebaseCollections.walls,
-            sourceTag: 'following.feed',
-            filters: <FirestoreFilter>[
-              FirestoreFilter(field: "review", op: FirestoreFilterOp.isEqualTo, value: true),
-            ],
-            orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-            limit: 200,
-            isStream: true,
-          ),
-          (data, docId) => _FirestoreDoc(docId, data),
-        )
-        .pipe(sc);
+  List<List<String>> _chunks(List<String> input, int chunkSize) {
+    final List<List<String>> output = <List<String>>[];
+    for (int i = 0; i < input.length; i += chunkSize) {
+      final int end = (i + chunkSize < input.length) ? i + chunkSize : input.length;
+      output.add(input.sublist(i, end));
+    }
+    return output;
+  }
+
+  List<_FirestoreDoc> _dedupeSortAndLimit(List<_FirestoreDoc> docs) {
+    final Map<String, _FirestoreDoc> unique = <String, _FirestoreDoc>{};
+    for (final _FirestoreDoc doc in docs) {
+      final dynamic rawId = doc['id'];
+      final String key = rawId?.toString().trim().isNotEmpty == true ? rawId.toString() : doc.id;
+      unique[key] = doc;
+    }
+    final List<_FirestoreDoc> result = unique.values.toList(growable: false)
+      ..sort((a, b) => _toDateTime(b["createdAt"]).compareTo(_toDateTime(a["createdAt"])));
+    if (result.length <= _maxFeedItems) {
+      return result;
+    }
+    return result.sublist(0, _maxFeedItems);
+  }
+
+  int _resolvePerChunkLimit(int chunkCount) {
+    if (chunkCount <= 0) {
+      return _maxPerChunkLimit;
+    }
+    final int computed = (_maxFeedItems / chunkCount).ceil();
+    return computed.clamp(8, _maxPerChunkLimit);
+  }
+
+  Future<void> _loadFollowingFeed() async {
+    await _feedSubscription?.cancel();
+    final List<String> currentFollowing = await _resolveFollowingEmails();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      following = currentFollowing;
+      finalDocs = <_FirestoreDoc>[];
+    });
+    if (currentFollowing.isEmpty) {
+      return;
+    }
+
+    final List<List<String>> chunked = _chunks(currentFollowing, _followingChunkSize);
+    final int perChunkLimit = _resolvePerChunkLimit(chunked.length);
+    final List<Stream<List<_FirestoreDoc>>> streams = chunked.asMap().entries.map((entry) {
+      final int index = entry.key;
+      final List<String> chunk = entry.value;
+      return firestoreClient.watchQuery<_FirestoreDoc>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.walls,
+          sourceTag: 'following.feed.chunk_${index + 1}',
+          filters: <FirestoreFilter>[
+            const FirestoreFilter(field: "review", op: FirestoreFilterOp.isEqualTo, value: true),
+            FirestoreFilter(field: "email", op: FirestoreFilterOp.whereIn, value: chunk),
+          ],
+          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+          limit: perChunkLimit,
+          isStream: true,
+        ),
+        (data, docId) => _FirestoreDoc(docId, data),
+      );
+    }).toList(growable: false);
+
+    final Stream<List<_FirestoreDoc>> merged = streams.length == 1
+        ? streams.first
+        : Rx.combineLatestList<List<_FirestoreDoc>>(streams)
+            .map((batches) => batches.expand((docs) => docs).toList(growable: false));
+
+    _feedSubscription = merged.listen(
+      (docs) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          finalDocs = _dedupeSortAndLimit(docs);
+        });
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        logger.e(
+          'Following feed stream failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      },
+    );
   }
 
   @override
   void dispose() {
+    _feedSubscription?.cancel();
+    _feedSubscription = null;
     super.dispose();
-    _streamController?.close();
-    _streamController = null;
   }
 
   @override
@@ -147,7 +240,7 @@ class _FollowingTileState extends State<FollowingTile> {
     super.initState();
   }
 
-  void showGooglePopUp(BuildContext context, Function func) {
+  void showGooglePopUp(BuildContext context, VoidCallback func) {
     logger.d(globals.prismUser.loggedIn.toString());
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
@@ -320,11 +413,17 @@ class _FirestoreDoc {
 
 DateTime _toDateTime(dynamic value) {
   if (value is DateTime) {
-    return value;
+    return value.toUtc();
   }
-  final dynamic withToDate = value;
-  if (withToDate != null && withToDate.toDate is Function) {
-    return withToDate.toDate() as DateTime;
+  if (value is Timestamp) {
+    return value.toDate().toUtc();
+  }
+  if (value is String) {
+    try {
+      return DateTime.parse(value).toUtc();
+    } catch (_) {
+      return DateTime.now().toUtc();
+    }
   }
   return DateTime.now().toUtc();
 }

@@ -92,6 +92,10 @@ class _SetupPageState extends State<SetupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final List<SetupSnapshot> setups = context.setupsAdapter().setups ?? const <SetupSnapshot>[];
+    final bool hasSetups = setups.isNotEmpty;
+    final int currentPage = hasSetups ? pageNumber.clamp(0, setups.length - 1) : 0;
+
     return Stack(
       alignment: Alignment.topCenter,
       children: <Widget>[
@@ -119,9 +123,7 @@ class _SetupPageState extends State<SetupPage> {
                     SizedBox(
                       width: MediaQuery.of(context).size.width * 0.8,
                       child: Text(
-                        context.setupsAdapter(listen: false).setups!.isEmpty
-                            ? ""
-                            : context.setupsAdapter(listen: false).setups![pageNumber]['name'].toString().toUpperCase(),
+                        hasSetups ? setups[currentPage]['name'].toString().toUpperCase() : "",
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 30),
@@ -143,7 +145,6 @@ class _SetupPageState extends State<SetupPage> {
                   logger.d("snapshot none, waiting");
                   return Center(child: Loader());
                 } else {
-                  Future.delayed(Duration.zero).then((value) => setState(() {}));
                   return SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height * 0.9,
@@ -152,24 +153,22 @@ class _SetupPageState extends State<SetupPage> {
                         setState(() {
                           pageNumber = value;
                         });
-                        if (pageNumber + 1 == context.setupsAdapter(listen: false).setups!.length) {
+                        if (hasSetups && pageNumber + 1 == setups.length) {
                           context.setupsAdapter(listen: false).seeMoreSetups();
                         }
                       },
                       controller: widget.controller,
-                      itemCount: context.setupsAdapter(listen: false).setups!.isEmpty
-                          ? 1
-                          : context.setupsAdapter(listen: false).setups!.length,
-                      itemBuilder: (context, index) => context.setupsAdapter(listen: false).setups!.isEmpty
+                      itemCount: hasSetups ? setups.length : 1,
+                      itemBuilder: (context, index) => !hasSetups
                           ? Loader()
                           : GestureDetector(
                               onTap: () {
-                                if (pageNumber >= 5) {
+                                if (index >= 5) {
                                   showPremiumPopUp(() {
-                                    context.pushNamedRoute(setupViewRoute, arguments: [pageNumber]);
+                                    context.pushNamedRoute(setupViewRoute, arguments: [index]);
                                   });
                                 } else {
-                                  context.pushNamedRoute(setupViewRoute, arguments: [pageNumber]);
+                                  context.pushNamedRoute(setupViewRoute, arguments: [index]);
                                 }
                               },
                               child: AnimatedContainer(
@@ -182,7 +181,7 @@ class _SetupPageState extends State<SetupPage> {
                                 child: Align(
                                   alignment: Alignment.topCenter,
                                   child: CachedNetworkImage(
-                                    imageUrl: context.setupsAdapter(listen: false).setups![index]['image'].toString(),
+                                    imageUrl: setups[index]['image'].toString(),
                                     imageBuilder: (context, imageProvider) => Container(
                                       width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
                                       height: MediaQuery.of(context).size.height * 0.7,
@@ -280,7 +279,7 @@ class _SetupPageState extends State<SetupPage> {
               ),
             ),
           ),
-        if (pageNumber == context.setupsAdapter(listen: false).setups!.length - 1)
+        if (!hasSetups || pageNumber >= setups.length - 1)
           Container()
         else
           Align(

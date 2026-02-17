@@ -88,7 +88,25 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
 
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
-    context.publicProfileAdapter(listen: false).getuserProfileWalls(widget.email);
+    await context.publicProfileAdapter(listen: false).refreshProfile(widget.email);
+  }
+
+  Future<void> _loadMoreWalls() async {
+    if (seeMoreLoader) {
+      return;
+    }
+    setState(() {
+      seeMoreLoader = true;
+    });
+    try {
+      await context.publicProfileAdapter(listen: false).seeMoreUserProfileWalls(widget.email);
+    } finally {
+      if (mounted) {
+        setState(() {
+          seeMoreLoader = false;
+        });
+      }
+    }
   }
 
   @override
@@ -199,20 +217,10 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
                       if (index == context.publicProfileAdapter(listen: false).userProfileWalls!.length - 1 &&
-                          !(context.publicProfileAdapter(listen: false).userProfileWalls!.length < 12)) {
+                          context.publicProfileAdapter(listen: false).hasMoreWalls) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
-                          func: () {
-                            if (!seeMoreLoader) {
-                              setState(() {
-                                seeMoreLoader = true;
-                              });
-                              context.publicProfileAdapter(listen: false).seeMoreUserProfileWalls(widget.email);
-                              setState(() {
-                                Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
-                              });
-                            }
-                          },
+                          func: _loadMoreWalls,
                         );
                       }
                       return globals.prismUser.premium != true

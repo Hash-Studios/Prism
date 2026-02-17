@@ -11,7 +11,8 @@ class UserProfileSetupLoader extends StatefulWidget {
   _UserProfileSetupLoaderState createState() => _UserProfileSetupLoaderState();
 }
 
-class _UserProfileSetupLoaderState extends State<UserProfileSetupLoader> {
+class _UserProfileSetupLoaderState extends State<UserProfileSetupLoader>
+    with AutomaticKeepAliveClientMixin<UserProfileSetupLoader> {
   Future? _future;
 
   @override
@@ -22,6 +23,7 @@ class _UserProfileSetupLoaderState extends State<UserProfileSetupLoader> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Padding(
       padding: const EdgeInsets.only(top: 4.0),
       child: FutureBuilder(
@@ -39,4 +41,7 @@ class _UserProfileSetupLoaderState extends State<UserProfileSetupLoader> {
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

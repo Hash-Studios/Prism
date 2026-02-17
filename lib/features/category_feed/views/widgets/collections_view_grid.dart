@@ -23,6 +23,25 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
   GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
+
+  Future<void> _loadMore() async {
+    if (seeMoreLoader || !collectionHasMore) {
+      return;
+    }
+    setState(() {
+      seeMoreLoader = true;
+    });
+    try {
+      await seeMoreCollectionWithName();
+    } finally {
+      if (mounted) {
+        setState(() {
+          seeMoreLoader = false;
+        });
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -91,10 +110,11 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
             }
           });
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final List<Map<String, dynamic>> walls = anyCollectionWalls ?? <Map<String, dynamic>>[];
     return GridView.builder(
       controller: controller,
       padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-      itemCount: anyCollectionWalls!.length,
+      itemCount: walls.length,
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
@@ -102,19 +122,11 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
           mainAxisSpacing: 8,
           crossAxisSpacing: 8),
       itemBuilder: (context, index) {
-        if (index == anyCollectionWalls!.length - 1 && !(anyCollectionWalls!.length < 24)) {
+        if (index == walls.length - 1 && collectionHasMore && walls.length >= 24) {
           return SeeMoreButton(
             seeMoreLoader: seeMoreLoader,
             func: () {
-              if (!seeMoreLoader) {
-                setState(() {
-                  seeMoreLoader = true;
-                });
-                seeMoreCollectionWithName();
-                setState(() {
-                  Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
-                });
-              }
+              _loadMore();
             },
           );
         }
@@ -135,8 +147,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                           color: animation.value,
                           borderRadius: BorderRadius.circular(20),
                           image: DecorationImage(
-                              image:
-                                  CachedNetworkImageProvider(anyCollectionWalls![index]["wallpaper_thumb"].toString()),
+                              image: CachedNetworkImageProvider(walls[index]["wallpaper_thumb"].toString()),
                               fit: BoxFit.cover)),
                     ),
                     ClipRRect(
@@ -148,10 +159,10 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                           highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                           onTap: () {
                             context.pushNamedRoute(shareRoute, arguments: [
-                              anyCollectionWalls![index]["id"],
-                              anyCollectionWalls![index]["wallpaper_provider"],
-                              anyCollectionWalls![index]["wallpaper_url"],
-                              anyCollectionWalls![index]["wallpaper_thumb"]
+                              walls[index]["id"],
+                              walls[index]["wallpaper_provider"],
+                              walls[index]["wallpaper_url"],
+                              walls[index]["wallpaper_thumb"]
                             ]);
                           },
                           onLongPress: () {
@@ -161,10 +172,10 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                             shakeController.forward(from: 0.0);
                             HapticFeedback.vibrate();
                             createDynamicLink(
-                                anyCollectionWalls![index]["id"].toString(),
-                                anyCollectionWalls![index]["wallpaper_provider"].toString(),
-                                anyCollectionWalls![index]["wallpaper_url"].toString(),
-                                anyCollectionWalls![index]["wallpaper_thumb"].toString());
+                                walls[index]["id"].toString(),
+                                walls[index]["wallpaper_provider"].toString(),
+                                walls[index]["wallpaper_url"].toString(),
+                                walls[index]["wallpaper_thumb"].toString());
                           },
                         ),
                       ),

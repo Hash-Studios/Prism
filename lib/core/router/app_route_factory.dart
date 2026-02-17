@@ -2,6 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/router/undefined_screen.dart';
 import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
+import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/ads/views/pages/ads_not_loading_page.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
@@ -79,6 +80,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       pushNavStack("Review Screen");
       analytics.setCurrentScreen(screenName: reviewRoute);
       return CupertinoPageRoute(builder: (context) => ReviewScreen());
+    case adminReviewRoute:
+      pushNavStack("Admin Review");
+      analytics.setCurrentScreen(screenName: adminReviewRoute);
+      return CupertinoPageRoute(builder: (context) => const AdminReviewScreen());
     case favWallRoute:
       pushNavStack("Fav Walls");
       analytics.setCurrentScreen(screenName: favWallRoute);

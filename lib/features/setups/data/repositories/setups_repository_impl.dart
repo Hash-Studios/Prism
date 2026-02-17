@@ -14,6 +14,7 @@ class SetupsRepositoryImpl implements SetupsRepository {
 
   final FirestoreClient _firestoreClient;
   String? _cursorDocId;
+  static const int _setupsReadDedupeMs = 30000;
 
   @override
   Future<Result<SetupsPage>> fetchSetups({required bool refresh}) async {
@@ -28,6 +29,8 @@ class SetupsRepositoryImpl implements SetupsRepository {
           orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at', descending: true)],
           limit: 10,
           startAfterDocId: refresh ? null : _cursorDocId,
+          cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
+          dedupeWindowMs: refresh ? 0 : _setupsReadDedupeMs,
         ),
         (data, docId) => <String, dynamic>{...data, '__docId': docId},
       );
