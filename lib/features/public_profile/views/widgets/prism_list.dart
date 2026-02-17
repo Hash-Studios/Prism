@@ -55,6 +55,7 @@ class PrismList extends StatelessWidget {
                 ShareParams(
                   text:
                       "Fall in love with Android customisation again! Check out Prism -\nhttps://play.google.com/store/apps/details?id=com.hash.prism",
+                  sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
                 ),
               );
             }),

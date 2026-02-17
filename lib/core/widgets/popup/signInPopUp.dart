@@ -1,3 +1,4 @@
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -5,9 +6,19 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:rive/rive.dart';
 
-void googleSignInPopUp(BuildContext context, Function func) {
+void googleSignInPopUp(BuildContext context, VoidCallback func) {
+  final NavigatorState navigator = Navigator.of(context, rootNavigator: true);
+  bool loaderVisible = false;
+
+  void closeLoaderIfVisible() {
+    if (!loaderVisible || !navigator.mounted) {
+      return;
+    }
+    navigator.pop();
+    loaderVisible = false;
+  }
+
   final Dialog loaderDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     child: Container(
@@ -35,9 +46,10 @@ void googleSignInPopUp(BuildContext context, Function func) {
               decoration: BoxDecoration(
                   borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
                   color: Theme.of(context).hintColor),
-              child: const RiveAnimation.asset(
-                "assets/animations/Signin.flr",
-                animations: ["signin"],
+              child: Icon(
+                JamIcons.log_in,
+                size: 54,
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             Row(
@@ -211,7 +223,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         color: Theme.of(context).primaryColor,
         onPressed: () {
-          Navigator.of(context).pop();
+          navigator.pop();
         },
         child: Text(
           'CLOSE',
@@ -225,17 +237,34 @@ void googleSignInPopUp(BuildContext context, Function func) {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         color: Theme.of(context).colorScheme.error,
         onPressed: () {
-          Navigator.of(context).pop();
-          showDialog(barrierDismissible: false, context: context, builder: (BuildContext context) => loaderDialog);
+          navigator.pop();
+          loaderVisible = true;
+          showDialog(
+            barrierDismissible: false,
+            context: navigator.context,
+            builder: (BuildContext context) => loaderDialog,
+          );
           globals.gAuth.signInWithGoogle().then((value) {
+            if (!navigator.mounted) {
+              return;
+            }
+            closeLoaderIfVisible();
+            if (value == GoogleAuth.signInCancelledResult) {
+              globals.prismUser.loggedIn = false;
+              main.prefs.put(main.userHiveKey, globals.prismUser);
+              toasts.codeSend("Sign in cancelled.");
+              return;
+            }
             toasts.codeSend("Login Successful!");
             globals.prismUser.loggedIn = true;
             main.prefs.put(main.userHiveKey, globals.prismUser);
-            Navigator.pop(context);
             func();
           }).catchError((e) {
+            if (!navigator.mounted) {
+              return;
+            }
             logger.d(e.toString());
-            Navigator.pop(context);
+            closeLoaderIfVisible();
             globals.prismUser.loggedIn = false;
             main.prefs.put(main.userHiveKey, globals.prismUser);
             toasts.error("Something went wrong, please try again!");

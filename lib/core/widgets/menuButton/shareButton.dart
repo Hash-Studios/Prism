@@ -90,7 +90,12 @@ class _ShareButtonState extends State<ShareButton> {
     final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
     final Uri shortUrl = shortDynamicLink.shortUrl;
     Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-    SharePlus.instance.share(ShareParams(text: "🔥Check this out ➜ $shortUrl"));
+    SharePlus.instance.share(
+      ShareParams(
+        text: "🔥Check this out ➜ $shortUrl",
+        sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
+      ),
+    );
     logger.d(shortUrl.toString());
     analytics.logShare(contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
     setState(() {

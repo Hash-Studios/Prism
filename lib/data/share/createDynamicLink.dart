@@ -55,7 +55,12 @@ Future<void> createUserDynamicLink(String name, String username, String email, S
   final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-  SharePlus.instance.share(ShareParams(text: "Hey check out my profile on Prism ➜ $shortUrl"));
+  SharePlus.instance.share(
+    ShareParams(
+      text: "Hey check out my profile on Prism ➜ $shortUrl",
+      sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
+    ),
+  );
   analytics.logShare(contentType: 'userShare', itemId: username, method: 'link');
   logger.d(shortUrl.toString());
 }
@@ -80,7 +85,12 @@ Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) 
   final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-  SharePlus.instance.share(ShareParams(text: "Hey check this out ➜ $shortUrl"));
+  SharePlus.instance.share(
+    ShareParams(
+      text: "Hey check this out ➜ $shortUrl",
+      sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
+    ),
+  );
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
   logger.d(shortUrl.toString());
 }

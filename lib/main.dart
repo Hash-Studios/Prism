@@ -99,12 +99,12 @@ int _colorValueFromPrefs(dynamic rawValue, {required int fallback}) {
 }
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  final SentryConfig sentryConfig = _resolveSentryConfig();
-  await _initializeMonitoring(sentryConfig);
-
   await runZonedGuarded<Future<void>>(
     () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      final SentryConfig sentryConfig = _resolveSentryConfig();
+      await _initializeMonitoring(sentryConfig);
+
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
         logger.e(
           'Uncaught platform error',
@@ -296,9 +296,11 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
         options.dist = config.dist;
       }
       options.sendDefaultPii = false;
-      options.tracesSampleRate = 0;
+      options.tracesSampleRate = 0.1;
       options.attachStacktrace = true;
       options.enableAutoNativeBreadcrumbs = true;
+      options.replay.sessionSampleRate = 0.1;
+      options.replay.onErrorSampleRate = 1.0;
     });
     MonitoringRuntime.reporter = const SentryErrorReporter();
     await MonitoringRuntime.reporter.addBreadcrumb(
