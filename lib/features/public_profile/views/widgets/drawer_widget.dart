@@ -267,6 +267,16 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
+            if (globals.isAdminUser())
+              createDrawerBodyItem(
+                icon: JamIcons.shield_check,
+                text: 'Admin Moderation',
+                onTap: () {
+                  Navigator.pop(context);
+                  context.pushNamedRoute(adminReviewRoute);
+                },
+                context: context,
+              ),
             const Divider(),
             createDrawerBodyHeader(text: "CUSTOMISATION", context: context),
             createDrawerBodyItem(

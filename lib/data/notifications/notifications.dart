@@ -7,6 +7,8 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 
+const int _defaultNotifLimit = 50;
+
 Map<String, dynamic> _asMap(Object? raw) {
   if (raw is Map<String, dynamic>) {
     return raw;
@@ -17,138 +19,103 @@ Map<String, dynamic> _asMap(Object? raw) {
   return <String, dynamic>{};
 }
 
-Future<List<Map<String, dynamic>>> getLastMonthNotifs(String modifier) async {
+DateTime? _asUtcDateTime(Object? raw) {
+  if (raw is DateTime) {
+    return raw.toUtc();
+  }
+  if (raw is String) {
+    try {
+      return DateTime.parse(raw).toUtc();
+    } catch (_) {
+      return null;
+    }
+  }
+  return null;
+}
+
+List<String> _notificationModifiers() {
+  final String audience = globals.prismUser.premium ? 'premium' : 'free';
+  return <String>[
+    audience,
+    'all',
+    globals.currentAppVersion.trim(),
+    globals.prismUser.email.trim(),
+  ].where((value) => value.isNotEmpty).toSet().toList(growable: false);
+}
+
+Future<List<Map<String, dynamic>>> _fetchNotificationsSince({
+  required DateTime sinceUtc,
+  required String sourceTag,
+  int limit = _defaultNotifLimit,
+}) async {
+  final List<String> modifiers = _notificationModifiers();
+  if (modifiers.isEmpty) {
+    return <Map<String, dynamic>>[];
+  }
   return firestoreClient.query<Map<String, dynamic>>(
     FirestoreQuerySpec(
       collection: FirebaseCollections.notifications,
-      sourceTag: 'notifications.last_month',
+      sourceTag: sourceTag,
       filters: <FirestoreFilter>[
-        FirestoreFilter(
-          field: "createdAt",
-          op: FirestoreFilterOp.isGreaterThan,
-          value: DateTime.now().toUtc().subtract(const Duration(days: 30)),
-        ),
-        FirestoreFilter(field: 'modifier', op: FirestoreFilterOp.isEqualTo, value: modifier),
+        FirestoreFilter(field: "createdAt", op: FirestoreFilterOp.isGreaterThan, value: sinceUtc),
+        FirestoreFilter(field: 'modifier', op: FirestoreFilterOp.whereIn, value: modifiers),
       ],
       orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+      limit: limit,
+      dedupeWindowMs: 1500,
     ),
     (data, _) => data,
   );
 }
 
-Future<List<Map<String, dynamic>>> getLatestNotifs(String modifier) async {
-  return firestoreClient.query<Map<String, dynamic>>(
-    FirestoreQuerySpec(
-      collection: FirebaseCollections.notifications,
-      sourceTag: 'notifications.latest',
-      filters: <FirestoreFilter>[
-        FirestoreFilter(
-            field: "createdAt", op: FirestoreFilterOp.isGreaterThan, value: main.prefs.get('lastFetchTime')),
-        FirestoreFilter(field: 'modifier', op: FirestoreFilterOp.isEqualTo, value: modifier),
-      ],
-      orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-    ),
-    (data, _) => data,
-  );
+String _notifKey(InAppNotif notif) {
+  final String title = notif.title ?? '';
+  final String body = notif.body ?? '';
+  final String pageName = notif.pageName ?? '';
+  final String url = notif.url ?? '';
+  final String createdAt = notif.createdAt?.toUtc().toIso8601String() ?? '';
+  return '$title|$body|$pageName|$url|$createdAt';
+}
+
+Future<void> _addUniqueNotifications(
+  Box<InAppNotif> box,
+  List<Map<String, dynamic>> docs,
+) async {
+  final Set<String> seen = box.values.map(_notifKey).toSet();
+  for (final Map<String, dynamic> raw in docs) {
+    try {
+      final InAppNotif notif = InAppNotif.fromSnapshot(raw);
+      final String key = _notifKey(notif);
+      if (seen.add(key)) {
+        await box.add(notif);
+      }
+    } catch (e) {
+      logger.w('Skipping malformed in-app notification payload: $e');
+    }
+  }
 }
 
 Future<void> getNotifs() async {
   logger.d("Fetching notifs");
   final Box<InAppNotif> box = Hive.box('inAppNotifs');
-  if (main.prefs.get('lastFetchTime') != null) {
-    logger.d("Last fetch time ${main.prefs.get('lastFetchTime')}");
-    if (globals.prismUser.premium == false) {
-      getLatestNotifs('free').then((snap) {
-        for (final doc in snap) {
-          final data = _asMap(doc);
-          if (data['modifier'] != '' || data['modifier'] != null) {
-            box.add(InAppNotif.fromSnapshot(data));
-          }
-        }
-      });
-    }
-    if (globals.prismUser.premium == true) {
-      getLatestNotifs('premium').then((snap) {
-        for (final doc in snap) {
-          final data = _asMap(doc);
-          if (data['modifier'] != '' || data['modifier'] != null) {
-            box.add(InAppNotif.fromSnapshot(data));
-          }
-        }
-      });
-    }
-    getLatestNotifs('all').then((snap) {
-      for (final doc in snap) {
-        final data = _asMap(doc);
-        if (data['modifier'] != '' || data['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(data));
-        }
-      }
-    });
-    getLatestNotifs(globals.currentAppVersion).then((snap) {
-      for (final doc in snap) {
-        final data = _asMap(doc);
-        if (data['modifier'] != '' || data['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(data));
-        }
-      }
-    });
-    getLatestNotifs(globals.prismUser.email).then((snap) {
-      for (final doc in snap) {
-        final data = _asMap(doc);
-        if (data['modifier'] != '' || data['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(data));
-        }
-      }
-    });
-    main.prefs.put('lastFetchTime', DateTime.now());
-  } else {
+  final DateTime nowUtc = DateTime.now().toUtc();
+  final DateTime? lastFetchTime = _asUtcDateTime(main.prefs.get('lastFetchTime'));
+  if (lastFetchTime == null) {
     logger.d("Fetching for first time");
-    box.clear();
-    if (globals.prismUser.premium == false) {
-      getLastMonthNotifs('free').then((snap) {
-        for (final doc in snap) {
-          final data = _asMap(doc);
-          if (data['modifier'] != '' || data['modifier'] != null) {
-            box.add(InAppNotif.fromSnapshot(data));
-          }
-        }
-      });
-    }
-    if (globals.prismUser.premium == true) {
-      getLastMonthNotifs('premium').then((snap) {
-        for (final doc in snap) {
-          final data = _asMap(doc);
-          if (data['modifier'] != '' || data['modifier'] != null) {
-            box.add(InAppNotif.fromSnapshot(data));
-          }
-        }
-      });
-    }
-    getLastMonthNotifs('all').then((snap) {
-      for (final doc in snap) {
-        final data = _asMap(doc);
-        if (data['modifier'] != '' || data['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(data));
-        }
-      }
-    });
-    getLastMonthNotifs(globals.currentAppVersion).then((snap) {
-      for (final doc in snap) {
-        final data = _asMap(doc);
-        if (data['modifier'] != '' || data['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(data));
-        }
-      }
-    });
-    getLastMonthNotifs(globals.prismUser.email).then((snap) {
-      for (final doc in snap) {
-        final data = _asMap(doc);
-        if (data['modifier'] != '' || data['modifier'] != null) {
-          box.add(InAppNotif.fromSnapshot(data));
-        }
-      }
-    });
-    main.prefs.put('lastFetchTime', DateTime.now());
+    await box.clear();
+    final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
+      sinceUtc: nowUtc.subtract(const Duration(days: 30)),
+      sourceTag: 'notifications.last_month',
+    );
+    await _addUniqueNotifications(box, snap.map(_asMap).toList(growable: false));
+    main.prefs.put('lastFetchTime', nowUtc);
+    return;
   }
+  logger.d("Last fetch time $lastFetchTime");
+  final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
+    sinceUtc: lastFetchTime,
+    sourceTag: 'notifications.latest',
+  );
+  await _addUniqueNotifications(box, snap.map(_asMap).toList(growable: false));
+  main.prefs.put('lastFetchTime', nowUtc);
 }

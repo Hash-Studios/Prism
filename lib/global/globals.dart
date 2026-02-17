@@ -61,6 +61,16 @@ List verifiedUsers = [
   "maurya.abhay30@gmail.com",
 ];
 
+final Set<String> adminEmails = <String>{
+  "akshaymaurya3006@gmail.com",
+  "maurya.abhay30@gmail.com",
+};
+
+bool isAdminUser([String? email]) {
+  final String target = (email ?? prismUser.email).trim().toLowerCase();
+  return adminEmails.contains(target);
+}
+
 String bannerText = "Join our Telegram";
 
 String bannerURL = "https://t.me/PrismWallpapers";

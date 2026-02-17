@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/navigation/views/pages/page_manager.dart';
@@ -96,6 +97,7 @@ class _SplashWidgetState extends State<SplashWidget> {
       logger.d("splash done");
       logger.d("Current App Version: ${globals.currentAppVersion.replaceAll(".", "")}");
       logger.d("Obsolete App Version: ${globals.obsoleteAppVersion.replaceAll(".", "")}");
+      resetNavStack();
       return true;
     } catch (e) {
       logger.d(e.toString());

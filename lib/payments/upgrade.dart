@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
@@ -15,11 +16,48 @@ import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 CustomerInfo? _purchaserInfo;
+bool _purchasesConfigured = false;
+String _configuredAppUserId = "";
+
+const String _rcAndroidApiKey = String.fromEnvironment('RC_ANDROID_API_KEY', defaultValue: apiKey);
+const String _rcIosApiKey = String.fromEnvironment('RC_IOS_API_KEY', defaultValue: apiKey);
+
+String _resolveRevenueCatApiKey() {
+  if (Platform.isIOS) {
+    return _rcIosApiKey;
+  }
+  if (Platform.isAndroid) {
+    return _rcAndroidApiKey;
+  }
+  return _rcAndroidApiKey;
+}
+
+Future<void> _ensurePurchasesConfigured() async {
+  final String targetUserId = globals.prismUser.id.trim();
+  if (!_purchasesConfigured) {
+    final PurchasesConfiguration configuration = PurchasesConfiguration(_resolveRevenueCatApiKey());
+    if (targetUserId.isNotEmpty) {
+      configuration.appUserID = targetUserId;
+    }
+    await Purchases.configure(configuration);
+    _purchasesConfigured = true;
+    _configuredAppUserId = targetUserId;
+    return;
+  }
+  if (targetUserId.isNotEmpty && targetUserId != _configuredAppUserId) {
+    try {
+      await Purchases.logIn(targetUserId);
+      _configuredAppUserId = targetUserId;
+    } on PlatformException catch (e) {
+      logger.w('RevenueCat login sync failed: $e');
+    }
+  }
+}
 
 Future<void> checkPremium() async {
   appData.isPro = false;
 
-  await Purchases.configure(PurchasesConfiguration(apiKey)..appUserID = globals.prismUser.id);
+  await _ensurePurchasesConfigured();
 
   CustomerInfo purchaserInfo;
   try {
@@ -57,7 +95,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     appData.isPro = false;
 
     await Purchases.setLogLevel(LogLevel.debug);
-    await Purchases.configure(PurchasesConfiguration(apiKey)..appUserID = globals.prismUser.id);
+    await _ensurePurchasesConfigured();
 
     CustomerInfo purchaserInfo;
     try {
@@ -77,6 +115,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   }
 
   Future<void> fetchData() async {
+    await _ensurePurchasesConfigured();
     CustomerInfo? purchaserInfo;
     try {
       purchaserInfo = await Purchases.getCustomerInfo();

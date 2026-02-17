@@ -2,15 +2,19 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 class PremiumBannerFollowingFeed extends StatelessWidget {
-  final bool? comparator;
-  final Widget? child;
-  const PremiumBannerFollowingFeed({this.comparator, this.child});
+  final bool comparator;
+  final Widget child;
+  const PremiumBannerFollowingFeed({
+    super.key,
+    required this.comparator,
+    required this.child,
+  });
   @override
   Widget build(BuildContext context) {
-    return comparator!
-        ? child!
+    return comparator
+        ? child
         : Stack(
-            children: [
+            children: <Widget>[
               child,
               Positioned(
                 bottom: 0,
@@ -29,7 +33,7 @@ class PremiumBannerFollowingFeed extends StatelessWidget {
                   ),
                 ),
               ),
-            ] as List<Widget>,
+            ],
           );
   }
 }

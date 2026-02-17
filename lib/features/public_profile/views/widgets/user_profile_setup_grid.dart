@@ -105,7 +105,25 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
 
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
-    context.publicProfileAdapter(listen: false).getUserProfileSetups(widget.email);
+    await context.publicProfileAdapter(listen: false).refreshProfile(widget.email);
+  }
+
+  Future<void> _loadMoreSetups() async {
+    if (seeMoreLoader) {
+      return;
+    }
+    setState(() {
+      seeMoreLoader = true;
+    });
+    try {
+      await context.publicProfileAdapter(listen: false).seeMoreUserProfileSetups(widget.email);
+    } finally {
+      if (mounted) {
+        setState(() {
+          seeMoreLoader = false;
+        });
+      }
+    }
   }
 
   @override
@@ -218,20 +236,10 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
                       if (index == context.publicProfileAdapter(listen: false).userProfileSetups!.length - 1 &&
-                          !(context.publicProfileAdapter(listen: false).userProfileSetups!.length < 8)) {
+                          context.publicProfileAdapter(listen: false).hasMoreSetups) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
-                          func: () {
-                            if (!seeMoreLoader) {
-                              setState(() {
-                                seeMoreLoader = true;
-                              });
-                              context.publicProfileAdapter(listen: false).seeMoreUserProfileSetups(widget.email);
-                              setState(() {
-                                Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
-                              });
-                            }
-                          },
+                          func: _loadMoreSetups,
                         );
                       }
                       return PremiumBannerSetupPhotographer(

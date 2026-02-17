@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
@@ -44,12 +46,42 @@ class _WallpaperGridState extends State<WallpaperGrid> {
     await Data.getPrismWalls();
   }
 
-  void showGooglePopUp(BuildContext context, Function func) {
+  void showGooglePopUp(BuildContext context, VoidCallback func) {
     logger.d(globals.prismUser.loggedIn.toString());
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
     } else {
       func();
+    }
+  }
+
+  Future<void> _triggerSeeMore(List<dynamic> subWalls) async {
+    if (seeMoreLoader || !Data.prismHasMore) {
+      return;
+    }
+    if (!(Data.prismWallsDocSnaps?.isNotEmpty ?? false)) {
+      logger.w("[WallpaperGrid] see more skipped: no doc snapshots");
+      Data.prismHasMore = false;
+      return;
+    }
+    setState(() {
+      seeMoreLoader = true;
+    });
+    logger.d(
+      "[WallpaperGrid] see more triggered",
+      fields: <String, Object?>{
+        "currentItems": subWalls.length,
+        "docSnaps": Data.prismWallsDocSnaps?.length ?? 0,
+      },
+    );
+    try {
+      await Data.seeMorePrism();
+    } finally {
+      if (mounted) {
+        setState(() {
+          seeMoreLoader = false;
+        });
+      }
     }
   }
 
@@ -235,26 +267,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
               if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
-                if (!seeMoreLoader) {
-                  if (!(Data.prismWallsDocSnaps?.isNotEmpty ?? false)) {
-                    logger.w("[WallpaperGrid] see more skipped: no doc snapshots");
-                    return false;
-                  }
-                  setState(() {
-                    seeMoreLoader = true;
-                  });
-                  logger.d(
-                    "[WallpaperGrid] see more triggered",
-                    fields: <String, Object?>{
-                      "currentItems": subWalls.length,
-                      "docSnaps": Data.prismWallsDocSnaps?.length ?? 0,
-                    },
-                  );
-                  Data.seeMorePrism();
-                  setState(() {
-                    Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
-                  });
-                }
+                unawaited(_triggerSeeMore(subWalls));
               }
               return false;
             },
@@ -288,22 +301,11 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                 if (index >= subWalls.length) {
                   return const SizedBox.shrink();
                 }
-                if (index == subWalls.length - 1) {
+                if (index == subWalls.length - 1 && Data.prismHasMore) {
                   return SeeMoreButton(
                     seeMoreLoader: seeMoreLoader,
                     func: () {
-                      if (!seeMoreLoader) {
-                        if (!(Data.prismWallsDocSnaps?.isNotEmpty ?? false)) {
-                          return;
-                        }
-                        setState(() {
-                          seeMoreLoader = true;
-                        });
-                        Data.seeMorePrism();
-                        setState(() {
-                          Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
-                        });
-                      }
+                      unawaited(_triggerSeeMore(subWalls));
                     },
                   );
                 }

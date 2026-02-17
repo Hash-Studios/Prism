@@ -35,8 +35,12 @@ class PublicProfileAdapter {
     return state.setups.map((item) => PublicProfileSnapshot(item.payload)).toList(growable: false);
   }
 
+  bool get hasMoreWalls => _bloc.state.hasMoreWalls;
+
+  bool get hasMoreSetups => _bloc.state.hasMoreSetups;
+
   Future<void> getuserProfileWalls(String? email) {
-    return _loadForEmail(email);
+    return _ensureLoadedEmail(_normalizeEmail(email));
   }
 
   Future<void> seeMoreUserProfileWalls(String? email) async {
@@ -55,7 +59,24 @@ class PublicProfileAdapter {
   }
 
   Future<void> getUserProfileSetups(String? email) {
-    return _loadForEmail(email);
+    return _ensureLoadedEmail(_normalizeEmail(email));
+  }
+
+  Future<void> refreshProfile(String? email) async {
+    final normalizedEmail = _normalizeEmail(email);
+    if (normalizedEmail.isEmpty) {
+      return;
+    }
+    if (_bloc.state.email != normalizedEmail || _bloc.state.status == LoadStatus.initial) {
+      await _loadForEmail(normalizedEmail, force: true);
+      return;
+    }
+    if (_bloc.state.status == LoadStatus.loading) {
+      await _bloc.stream.firstWhere((state) => state.status != LoadStatus.loading);
+      return;
+    }
+    _bloc.add(const PublicProfileEvent.refreshRequested());
+    await _bloc.stream.firstWhere((state) => state.status != LoadStatus.loading);
   }
 
   Future<void> seeMoreUserProfileSetups(String? email) async {
@@ -73,20 +94,30 @@ class PublicProfileAdapter {
     await completion;
   }
 
-  Future<void> _loadForEmail(String? email) async {
-    final normalizedEmail = _normalizeEmail(email);
-    if (normalizedEmail.isEmpty) {
-      return;
-    }
-    _bloc.add(PublicProfileEvent.started(email: normalizedEmail));
-    await _bloc.stream.firstWhere((state) => state.status != LoadStatus.loading);
-  }
-
   Future<void> _ensureLoadedEmail(String email) async {
-    if (_bloc.state.email == email && _bloc.state.status != LoadStatus.initial) {
+    if (email.isEmpty) {
       return;
     }
     await _loadForEmail(email);
+  }
+
+  Future<void> _loadForEmail(String email, {bool force = false}) async {
+    if (email.isEmpty) {
+      return;
+    }
+    final state = _bloc.state;
+    final bool sameEmail = state.email == email;
+    if (!force && sameEmail) {
+      if (state.status == LoadStatus.loading) {
+        await _bloc.stream.firstWhere((value) => value.status != LoadStatus.loading);
+        return;
+      }
+      if (state.status != LoadStatus.initial) {
+        return;
+      }
+    }
+    _bloc.add(PublicProfileEvent.started(email: email));
+    await _bloc.stream.firstWhere((value) => value.status != LoadStatus.loading);
   }
 
   String _normalizeEmail(String? email) => email?.trim() ?? '';
