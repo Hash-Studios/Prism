@@ -97,10 +97,8 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
-      PlatformDispatcher.instance.onError =
-          (Object error, StackTrace stackTrace) {
-        logger.e('Uncaught platform error',
-            error: error, stackTrace: stackTrace);
+      PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
+        logger.e('Uncaught platform error', error: error, stackTrace: stackTrace);
         return true;
       };
 
@@ -126,8 +124,7 @@ Future<void> main() async {
           );
         }
       } else {
-        logger.w(
-            'Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
+        logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
       }
 
       final dir = await getApplicationDocumentsDirectory();
@@ -148,11 +145,9 @@ Future<void> main() async {
         fallback: 0xFFE57697,
       );
       prefs.put("systemOverlayColor", systemOverlayColorValue);
-      currentThemeID =
-          prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+      currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
       prefs.put("lightThemeID", currentThemeID);
-      currentDarkThemeID =
-          prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
+      currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
       prefs.put("darkThemeID", currentDarkThemeID);
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);
@@ -188,10 +183,8 @@ Future<void> main() async {
       SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
         systemNavigationBarColor: Color(systemOverlayColorValue),
       ));
-      SystemChrome.setSystemUIOverlayStyle(
-          const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
-      await SystemChrome.setPreferredOrientations(
-          [DeviceOrientation.portraitUp]);
+      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+      await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
       runApp(
         RestartWidget(
@@ -207,8 +200,7 @@ Future<void> main() async {
                 create: (_) => getIt<UserSearchBloc>(),
               ),
               BlocProvider<CategoryFeedBloc>(
-                create: (_) => getIt<CategoryFeedBloc>()
-                  ..add(const CategoryFeedEvent.started()),
+                create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
               ),
               BlocProvider<ProfileWallsBloc>(
                 create: (_) => getIt<ProfileWallsBloc>(),
@@ -229,16 +221,13 @@ Future<void> main() async {
                 create: (_) => getIt<PublicProfileBloc>(),
               ),
               BlocProvider<ThemeLightBloc>(
-                create: (_) => getIt<ThemeLightBloc>()
-                  ..add(const ThemeLightEvent.started()),
+                create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
               ),
               BlocProvider<ThemeDarkBloc>(
-                create: (_) =>
-                    getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
+                create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
               ),
               BlocProvider<ThemeModeBloc>(
-                create: (_) =>
-                    getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
+                create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
               ),
             ],
             child: MyApp(),
@@ -339,9 +328,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _appRouter = AppRouter(
-      initialRouteName: ((prefs.get('onboarded_new') as bool?) ?? false)
-          ? splashRoute
-          : onboardingRoute,
+      initialRouteName: ((prefs.get('onboarded_new') as bool?) ?? false) ? splashRoute : onboardingRoute,
     );
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
@@ -390,11 +377,9 @@ class _RestartWidgetState extends State<RestartWidget> {
       key = UniqueKey();
     });
     Hive.openBox('prefs').then((prefs) {
-      currentThemeID =
-          prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+      currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
       prefs.put("lightThemeID", currentThemeID);
-      currentDarkThemeID =
-          prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
+      currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
       prefs.put("darkThemeID", currentDarkThemeID);
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);

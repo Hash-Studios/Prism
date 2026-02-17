@@ -1,40 +1,60 @@
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_page.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_setup_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PublicProfileRepository)
 class PublicProfileRepositoryImpl implements PublicProfileRepository {
-  PublicProfileRepositoryImpl(this._firestore);
+  PublicProfileRepositoryImpl(this._firestoreClient);
 
-  final FirebaseFirestore _firestore;
-  final Map<String, DocumentSnapshot<Map<String, dynamic>>> _wallCursorByEmail = {};
-  final Map<String, DocumentSnapshot<Map<String, dynamic>>> _setupCursorByEmail = {};
+  final FirestoreClient _firestoreClient;
+  final Map<String, String> _wallCursorByEmail = <String, String>{};
+  final Map<String, String> _setupCursorByEmail = <String, String>{};
 
-  Future<DocumentSnapshot<Map<String, dynamic>>?> _findUser(String email) async {
-    final usersv2 = await _firestore.collection('usersv2').where('email', isEqualTo: email).limit(1).get();
-
-    if (usersv2.docs.isNotEmpty) {
-      return usersv2.docs.first;
+  Future<Map<String, dynamic>?> _findUser(String email) async {
+    final usersv2 = await _firestoreClient.query<Map<String, dynamic>>(
+      FirestoreQuerySpec(
+        collection: FirebaseCollections.usersV2,
+        sourceTag: 'public_profile.find_user_v2',
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
+        ],
+        limit: 1,
+      ),
+      (data, docId) => <String, dynamic>{...data, '__docId': docId},
+    );
+    if (usersv2.isNotEmpty) {
+      return usersv2.first;
     }
 
-    final users = await _firestore.collection('users').where('email', isEqualTo: email).limit(1).get();
-    if (users.docs.isNotEmpty) {
-      return users.docs.first;
+    final users = await _firestoreClient.query<Map<String, dynamic>>(
+      FirestoreQuerySpec(
+        collection: FirebaseCollections.users,
+        sourceTag: 'public_profile.find_user_legacy',
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
+        ],
+        limit: 1,
+      ),
+      (data, docId) => <String, dynamic>{...data, '__docId': docId},
+    );
+    if (users.isNotEmpty) {
+      return users.first;
     }
-
     return null;
   }
 
-  PublicProfileEntity _toEntity(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? <String, dynamic>{};
+  PublicProfileEntity _toEntity(Map<String, dynamic> data) {
     return PublicProfileEntity(
-      id: (data['id'] ?? doc.id).toString(),
+      id: (data['id'] ?? data['__docId'] ?? '').toString(),
       name: (data['name'] ?? '').toString(),
       email: (data['email'] ?? '').toString(),
       username: (data['username'] ?? '').toString(),
@@ -67,36 +87,38 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required bool refresh,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _firestore
-          .collection('walls')
-          .where('review', isEqualTo: true)
-          .where('email', isEqualTo: email)
-          .orderBy('createdAt', descending: true)
-          .limit(12);
-
-      final cursor = _wallCursorByEmail[email];
-      if (!refresh && cursor != null) {
-        query = query.startAfterDocument(cursor);
+      final rows = await _firestoreClient.query<Map<String, dynamic>>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.walls,
+          sourceTag: 'public_profile.fetch_walls',
+          filters: <FirestoreFilter>[
+            const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+            FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
+          ],
+          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+          limit: 12,
+          startAfterDocId: refresh ? null : _wallCursorByEmail[email],
+        ),
+        (data, docId) => <String, dynamic>{...data, '__docId': docId},
+      );
+      if (rows.isNotEmpty) {
+        _wallCursorByEmail[email] = rows.last['__docId']?.toString() ?? '';
       }
 
-      final snapshot = await query.get();
-      if (snapshot.docs.isNotEmpty) {
-        _wallCursorByEmail[email] = snapshot.docs.last;
-      }
-
-      final items = snapshot.docs.map((doc) {
-        final data = doc.data();
+      final items = rows.map((data) {
+        final payload = <String, dynamic>{...data};
+        payload.remove('__docId');
         return PublicProfileWallEntity(
-          id: (data['id'] ?? doc.id).toString(),
-          payload: data,
+          id: (payload['id'] ?? data['__docId']).toString(),
+          payload: payload,
         );
       }).toList(growable: false);
 
       return Result.success(
         PublicProfilePage<PublicProfileWallEntity>(
           items: items,
-          hasMore: snapshot.docs.length == 12,
-          nextCursor: _wallCursorByEmail[email]?.id,
+          hasMore: rows.length == 12,
+          nextCursor: _wallCursorByEmail[email],
         ),
       );
     } catch (error) {
@@ -110,36 +132,38 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required bool refresh,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _firestore
-          .collection('setups')
-          .where('review', isEqualTo: true)
-          .where('email', isEqualTo: email)
-          .orderBy('created_at', descending: true)
-          .limit(8);
-
-      final cursor = _setupCursorByEmail[email];
-      if (!refresh && cursor != null) {
-        query = query.startAfterDocument(cursor);
+      final rows = await _firestoreClient.query<Map<String, dynamic>>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.setups,
+          sourceTag: 'public_profile.fetch_setups',
+          filters: <FirestoreFilter>[
+            const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+            FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
+          ],
+          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at', descending: true)],
+          limit: 8,
+          startAfterDocId: refresh ? null : _setupCursorByEmail[email],
+        ),
+        (data, docId) => <String, dynamic>{...data, '__docId': docId},
+      );
+      if (rows.isNotEmpty) {
+        _setupCursorByEmail[email] = rows.last['__docId']?.toString() ?? '';
       }
 
-      final snapshot = await query.get();
-      if (snapshot.docs.isNotEmpty) {
-        _setupCursorByEmail[email] = snapshot.docs.last;
-      }
-
-      final items = snapshot.docs.map((doc) {
-        final data = doc.data();
+      final items = rows.map((data) {
+        final payload = <String, dynamic>{...data};
+        payload.remove('__docId');
         return PublicProfileSetupEntity(
-          id: (data['id'] ?? doc.id).toString(),
-          payload: data,
+          id: (payload['id'] ?? data['__docId']).toString(),
+          payload: payload,
         );
       }).toList(growable: false);
 
       return Result.success(
         PublicProfilePage<PublicProfileSetupEntity>(
           items: items,
-          hasMore: snapshot.docs.length == 8,
-          nextCursor: _setupCursorByEmail[email]?.id,
+          hasMore: rows.length == 8,
+          nextCursor: _setupCursorByEmail[email],
         ),
       );
     } catch (error) {
@@ -155,13 +179,22 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required String targetUserEmail,
   }) async {
     try {
-      await _firestore.collection('usersv2').doc(currentUserId).update({
-        'following': FieldValue.arrayUnion(<String>[targetUserEmail]),
-      });
-      await _firestore.collection('usersv2').doc(targetUserId).update({
-        'followers': FieldValue.arrayUnion(<String>[currentUserEmail]),
-      });
-
+      await _firestoreClient.updateDoc(
+        FirebaseCollections.usersV2,
+        currentUserId,
+        <String, dynamic>{
+          'following': FirestoreSentinels.arrayUnion(<Object?>[targetUserEmail]),
+        },
+        sourceTag: 'public_profile.follow.current_user',
+      );
+      await _firestoreClient.updateDoc(
+        FirebaseCollections.usersV2,
+        targetUserId,
+        <String, dynamic>{
+          'followers': FirestoreSentinels.arrayUnion(<Object?>[currentUserEmail]),
+        },
+        sourceTag: 'public_profile.follow.target_user',
+      );
       return fetchProfile(email: targetUserEmail);
     } catch (error) {
       return Result.error(ServerFailure('Unable to follow user: $error'));
@@ -176,13 +209,22 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required String targetUserEmail,
   }) async {
     try {
-      await _firestore.collection('usersv2').doc(currentUserId).update({
-        'following': FieldValue.arrayRemove(<String>[targetUserEmail]),
-      });
-      await _firestore.collection('usersv2').doc(targetUserId).update({
-        'followers': FieldValue.arrayRemove(<String>[currentUserEmail]),
-      });
-
+      await _firestoreClient.updateDoc(
+        FirebaseCollections.usersV2,
+        currentUserId,
+        <String, dynamic>{
+          'following': FirestoreSentinels.arrayRemove(<Object?>[targetUserEmail]),
+        },
+        sourceTag: 'public_profile.unfollow.current_user',
+      );
+      await _firestoreClient.updateDoc(
+        FirebaseCollections.usersV2,
+        targetUserId,
+        <String, dynamic>{
+          'followers': FirestoreSentinels.arrayRemove(<Object?>[currentUserEmail]),
+        },
+        sourceTag: 'public_profile.unfollow.target_user',
+      );
       return fetchProfile(email: targetUserEmail);
     } catch (error) {
       return Result.error(ServerFailure('Unable to unfollow user: $error'));
@@ -195,9 +237,21 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required Map<String, String> links,
   }) async {
     try {
-      await _firestore.collection('usersv2').doc(userId).update({'links': links});
-
-      final updated = await _firestore.collection('usersv2').doc(userId).get();
+      await _firestoreClient.updateDoc(
+        FirebaseCollections.usersV2,
+        userId,
+        <String, dynamic>{'links': links},
+        sourceTag: 'public_profile.update_links',
+      );
+      final updated = await _firestoreClient.getById<Map<String, dynamic>>(
+        FirebaseCollections.usersV2,
+        userId,
+        (data, docId) => <String, dynamic>{...data, '__docId': docId},
+        sourceTag: 'public_profile.update_links.read_back',
+      );
+      if (updated == null) {
+        return Result.error(const ValidationFailure('Profile not found'));
+      }
       return Result.success(_toEntity(updated));
     } catch (error) {
       return Result.error(ServerFailure('Unable to update links: $error'));

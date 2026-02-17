@@ -96,6 +96,8 @@ import '../../features/user_search/biz/bloc/user_search_bloc.j.dart' as _i733;
 import '../../features/user_search/data/repositories/user_search_repository_impl.dart' as _i352;
 import '../../features/user_search/domain/repositories/user_search_repository.dart' as _i204;
 import '../../features/user_search/domain/usecases/search_users_usecase.dart' as _i750;
+import '../firestore/firestore_client.dart' as _i349;
+import '../firestore/firestore_telemetry.dart' as _i393;
 import '../network/connectivity_service.dart' as _i491;
 import 'injection_module.dart' as _i212;
 
@@ -112,6 +114,7 @@ _i174.GetIt initGetIt(
   );
   final appModule = _$AppModule();
   gh.lazySingleton<_i974.FirebaseFirestore>(() => appModule.firebaseFirestore);
+  gh.lazySingleton<_i393.FirestoreTelemetrySink>(() => appModule.firestoreTelemetrySink);
   gh.lazySingleton<_i59.FirebaseAuth>(() => appModule.firebaseAuth);
   gh.lazySingleton<_i538.FirebaseDynamicLinks>(() => appModule.firebaseDynamicLinks);
   gh.lazySingleton<_i627.FirebaseRemoteConfig>(() => appModule.remoteConfig);
@@ -151,25 +154,23 @@ _i174.GetIt initGetIt(
       () => _i474.DeleteNotificationUseCase(gh<_i366.NotificationsRepository>()));
   gh.lazySingleton<_i474.ClearNotificationsUseCase>(
       () => _i474.ClearNotificationsUseCase(gh<_i366.NotificationsRepository>()));
+  gh.lazySingleton<_i349.FirestoreClient>(() => appModule.firestoreClient(
+        gh<_i974.FirebaseFirestore>(),
+        gh<_i393.FirestoreTelemetrySink>(),
+      ));
   gh.lazySingleton<_i415.BootstrapAppUseCase>(() => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()));
-  gh.lazySingleton<_i204.UserSearchRepository>(() => _i352.UserSearchRepositoryImpl(gh<_i974.FirebaseFirestore>()));
   gh.factory<_i364.SessionBloc>(() => _i364.SessionBloc(
         gh<_i986.GetSessionUseCase>(),
         gh<_i986.RefreshPremiumUseCase>(),
         gh<_i986.SignOutUseCase>(),
       ));
-  gh.lazySingleton<_i643.FavouriteWallsRepository>(() => _i176.FavouriteWallsRepositoryImpl(
-        gh<_i974.FirebaseFirestore>(),
-        gh<_i979.Box<dynamic>>(instanceName: 'localFavBox'),
-      ));
   gh.lazySingleton<_i576.GeneratePaletteUseCase>(() => _i576.GeneratePaletteUseCase(gh<_i1019.PaletteRepository>()));
   gh.lazySingleton<_i425.ThemeRepository>(
       () => _i404.ThemeRepositoryImpl(gh<_i979.Box<dynamic>>(instanceName: 'prefsBox')));
-  gh.lazySingleton<_i411.SetupsRepository>(() => _i415.SetupsRepositoryImpl(gh<_i974.FirebaseFirestore>()));
-  gh.lazySingleton<_i563.ProfileSetupsRepository>(
-      () => _i983.ProfileSetupsRepositoryImpl(gh<_i974.FirebaseFirestore>()));
-  gh.lazySingleton<_i817.PublicProfileRepository>(
-      () => _i769.PublicProfileRepositoryImpl(gh<_i974.FirebaseFirestore>()));
+  gh.lazySingleton<_i643.FavouriteWallsRepository>(() => _i176.FavouriteWallsRepositoryImpl(
+        gh<_i349.FirestoreClient>(),
+        gh<_i979.Box<dynamic>>(instanceName: 'localFavBox'),
+      ));
   gh.lazySingleton<_i321.CreateRewardedAdUseCase>(() => _i321.CreateRewardedAdUseCase(gh<_i1055.AdsRepository>()));
   gh.lazySingleton<_i321.AddRewardUseCase>(() => _i321.AddRewardUseCase(gh<_i1055.AdsRepository>()));
   gh.lazySingleton<_i321.ShowRewardedAdUseCase>(() => _i321.ShowRewardedAdUseCase(gh<_i1055.AdsRepository>()));
@@ -182,14 +183,13 @@ _i174.GetIt initGetIt(
       () => _i406.RemoveFavouriteWallUseCase(gh<_i643.FavouriteWallsRepository>()));
   gh.lazySingleton<_i406.ClearFavouriteWallsUseCase>(
       () => _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()));
-  gh.lazySingleton<_i841.FavouriteSetupsRepository>(() => _i934.FavouriteSetupsRepositoryImpl(
-        gh<_i974.FirebaseFirestore>(),
-        gh<_i979.Box<dynamic>>(instanceName: 'localFavBox'),
-      ));
   gh.lazySingleton<_i865.QuickActionsRepository>(() => _i207.QuickActionsRepositoryImpl(gh<_i578.QuickActions>()));
   gh.lazySingleton<_i563.CategoryFeedRepository>(
       () => _i307.CategoryFeedRepositoryImpl(gh<_i979.Box<dynamic>>(instanceName: 'prefsBox')));
-  gh.lazySingleton<_i668.ProfileWallsRepository>(() => _i409.ProfileWallsRepositoryImpl(gh<_i974.FirebaseFirestore>()));
+  gh.lazySingleton<_i841.FavouriteSetupsRepository>(() => _i934.FavouriteSetupsRepositoryImpl(
+        gh<_i349.FirestoreClient>(),
+        gh<_i979.Box<dynamic>>(instanceName: 'localFavBox'),
+      ));
   gh.lazySingleton<_i491.ConnectivityService>(
       () => _i491.InternetConnectivityService(gh<_i973.InternetConnectionChecker>()));
   gh.factory<_i782.FavouriteWallsBloc>(() => _i782.FavouriteWallsBloc(
@@ -219,7 +219,11 @@ _i174.GetIt initGetIt(
         gh<_i474.DeleteNotificationUseCase>(),
         gh<_i474.ClearNotificationsUseCase>(),
       ));
+  gh.lazySingleton<_i204.UserSearchRepository>(() => _i352.UserSearchRepositoryImpl(gh<_i349.FirestoreClient>()));
+  gh.lazySingleton<_i411.SetupsRepository>(() => _i415.SetupsRepositoryImpl(gh<_i349.FirestoreClient>()));
   gh.factory<_i313.StartupBloc>(() => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()));
+  gh.lazySingleton<_i563.ProfileSetupsRepository>(() => _i983.ProfileSetupsRepositoryImpl(gh<_i349.FirestoreClient>()));
+  gh.lazySingleton<_i817.PublicProfileRepository>(() => _i769.PublicProfileRepositoryImpl(gh<_i349.FirestoreClient>()));
   gh.lazySingleton<_i340.FetchFavouriteSetupsUseCase>(
       () => _i340.FetchFavouriteSetupsUseCase(gh<_i841.FavouriteSetupsRepository>()));
   gh.lazySingleton<_i340.ToggleFavouriteSetupUseCase>(
@@ -228,6 +232,7 @@ _i174.GetIt initGetIt(
       () => _i340.RemoveFavouriteSetupUseCase(gh<_i841.FavouriteSetupsRepository>()));
   gh.lazySingleton<_i340.ClearFavouriteSetupsUseCase>(
       () => _i340.ClearFavouriteSetupsUseCase(gh<_i841.FavouriteSetupsRepository>()));
+  gh.lazySingleton<_i668.ProfileWallsRepository>(() => _i409.ProfileWallsRepositoryImpl(gh<_i349.FirestoreClient>()));
   gh.lazySingleton<_i446.FetchPublicProfileUseCase>(
       () => _i446.FetchPublicProfileUseCase(gh<_i817.PublicProfileRepository>()));
   gh.lazySingleton<_i446.FetchPublicProfileWallsUseCase>(

@@ -21,7 +21,6 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
@@ -78,11 +77,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             )
           : Scaffold(
               key: scaffoldKey,
-              body: StreamBuilder<QuerySnapshot>(
+              body: StreamBuilder<List<Map<String, dynamic>>>(
                 stream: getUserProfile(email!),
-                builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
                   if (snapshot.hasData && snapshot.data != null) {
-                    if (snapshot.data!.docs.isEmpty) {
+                    if (snapshot.data!.isEmpty) {
                       return ColoredBox(
                         color: Theme.of(context).primaryColor,
                         child: Center(
@@ -96,15 +95,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       );
                     }
-                    final doc = snapshot.data!.docs[0];
-                    final data = doc.data()! as Map<String, dynamic>;
+                    final data = snapshot.data!.first;
                     final Map links = data["links"] is Map ? (data["links"] as Map) : <String, dynamic>{};
-                    final bool premium = data["premium"] is bool ? data["premium"] as bool : false;
+                    final bool premium = data["premium"] is bool && data["premium"] as bool;
                     final List followers = data["followers"] is List ? data["followers"] as List : <dynamic>[];
                     final List following = data["following"] is List ? data["following"] as List : <dynamic>[];
                     return ProfileChild(
                       ownProfile: false,
-                      id: doc.id,
+                      id: (data['__docId'] ?? '').toString(),
                       bio: data["bio"].toString(),
                       coverPhoto: data["coverPhoto"]?.toString() ?? "",
                       email: data["email"].toString(),
@@ -166,7 +164,6 @@ class _ProfileChildState extends State<ProfileChild> {
   // int profileCount = ((main.prefs.get('userPosts') as int?) ?? 0) +
   //     ((main.prefs.get('userSetups') as int?) ?? 0);
   final ScrollController scrollController = ScrollController();
-  // final FirebaseFirestore firestore = FirebaseFirestore.instance;
   // int count = 0;
   @override
   void initState() {
@@ -368,7 +365,6 @@ class _ProfileChildState extends State<ProfileChild> {
                                           ? MediaQuery.of(context).size.height * 0.21 - 37
                                           : MediaQuery.of(context).size.height * 0.27 - 37,
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.start,
                                         children: [
                                           SizedBox(
                                             width: MediaQuery.of(context).size.width * 0.7,

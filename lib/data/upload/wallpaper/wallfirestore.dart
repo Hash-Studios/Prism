@@ -1,14 +1,14 @@
 import 'dart:convert';
 
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
-FirebaseFirestore firestore = FirebaseFirestore.instance;
 Future<void> createRecord(
     String? id,
     String? wallpaperProvider,
@@ -37,22 +37,25 @@ Future<void> createRecord(
   if (dailyWallUpload > 5) {
     toasts.codeSend("Please try to upload less than 5 walls a day.");
   }
-  await firestore.collection("walls").add({
-    'by': globals.prismUser.name,
-    'email': globals.prismUser.email,
-    'userPhoto': globals.prismUser.profilePhoto,
-    'id': id,
-    'wallpaper_provider': wallpaperProvider,
-    'wallpaper_thumb': wallpaperThumb,
-    'wallpaper_url': wallpaperUrl,
-    'resolution': wallpaperResolution,
-    'size': wallpaperSize,
-    'category': wallpaperCategory,
-    'desc': wallpaperDesc,
-    'review': review,
-    'createdAt': DateTime.now().toUtc(),
-    'collections': ["community"],
-  });
+  await firestoreClient.addDoc(
+      FirebaseCollections.walls,
+      {
+        'by': globals.prismUser.name,
+        'email': globals.prismUser.email,
+        'userPhoto': globals.prismUser.profilePhoto,
+        'id': id,
+        'wallpaper_provider': wallpaperProvider,
+        'wallpaper_thumb': wallpaperThumb,
+        'wallpaper_url': wallpaperUrl,
+        'resolution': wallpaperResolution,
+        'size': wallpaperSize,
+        'category': wallpaperCategory,
+        'desc': wallpaperDesc,
+        'review': review,
+        'createdAt': DateTime.now().toUtc(),
+        'collections': ["community"],
+      },
+      sourceTag: 'upload.createWall');
   if (globals.prismUser.premium == true) {
     http.post(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
@@ -119,27 +122,30 @@ Future<void> createSetup(
     String setupDesc,
     String wallId,
     bool? review) async {
-  await firestore.collection("setups").add({
-    'by': globals.prismUser.name,
-    'email': globals.prismUser.email,
-    'userPhoto': globals.prismUser.profilePhoto,
-    'id': id,
-    'image': imageURL,
-    'wallpaper_provider': wallpaperProvider,
-    'wallpaper_thumb': wallpaperThumb,
-    'wallpaper_url': wallpaperUrl,
-    'icon': iconName,
-    'icon_url': iconURL,
-    'widget': widgetName,
-    'widget_url': widgetURL,
-    'widget2': widgetName2,
-    'widget_url2': widgetURL2,
-    'name': setupName,
-    'desc': setupDesc,
-    'review': review,
-    'created_at': DateTime.now().toUtc(),
-    'wall_id': wallId
-  });
+  await firestoreClient.addDoc(
+      FirebaseCollections.setups,
+      {
+        'by': globals.prismUser.name,
+        'email': globals.prismUser.email,
+        'userPhoto': globals.prismUser.profilePhoto,
+        'id': id,
+        'image': imageURL,
+        'wallpaper_provider': wallpaperProvider,
+        'wallpaper_thumb': wallpaperThumb,
+        'wallpaper_url': wallpaperUrl,
+        'icon': iconName,
+        'icon_url': iconURL,
+        'widget': widgetName,
+        'widget_url': widgetURL,
+        'widget2': widgetName2,
+        'widget_url2': widgetURL2,
+        'name': setupName,
+        'desc': setupDesc,
+        'review': review,
+        'created_at': DateTime.now().toUtc(),
+        'wall_id': wallId
+      },
+      sourceTag: 'upload.createSetup');
   if (globals.prismUser.loggedIn == true && globals.prismUser.premium == true) {
     http.post(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
@@ -204,7 +210,9 @@ Future<void> updateSetup(
     String setupDesc,
     String wallId,
     bool? review) async {
-  await firestore.collection("setups").doc(setupDocId).set(
+  await firestoreClient.setDoc(
+      FirebaseCollections.setups,
+      setupDocId,
       {
         'by': globals.prismUser.name,
         'email': globals.prismUser.email,
@@ -226,9 +234,8 @@ Future<void> updateSetup(
         'created_at': DateTime.now().toUtc(),
         'wall_id': wallId
       },
-      SetOptions(
-        merge: true,
-      ));
+      merge: true,
+      sourceTag: 'upload.updateSetup');
   toasts.codeSend("Your setup is edited, and is under review.");
 }
 
@@ -248,26 +255,30 @@ Future<void> createDraftSetup(
   String? setupDesc,
   String? wallId,
 ) async {
-  await firestore.collection("draftSetups").doc(id).set({
-    'by': globals.prismUser.name,
-    'email': globals.prismUser.email,
-    'userPhoto': globals.prismUser.profilePhoto,
-    'id': id,
-    'image': imageURL,
-    'wallpaper_provider': wallpaperProvider,
-    'wallpaper_thumb': wallpaperThumb,
-    'wallpaper_url': wallpaperUrl,
-    'icon': iconName,
-    'icon_url': iconURL,
-    'widget': widgetName,
-    'widget_url': widgetURL,
-    'widget2': widgetName2,
-    'widget_url2': widgetURL2,
-    'name': setupName,
-    'desc': setupDesc,
-    'review': false,
-    'created_at': DateTime.now().toUtc(),
-    'wall_id': wallId,
-  });
+  await firestoreClient.setDoc(
+      FirebaseCollections.draftSetups,
+      id!,
+      {
+        'by': globals.prismUser.name,
+        'email': globals.prismUser.email,
+        'userPhoto': globals.prismUser.profilePhoto,
+        'id': id,
+        'image': imageURL,
+        'wallpaper_provider': wallpaperProvider,
+        'wallpaper_thumb': wallpaperThumb,
+        'wallpaper_url': wallpaperUrl,
+        'icon': iconName,
+        'icon_url': iconURL,
+        'widget': widgetName,
+        'widget_url': widgetURL,
+        'widget2': widgetName2,
+        'widget_url2': widgetURL2,
+        'name': setupName,
+        'desc': setupDesc,
+        'review': false,
+        'created_at': DateTime.now().toUtc(),
+        'wall_id': wallId,
+      },
+      sourceTag: 'upload.createDraftSetup');
   toasts.codeSend("Draft saved!");
 }

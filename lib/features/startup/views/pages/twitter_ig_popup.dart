@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/gitkey.dart';
@@ -7,7 +9,6 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -104,7 +105,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       const SizedBox(
                         height: 17,
                       ),
-                      FollowHeaderCard(
+                      const FollowHeaderCard(
                         email: "hk3ToN_Prism@gmail.com",
                         url: "https://pbs.twimg.com/profile_images/1278264820450680833/LKoAc7nh_400x400.jpg",
                         name: "Hk3ToN",
@@ -112,7 +113,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                         img2: user3Image2,
                         img3: user3Image3,
                       ),
-                      FollowHeaderCard(
+                      const FollowHeaderCard(
                         email: "akshaymaurya3006@gmail.com",
                         url:
                             "https://lh3.googleusercontent.com/a-/AOh14Gh7a-JaBRpAI9SPmSBJQmOeggj6ic2mub3DKala_g=s96-c",
@@ -121,7 +122,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                         img2: user2Image2,
                         img3: user2Image3,
                       ),
-                      FollowHeaderCard(
+                      const FollowHeaderCard(
                         email: "maurya.abhay30@gmail.com",
                         url:
                             "https://lh3.googleusercontent.com/a-/AOh14GgTe5pUi3k-cdvxoCoJ2kKWafu0RXDN3sUVTp3Z58c=s96-c",
@@ -130,7 +131,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                         img2: user1Image2,
                         img3: user1Image3,
                       ),
-                      FollowHeaderCard(
+                      const FollowHeaderCard(
                         email: "inderpalsansoa.1993@gmail.com",
                         url: "https://lh3.googleusercontent.com/a-/AOh14GjUOpZ14V9UdM58LCz1nx87N_3SDYSHQwTOec-I=s96-c",
                         name: "ShankyGotThatArt",
@@ -138,7 +139,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                         img2: user4Image2,
                         img3: user4Image3,
                       ),
-                      FollowHeaderCard(
+                      const FollowHeaderCard(
                         email: "yyo17341@gmail.com",
                         url: "https://lh3.googleusercontent.com/a-/AOh14GizSGAXOap5UIqWKX16JNSKe56y1X_mKNb0Snaf=s96-c",
                         name: "Megh Dave",
@@ -146,7 +147,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                         img2: user5Image2,
                         img3: user5Image3,
                       ),
-                      FollowHeaderCard(
+                      const FollowHeaderCard(
                         email: "techpool007@gmail.com",
                         url:
                             "https://lh3.googleusercontent.com/a-/AOh14GhcT-AssZM3Kk6jz4OTbbAPz3gS-2tvPjLhkAj83w=s96-c",
@@ -260,7 +261,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
 }
 
 class FollowHeaderCard extends StatelessWidget {
-  FollowHeaderCard({
+  const FollowHeaderCard({
     super.key,
     required this.url,
     required this.email,
@@ -276,11 +277,9 @@ class FollowHeaderCard extends StatelessWidget {
   final String img1;
   final String img2;
   final String img3;
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   @override
   Widget build(BuildContext context) {
-    final CollectionReference<Map<String, dynamic>> users = firestore.collection(USER_NEW_COLLECTION);
     return ShowUpTransition(
       forward: true,
       slideSide: SlideFromSlide.bottom,
@@ -316,13 +315,26 @@ class FollowHeaderCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: users.where("email", isEqualTo: globals.prismUser.email).snapshots(),
-                    builder: (BuildContext context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
-                      if (!snapshot.hasData) {
+                  StreamBuilder<List<_FirestoreDoc>>(
+                    stream: firestoreClient.watchQuery<_FirestoreDoc>(
+                      FirestoreQuerySpec(
+                        collection: USER_NEW_COLLECTION,
+                        sourceTag: 'startup.follow.currentUser',
+                        filters: <FirestoreFilter>[
+                          FirestoreFilter(
+                              field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email),
+                        ],
+                        isStream: true,
+                        limit: 1,
+                      ),
+                      (data, docId) => _FirestoreDoc(docId, data),
+                    ),
+                    builder: (BuildContext context, AsyncSnapshot<List<_FirestoreDoc>> snapshot) {
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return Container();
                       } else {
-                        final Map<String, dynamic> currentUserData = snapshot.data!.docs[0].data();
+                        final _FirestoreDoc currentUserDoc = snapshot.data!.first;
+                        final Map<String, dynamic> currentUserData = currentUserDoc.data;
                         final List<dynamic> following = List<dynamic>.from(currentUserData['following'] as List? ?? []);
                         if (following.contains(email)) {
                           return Padding(
@@ -347,19 +359,37 @@ class FollowHeaderCard extends StatelessWidget {
                           return Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
                                 following.add(email);
-                                snapshot.data!.docs[0].reference.update({'following': following});
-                                users.where("email", isEqualTo: email).get().then((value) {
-                                  if (value.docs.isEmpty) {
-                                  } else {
-                                    final Map<String, dynamic> userData = value.docs[0].data();
-                                    final List<dynamic> followers =
-                                        List<dynamic>.from(userData['followers'] as List? ?? []);
-                                    followers.add(globals.prismUser.email);
-                                    value.docs[0].reference.update({'followers': followers});
-                                  }
-                                });
+                                await firestoreClient.updateDoc(
+                                  USER_NEW_COLLECTION,
+                                  currentUserDoc.id,
+                                  <String, dynamic>{'following': following},
+                                  sourceTag: 'startup.follow.currentUser.update',
+                                );
+                                final users = await firestoreClient.query<_FirestoreDoc>(
+                                  FirestoreQuerySpec(
+                                    collection: USER_NEW_COLLECTION,
+                                    sourceTag: 'startup.follow.target.lookup',
+                                    filters: <FirestoreFilter>[
+                                      FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: email),
+                                    ],
+                                    limit: 1,
+                                  ),
+                                  (data, docId) => _FirestoreDoc(docId, data),
+                                );
+                                if (users.isNotEmpty) {
+                                  final Map<String, dynamic> userData = users.first.data;
+                                  final List<dynamic> followers =
+                                      List<dynamic>.from(userData['followers'] as List? ?? []);
+                                  followers.add(globals.prismUser.email);
+                                  await firestoreClient.updateDoc(
+                                    USER_NEW_COLLECTION,
+                                    users.first.id,
+                                    <String, dynamic>{'followers': followers},
+                                    sourceTag: 'startup.follow.target.update',
+                                  );
+                                }
                                 http.post(
                                   Uri.parse(
                                     'https://fcm.googleapis.com/fcm/send',
@@ -447,6 +477,13 @@ class FollowHeaderCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FirestoreDoc {
+  const _FirestoreDoc(this.id, this.data);
+
+  final String id;
+  final Map<String, dynamic> data;
 }
 
 class FollowImage extends StatelessWidget {

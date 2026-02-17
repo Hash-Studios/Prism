@@ -1,7 +1,9 @@
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/setups/biz/bloc/setups_bloc.j.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -51,14 +53,25 @@ extension SetupsBlocAdapterX on BuildContext {
   }
 }
 
-final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 Map? setup;
 
 Future<Map?> getSetupFromName(String? name) async {
   setup = {};
-  await databaseReference.collection('setups').where('name', isEqualTo: name).get().then((value) {
-    for (final doc in value.docs) {
-      setup = doc.data();
+  await firestoreClient
+      .query<Map<String, dynamic>>(
+    FirestoreQuerySpec(
+      collection: FirebaseCollections.setups,
+      sourceTag: 'setups.lookup.byName',
+      filters: <FirestoreFilter>[
+        FirestoreFilter(field: 'name', op: FirestoreFilterOp.isEqualTo, value: name),
+      ],
+      limit: 1,
+    ),
+    (data, _) => data,
+  )
+      .then((value) {
+    if (value.isNotEmpty) {
+      setup = value.first;
     }
     logger.d(setup.toString());
   }).catchError((error) {

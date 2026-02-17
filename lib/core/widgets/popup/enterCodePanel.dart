@@ -1,7 +1,9 @@
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class EnterCodePanel extends StatefulWidget {
@@ -15,7 +17,6 @@ class EnterCodePanel extends StatefulWidget {
 
 class _EnterCodePanelState extends State<EnterCodePanel> {
   final TextEditingController codeController = TextEditingController();
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
   bool isLoading = false;
   bool enabled = false;
   @override
@@ -114,27 +115,40 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                               setState(() {
                                 isLoading = true;
                               });
-                              await firestore
-                                  .collection('codes')
-                                  .where('code', isEqualTo: codeController.text.toLowerCase())
-                                  .limit(1)
-                                  .get()
-                                  .then((value) {
-                                if (value.docs.isNotEmpty) {
-                                  if (value.docs[0].data()["redeemed"] == false) {
-                                    firestore.collection('codes').doc(value.docs[0].id).update({
-                                      "redeemed": true,
-                                      "winner": globals.prismUser.toJson(),
-                                      "when": DateTime.now().toUtc()
-                                    });
-                                    toasts.codeSend("Congratulations, we will contact you!");
-                                  } else {
-                                    toasts.error("Sorry, this code has already been redeemed!");
-                                  }
+                              final matches = await firestoreClient.query<_RedeemCodeDoc>(
+                                FirestoreQuerySpec(
+                                  collection: FirebaseCollections.codes,
+                                  sourceTag: 'codes.redeem.lookup',
+                                  filters: <FirestoreFilter>[
+                                    FirestoreFilter(
+                                      field: 'code',
+                                      op: FirestoreFilterOp.isEqualTo,
+                                      value: codeController.text.toLowerCase(),
+                                    ),
+                                  ],
+                                  limit: 1,
+                                ),
+                                (data, docId) => _RedeemCodeDoc(docId, data),
+                              );
+                              if (matches.isNotEmpty) {
+                                final doc = matches.first;
+                                if (doc.data["redeemed"] == false) {
+                                  await firestoreClient.updateDoc(
+                                      FirebaseCollections.codes,
+                                      doc.id,
+                                      <String, dynamic>{
+                                        "redeemed": true,
+                                        "winner": globals.prismUser.toJson(),
+                                        "when": DateTime.now().toUtc(),
+                                      },
+                                      sourceTag: 'codes.redeem.update');
+                                  toasts.codeSend("Congratulations, we will contact you!");
                                 } else {
-                                  toasts.error("Invalid code!");
+                                  toasts.error("Sorry, this code has already been redeemed!");
                                 }
-                              });
+                              } else {
+                                toasts.error("Invalid code!");
+                              }
                               setState(() {
                                 isLoading = false;
                               });
@@ -198,4 +212,11 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
       ),
     );
   }
+}
+
+class _RedeemCodeDoc {
+  const _RedeemCodeDoc(this.id, this.data);
+
+  final String id;
+  final Map<String, dynamic> data;
 }

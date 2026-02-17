@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -13,7 +15,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -35,7 +36,6 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   late TextEditingController bioController;
   late TextEditingController usernameController;
   late TextEditingController nameController;
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
   bool isLoading = false;
   bool pfpEdit = false;
   bool coverEdit = false;
@@ -300,9 +300,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       logger.d('File Uploaded');
       globals.prismUser.profilePhoto = pfpUrl;
       main.prefs.put(main.userHiveKey, globals.prismUser);
-      await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+      await _updateCurrentUser(<String, dynamic>{
         "profilePhoto": pfpUrl,
-      });
+      }, 'profile.edit.profilePhoto');
     } catch (e) {
       logger.d(e.toString());
       toasts.error("Some uploading issue, please try again.");
@@ -324,9 +324,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       logger.d('Cover File Uploaded');
       globals.prismUser.coverPhoto = coverUrl;
       main.prefs.put(main.userHiveKey, globals.prismUser);
-      await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+      await _updateCurrentUser(<String, dynamic>{
         "coverPhoto": coverUrl,
-      });
+      }, 'profile.edit.coverPhoto');
     } catch (e) {
       logger.d(e.toString());
       toasts.error("Some uploading issue, please try again.");
@@ -389,6 +389,30 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     );
 
     showModal(context: context, builder: (BuildContext context) => deletePopUp);
+  }
+
+  Future<void> _updateCurrentUser(Map<String, dynamic> data, String sourceTag) {
+    return firestoreClient.updateDoc(
+      USER_NEW_COLLECTION,
+      globals.prismUser.id,
+      data,
+      sourceTag: sourceTag,
+    );
+  }
+
+  Future<bool> _isUsernameAvailable(String username) async {
+    final users = await firestoreClient.query<Map<String, dynamic>>(
+      FirestoreQuerySpec(
+        collection: USER_NEW_COLLECTION,
+        sourceTag: 'profile.edit.usernameAvailability',
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: "username", op: FirestoreFilterOp.isEqualTo, value: username),
+        ],
+        limit: 1,
+      ),
+      (data, _) => data,
+    );
+    return users.isEmpty;
   }
 
   @override
@@ -485,9 +509,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             _cover = null;
                             globals.prismUser.coverPhoto = null;
                             main.prefs.put(main.userHiveKey, globals.prismUser);
-                            await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+                            await _updateCurrentUser(<String, dynamic>{
                               "coverPhoto": null,
-                            });
+                            }, 'profile.edit.removeCoverPhoto');
                           }, "Cover photo");
                         },
                         icon: const Icon(
@@ -679,20 +703,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               setState(() {
                                 isCheckingUsername = true;
                               });
-                              await FirebaseFirestore.instance
-                                  .collection(USER_NEW_COLLECTION)
-                                  .where("username", isEqualTo: value)
-                                  .get()
-                                  .then((snapshot) {
-                                if (snapshot.size == 0) {
-                                  setState(() {
-                                    available = true;
-                                  });
-                                } else {
-                                  setState(() {
-                                    available = false;
-                                  });
-                                }
+                              final isAvailable = await _isUsernameAvailable(value);
+                              setState(() {
+                                available = isAvailable;
                               });
                               setState(() {
                                 isCheckingUsername = false;
@@ -758,9 +771,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   bioController.text = "";
                                   globals.prismUser.bio = "";
                                   main.prefs.put(main.userHiveKey, globals.prismUser);
-                                  await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+                                  await _updateCurrentUser(<String, dynamic>{
                                     "bio": "",
-                                  });
+                                  }, 'profile.edit.clearBio');
                                 }, "bio");
                               },
                               icon: const Icon(
@@ -890,12 +903,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                           links.remove(_link?["name"].toString());
                                           globals.prismUser.links = links;
                                           main.prefs.put(main.userHiveKey, globals.prismUser);
-                                          await firestore
-                                              .collection(USER_NEW_COLLECTION)
-                                              .doc(globals.prismUser.id)
-                                              .update({
+                                          await _updateCurrentUser(<String, dynamic>{
                                             "links": globals.prismUser.links,
-                                          });
+                                          }, 'profile.edit.removeLink');
                                         }, "${_link?["name"].toString().inCaps}");
                                       },
                                       icon: const Icon(
@@ -987,9 +997,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             if (bioEdit && bioController.text != "") {
                               globals.prismUser.bio = bioController.text;
                               main.prefs.put(main.userHiveKey, globals.prismUser);
-                              await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+                              await _updateCurrentUser(<String, dynamic>{
                                 "bio": bioController.text,
-                              });
+                              }, 'profile.edit.bio');
                             }
                             if (linkEdit) {
                               final Map links = globals.prismUser.links;
@@ -1000,16 +1010,16 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               }
                               globals.prismUser.links = links;
                               main.prefs.put(main.userHiveKey, globals.prismUser);
-                              await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+                              await _updateCurrentUser(<String, dynamic>{
                                 "links": links,
-                              });
+                              }, 'profile.edit.links');
                             }
                             if (nameEdit && nameController.text != "") {
                               globals.prismUser.name = nameController.text;
                               main.prefs.put(main.userHiveKey, globals.prismUser);
-                              await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+                              await _updateCurrentUser(<String, dynamic>{
                                 "name": nameController.text,
-                              });
+                              }, 'profile.edit.name');
                             }
                             setState(() {
                               isLoading = false;
@@ -1028,9 +1038,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                     usernameController.text.length >= 8) {
                                   globals.prismUser.username = usernameController.text;
                                   main.prefs.put(main.userHiveKey, globals.prismUser);
-                                  await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+                                  await _updateCurrentUser(<String, dynamic>{
                                     "username": usernameController.text,
-                                  });
+                                  }, 'profile.edit.username');
                                 }
                                 if (_pfp != null && pfpEdit) {
                                   await processImage();
@@ -1041,16 +1051,16 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 if (bioEdit && bioController.text != "") {
                                   globals.prismUser.bio = bioController.text;
                                   main.prefs.put(main.userHiveKey, globals.prismUser);
-                                  await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+                                  await _updateCurrentUser(<String, dynamic>{
                                     "bio": bioController.text,
-                                  });
+                                  }, 'profile.edit.bio.withUsername');
                                 }
                                 if (nameEdit && nameController.text != "") {
                                   globals.prismUser.name = nameController.text;
                                   main.prefs.put(main.userHiveKey, globals.prismUser);
-                                  await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+                                  await _updateCurrentUser(<String, dynamic>{
                                     "name": nameController.text,
-                                  });
+                                  }, 'profile.edit.name.withUsername');
                                 }
                                 if (linkEdit) {
                                   final Map links = globals.prismUser.links;
@@ -1061,9 +1071,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   }
                                   globals.prismUser.links = links;
                                   main.prefs.put(main.userHiveKey, globals.prismUser);
-                                  await firestore.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
+                                  await _updateCurrentUser(<String, dynamic>{
                                     "links": links,
-                                  });
+                                  }, 'profile.edit.links.withUsername');
                                 }
                                 setState(() {
                                   isLoading = false;

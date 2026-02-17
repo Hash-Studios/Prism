@@ -1,17 +1,19 @@
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/profile_setups/domain/entities/profile_setup_entity.dart';
 import 'package:Prism/features/profile_setups/domain/entities/profile_setups_page.dart';
 import 'package:Prism/features/profile_setups/domain/repositories/profile_setups_repository.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: ProfileSetupsRepository)
 class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
-  ProfileSetupsRepositoryImpl(this._firestore);
+  ProfileSetupsRepositoryImpl(this._firestoreClient);
 
-  final FirebaseFirestore _firestore;
-  final Map<String, DocumentSnapshot<Map<String, dynamic>>> _cursorByEmail = {};
+  final FirestoreClient _firestoreClient;
+  final Map<String, String> _cursorByEmail = {};
 
   @override
   Future<Result<ProfileSetupsPage>> fetchProfileSetups({
@@ -19,33 +21,36 @@ class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
     required bool refresh,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _firestore
-          .collection('setups')
-          .where('review', isEqualTo: true)
-          .where('email', isEqualTo: email)
-          .orderBy('created_at', descending: true)
-          .limit(8);
-
       final cursor = _cursorByEmail[email];
-      if (!refresh && cursor != null) {
-        query = query.startAfterDocument(cursor);
+      final rows = await _firestoreClient.query<Map<String, dynamic>>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.setups,
+          sourceTag: 'profile_setups.fetch',
+          filters: <FirestoreFilter>[
+            const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+            FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
+          ],
+          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at', descending: true)],
+          limit: 8,
+          startAfterDocId: refresh ? null : cursor,
+        ),
+        (data, docId) => <String, dynamic>{...data, '__docId': docId},
+      );
+      if (rows.isNotEmpty) {
+        _cursorByEmail[email] = rows.last['__docId']?.toString() ?? '';
       }
 
-      final snapshot = await query.get();
-      if (snapshot.docs.isNotEmpty) {
-        _cursorByEmail[email] = snapshot.docs.last;
-      }
-
-      final items = snapshot.docs.map((doc) {
-        final data = doc.data();
-        return ProfileSetupEntity(id: (data['id'] ?? doc.id).toString(), payload: data);
+      final items = rows.map((data) {
+        final payload = <String, dynamic>{...data};
+        payload.remove('__docId');
+        return ProfileSetupEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
       }).toList(growable: false);
 
       return Result.success(
         ProfileSetupsPage(
           items: items,
-          hasMore: snapshot.docs.length == 8,
-          nextCursor: _cursorByEmail[email]?.id,
+          hasMore: rows.length == 8,
+          nextCursor: _cursorByEmail[email],
         ),
       );
     } catch (error) {

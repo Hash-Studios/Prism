@@ -57,8 +57,7 @@ Future<_RepoSnapshot?> _loadRepoSnapshot(
   required String action,
 }) async {
   try {
-    final RepositoryContents repoContents =
-        await github.repositories.getContents(
+    final RepositoryContents repoContents = await github.repositories.getContents(
       RepositorySlug(gitUserName, repoName3),
       jsonFile,
     );
@@ -124,17 +123,13 @@ Future<void> _incrementCounter(
     }
 
     final dynamic sectionValue = snapshot.jsonMap[section];
-    final Map<String, dynamic> sectionMap = sectionValue is Map
-        ? sectionValue.cast<String, dynamic>()
-        : <String, dynamic>{};
+    final Map<String, dynamic> sectionMap =
+        sectionValue is Map ? sectionValue.cast<String, dynamic>() : <String, dynamic>{};
 
     final dynamic itemValue = sectionMap[id];
-    final Map<String, dynamic> itemMap = itemValue is Map
-        ? itemValue.cast<String, dynamic>()
-        : <String, dynamic>{};
+    final Map<String, dynamic> itemMap = itemValue is Map ? itemValue.cast<String, dynamic>() : <String, dynamic>{};
 
-    final int currentCount =
-        int.tryParse(itemMap[field]?.toString() ?? '0') ?? 0;
+    final int currentCount = int.tryParse(itemMap[field]?.toString() ?? '0') ?? 0;
     itemMap[field] = (currentCount + 1).toString();
     sectionMap[id] = itemMap;
     snapshot.jsonMap[section] = sectionMap;

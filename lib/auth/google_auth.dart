@@ -1,18 +1,20 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/payments/upgrade.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
-const String USER_OLD_COLLECTION = 'users';
-const String USER_NEW_COLLECTION = 'usersv2';
+const String USER_OLD_COLLECTION = FirebaseCollections.users;
+const String USER_NEW_COLLECTION = FirebaseCollections.usersV2;
 
 class GoogleAuth {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -56,37 +58,47 @@ class GoogleAuth {
       name = user!.displayName;
       email = user.email;
 
-      final List<DocumentSnapshot?> usersData = await getUsersData(user);
+      final List<Map<String, dynamic>?> usersData = await getUsersData(user);
       // User exists in both. Therefore go ahead with the new collection, and forget the old one.
       logger.d("USERDATA0 ${usersData[0]}");
       logger.d("USERDATA1 ${usersData[1]}");
       if (usersData[0] != null && usersData[1] != null) {
         final doc = usersData[1]!;
-        globals.prismUser = PrismUsersV2.fromDocumentSnapshot(doc, user);
-        FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
-          'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
-          'loggedIn': true,
-        });
+        globals.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
+        firestoreClient.updateDoc(
+            USER_NEW_COLLECTION,
+            globals.prismUser.id,
+            {
+              'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
+              'loggedIn': true,
+            },
+            sourceTag: 'auth.signin.update_last_login');
         logger.d("USERDATA CASE1");
       }
       // User exists in old database. Copy/create him in the new db.
       else if (usersData[0] != null && usersData[1] == null) {
         final doc = usersData[0]!;
-        globals.prismUser = PrismUsersV2.fromDocumentSnapshot(doc, user);
-        FirebaseFirestore.instance
-            .collection(USER_NEW_COLLECTION)
-            .doc(globals.prismUser.id)
-            .set(globals.prismUser.toJson());
+        globals.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
+        firestoreClient.setDoc(
+          USER_NEW_COLLECTION,
+          globals.prismUser.id,
+          globals.prismUser.toJson(),
+          sourceTag: 'auth.signin.copy_legacy_user',
+        );
         logger.d("USERDATA CASE2");
       }
       // User exists in new database. Simply sign him in.
       else if (usersData[0] == null && usersData[1] != null) {
         final doc = usersData[1]!;
-        globals.prismUser = PrismUsersV2.fromDocumentSnapshot(doc, user);
-        FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
-          'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
-          'loggedIn': true,
-        });
+        globals.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
+        firestoreClient.updateDoc(
+            USER_NEW_COLLECTION,
+            globals.prismUser.id,
+            {
+              'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
+              'loggedIn': true,
+            },
+            sourceTag: 'auth.signin.update_last_login_existing');
         logger.d("USERDATA CASE3");
       }
       // User exists in none. Create new data in new db and sign him in.
@@ -111,10 +123,12 @@ class GoogleAuth {
           transactions: [],
           coverPhoto: "",
         );
-        FirebaseFirestore.instance
-            .collection(USER_NEW_COLLECTION)
-            .doc(globals.prismUser.id)
-            .set(globals.prismUser.toJson());
+        firestoreClient.setDoc(
+          USER_NEW_COLLECTION,
+          globals.prismUser.id,
+          globals.prismUser.toJson(),
+          sourceTag: 'auth.signin.create_user',
+        );
         logger.d("USERDATA CASE4");
       }
 
@@ -167,9 +181,13 @@ class GoogleAuth {
     });
     await Purchases.logOut();
     try {
-      FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(globals.prismUser.id).update({
-        'loggedIn': false,
-      });
+      firestoreClient.updateDoc(
+          USER_NEW_COLLECTION,
+          globals.prismUser.id,
+          {
+            'loggedIn': false,
+          },
+          sourceTag: 'auth.signout.mark_logged_out');
     } catch (e, st) {
       logger.e('Failed to mark user logged out', error: e, stackTrace: st);
     }
@@ -195,22 +213,52 @@ class GoogleAuth {
     }
   }
 
-  Future<DocumentSnapshot?> getUserOLD(User? user) async {
-    final QuerySnapshot result =
-        await FirebaseFirestore.instance.collection(USER_OLD_COLLECTION).where('id', isEqualTo: user!.uid).get();
-    final List<DocumentSnapshot> documents = result.docs;
-    return documents.isNotEmpty ? documents.first : null;
+  Future<Map<String, dynamic>?> getUserOLD(User? user) async {
+    final rows = await firestoreClient.query<Map<String, dynamic>>(
+      FirestoreQuerySpec(
+        collection: USER_OLD_COLLECTION,
+        sourceTag: 'auth.get_user_old',
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user!.uid),
+        ],
+        limit: 1,
+      ),
+      (data, docId) => <String, dynamic>{...data, '__docId': docId},
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    final String docId = rows.first['__docId']?.toString() ?? '';
+    if (docId.isEmpty) {
+      return null;
+    }
+    return rows.first;
   }
 
-  Future<DocumentSnapshot?> getUserNEW(User? user) async {
-    final QuerySnapshot result =
-        await FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).where('id', isEqualTo: user!.uid).get();
-    final List<DocumentSnapshot> documents = result.docs;
-    return documents.isNotEmpty ? documents.first : null;
+  Future<Map<String, dynamic>?> getUserNEW(User? user) async {
+    final rows = await firestoreClient.query<Map<String, dynamic>>(
+      FirestoreQuerySpec(
+        collection: USER_NEW_COLLECTION,
+        sourceTag: 'auth.get_user_new',
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user!.uid),
+        ],
+        limit: 1,
+      ),
+      (data, docId) => <String, dynamic>{...data, '__docId': docId},
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    final String docId = rows.first['__docId']?.toString() ?? '';
+    if (docId.isEmpty) {
+      return null;
+    }
+    return rows.first;
   }
 
-  Future<List<DocumentSnapshot?>> getUsersData(User? user) async {
-    late final List<DocumentSnapshot?> output;
+  Future<List<Map<String, dynamic>?>> getUsersData(User? user) async {
+    late final List<Map<String, dynamic>?> output;
     await Future.wait([getUserOLD(user), getUserNEW(user)]).then((value) => output = value);
     return output;
   }

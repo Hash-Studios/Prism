@@ -1,21 +1,24 @@
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:animations/animations.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 void showLinksPopUp(BuildContext context, String id) {
   Future<List<LinksModel>> getLinks(String id) async {
     List<LinksModel> links = [];
-    final FirebaseFirestore firestore = FirebaseFirestore.instance;
     logger.d(id);
-    await firestore.collection(USER_NEW_COLLECTION).doc(id).get().then((value) {
-      links = linksToModel(value.data()!["links"] as Map);
-      logger.d(links.toString());
-    });
+    final userData = await firestoreClient.getById<Map<String, dynamic>>(
+      USER_NEW_COLLECTION,
+      id,
+      (data, _) => data,
+      sourceTag: 'profile.linksPopup.get',
+    );
+    links = linksToModel(userData?["links"] as Map? ?? <String, dynamic>{});
+    logger.d(links.toString());
     return links;
   }
 
