@@ -55,3 +55,7 @@ android/app/build.gradle
 android/google-play-console.json
 android/key.jks
 android/android_keys.zip
+.gradle-local/**
+lib/firebase_options.dart
+firebase.json
+ios/Runner/GoogleService-Info.plist
