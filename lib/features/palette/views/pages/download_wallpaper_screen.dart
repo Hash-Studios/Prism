@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/global/globals.dart' as globals;

@@ -1,5 +1,4 @@
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';

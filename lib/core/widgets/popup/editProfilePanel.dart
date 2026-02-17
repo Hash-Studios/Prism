@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';

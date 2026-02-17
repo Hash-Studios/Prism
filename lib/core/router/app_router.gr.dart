@@ -1045,7 +1045,7 @@ class UpgradeRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return UpgradeScreen();
+      return const UpgradeScreen();
     },
   );
 }

@@ -1,6 +1,5 @@
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -19,11 +18,6 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 // ---------------------------------------------------------------------------
 
 final _purchasesService = PurchasesService.instance;
-
-Future<bool> _onWillPop() async {
-  popNavStackIfPossible();
-  return true;
-}
 
 // ---------------------------------------------------------------------------
 // Feature data model
@@ -208,7 +202,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
   Widget build(BuildContext context) {
     if (_customerInfo == null) {
       return PopScope(
-        onPopInvokedWithResult: (_, __) => _onWillPop(),
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           body: Center(child: Loader()),
@@ -300,7 +293,6 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
     final selectedPackage = packages.isNotEmpty ? packages[_selectedIndex.clamp(0, packages.length - 1)] : null;
 
     return PopScope(
-      onPopInvokedWithResult: (_, __) => _onWillPop(),
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         // Sticky purchase CTA

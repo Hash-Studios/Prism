@@ -43,7 +43,6 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_io/hive_io.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 String userHiveKey = "prismUserV2-1";
 late Box prefs;

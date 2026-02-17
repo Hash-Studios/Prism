@@ -1,5 +1,4 @@
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
