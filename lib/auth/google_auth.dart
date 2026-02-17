@@ -1,7 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/userModel.dart';
-import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/global/globals.dart' as globals;
