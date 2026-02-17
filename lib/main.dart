@@ -332,15 +332,39 @@ class _MyAppState extends State<MyApp> {
   late final AppRouter _appRouter;
 
   Future<bool> getLoginStatus() async {
-    final bool value = await globals.gAuth.isSignedIn();
+    bool value = await globals.gAuth.isSignedIn();
     if (value) {
       if (prefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
-        globals.gAuth.signOutGoogle();
+        try {
+          await globals.gAuth.signOutGoogle();
+        } catch (e, st) {
+          logger.w(
+            'Forced sign-out migration failed; continuing with signed-out state.',
+            tag: 'Auth',
+            error: e,
+            stackTrace: st,
+          );
+        }
         prefs.put("logouteveryoneaugust2021", true);
         toasts.codeSend("Please login again, to enjoy the app!");
+        value = false;
       }
     } else if (!value) {
       prefs.put("logouteveryoneaugust2021", true);
+      // Ensure stale profile data from previous sessions cannot make the app behave as logged in.
+      globals.prismUser
+        ..loggedIn = false
+        ..premium = false
+        ..id = ''
+        ..email = ''
+        ..username = ''
+        ..name = ''
+        ..bio = ''
+        ..profilePhoto = ''
+        ..coverPhoto = ''
+        ..followers = <dynamic>[]
+        ..following = <dynamic>[]
+        ..links = <String, dynamic>{};
     }
     if (value) {
       await PurchasesService.instance.checkAndPersistPremium();

@@ -176,7 +176,16 @@ class GoogleAuth {
   Future<bool> signOutGoogle() async {
     final String existingUserId = globals.prismUser.id;
     await _ensureGoogleSignInInitialized();
-    await googleSignIn.signOut();
+    try {
+      await googleSignIn.signOut();
+    } catch (e, st) {
+      logger.w(
+        'Google signOut failed; continuing local sign-out cleanup.',
+        tag: 'GoogleAuth',
+        error: e,
+        stackTrace: st,
+      );
+    }
     globals.prismUser = PrismUsersV2(
       name: "",
       bio: "",
@@ -205,7 +214,16 @@ class GoogleAuth {
     Hive.openBox('prefs').then((value) {
       value.put(main.userHiveKey, globals.prismUser);
     });
-    await PurchasesService.instance.logOut();
+    try {
+      await PurchasesService.instance.logOut();
+    } catch (e, st) {
+      logger.w(
+        'RevenueCat signOut failed; continuing local sign-out cleanup.',
+        tag: 'GoogleAuth',
+        error: e,
+        stackTrace: st,
+      );
+    }
     try {
       if (existingUserId.isNotEmpty) {
         firestoreClient.updateDoc(
@@ -225,7 +243,11 @@ class GoogleAuth {
 
   Future<bool> isSignedIn() async {
     try {
-      final bool signedInWithFirebase = _auth.currentUser != null;
+      final User? currentUser = _auth.currentUser;
+      final bool signedInWithFirebase = currentUser != null &&
+          !currentUser.isAnonymous &&
+          (currentUser.email ?? '').trim().isNotEmpty &&
+          currentUser.providerData.any((provider) => provider.providerId == GoogleAuthProvider.PROVIDER_ID);
       if (signedInWithFirebase) {
         logger.d('true');
         return true;
