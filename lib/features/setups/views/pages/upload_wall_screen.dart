@@ -118,8 +118,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   Future deleteFile() async {
     final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
-    await github.repositories
-        .deleteFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls), wallpaperPath, wallpaperPath, wallpaperSha, "master");
+    await github.repositories.deleteFile(
+        RepositorySlug(Env.ghUserName, Env.ghRepoWalls), wallpaperPath, wallpaperPath, wallpaperSha, "master");
     await github.repositories
         .deleteFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls), thumbPath, thumbPath, thumbSha, "master");
     logger.d("Files deleted");
