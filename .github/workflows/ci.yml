@@ -24,15 +24,8 @@ jobs:
           flutter-version: ${{ steps.fvm.outputs.version }}
           channel: stable
           cache: true
-
-      - name: Cache pub dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            .dart_tool
-          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-          restore-keys: pub-${{ runner.os }}-
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
 
       - name: Install dependencies
         run: flutter pub get
