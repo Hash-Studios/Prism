@@ -78,8 +78,8 @@ ios-setup: ensure-fvm
 	@cd ios && export LANG=en_US.UTF-8 && export LC_ALL=en_US.UTF-8 && pod deintegrate && pod install --repo-update
 	@echo "iOS pods setup complete."
 
-build-ios: ensure-fvm ios-setup
-	@fvm flutter build ios --no-codesign $(IOS_BUILD_ARGS)
+build-ios: ensure-fvm
+	@fvm flutter build ios $(IOS_BUILD_ARGS)
 
 ensure-fvm:
 	@command -v fvm >/dev/null 2>&1 || { \

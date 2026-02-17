@@ -24,6 +24,7 @@ import 'package:Prism/features/theme_dark/theme_dark.dart';
 import 'package:Prism/features/theme_light/theme_light.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_search/user_search.dart';
+import 'package:Prism/firebase_options.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
@@ -32,7 +33,6 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -106,12 +106,7 @@ Future<void> main() async {
     logger.e('Uncaught platform error', error: error, stackTrace: stackTrace);
     return true;
   };
-  const enableAdsInDebug = bool.fromEnvironment('ENABLE_ADS_IN_DEBUG');
-  if (!kDebugMode || enableAdsInDebug) {
-    MobileAds.instance.initialize();
-  } else {
-    logger.i('Skipping Mobile Ads initialization in debug mode.');
-  }
+  await MobileAds.instance.initialize();
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.dumpErrorToConsole(details, forceReport: true);
   };
@@ -119,7 +114,9 @@ Future<void> main() async {
   const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
   if (!skipFirebaseInit) {
     try {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
       FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
     } catch (error, stackTrace) {
       logger.w(
