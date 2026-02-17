@@ -21,6 +21,7 @@ void main() {
     registerFallbackValue(
       const ToggleFavouriteWallParams(
         userId: 'user_1',
+        currentlyFavourited: false,
         wall: FavouriteWallEntity(
           id: 'w1',
           provider: 'Prism',
@@ -31,7 +32,12 @@ void main() {
     registerFallbackValue(
       const RemoveFavouriteWallParams(userId: 'user_1', wallId: 'w1'),
     );
-    registerFallbackValue(const ClearFavouriteWallsParams(userId: 'user_1'));
+    registerFallbackValue(
+      const ClearFavouriteWallsParams(
+        userId: 'user_1',
+        wallIds: <String>['w1'],
+      ),
+    );
   });
 
   late _MockFetchFavouriteWallsUseCase fetchUseCase;
@@ -58,28 +64,15 @@ void main() {
     );
 
     when(() => toggleUseCase(any())).thenAnswer(
-      (_) async => Result.success(
-        const <FavouriteWallEntity>[
-          FavouriteWallEntity(
-            id: 'w1',
-            provider: 'Prism',
-            payload: <String, dynamic>{},
-          ),
-          FavouriteWallEntity(
-            id: 'w2',
-            provider: 'Pexels',
-            payload: <String, dynamic>{},
-          ),
-        ],
-      ),
+      (_) async => Result.success(true),
     );
 
     when(() => removeUseCase(any())).thenAnswer(
-      (_) async => Result.success(const <FavouriteWallEntity>[]),
+      (_) async => Result.success(true),
     );
 
     when(() => clearUseCase(any())).thenAnswer(
-      (_) async => Result.success(const <FavouriteWallEntity>[]),
+      (_) async => Result.success(true),
     );
   });
 
