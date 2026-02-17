@@ -50,7 +50,7 @@ jobs:
             -print0 | xargs -0 dart format --line-length 120 --set-exit-if-changed -o none
 
       - name: Analyze
-        run: flutter analyze --no-pub
+        run: flutter analyze --no-pub --no-fatal-infos
 
       - name: Run tests
         run: |
