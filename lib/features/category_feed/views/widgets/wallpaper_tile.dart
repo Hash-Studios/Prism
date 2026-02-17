@@ -31,10 +31,22 @@ class WallpaperTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<dynamic> walls = Data.subPrismWalls?.cast<dynamic>() ?? <dynamic>[];
+    final bool hasWall = index >= 0 && index < walls.length;
+    Map<String, dynamic>? wallData;
+    if (hasWall) {
+      final dynamic wall = walls[index];
+      if (wall is Map<String, dynamic>) {
+        wallData = wall;
+      } else if (wall is Map) {
+        wallData = wall.cast<String, dynamic>();
+      }
+    }
+
     return Stack(
       children: [
         Container(
-          decoration: Data.subPrismWalls!.isEmpty
+          decoration: !hasWall || wallData == null
               ? BoxDecoration(
                   color: context.prismModeStyleForContext() == "Dark"
                       ? Colors.white10
@@ -48,7 +60,7 @@ class WallpaperTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
                     image: CachedNetworkImageProvider(
-                      Data.subPrismWalls![index]["wallpaper_thumb"].toString(),
+                      wallData["wallpaper_thumb"].toString(),
                     ),
                     fit: BoxFit.cover,
                   )),
@@ -61,31 +73,27 @@ class WallpaperTile extends StatelessWidget {
               splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
               onTap: () {
-                if (Data.subPrismWalls == []) {
-                } else {
-                  log((globals.isPremiumWall(
-                              globals.premiumCollections, Data.subPrismWalls![index]["collections"] as List? ?? []) ==
-                          true)
-                      .toString());
-                  log(globals.prismUser.premium.toString());
-                  globals.isPremiumWall(globals.premiumCollections,
-                                  Data.subPrismWalls![index]["collections"] as List? ?? []) ==
-                              true &&
-                          globals.prismUser.premium != true
-                      ? showGooglePopUp(context, () {
-                          context.pushNamedRoute(
-                            premiumRoute,
-                          );
-                        })
-                      : context.pushNamedRoute(
-                          wallpaperRoute,
-                          arguments: [
-                            widget.provider,
-                            index,
-                            Data.subPrismWalls![index]["wallpaper_thumb"],
-                          ],
-                        );
+                if (!hasWall || wallData == null) {
+                  return;
                 }
+                final List<dynamic> collections = wallData["collections"] as List? ?? <dynamic>[];
+                log((globals.isPremiumWall(globals.premiumCollections, collections) == true).toString());
+                log(globals.prismUser.premium.toString());
+                globals.isPremiumWall(globals.premiumCollections, collections) == true &&
+                        globals.prismUser.premium != true
+                    ? showGooglePopUp(context, () {
+                        context.pushNamedRoute(
+                          premiumRoute,
+                        );
+                      })
+                    : context.pushNamedRoute(
+                        wallpaperRoute,
+                        arguments: [
+                          widget.provider,
+                          index,
+                          wallData["wallpaper_thumb"],
+                        ],
+                      );
               },
             ),
           ),

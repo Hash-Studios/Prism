@@ -8,6 +8,7 @@ import 'package:Prism/features/category_feed/domain/entities/category_entity.dar
 import 'package:Prism/features/category_feed/domain/entities/category_feed_page.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:hive/hive.dart';
 import 'package:injectable/injectable.dart';
 
@@ -38,6 +39,15 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     required bool refresh,
   }) async {
     final mode = refresh ? 'r' : 'm';
+    logger.d(
+      '[CategoryFeedRepository] fetchCategoryFeed start',
+      fields: <String, Object?>{
+        'category': category.name,
+        'provider': category.provider,
+        'type': category.type,
+        'refresh': refresh,
+      },
+    );
 
     try {
       List<dynamic> rawItems = <dynamic>[];
@@ -81,6 +91,16 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         final payload = <String, dynamic>{'raw': item, 'id': id};
         return FeedItemEntity(id: id, provider: category.provider, payload: payload);
       }).toList(growable: false);
+      logger.i(
+        '[CategoryFeedRepository] fetchCategoryFeed success',
+        fields: <String, Object?>{
+          'category': category.name,
+          'provider': category.provider,
+          'mode': mode,
+          'rawCount': rawItems.length,
+          'itemCount': items.length,
+        },
+      );
 
       return Result.success(
         CategoryFeedPage(
@@ -89,7 +109,17 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
           nextCursor: items.isEmpty ? null : items.length.toString(),
         ),
       );
-    } catch (error) {
+    } catch (error, stackTrace) {
+      logger.e(
+        '[CategoryFeedRepository] fetchCategoryFeed failed',
+        error: error,
+        stackTrace: stackTrace,
+        fields: <String, Object?>{
+          'category': category.name,
+          'provider': category.provider,
+          'mode': mode,
+        },
+      );
       return Result.error(ServerFailure('Failed to fetch category feed: $error'));
     }
   }

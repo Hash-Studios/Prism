@@ -183,6 +183,10 @@ class PrismList extends StatelessWidget {
                 final model = androidInfo.model;
                 logger.d('Android $release (SDK $sdkInt), $manufacturer $model');
                 final String zipPath = await zipLogs();
+                if (zipPath.startsWith(logExportDisabledMarker)) {
+                  toasts.error('Log export is temporarily disabled.');
+                  return;
+                }
                 final String encryptedZipPath = zipPath.split("::::").last;
                 final String encryptedZipKey = zipPath.split("::::").first;
                 final MailOptions mailOptions = MailOptions(

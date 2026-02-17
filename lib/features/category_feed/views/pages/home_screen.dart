@@ -21,6 +21,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  LoadStatus? _lastLoggedStatus;
+  int _lastLoggedItemCount = -1;
+
   Future<bool> onWillPop() async {
     final choice = categoryChoices[0];
     if (context.categorySelectedChoice(listen: false).name != choice.name) {
@@ -73,6 +76,20 @@ class _HomeScreenState extends State<HomeScreen> {
       onWillPop: onWillPop,
       child: BlocBuilder<CategoryFeedBloc, CategoryFeedState>(
         builder: (context, state) {
+          if (_lastLoggedStatus != state.status || _lastLoggedItemCount != state.items.length) {
+            _lastLoggedStatus = state.status;
+            _lastLoggedItemCount = state.items.length;
+            logger.d(
+              '[HomeScreen] feed state',
+              fields: <String, Object?>{
+                'status': state.status.name,
+                'items': state.items.length,
+                'hasMore': state.hasMore,
+                'category': state.selectedCategory?.name,
+                'provider': state.selectedCategory?.provider,
+              },
+            );
+          }
           if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
             return const LoadingCards();
           }
