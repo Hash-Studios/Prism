@@ -4,7 +4,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
-import 'package:Prism/gitkey.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -109,52 +109,52 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                         email: "hk3ToN_Prism@gmail.com",
                         url: "https://pbs.twimg.com/profile_images/1278264820450680833/LKoAc7nh_400x400.jpg",
                         name: "Hk3ToN",
-                        img1: user3Image1,
-                        img2: user3Image2,
-                        img3: user3Image3,
+                        img1: Env.user3Image1,
+                        img2: Env.user3Image2,
+                        img3: Env.user3Image3,
                       ),
                       const FollowHeaderCard(
                         email: "akshaymaurya3006@gmail.com",
                         url:
                             "https://lh3.googleusercontent.com/a-/AOh14Gh7a-JaBRpAI9SPmSBJQmOeggj6ic2mub3DKala_g=s96-c",
                         name: "Akshay Maurya",
-                        img1: user2Image1,
-                        img2: user2Image2,
-                        img3: user2Image3,
+                        img1: Env.user2Image1,
+                        img2: Env.user2Image2,
+                        img3: Env.user2Image3,
                       ),
                       const FollowHeaderCard(
                         email: "maurya.abhay30@gmail.com",
                         url:
                             "https://lh3.googleusercontent.com/a-/AOh14GgTe5pUi3k-cdvxoCoJ2kKWafu0RXDN3sUVTp3Z58c=s96-c",
                         name: "Abhay Maurya",
-                        img1: user1Image1,
-                        img2: user1Image2,
-                        img3: user1Image3,
+                        img1: Env.user1Image1,
+                        img2: Env.user1Image2,
+                        img3: Env.user1Image3,
                       ),
                       const FollowHeaderCard(
                         email: "inderpalsansoa.1993@gmail.com",
                         url: "https://lh3.googleusercontent.com/a-/AOh14GjUOpZ14V9UdM58LCz1nx87N_3SDYSHQwTOec-I=s96-c",
                         name: "ShankyGotThatArt",
-                        img1: user4Image1,
-                        img2: user4Image2,
-                        img3: user4Image3,
+                        img1: Env.user4Image1,
+                        img2: Env.user4Image2,
+                        img3: Env.user4Image3,
                       ),
                       const FollowHeaderCard(
                         email: "yyo17341@gmail.com",
                         url: "https://lh3.googleusercontent.com/a-/AOh14GizSGAXOap5UIqWKX16JNSKe56y1X_mKNb0Snaf=s96-c",
                         name: "Megh Dave",
-                        img1: user5Image1,
-                        img2: user5Image2,
-                        img3: user5Image3,
+                        img1: Env.user5Image1,
+                        img2: Env.user5Image2,
+                        img3: Env.user5Image3,
                       ),
                       const FollowHeaderCard(
                         email: "techpool007@gmail.com",
                         url:
                             "https://lh3.googleusercontent.com/a-/AOh14GhcT-AssZM3Kk6jz4OTbbAPz3gS-2tvPjLhkAj83w=s96-c",
                         name: "Dennis Wilson",
-                        img1: user6Image1,
-                        img2: user6Image2,
-                        img3: user6Image3,
+                        img1: Env.user6Image1,
+                        img2: Env.user6Image2,
+                        img3: Env.user6Image3,
                       ),
                     ],
                   )),
@@ -396,7 +396,7 @@ class FollowHeaderCard extends StatelessWidget {
                                   ),
                                   headers: <String, String>{
                                     'Content-Type': 'application/json',
-                                    'Authorization': 'key=$fcmServerToken',
+                                    'Authorization': 'key=${Env.fcmServerKey}',
                                   },
                                   body: jsonEncode(
                                     <String, dynamic>{

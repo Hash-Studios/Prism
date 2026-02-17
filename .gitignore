@@ -44,6 +44,7 @@ key.jks
 pubspec.lock
 android/app/google-services.json
 lib/gitkey.dart
+.env
 android/app/.settings/org.eclipse.buildship.core.prefs
 android/app/.project
 android/app/.classpath

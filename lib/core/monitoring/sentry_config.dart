@@ -1,4 +1,4 @@
-import 'package:Prism/gitkey.dart';
+import 'package:Prism/env/env.dart';
 
 class SentryConfig {
   const SentryConfig({
@@ -22,7 +22,7 @@ class SentryConfig {
     String fallbackRelease = '',
     String fallbackDist = '',
   }) {
-    const String rawDsn = sentryDsn;
+    const String rawDsn = Env.sentryDsn;
     // const String rawDsn = String.fromEnvironment('SENTRY_DSN');
     const String rawEnvironment = String.fromEnvironment('SENTRY_ENV');
     const String rawRelease = String.fromEnvironment('SENTRY_RELEASE');
