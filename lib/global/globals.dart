@@ -3,6 +3,8 @@ import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/main.dart' as main;
 
 GoogleAuth gAuth = GoogleAuth();
+const String defaultProfilePhotoUrl =
+    'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';
 PrismUsersV2 prismUser = main.prefs.get(
   main.userHiveKey,
   defaultValue: PrismUsersV2(
@@ -18,7 +20,7 @@ PrismUsersV2 prismUser = main.prefs.get(
     links: {},
     premium: false,
     loggedIn: false,
-    profilePhoto: "",
+    profilePhoto: defaultProfilePhotoUrl,
     badges: [],
     coins: 0,
     subPrisms: [],

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
@@ -5,6 +7,7 @@ import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,8 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     if (main.prefs.get('subscribedToRecommendations', defaultValue: false) as bool) {
     } else {
-      f.subscribeToTopic('recommendations');
-      f.subscribeToTopic('posts');
+      unawaited(subscribeToTopicSafely(f, 'recommendations', sourceTag: 'home.init.recommendations'));
+      unawaited(subscribeToTopicSafely(f, 'posts', sourceTag: 'home.init.posts'));
       main.prefs.put('subscribedToRecommendations', true);
     }
     isNew = true;

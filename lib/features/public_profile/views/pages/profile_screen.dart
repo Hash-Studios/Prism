@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
@@ -24,7 +25,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
-import 'package:rive/rive.dart';
 
 class ProfileScreen extends StatefulWidget {
   final List? arguments;
@@ -683,9 +683,9 @@ class _ProfileChildState extends State<ProfileChild> {
                             child: Center(
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width / 2,
-                                child: const RiveAnimation.asset(
-                                  "assets/animations/Text.flr",
-                                  animations: ["Untitled"],
+                                child: const SafeRiveAsset(
+                                  assetName: "assets/animations/Text.flr",
+                                  animations: <String>["Untitled"],
                                 ),
                               ),
                             ),

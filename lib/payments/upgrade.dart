@@ -146,8 +146,12 @@ class _UpsellScreenState extends State<UpsellScreen> {
       const FeatureChip(icon: JamIcons.coffee_cup, text: "Support development, and content growth"),
     ];
     _mainScrollController.addListener(() {
-      if (mounted) {
-        setState(() => _scrollOffset = _mainScrollController.offset);
+      if (!mounted || _mainScrollController.positions.isEmpty) {
+        return;
+      }
+      final double latestOffset = _mainScrollController.positions.last.pixels;
+      if (_scrollOffset != latestOffset) {
+        setState(() => _scrollOffset = latestOffset);
       }
     });
     // Pre-select annual if available, otherwise first package

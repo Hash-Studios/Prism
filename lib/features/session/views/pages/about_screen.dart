@@ -1,5 +1,6 @@
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/contriPopUp.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
@@ -185,7 +186,10 @@ class AboutScreen extends StatelessWidget {
                         } else {
                           tiles.add(ListTile(
                             leading: CircleAvatar(
-                              backgroundImage: CachedNetworkImageProvider(c.avatarUrl!),
+                              backgroundImage: isValidNetworkUrl(c.avatarUrl)
+                                  ? CachedNetworkImageProvider(c.avatarUrl!.trim())
+                                  : null,
+                              child: isValidNetworkUrl(c.avatarUrl) ? null : const Icon(JamIcons.user),
                             ),
                             title: Text(
                               c.login!,
@@ -249,8 +253,11 @@ class ContributorWidget extends StatelessWidget {
       child: Column(
         children: [
           CircleAvatar(
-            backgroundImage: CachedNetworkImageProvider(contributor.avatarUrl ?? ""),
+            backgroundImage: isValidNetworkUrl(contributor.avatarUrl)
+                ? CachedNetworkImageProvider(contributor.avatarUrl!.trim())
+                : null,
             radius: radius,
+            child: isValidNetworkUrl(contributor.avatarUrl) ? null : const Icon(JamIcons.user),
           ),
           const SizedBox(
             height: 5,

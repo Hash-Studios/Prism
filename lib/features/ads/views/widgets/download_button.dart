@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -12,7 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:rive/rive.dart';
 
 class DownloadButton extends StatefulWidget {
   final String? link;
@@ -218,9 +218,9 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                 decoration: BoxDecoration(
                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
                     color: Theme.of(context).hintColor),
-                child: const RiveAnimation.asset(
-                  "assets/animations/Update.flr",
-                  animations: ["update"],
+                child: const SafeRiveAsset(
+                  assetName: "assets/animations/Update.flr",
+                  animations: <String>["update"],
                 ),
               ),
               Column(
