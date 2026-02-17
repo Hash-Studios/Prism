@@ -1,2 +1,6 @@
 export 'biz/bloc/navigation_bloc.j.dart';
 export 'builder/navigation_builder.dart';
+export 'views/pages/page_manager.dart';
+export 'views/widgets/bottom_nav_bar.dart';
+export 'views/widgets/inherited_scroll_controller_provider.dart';
+export 'views/widgets/offline_banner.dart';

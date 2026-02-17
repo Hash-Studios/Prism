@@ -5,7 +5,6 @@ import 'package:flutter/widgets.dart';
 class AppRouter {
   AppRouter({required this.initialLegacyRoute})
       : _router = RootStackRouter.build(
-          defaultRouteType: const RouteType.material(),
           routes: [
             NamedRouteDef(
               name: _appShellRouteName,
