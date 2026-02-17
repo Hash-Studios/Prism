@@ -166,12 +166,21 @@ class GoogleAuth {
   }
 
   Future<bool> isSignedIn() async {
-    await _ensureGoogleSignInInitialized();
-    final Future<GoogleSignInAccount?>? lightweightAuth = googleSignIn.attemptLightweightAuthentication();
-    final GoogleSignInAccount? account = lightweightAuth == null ? null : await lightweightAuth;
-    final bool isSignedIn = account != null;
-    logger.d(isSignedIn.toString());
-    return isSignedIn;
+    try {
+      final bool signedInWithFirebase = _auth.currentUser != null;
+      if (signedInWithFirebase) {
+        logger.d('true');
+        return true;
+      }
+
+      // Avoid triggering credential-manager lightweight auth flow on startup;
+      // that flow can interrupt debug sessions and spawn transient activities.
+      logger.d('false');
+      return false;
+    } catch (e, st) {
+      logger.e('Failed to check sign-in status', error: e, stackTrace: st);
+      return false;
+    }
   }
 
   Future<DocumentSnapshot?> getUserOLD(User? user) async {

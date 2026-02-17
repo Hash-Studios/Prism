@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze run build
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze run build attach
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -55,6 +55,13 @@ build: ensure-fvm
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
 	fvm flutter build apk $(FIREBASE_RUN_ARG) $(BUILD_ARGS)
+
+attach: ensure-fvm
+	@if [ -n "$(DEVICE)" ]; then \
+		fvm flutter attach -d "$(DEVICE)"; \
+	else \
+		fvm flutter attach; \
+	fi
 
 ensure-fvm:
 	@command -v fvm >/dev/null 2>&1 || { \

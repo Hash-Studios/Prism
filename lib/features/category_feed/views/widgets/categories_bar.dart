@@ -8,6 +8,7 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
@@ -35,7 +36,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
       noNotification = true;
     }
     super.initState();
-    checkForUpdate();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      checkForUpdate();
+    });
   }
 
   Future<void> fetchNotifications() async {
@@ -62,16 +66,20 @@ class _CategoriesBarState extends State<CategoriesBar> {
 
   //Check for update if available
   Future<void> checkForUpdate() async {
-    InAppUpdate.checkForUpdate().then((info) {
+    // Avoid forcing an immediate-update flow during debug sessions because it
+    // interrupts the running process and disconnects flutter run.
+    if (kDebugMode) {
+      return;
+    }
+
+    try {
+      final info = await InAppUpdate.checkForUpdate();
       if (info.updateAvailability == UpdateAvailability.updateAvailable) {
-        InAppUpdate.performImmediateUpdate().catchError((e) {
-          _showError(e);
-          return AppUpdateResult.inAppUpdateFailed;
-        });
+        logger.i('Update available. Skipping automatic immediate update at startup.');
       }
-    }).catchError((e) {
+    } catch (e) {
       _showError(e);
-    });
+    }
   }
 
   void _showError(dynamic exception) {
