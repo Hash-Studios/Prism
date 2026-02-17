@@ -203,7 +203,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 height: MediaQuery.of(context).size.width / 2.4,
                 child: RiveAnimation.asset(
                   isUploading ? "assets/animations/Upload.flr" : "assets/animations/Process.flr",
-                  animations: [isUploading ? "upload" : "process"],
+                  animations: [if (isUploading) "upload" else "process"],
                 ),
               )
             else
