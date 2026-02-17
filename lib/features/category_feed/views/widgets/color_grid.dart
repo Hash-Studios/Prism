@@ -1,3 +1,4 @@
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
@@ -5,7 +6,6 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -57,15 +57,15 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.black.withOpacity(.1),
-                  end: Colors.black.withOpacity(.14),
+                  begin: Colors.black.withValues(alpha: .1),
+                  end: Colors.black.withValues(alpha: .14),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.black.withOpacity(.14),
-                  end: Colors.black.withOpacity(.1),
+                  begin: Colors.black.withValues(alpha: .14),
+                  end: Colors.black.withValues(alpha: .1),
                 ),
               ),
             ],
@@ -128,7 +128,9 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
           itemBuilder: (context, index) {
             if (index == PData.wallsC.length - 1) {
               return MaterialButton(
-                  color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withOpacity(.1),
+                  color: context.prismModeStyleForContext() == "Dark"
+                      ? Colors.white10
+                      : Colors.black.withValues(alpha: .1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   onPressed: () {
                     if (!seeMoreLoader) {
@@ -155,7 +157,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                         padding: index == longTapIndex
                             ? EdgeInsets.symmetric(
                                 vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
-                            : const EdgeInsets.all(0),
+                            : EdgeInsets.zero,
                         child: Stack(
                           children: [
                             Container(
@@ -177,8 +179,8 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
-                                  highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                                  splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                                  highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                   onTap: () {
                                     if (PData.wallsC == []) {
                                     } else {

@@ -1,11 +1,11 @@
 import 'dart:io';
 
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/foundation.dart';
@@ -38,11 +38,7 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
   void initState() {
     myScroll();
     super.initState();
-    // if (globals.prismUser.premium) {
     bottom = 10;
-    // } else {
-    //   bottom = 90;
-    // }
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -114,7 +110,6 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
             child: BottomNavBar(),
           ),
         ),
-        // if (bottom != 10) AdBannerWidget(bottom),
         if (isOnTop == true)
           Container()
         else
@@ -190,7 +185,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
     });
   }
 
-  void showGooglePopUp(Function func) {
+  void showGooglePopUp(VoidCallback func) {
     logger.d(isLoggedin.toString());
     if (isLoggedin == false) {
       googleSignInPopUp(context, func);
@@ -206,7 +201,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         boxShadow: [
-          BoxShadow(color: const Color(0xFF000000).withOpacity(0.25), blurRadius: 4, offset: const Offset(0, 4)),
+          BoxShadow(color: const Color(0xFF000000).withValues(alpha: 0.25), blurRadius: 4, offset: const Offset(0, 4)),
         ],
         borderRadius: BorderRadius.circular(500),
       ),
@@ -220,7 +215,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
               padding: const EdgeInsets.fromLTRB(18, 10, 0, 10),
               child: IconButton(
                 tooltip: 'Home',
-                padding: const EdgeInsets.all(0),
+                padding: EdgeInsets.zero,
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -238,7 +233,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: currentNavStackEntry == "Home" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      margin: currentNavStackEntry == "Home" ? const EdgeInsets.all(3) : EdgeInsets.zero,
                       width: currentNavStackEntry == "Home" ? _paddingAnimation.value : 0,
                       height: currentNavStackEntry == "Home" ? 3 : 0,
                     )
@@ -263,7 +258,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
                 tooltip: 'Search',
-                padding: const EdgeInsets.all(0),
+                padding: EdgeInsets.zero,
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -281,7 +276,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: currentNavStackEntry == "Search" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      margin: currentNavStackEntry == "Search" ? const EdgeInsets.all(3) : EdgeInsets.zero,
                       width: currentNavStackEntry == "Search" ? _paddingAnimation.value : 0,
                       height: currentNavStackEntry == "Search" ? 3 : 0,
                     )
@@ -318,7 +313,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   ),
                   IconButton(
                     tooltip: 'Upload',
-                    padding: const EdgeInsets.all(0),
+                    padding: EdgeInsets.zero,
                     icon: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
@@ -341,7 +336,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                                     : Theme.of(context).colorScheme.error
                                 : Theme.of(context).colorScheme.secondary,
                           ),
-                          margin: currentNavStackEntry == "Add" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                          margin: currentNavStackEntry == "Add" ? const EdgeInsets.all(3) : EdgeInsets.zero,
                           width: currentNavStackEntry == "Add" ? _paddingAnimation.value : 0,
                           height: currentNavStackEntry == "Add" ? 3 : 0,
                         )
@@ -364,7 +359,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
                 tooltip: 'Setups',
-                padding: const EdgeInsets.all(0),
+                padding: EdgeInsets.zero,
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -382,7 +377,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: currentNavStackEntry == "Setups" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      margin: currentNavStackEntry == "Setups" ? const EdgeInsets.all(3) : EdgeInsets.zero,
                       width: currentNavStackEntry == "Setups" ? _paddingAnimation.value : 0,
                       height: currentNavStackEntry == "Setups" ? 3 : 0,
                     )
@@ -401,7 +396,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
               padding: const EdgeInsets.fromLTRB(0, 10, 18, 10),
               child: IconButton(
                 tooltip: 'Profile',
-                padding: const EdgeInsets.all(0),
+                padding: EdgeInsets.zero,
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -447,7 +442,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: currentNavStackEntry == "Profile" ? const EdgeInsets.all(3) : const EdgeInsets.all(0),
+                      margin: currentNavStackEntry == "Profile" ? const EdgeInsets.all(3) : EdgeInsets.zero,
                       width: currentNavStackEntry == "Profile" ? _paddingAnimation.value : 0,
                       height: currentNavStackEntry == "Profile" ? 3 : 0,
                     )
@@ -503,12 +498,15 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
 
   Future getImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (!mounted) {
+      return;
+    }
     if (pickedFile != null) {
       setState(() {
         _wallpaper = File(pickedFile.path);
       });
       Navigator.pop(context);
-      Future.delayed(const Duration()).then((value) => context.pushNamedRoute(editWallRoute, arguments: [_wallpaper]));
+      context.pushNamedRoute(editWallRoute, arguments: [_wallpaper]);
     }
   }
 
@@ -600,7 +598,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                               width: width / 2 - 14,
                               height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                                 border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
@@ -623,7 +621,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                       border: Border.all(
                                         color: Theme.of(context).colorScheme.error,
                                       ),
-                                      color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                                      color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                                       shape: BoxShape.circle),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
@@ -657,7 +655,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     child: GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
-                        Future.delayed(const Duration()).then((value) => context.pushNamedRoute(setupGuidelinesRoute));
+                        context.pushNamedRoute(setupGuidelinesRoute);
                       },
                       child: SizedBox(
                         width: width / 2 - 20,
@@ -669,7 +667,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                               width: width / 2 - 14,
                               height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                                 border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
@@ -692,7 +690,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                       border: Border.all(
                                         color: Theme.of(context).colorScheme.error,
                                       ),
-                                      color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                                      color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                                       shape: BoxShape.circle),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
@@ -760,9 +758,9 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
   bool _loadingAnchoredBanner = false;
 
   Future<void> _createAnchoredBanner(BuildContext context) async {
-    Future.delayed(const Duration()).then((value) => setState(() {
-          _anchoredBanner = null;
-        }));
+    setState(() {
+      _anchoredBanner = null;
+    });
     final AnchoredAdaptiveBannerAdSize? size = await AdSize.getAnchoredAdaptiveBannerAdSize(
       Orientation.portrait,
       MediaQuery.of(context).size.width.truncate(),
@@ -830,7 +828,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
               : Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Theme.of(context).primaryColor.withOpacity(0), Theme.of(context).primaryColor],
+                      colors: [Theme.of(context).primaryColor.withValues(alpha: 0), Theme.of(context).primaryColor],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),

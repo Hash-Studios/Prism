@@ -32,7 +32,9 @@ class _GoogleButtonState extends State<GoogleButton> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                      color: const Color(0xFFEFF5FF).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 4)),
+                      color: const Color(0xFFEFF5FF).withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4)),
                 ],
                 borderRadius: BorderRadius.circular(500),
               )
@@ -45,7 +47,7 @@ class _GoogleButtonState extends State<GoogleButton> {
               ),
         child: MaterialButton(
           colorBrightness: Brightness.light,
-          padding: const EdgeInsets.all(0),
+          padding: EdgeInsets.zero,
           shape: const StadiumBorder(),
           onPressed: () {
             gAuth.signInWithGoogle().whenComplete(() async {}).catchError((e) {

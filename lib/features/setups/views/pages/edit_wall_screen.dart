@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
@@ -251,7 +251,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
       child: ColorFiltered(
         colorFilter: ColorFilter.matrix(calculateSaturationMatrix(sat)),
         child: ExtendedImage(
-          color: bright > 0 ? Colors.white.withOpacity(bright) : Colors.black.withOpacity(-bright),
+          color: bright > 0 ? Colors.white.withValues(alpha: bright) : Colors.black.withValues(alpha: -bright),
           colorBlendMode: bright > 0 ? BlendMode.lighten : BlendMode.darken,
           image: ExtendedFileImageProvider(image!, cacheRawData: true),
           height: MediaQuery.of(context).size.width,
@@ -376,7 +376,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     image!.writeAsBytesSync(result);
     logger.d('image_editor time : $diff');
     popNavStackIfPossible();
-    Future.delayed(const Duration())
+    Future.delayed(Duration.zero)
         .then((value) => context.pushReplacementNamedRoute(uploadWallRoute, arguments: [image, false]));
   }
 

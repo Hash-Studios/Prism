@@ -4,11 +4,11 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flare_flutter/flare_actor.dart';
@@ -257,7 +257,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                     child: Center(
                       child: Icon(
                         JamIcons.info,
-                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                       ),
                     ),
                   ),
@@ -273,7 +273,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 10,
-                            color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                           ),
                         ),
                       ),

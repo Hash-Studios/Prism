@@ -1,6 +1,8 @@
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
@@ -16,7 +18,6 @@ import 'package:Prism/features/setups/views/widgets/clock_setup_overlay.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -27,7 +28,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ShareSetupViewScreen extends StatefulWidget {
   final List? arguments;
@@ -170,8 +170,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(30),
                               color: panelCollapsed
-                                  ? Theme.of(context).primaryColor.withOpacity(1)
-                                  : Theme.of(context).primaryColor.withOpacity(.5),
+                                  ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                                  : Theme.of(context).primaryColor.withValues(alpha: .5),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,7 +180,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                     child: Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: AnimatedOpacity(
-                                    duration: const Duration(),
+                                    duration: Duration.zero,
                                     opacity: panelCollapsed ? 0.0 : 1.0,
                                     child: GestureDetector(
                                       onTap: () {
@@ -354,8 +354,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                           Icon(
                                                             JamIcons.info,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
@@ -773,7 +775,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                             color: Theme.of(context).primaryColor,
                                             boxShadow: [
                                               BoxShadow(
-                                                  color: Colors.black.withOpacity(.25),
+                                                  color: Colors.black.withValues(alpha: .25),
                                                   blurRadius: 4,
                                                   offset: const Offset(0, 4))
                                             ],
@@ -821,7 +823,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               color: Theme.of(context).primaryColor,
                                               boxShadow: [
                                                 BoxShadow(
-                                                    color: Colors.black.withOpacity(.25),
+                                                    color: Colors.black.withValues(alpha: .25),
                                                     blurRadius: 4,
                                                     offset: const Offset(0, 4))
                                               ],
@@ -1013,7 +1015,7 @@ class SetupDetailsTile extends StatelessWidget {
                           overflow: TextOverflow.fade,
                           style: TextStyle(
                             fontSize: 140,
-                            color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -1023,7 +1025,7 @@ class SetupDetailsTile extends StatelessWidget {
                         height: 80,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
-                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -1067,8 +1069,8 @@ class SetupDetailsTile extends StatelessWidget {
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
-                              highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                               onTap: () {
                                 onTap();
                               },
@@ -1102,7 +1104,7 @@ class ModifiedShareDownloadButton extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Theme.of(context).primaryColor,
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))
+                      BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
                     ],
                     borderRadius: BorderRadius.circular(500),
                   ),
@@ -1121,7 +1123,9 @@ class ModifiedShareDownloadButton extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
+                ],
                 borderRadius: BorderRadius.circular(500),
               ),
               padding: const EdgeInsets.all(17),
@@ -1152,7 +1156,7 @@ class ModifiedShareSetWallpaperButton extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Theme.of(context).primaryColor,
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))
+                      BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
                     ],
                     borderRadius: BorderRadius.circular(500),
                   ),
@@ -1171,7 +1175,9 @@ class ModifiedShareSetWallpaperButton extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
+                ],
                 borderRadius: BorderRadius.circular(500),
               ),
               padding: const EdgeInsets.all(17),

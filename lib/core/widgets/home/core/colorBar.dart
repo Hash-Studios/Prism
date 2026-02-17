@@ -30,7 +30,7 @@ class ColorBar extends StatelessWidget {
                 });
               },
               onTap: () {
-                Future.delayed(const Duration()).then((value) => context.pushNamedRoute(
+                Future.delayed(Duration.zero).then((value) => context.pushNamedRoute(
                       colorRoute,
                       arguments: [
                         colors![color].toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
@@ -39,7 +39,8 @@ class ColorBar extends StatelessWidget {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: colors == null ? Theme.of(context).colorScheme.secondary.withOpacity(0.1) : colors![color],
+                  color:
+                      colors == null ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1) : colors![color],
                   shape: BoxShape.circle,
                 ),
                 height: MediaQuery.of(context).size.width / 8,

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/badgeModel.dart';
@@ -7,8 +6,9 @@ import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/router/nav_stack.dart' as router;
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/nav_stack.dart' as router;
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
@@ -27,7 +27,6 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/payments/upgrade.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -42,13 +41,11 @@ import 'package:path_provider/path_provider.dart';
 
 String userHiveKey = "prismUserV2-1";
 late Box prefs;
-Directory? dir;
 String? currentThemeID;
 String? currentDarkThemeID;
 String? currentMode;
 Color? lightAccent;
 Color? darkAccent;
-bool? hqThumbs;
 late bool optimisedWallpapers;
 int? categories;
 int? purity;
@@ -72,8 +69,6 @@ Future<void> main() async {
     getApplicationDocumentsDirectory().then(
       (dir) async {
         Hive.init(dir.path);
-        // await Hive.deleteBoxFromDisk('prefs');
-        // Hive.ignoreTypeId<PrismUsers>(33);
         Hive.registerAdapter(PrismUsersAdapter());
         Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
         Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
@@ -99,11 +94,7 @@ Future<void> main() async {
         darkAccent = Color(int.parse(prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
         prefs.put("darkAccent", int.parse(darkAccent.toString().replaceAll("Color(", "").replaceAll(")", "")));
         optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
-        // if (optimisedWallpapers) {
-        //   prefs.put('optimisedWallpapers', true);
-        // } else {
         prefs.put('optimisedWallpapers', false);
-        // }
         categories = prefs.get('WHcategories') as int? ?? 100;
         if (categories == 100) {
           prefs.put('WHcategories', 100);
@@ -242,6 +233,7 @@ class _MyAppState extends State<MyApp> {
 class RestartWidget extends StatefulWidget {
   const RestartWidget({this.child});
   final Widget? child;
+  // ignore: unreachable_from_main
   static void restartApp(BuildContext context) {
     router.resetNavStack();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(

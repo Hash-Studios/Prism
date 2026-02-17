@@ -44,30 +44,30 @@ class Colors {
   final Color _mainAccentColor = Color(main.prefs.get("systemOverlayColor") as int);
 
   Color mainColor(double opacity) {
-    return _mainColor.withOpacity(opacity);
+    return _mainColor.withValues(alpha: opacity);
   }
 
   Color secondColor(double opacity) {
-    return _secondColor.withOpacity(opacity);
+    return _secondColor.withValues(alpha: opacity);
   }
 
   Color accentColor(double opacity) {
-    return _accentColor.withOpacity(opacity);
+    return _accentColor.withValues(alpha: opacity);
   }
 
   Color mainDarkColor(double opacity) {
-    return _mainDarkColor.withOpacity(opacity);
+    return _mainDarkColor.withValues(alpha: opacity);
   }
 
   Color secondDarkColor(double opacity) {
-    return _secondDarkColor.withOpacity(opacity);
+    return _secondDarkColor.withValues(alpha: opacity);
   }
 
   Color accentDarkColor(double opacity) {
-    return _accentDarkColor.withOpacity(opacity);
+    return _accentDarkColor.withValues(alpha: opacity);
   }
 
   Color mainAccentColor(double opacity) {
-    return _mainAccentColor.withOpacity(opacity);
+    return _mainAccentColor.withValues(alpha: opacity);
   }
 }

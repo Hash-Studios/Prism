@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -14,7 +15,6 @@ import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -222,8 +222,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
                           color: panelCollapsed
-                              ? Theme.of(context).primaryColor.withOpacity(1)
-                              : Theme.of(context).primaryColor.withOpacity(.5),
+                              ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                              : Theme.of(context).primaryColor.withValues(alpha: .5),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,7 +232,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                 child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: AnimatedOpacity(
-                                duration: const Duration(),
+                                duration: Duration.zero,
                                 opacity: panelCollapsed ? 0.0 : 1.0,
                                 child: GestureDetector(
                                   onTap: () {
@@ -278,7 +278,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                               Icon(
                                                 JamIcons.eye,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -296,7 +296,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                               Icon(
                                                 JamIcons.heart_f,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -314,7 +314,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                               Icon(
                                                 JamIcons.save,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -356,7 +356,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                 Icon(
                                                   JamIcons.unordered_list,
                                                   size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                                 ),
                                               ],
                                             ),
@@ -375,7 +375,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                               Icon(
                                                 JamIcons.set_square,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                             ],
                                           ),
@@ -396,7 +396,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                               Icon(
                                                 JamIcons.database,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                             ],
                                           ),
@@ -508,7 +508,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                       Icon(
                                                         JamIcons.camera,
                                                         size: 20,
-                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary
+                                                            .withValues(alpha: .7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
@@ -526,7 +529,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                       Icon(
                                                         JamIcons.arrow_circle_right,
                                                         size: 20,
-                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary
+                                                            .withValues(alpha: .7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
@@ -544,7 +550,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                       Icon(
                                                         JamIcons.save,
                                                         size: 20,
-                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary
+                                                            .withValues(alpha: .7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
@@ -575,7 +584,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                       Icon(
                                                         JamIcons.set_square,
                                                         size: 20,
-                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary
+                                                            .withValues(alpha: .7),
                                                       ),
                                                     ],
                                                   ),
@@ -596,7 +608,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                       Icon(
                                                         JamIcons.database,
                                                         size: 20,
-                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary
+                                                            .withValues(alpha: .7),
                                                       ),
                                                     ],
                                                   ),
@@ -632,7 +647,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                               color: Theme.of(context)
                                                                   .colorScheme
                                                                   .secondary
-                                                                  .withOpacity(.7),
+                                                                  .withValues(alpha: .7),
                                                             ),
                                                             const SizedBox(width: 10),
                                                             SizedBox(
@@ -658,7 +673,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                               color: Theme.of(context)
                                                                   .colorScheme
                                                                   .secondary
-                                                                  .withOpacity(.7),
+                                                                  .withValues(alpha: .7),
                                                             ),
                                                             const SizedBox(width: 10),
                                                             Text(
@@ -694,7 +709,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                               color: Theme.of(context)
                                                                   .colorScheme
                                                                   .secondary
-                                                                  .withOpacity(.7),
+                                                                  .withValues(alpha: .7),
                                                             ),
                                                           ],
                                                         ),
@@ -716,7 +731,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                               color: Theme.of(context)
                                                                   .colorScheme
                                                                   .secondary
-                                                                  .withOpacity(.7),
+                                                                  .withValues(alpha: .7),
                                                             ),
                                                           ],
                                                         ),
@@ -990,8 +1005,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
                           color: panelCollapsed
-                              ? Theme.of(context).primaryColor.withOpacity(1)
-                              : Theme.of(context).primaryColor.withOpacity(.5),
+                              ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                              : Theme.of(context).primaryColor.withValues(alpha: .5),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1000,7 +1015,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                 child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: AnimatedOpacity(
-                                duration: const Duration(),
+                                duration: Duration.zero,
                                 opacity: panelCollapsed ? 0.0 : 1.0,
                                 child: GestureDetector(
                                   onTap: () {
@@ -1045,7 +1060,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             Icon(
                                               JamIcons.eye,
                                               size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
@@ -1063,7 +1078,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             Icon(
                                               JamIcons.heart_f,
                                               size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
@@ -1095,7 +1110,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             Icon(
                                               JamIcons.set_square,
                                               size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                             ),
                                           ],
                                         ),
@@ -1113,7 +1128,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             Icon(
                                               JamIcons.save,
                                               size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                             ),
                                           ],
                                         ),

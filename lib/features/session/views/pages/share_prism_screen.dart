@@ -1,6 +1,6 @@
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
@@ -100,7 +100,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium!
-                        .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
+                        .copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                   ),
                 ),
                 SizedBox(
@@ -111,17 +111,17 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium!
-                        .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
+                        .copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                   ),
                 ),
                 const SizedBox(
                   height: 10,
                 ),
                 MaterialButton(
-                  disabledColor: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+                  disabledColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
                   shape: const StadiumBorder(),
                   color: link == ""
-                      ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+                      ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
                       : Theme.of(context).colorScheme.error,
                   onPressed: link == ""
                       ? () {

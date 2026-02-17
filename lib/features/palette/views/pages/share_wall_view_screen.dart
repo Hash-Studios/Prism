@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
@@ -23,7 +24,6 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -128,7 +128,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
       updateViews(id.toString().toUpperCase());
       _futureView = getViews(id.toString().toUpperCase());
     }
-    Future.delayed(const Duration()).then((value) => _updatePaletteGenerator());
+    Future.delayed(Duration.zero).then((value) => _updatePaletteGenerator());
     super.initState();
   }
 
@@ -244,8 +244,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(30),
                             color: panelCollapsed
-                                ? Theme.of(context).primaryColor.withOpacity(1)
-                                : Theme.of(context).primaryColor.withOpacity(.5),
+                                ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                                : Theme.of(context).primaryColor.withValues(alpha: .5),
                           ),
                           child: FutureBuilder<WallPaper>(
                               future: futureW,
@@ -263,7 +263,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                           child: Padding(
                                         padding: const EdgeInsets.all(10.0),
                                         child: AnimatedOpacity(
-                                          duration: const Duration(),
+                                          duration: Duration.zero,
                                           opacity: panelCollapsed ? 0.0 : 1.0,
                                           child: GestureDetector(
                                             onTap: () {
@@ -304,7 +304,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       Icon(
                                                         JamIcons.eye,
                                                         size: 20,
-                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary
+                                                            .withValues(alpha: .7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
@@ -322,7 +325,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       Icon(
                                                         JamIcons.heart_f,
                                                         size: 20,
-                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary
+                                                            .withValues(alpha: .7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
@@ -340,7 +346,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       Icon(
                                                         JamIcons.save,
                                                         size: 20,
-                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary
+                                                            .withValues(alpha: .7),
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
@@ -374,8 +383,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                         Icon(
                                                           JamIcons.unordered_list,
                                                           size: 20,
-                                                          color:
-                                                              Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .secondary
+                                                              .withValues(alpha: .7),
                                                         ),
                                                       ],
                                                     ),
@@ -394,7 +405,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       Icon(
                                                         JamIcons.set_square,
                                                         size: 20,
-                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary
+                                                            .withValues(alpha: .7),
                                                       ),
                                                     ],
                                                   ),
@@ -412,7 +426,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       Icon(
                                                         JamIcons.database,
                                                         size: 20,
-                                                        color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary
+                                                            .withValues(alpha: .7),
                                                       ),
                                                     ],
                                                   ),
@@ -671,8 +688,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(30),
                                 color: panelCollapsed
-                                    ? Theme.of(context).primaryColor.withOpacity(1)
-                                    : Theme.of(context).primaryColor.withOpacity(.5),
+                                    ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                                    : Theme.of(context).primaryColor.withValues(alpha: .5),
                               ),
                               child: FutureBuilder<Map>(
                                   future: futureM,
@@ -690,7 +707,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                               child: Padding(
                                             padding: const EdgeInsets.all(10.0),
                                             child: AnimatedOpacity(
-                                              duration: const Duration(),
+                                              duration: Duration.zero,
                                               opacity: panelCollapsed ? 0.0 : 1.0,
                                               child: GestureDetector(
                                                 onTap: () {
@@ -804,8 +821,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           Icon(
                                                             JamIcons.arrow_circle_right,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
@@ -821,8 +840,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           Icon(
                                                             JamIcons.save,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
@@ -910,8 +931,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           Icon(
                                                             JamIcons.set_square,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                         ],
                                                       ),
@@ -940,7 +963,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                               color: Theme.of(context)
                                                                   .colorScheme
                                                                   .secondary
-                                                                  .withOpacity(.7),
+                                                                  .withValues(alpha: .7),
                                                             ),
                                                           ],
                                                         ),
@@ -976,7 +999,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                         color: Theme.of(context).primaryColor,
                                                         boxShadow: [
                                                           BoxShadow(
-                                                              color: Colors.black.withOpacity(.25),
+                                                              color: Colors.black.withValues(alpha: .25),
                                                               blurRadius: 4,
                                                               offset: const Offset(0, 4))
                                                         ],
@@ -1260,8 +1283,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(30),
                                       color: panelCollapsed
-                                          ? Theme.of(context).primaryColor.withOpacity(1)
-                                          : Theme.of(context).primaryColor.withOpacity(.5),
+                                          ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                                          : Theme.of(context).primaryColor.withValues(alpha: .5),
                                     ),
                                     child: FutureBuilder<WallPaperP>(
                                         future: futureP,
@@ -1279,7 +1302,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                     child: Padding(
                                                   padding: const EdgeInsets.all(10.0),
                                                   child: AnimatedOpacity(
-                                                    duration: const Duration(),
+                                                    duration: Duration.zero,
                                                     opacity: panelCollapsed ? 0.0 : 1.0,
                                                     child: GestureDetector(
                                                       onTap: () {

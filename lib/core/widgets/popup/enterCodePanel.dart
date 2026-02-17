@@ -150,10 +150,10 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                         decoration: BoxDecoration(
                           color: !enabled
                               ? Theme.of(context).primaryColor
-                              : Theme.of(context).colorScheme.error.withOpacity(0.2),
+                              : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                           border: Border.all(
                               color: !enabled
-                                  ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+                                  ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
                                   : Theme.of(context).colorScheme.error,
                               width: 3),
                           borderRadius: BorderRadius.circular(10),
@@ -166,7 +166,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                                   style: TextStyle(
                                       fontSize: 16,
                                       color: !enabled
-                                          ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+                                          ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
                                           : Theme.of(context).colorScheme.secondary,
                                       fontWeight: FontWeight.bold),
                                 ),

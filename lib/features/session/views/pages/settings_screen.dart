@@ -1,3 +1,4 @@
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
@@ -6,7 +7,6 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -30,10 +30,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int purity = (main.prefs.get('WHpurity') ?? 100) as int;
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        popNavStackIfPossible();
-        return true;
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          popNavStackIfPossible();
+        }
       },
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
@@ -113,23 +114,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            // ListTile(
-            //   onTap: () {
-            //     context.pushNamedRoute(themeViewRoute);
-            //   },
-            //   leading: const Icon(JamIcons.wrench),
-            //   title: Text(
-            //     "Themes",
-            //     style: TextStyle(
-            //         color: Theme.of(context).accentColor,
-            //         fontWeight: FontWeight.w500,
-            //         fontFamily: "Proxima Nova"),
-            //   ),
-            //   subtitle: const Text(
-            //     "Toggle app theme",
-            //     style: TextStyle(fontSize: 12),
-            //   ),
-            // ),
             ListTile(
                 leading: const Icon(
                   JamIcons.pie_chart_alt,
@@ -155,34 +139,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   await Hive.openBox('setups');
                   toasts.codeSend("Cleared cache!");
                 }),
-            // SwitchListTile(
-            //     activeColor: Theme.of(context).errorColor,
-            //     secondary: const Icon(
-            //       JamIcons.dashboard,
-            //     ),
-            //     value: optWall,
-            //     title: Text(
-            //       "Wallpaper Optimisation",
-            //       style: TextStyle(
-            //           color: Theme.of(context).accentColor,
-            //           fontWeight: FontWeight.w500,
-            //           fontFamily: "Proxima Nova"),
-            //     ),
-            //     subtitle: optWall
-            //         ? const Text(
-            //             "Disabling this might lead to High Internet Usage",
-            //             style: TextStyle(fontSize: 12),
-            //           )
-            //         : const Text(
-            //             "Enable this to optimise Wallpapers according to your device",
-            //             style: TextStyle(fontSize: 12),
-            //           ),
-            //     onChanged: (bool value) async {
-            //       setState(() {
-            //         optWall = value;
-            //       });
-            //       main.prefs.put('optimisedWallpapers', value);
-            //     }),
             SwitchListTile(
                 activeThumbColor: Theme.of(context).colorScheme.error,
                 secondary: const Icon(
@@ -205,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         "Enable this to show the followers feed on home page.",
                         style: TextStyle(fontSize: 12),
                       ),
-                onChanged: (bool value) async {
+                onChanged: (bool value) {
                   setState(() {
                     followers = value;
                   });
@@ -234,7 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         "Enable this to show anime wallpapers",
                         style: TextStyle(fontSize: 12),
                       ),
-                onChanged: (bool value) async {
+                onChanged: (bool value) {
                   if (value == true) {
                     setState(() {
                       categories = 111;
@@ -269,7 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         "Enable this to show sketchy wallpapers",
                         style: TextStyle(fontSize: 12),
                       ),
-                onChanged: (bool value) async {
+                onChanged: (bool value) {
                   if (value == true) {
                     setState(() {
                       purity = 110;
@@ -317,7 +273,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             if (globals.prismUser.loggedIn == false)
               ListTile(
-                onTap: () {
+                onTap: () async {
                   final Dialog loaderDialog = Dialog(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     child: Container(
@@ -333,19 +289,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   if (globals.prismUser.loggedIn == false) {
                     showDialog(
                         barrierDismissible: false, context: context, builder: (BuildContext context) => loaderDialog);
-                    globals.gAuth.signInWithGoogle().then((value) {
+                    try {
+                      await globals.gAuth.signInWithGoogle();
+                      if (!mounted) {
+                        return;
+                      }
                       toasts.codeSend("Login Successful!");
                       globals.prismUser.loggedIn = true;
                       main.prefs.put(main.userHiveKey, globals.prismUser);
-                      Navigator.pop(context);
-                      main.RestartWidget.restartApp(context);
-                    }).catchError((e) {
-                      logger.d(e.toString());
-                      Navigator.pop(context);
+                      Navigator.pop(this.context);
+                      main.RestartWidget.restartApp(this.context);
+                    } catch (e) {
+                      if (!mounted) {
+                        return;
+                      }
+                      logger.d(e);
+                      Navigator.pop(this.context);
                       globals.prismUser.loggedIn = false;
                       main.prefs.put(main.userHiveKey, globals.prismUser);
                       toasts.error("Something went wrong, please try again!");
-                    });
+                    }
                   } else {
                     main.RestartWidget.restartApp(context);
                   }
@@ -384,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               "Remove all favourite wallpapers",
                               style: TextStyle(fontSize: 12),
                             ),
-                            onTap: () async {
+                            onTap: () {
                               showModal(
                                 context: context,
                                 builder: (context) => AlertDialog(
@@ -456,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               "Remove all favourite setups",
                               style: TextStyle(fontSize: 12),
                             ),
-                            onTap: () async {
+                            onTap: () {
                               showModal(
                                 context: context,
                                 builder: (context) => AlertDialog(

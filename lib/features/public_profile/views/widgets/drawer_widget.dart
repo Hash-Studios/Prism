@@ -1,12 +1,12 @@
 import 'dart:io';
 
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/popup/enterCodePanel.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -102,7 +102,7 @@ class ProfileDrawer extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .displaySmall!
-                .copyWith(fontSize: 12, color: Theme.of(context).colorScheme.secondary.withOpacity(0.4))),
+                .copyWith(fontSize: 12, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4))),
       ),
     );
   }

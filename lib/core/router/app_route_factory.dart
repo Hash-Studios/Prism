@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/router/undefined_screen.dart';
 import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/features/ads/views/pages/ads_not_loading_page.dart';
@@ -41,7 +42,6 @@ import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
 import 'package:Prism/payments/upgrade.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image/image.dart' as imagelib;
 
@@ -55,17 +55,17 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       pushNavStack("Search");
       analytics.setCurrentScreen(screenName: searchRoute);
       return PageRouteBuilder(
-          transitionDuration: const Duration(), pageBuilder: (context, animation1, animation2) => SearchScreen());
+          transitionDuration: Duration.zero, pageBuilder: (context, animation1, animation2) => SearchScreen());
     case homeRoute:
       pushNavStack("Home");
       analytics.setCurrentScreen(screenName: homeRoute);
       return PageRouteBuilder(
-          transitionDuration: const Duration(), pageBuilder: (context, animation1, animation2) => PageManager());
+          transitionDuration: Duration.zero, pageBuilder: (context, animation1, animation2) => PageManager());
     case profileRoute:
       pushNavStack("Profile");
       analytics.setCurrentScreen(screenName: profileRoute);
       return PageRouteBuilder(
-          transitionDuration: const Duration(),
+          transitionDuration: Duration.zero,
           pageBuilder: (context, animation1, animation2) => ProfileScreen(settings.arguments as List?));
     case followerProfileRoute:
       pushNavStack("Follower Profile");
@@ -151,7 +151,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       pushNavStack("Setups");
       analytics.setCurrentScreen(screenName: setupRoute);
       return PageRouteBuilder(
-          transitionDuration: const Duration(), pageBuilder: (context, animation1, animation2) => const SetupScreen());
+          transitionDuration: Duration.zero, pageBuilder: (context, animation1, animation2) => const SetupScreen());
     case setupViewRoute:
       pushNavStack("SetupView");
       analytics.setCurrentScreen(screenName: setupViewRoute);

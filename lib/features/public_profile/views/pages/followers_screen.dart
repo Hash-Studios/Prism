@@ -1,5 +1,5 @@
-import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 

@@ -1,8 +1,8 @@
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/favourite_setups/views/widgets/fav_setup_loader.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:flutter/material.dart';
 
 class FavouriteSetupScreen extends StatelessWidget {

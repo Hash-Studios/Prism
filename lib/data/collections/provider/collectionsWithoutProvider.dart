@@ -1,5 +1,5 @@
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 final FirebaseFirestore databaseReference = FirebaseFirestore.instance;

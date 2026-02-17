@@ -143,14 +143,14 @@ class LogOutputPrinter extends PrettyPrinter {
 }
 
 Future<String> zipLogs() async {
-  logger.v("Zipping Logs");
+  logger.t("Zipping Logs");
   final sourceDir = Directory(printer.logsFolderPath());
   final files = printer.filePathsForDates(2).map((e) => File(e)).toList();
   final zipFile = File(join(printer.logsFolderPath(), 'logs.zip'));
   try {
-    logger.v("Zipping Started");
+    logger.t("Zipping Started");
     await ZipFile.createFromFiles(sourceDir: sourceDir, files: files, zipFile: zipFile);
-    logger.v("Zipping Finished Successfully");
+    logger.t("Zipping Finished Successfully");
   } catch (e, strace) {
     logger.e('Failed to zip logs', error: e, stackTrace: strace);
   }
@@ -162,18 +162,18 @@ Future<String> encryptLogsZip(String zipPath) async {
   final List<String> pathList = zipPath.split('/');
   pathList.removeLast();
   final String outFilename = "${pathList.join("/")}/logs_zip.dat";
-  logger.v("Encryption Started");
+  logger.t("Encryption Started");
   final String secretKey = await FileEncrypter.encrypt(
     inFileName: zipPath,
     outFileName: outFilename,
   );
-  logger.v("Encryption Done");
+  logger.t("Encryption Done");
   logger.d(outFilename);
   // logger.d(secretKey);
-  // logger.v("Renaming File");
+  // logger.t("Renaming File");
   // final String secretOutFilename = "${pathList.join("/")}/$secretKey";
   // final File zipOut = File(outFilename);
   // await zipOut.rename(secretOutFilename);
-  // logger.v("Renaming Done");
+  // logger.t("Renaming Done");
   return "$secretKey::::$outFilename";
 }

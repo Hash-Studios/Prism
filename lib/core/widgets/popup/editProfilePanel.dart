@@ -3,12 +3,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -443,11 +443,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   defaultHeader
                                       .replaceAll(
                                         "#181818",
-                                        "#${Theme.of(context).primaryColor.value.toRadixString(16).substring(2)}",
+                                        "#${Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2)}",
                                       )
                                       .replaceAll(
                                         "#E77597",
-                                        "#${Theme.of(context).colorScheme.error.value.toRadixString(16).substring(2)}",
+                                        "#${Theme.of(context).colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
                                       ),
                                   fit: BoxFit.cover,
                                 )
@@ -468,7 +468,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             border: const Border.fromBorderSide(
                               BorderSide(color: Colors.white, width: 2),
                             ),
-                            color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
                           ),
                           child: const Icon(
                             JamIcons.pencil,
@@ -533,7 +533,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               border: const Border.fromBorderSide(
                                 BorderSide(color: Colors.white, width: 2),
                               ),
-                              color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
                             ),
                             child: const Icon(
                               JamIcons.pencil,
@@ -1083,11 +1083,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           color: !((!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
                                   (usernameEdit && enabled))
                               ? Theme.of(context).primaryColor
-                              : Theme.of(context).colorScheme.error.withOpacity(0.2),
+                              : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                           border: Border.all(
                               color: !((!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
                                       (usernameEdit && enabled))
-                                  ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+                                  ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
                                   : Theme.of(context).colorScheme.error,
                               width: 3),
                           borderRadius: BorderRadius.circular(10),
@@ -1102,7 +1102,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                       color: !((!usernameEdit &&
                                                   (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
                                               (usernameEdit && enabled))
-                                          ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+                                          ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
                                           : Theme.of(context).colorScheme.secondary,
                                       fontWeight: FontWeight.bold),
                                 ),

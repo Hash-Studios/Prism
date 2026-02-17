@@ -16,7 +16,7 @@ ThemeData kLightTheme = ThemeData(
     ),
     headlineSmall: TextStyle(
       fontSize: 16.0,
-      color: Colors.white.withOpacity(1),
+      color: Colors.white.withValues(alpha: 1),
       fontFamily: "Proxima Nova",
     ),
     headlineMedium: TextStyle(
@@ -39,20 +39,20 @@ ThemeData kLightTheme = ThemeData(
     ),
     titleLarge: TextStyle(
       fontSize: 13.0,
-      color: Colors.white.withOpacity(.85),
+      color: Colors.white.withValues(alpha: .85),
       fontFamily: "Proxima Nova",
     ),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      color: Colors.white.withOpacity(.75),
+      color: Colors.white.withValues(alpha: .75),
     ),
     bodyLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 24,
       fontWeight: FontWeight.w500,
-      color: Colors.white.withOpacity(1),
+      color: Colors.white.withValues(alpha: 1),
     ),
     bodySmall: TextStyle(
       fontFamily: 'Roboto',
@@ -149,7 +149,7 @@ ThemeData kLightTheme2 = ThemeData(
     ),
     headlineSmall: TextStyle(
       fontSize: 16.0,
-      color: Colors.white.withOpacity(1),
+      color: Colors.white.withValues(alpha: 1),
       fontFamily: "Proxima Nova",
     ),
     headlineMedium: TextStyle(
@@ -172,20 +172,20 @@ ThemeData kLightTheme2 = ThemeData(
     ),
     titleLarge: TextStyle(
       fontSize: 13.0,
-      color: Colors.white.withOpacity(.85),
+      color: Colors.white.withValues(alpha: .85),
       fontFamily: "Proxima Nova",
     ),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      color: Colors.white.withOpacity(.75),
+      color: Colors.white.withValues(alpha: .75),
     ),
     bodyLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 24,
       fontWeight: FontWeight.w500,
-      color: Colors.white.withOpacity(1),
+      color: Colors.white.withValues(alpha: 1),
     ),
     bodySmall: TextStyle(
       fontFamily: 'Roboto',
@@ -237,14 +237,14 @@ ThemeData kDarkTheme2 = ThemeData(
     ),
     titleLarge: TextStyle(
       fontSize: 14.0,
-      color: Colors.white.withOpacity(0.85),
+      color: Colors.white.withValues(alpha: 0.85),
       fontFamily: "Proxima Nova",
     ),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      color: Colors.white.withOpacity(.85),
+      color: Colors.white.withValues(alpha: .85),
     ),
     bodyLarge: const TextStyle(
       fontFamily: 'Proxima Nova',
@@ -279,7 +279,7 @@ ThemeData kLightTheme3 = ThemeData(
     ),
     headlineSmall: TextStyle(
       fontSize: 16.0,
-      color: Colors.white.withOpacity(1),
+      color: Colors.white.withValues(alpha: 1),
       fontFamily: "Proxima Nova",
     ),
     headlineMedium: TextStyle(
@@ -302,20 +302,20 @@ ThemeData kLightTheme3 = ThemeData(
     ),
     titleLarge: TextStyle(
       fontSize: 13.0,
-      color: Colors.white.withOpacity(.85),
+      color: Colors.white.withValues(alpha: .85),
       fontFamily: "Proxima Nova",
     ),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      color: Colors.white.withOpacity(.75),
+      color: Colors.white.withValues(alpha: .75),
     ),
     bodyLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 24,
       fontWeight: FontWeight.w500,
-      color: Colors.white.withOpacity(1),
+      color: Colors.white.withValues(alpha: 1),
     ),
     bodySmall: TextStyle(
       fontFamily: 'Roboto',
@@ -344,7 +344,7 @@ ThemeData kLightTheme4 = ThemeData(
     ),
     headlineSmall: TextStyle(
       fontSize: 16.0,
-      color: Colors.white.withOpacity(1),
+      color: Colors.white.withValues(alpha: 1),
       fontFamily: "Proxima Nova",
     ),
     headlineMedium: TextStyle(
@@ -367,20 +367,20 @@ ThemeData kLightTheme4 = ThemeData(
     ),
     titleLarge: TextStyle(
       fontSize: 13.0,
-      color: Colors.white.withOpacity(.85),
+      color: Colors.white.withValues(alpha: .85),
       fontFamily: "Proxima Nova",
     ),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      color: Colors.white.withOpacity(.75),
+      color: Colors.white.withValues(alpha: .75),
     ),
     bodyLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 24,
       fontWeight: FontWeight.w500,
-      color: Colors.white.withOpacity(1),
+      color: Colors.white.withValues(alpha: 1),
     ),
     bodySmall: TextStyle(
       fontFamily: 'Roboto',

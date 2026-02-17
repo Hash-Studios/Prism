@@ -1,16 +1,16 @@
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class UserSearch extends StatefulWidget {
   const UserSearch({super.key});
@@ -225,11 +225,11 @@ class _UsersResultListState extends State<UsersResultList> {
                                     defaultHeader
                                         .replaceAll(
                                           "#181818",
-                                          "#${Theme.of(context).primaryColor.value.toRadixString(16).substring(2)}",
+                                          "#${Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2)}",
                                         )
                                         .replaceAll(
                                           "#E77597",
-                                          "#${Theme.of(context).colorScheme.error.value.toRadixString(16).substring(2)}",
+                                          "#${Theme.of(context).colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
                                         ),
                                     fit: BoxFit.cover,
                                     width: MediaQuery.of(context).size.width,
@@ -282,7 +282,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontFamily: "Proxima Nova",
-                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                                       fontSize: 16,
                                       fontWeight: FontWeight.normal,
                                     ),
@@ -300,7 +300,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontFamily: "Proxima Nova",
-                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                                       fontSize: 14,
                                       fontWeight: FontWeight.normal,
                                     ),
@@ -319,7 +319,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                           text: "${user.following.length}",
                                           style: TextStyle(
                                             fontFamily: "Proxima Nova",
-                                            color: Theme.of(context).colorScheme.secondary.withOpacity(1),
+                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 1),
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -327,7 +327,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                             TextSpan(
                                               text: " Following",
                                               style: TextStyle(
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                                                 fontWeight: FontWeight.normal,
                                               ),
                                             ),
@@ -343,7 +343,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                           text: "${user.followers.length}",
                                           style: TextStyle(
                                             fontFamily: "Proxima Nova",
-                                            color: Theme.of(context).colorScheme.secondary.withOpacity(1),
+                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 1),
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -351,7 +351,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                             TextSpan(
                                               text: " Followers",
                                               style: TextStyle(
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                                                 fontWeight: FontWeight.normal,
                                               ),
                                             ),
@@ -381,12 +381,12 @@ class _UsersResultListState extends State<UsersResultList> {
                                                 padding: const EdgeInsets.all(6.0),
                                                 decoration: BoxDecoration(
                                                   shape: BoxShape.circle,
-                                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                                 ),
                                                 child: Icon(
                                                   linksData[e]!["icon"] as IconData,
                                                   size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
                                                 ),
                                               ),
                                               onPressed: () {
@@ -407,12 +407,12 @@ class _UsersResultListState extends State<UsersResultList> {
                                               padding: const EdgeInsets.all(6.0),
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                               ),
                                               child: Icon(
                                                 JamIcons.more_horizontal,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
                                               ),
                                             ),
                                             onPressed: () {

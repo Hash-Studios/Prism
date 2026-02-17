@@ -1,3 +1,4 @@
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
@@ -7,7 +8,6 @@ import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class SearchFocusedMenuDetails extends StatelessWidget {
   final String? selectedProvider;
@@ -90,8 +90,8 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                 },
                 child: Container(
                   color: context.prismModeStyleForContext() == "Dark"
-                      ? Colors.black.withOpacity(0.75)
-                      : Colors.white.withOpacity(0.75),
+                      ? Colors.black.withValues(alpha: 0.75)
+                      : Colors.white.withValues(alpha: 0.75),
                 )),
             Positioned(
                 top: childOffset.dy,
@@ -221,7 +221,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     color: Theme.of(context).hintColor,
                                     borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
-                                padding: const EdgeInsets.all(0),
+                                padding: EdgeInsets.zero,
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                   child: Icon(
@@ -363,7 +363,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     color: Theme.of(context).hintColor,
                                     borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
-                                padding: const EdgeInsets.all(0),
+                                padding: EdgeInsets.zero,
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                   child: Icon(

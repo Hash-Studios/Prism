@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/menuButton/favIconButton.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/followingFeed.dart';
@@ -8,7 +9,6 @@ import 'package:Prism/features/navigation/views/widgets/inherited_scroll_control
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -268,7 +268,7 @@ class _FollowingTileState extends State<FollowingTile> {
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.8), fontSize: 10),
+                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8), fontSize: 10),
                             ),
                           ),
                         ],

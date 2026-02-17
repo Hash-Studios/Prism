@@ -1,6 +1,6 @@
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
@@ -81,34 +81,6 @@ class _GeneralListState extends State<GeneralList> {
               await Hive.openBox('setups');
               toasts.codeSend("Cleared cache!");
             }),
-        // SwitchListTile(
-        //     activeColor: Theme.of(context).errorColor,
-        //     secondary: const Icon(
-        //       JamIcons.dashboard,
-        //     ),
-        //     value: optWall,
-        //     title: Text(
-        //       "Wallpaper Optimisation",
-        //       style: TextStyle(
-        //           color: Theme.of(context).accentColor,
-        //           fontWeight: FontWeight.w500,
-        //           fontFamily: "Proxima Nova"),
-        //     ),
-        //     subtitle: optWall
-        //         ? const Text(
-        //             "Disabling this might lead to High Internet Usage",
-        //             style: TextStyle(fontSize: 12),
-        //           )
-        //         : const Text(
-        //             "Enable this to optimise Wallpapers according to your device",
-        //             style: TextStyle(fontSize: 12),
-        //           ),
-        //     onChanged: (bool value) async {
-        //       setState(() {
-        //         optWall = value;
-        //       });
-        //       main.prefs.put('optimisedWallpapers', value);
-        //     }),
         SwitchListTile(
             activeThumbColor: Theme.of(context).colorScheme.error,
             secondary: const Icon(
@@ -131,7 +103,7 @@ class _GeneralListState extends State<GeneralList> {
                     "Enable this to show the followers feed on home page.",
                     style: TextStyle(fontSize: 12),
                   ),
-            onChanged: (bool value) async {
+            onChanged: (bool value) {
               setState(() {
                 followers = value;
               });
@@ -160,7 +132,7 @@ class _GeneralListState extends State<GeneralList> {
                     "Enable this to show anime wallpapers",
                     style: TextStyle(fontSize: 12),
                   ),
-            onChanged: (bool value) async {
+            onChanged: (bool value) {
               if (value == true) {
                 setState(() {
                   categories = 111;
@@ -195,7 +167,7 @@ class _GeneralListState extends State<GeneralList> {
                     "Enable this to show sketchy wallpapers",
                     style: TextStyle(fontSize: 12),
                   ),
-            onChanged: (bool value) async {
+            onChanged: (bool value) {
               if (value == true) {
                 setState(() {
                   purity = 110;

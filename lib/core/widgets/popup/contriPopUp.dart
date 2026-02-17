@@ -80,7 +80,7 @@ void showContributorDetails(BuildContext context, String username) {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyMedium!
-                                      .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
+                                      .copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                                 )),
                             const SizedBox(
                               height: 5,
@@ -89,17 +89,15 @@ void showContributorDetails(BuildContext context, String username) {
                               Row(
                                 children: [
                                   Icon(JamIcons.map_marker,
-                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
+                                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                                   SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
                                         snapshot.data!.location!,
                                         textAlign: TextAlign.center,
                                         overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium!
-                                            .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
+                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                                       )),
                                 ],
                               )

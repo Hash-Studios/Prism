@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
@@ -8,7 +9,6 @@ import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -56,15 +56,15 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.black.withOpacity(.1),
-                  end: Colors.black.withOpacity(.14),
+                  begin: Colors.black.withValues(alpha: .1),
+                  end: Colors.black.withValues(alpha: .14),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.black.withOpacity(.14),
-                  end: Colors.black.withOpacity(.1),
+                  begin: Colors.black.withValues(alpha: .14),
+                  end: Colors.black.withValues(alpha: .1),
                 ),
               ),
             ],
