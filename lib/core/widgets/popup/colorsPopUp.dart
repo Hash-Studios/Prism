@@ -1,8 +1,8 @@
 import 'package:Prism/core/router/route_names.dart';
 import 'package:animations/animations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
+import 'package:rive/rive.dart';
 
 final databaseReference = FirebaseFirestore.instance;
 List<Color> colors = [
@@ -72,9 +72,9 @@ Color showColors(BuildContext context) {
             decoration: BoxDecoration(
                 borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
                 color: Theme.of(context).hintColor),
-            child: const FlareActor(
+            child: const RiveAnimation.asset(
               "assets/animations/Color.flr",
-              animation: "color",
+              animations: ["color"],
             ),
           ),
           Row(

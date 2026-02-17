@@ -6,7 +6,7 @@ import 'package:animations/animations.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 
 Future<String> createDynamicLink(String id, String provider, String? url, String thumbUrl) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
@@ -55,7 +55,7 @@ Future<void> createUserDynamicLink(String name, String username, String email, S
   final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-  Share.share("Hey check out my profile on Prism ➜ $shortUrl");
+  SharePlus.instance.share(ShareParams(text: "Hey check out my profile on Prism ➜ $shortUrl"));
   analytics.logShare(contentType: 'userShare', itemId: username, method: 'link');
   logger.d(shortUrl.toString());
 }
@@ -80,7 +80,7 @@ Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) 
   final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-  Share.share("Hey check this out ➜ $shortUrl");
+  SharePlus.instance.share(ShareParams(text: "Hey check this out ➜ $shortUrl"));
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
   logger.d(shortUrl.toString());
 }

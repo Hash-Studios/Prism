@@ -4,7 +4,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ShareButton extends StatefulWidget {
   final String? id;
@@ -90,7 +90,7 @@ class _ShareButtonState extends State<ShareButton> {
     final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
     final Uri shortUrl = shortDynamicLink.shortUrl;
     Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-    Share.share("🔥Check this out ➜ $shortUrl");
+    SharePlus.instance.share(ShareParams(text: "🔥Check this out ➜ $shortUrl"));
     logger.d(shortUrl.toString());
     analytics.logShare(contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
     setState(() {

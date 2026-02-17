@@ -11,13 +11,13 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:github/github.dart';
 import 'package:path/path.dart' as Path;
 import 'package:photo_view/photo_view.dart';
+import 'package:rive/rive.dart';
 
 class UploadWallScreen extends StatefulWidget {
   final List? arguments;
@@ -201,9 +201,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               SizedBox(
                 width: MediaQuery.of(context).size.width / 2.4,
                 height: MediaQuery.of(context).size.width / 2.4,
-                child: FlareActor(
+                child: RiveAnimation.asset(
                   isUploading ? "assets/animations/Upload.flr" : "assets/animations/Process.flr",
-                  animation: isUploading ? "upload" : "process",
+                  animations: [isUploading ? "upload" : "process"],
                 ),
               )
             else
@@ -292,7 +292,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               ? () async {
                   popNavStack();
                   Navigator.pop(context, [wallpaperUrl, id]);
-                  analytics.logEvent(name: 'upload_wallpaper', parameters: {'id': id, 'link': wallpaperUrl});
+                  analytics
+                      .logEvent(name: 'upload_wallpaper', parameters: {'id': id ?? '', 'link': wallpaperUrl ?? ''});
                   WallStore.createRecord(id, wallpaperProvider, wallpaperThumb, wallpaperUrl, wallpaperResolution,
                       wallpaperSize, wallpaperCategory, wallpaperDesc, fromSetupRoute ? "setup" : review);
                   context.pushNamedRoute(reviewRoute);

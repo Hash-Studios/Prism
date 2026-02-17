@@ -1,23 +1,7 @@
-buildscript {
-    repositories {
-        google()
-        jcenter()
-        maven {
-            url 'https://maven.fabric.io/public'
-        }
-    }
-
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.4'
-        classpath 'com.google.gms:google-services:4.3.4'
-        classpath 'io.fabric.tools:gradle:1.26.1'
-    }
-}
-
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
 
@@ -29,6 +13,46 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
-task clean(type: Delete) {
-    delete rootProject.buildDir
+String inferNamespace(Project project) {
+    def manifestFile = project.file("src/main/AndroidManifest.xml")
+    if (manifestFile.exists()) {
+        def manifest = new XmlSlurper(false, false).parse(manifestFile)
+        def pkg = manifest.@package?.text()
+        if (pkg != null && !pkg.trim().isEmpty()) {
+            return pkg
+        }
+    }
+    def groupName = project.group?.toString()
+    if (groupName != null && !groupName.trim().isEmpty() && groupName != 'unspecified') {
+        return groupName
+    }
+    return "com.example.${project.name.replace('-', '_')}"
+}
+
+subprojects { subproject ->
+    ["com.android.application", "com.android.library"].each { pluginId ->
+        subproject.plugins.withId(pluginId) {
+            def androidExt = subproject.extensions.findByName("android")
+            if (androidExt == null) {
+                return
+            }
+
+            if (androidExt.hasProperty("buildFeatures") &&
+                androidExt.buildFeatures != null &&
+                androidExt.buildFeatures.hasProperty("buildConfig")) {
+                androidExt.buildFeatures.buildConfig = true
+            }
+
+            if (androidExt.hasProperty("namespace")) {
+                def namespaceValue = androidExt.namespace?.toString()
+                if (namespaceValue == null || namespaceValue.trim().isEmpty()) {
+                    androidExt.namespace = inferNamespace(subproject)
+                }
+            }
+        }
+    }
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.layout.buildDirectory
 }

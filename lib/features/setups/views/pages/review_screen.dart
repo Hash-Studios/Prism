@@ -10,11 +10,10 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:device_info/device_info.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gallery_saver/gallery_saver.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
@@ -362,11 +361,17 @@ class WallTile extends StatelessWidget {
                                           logger.d(e.toString());
                                         });
                                       } else {
-                                        GallerySaver.saveImage(link, albumName: "Prism").then((value) {
-                                          analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
-                                          toasts.codeSend("Wall Downloaded in Internal Storage/Prism!");
-                                          main.localNotification.cancelDownloadNotification();
-                                        }).catchError((e) {});
+                                        await platform.invokeMethod('save_image', {"link": link}).then((value) {
+                                          if (value as bool) {
+                                            analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
+                                            toasts.codeSend("Wall Downloaded in Internal Storage/Prism!");
+                                            main.localNotification.cancelDownloadNotification();
+                                          } else {
+                                            toasts.error("Couldn't download! Please Retry!");
+                                          }
+                                        }).catchError((e) {
+                                          logger.d(e.toString());
+                                        });
                                       }
                                     },
                                   ),
@@ -647,11 +652,17 @@ class RejectedWallTile extends StatelessWidget {
                                           logger.d(e.toString());
                                         });
                                       } else {
-                                        GallerySaver.saveImage(link, albumName: "Prism").then((value) {
-                                          analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
-                                          toasts.codeSend("Wall Downloaded in Internal Storage/Prism!");
-                                          main.localNotification.cancelDownloadNotification();
-                                        }).catchError((e) {});
+                                        await platform.invokeMethod('save_image', {"link": link}).then((value) {
+                                          if (value as bool) {
+                                            analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
+                                            toasts.codeSend("Wall Downloaded in Internal Storage/Prism!");
+                                            main.localNotification.cancelDownloadNotification();
+                                          } else {
+                                            toasts.error("Couldn't download! Please Retry!");
+                                          }
+                                        }).catchError((e) {
+                                          logger.d(e.toString());
+                                        });
                                       }
                                     },
                                   ),
@@ -1198,10 +1209,16 @@ class SetupTile extends StatelessWidget {
                                           logger.d(e.toString());
                                         });
                                       } else {
-                                        GallerySaver.saveImage(link, albumName: "Prism Setups").then((value) {
-                                          analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
-                                          toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setup!");
-                                        }).catchError((e) {});
+                                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
+                                          if (value as bool) {
+                                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                                            toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setup!");
+                                          } else {
+                                            toasts.error("Couldn't download! Please Retry!");
+                                          }
+                                        }).catchError((e) {
+                                          logger.d(e.toString());
+                                        });
                                       }
                                     },
                                   ),
@@ -1641,10 +1658,16 @@ class RejectedSetupTile extends StatelessWidget {
                                           logger.d(e.toString());
                                         });
                                       } else {
-                                        GallerySaver.saveImage(link, albumName: "Prism Setups").then((value) {
-                                          analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
-                                          toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setups!");
-                                        }).catchError((e) {});
+                                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
+                                          if (value as bool) {
+                                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                                            toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setups!");
+                                          } else {
+                                            toasts.error("Couldn't download! Please Retry!");
+                                          }
+                                        }).catchError((e) {
+                                          logger.d(e.toString());
+                                        });
                                       }
                                     },
                                   ),

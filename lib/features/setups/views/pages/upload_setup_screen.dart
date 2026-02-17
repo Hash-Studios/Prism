@@ -255,7 +255,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                       } else {
                         popNavStack();
                         Navigator.pop(context);
-                        analytics.logEvent(name: 'upload_setup', parameters: {'id': id, 'link': imageURL});
+                        analytics.logEvent(name: 'upload_setup', parameters: {'id': id ?? '', 'link': imageURL ?? ''});
                         WallStore.createSetup(
                           id,
                           imageURL,

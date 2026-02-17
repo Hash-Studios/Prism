@@ -50,6 +50,47 @@ late bool optimisedWallpapers;
 int? categories;
 int? purity;
 LocalNotification localNotification = LocalNotification();
+
+int _to8BitChannel(double value) {
+  final channel = (value * 255).round();
+  if (channel < 0) return 0;
+  if (channel > 255) return 255;
+  return channel;
+}
+
+int _colorValueFromPrefs(dynamic rawValue, {required int fallback}) {
+  if (rawValue == null) return fallback;
+
+  if (rawValue is int) return rawValue;
+  if (rawValue is Color) return rawValue.toARGB32();
+
+  final raw = rawValue.toString().trim();
+
+  final hexMatch = RegExp('0x[0-9a-fA-F]+').firstMatch(raw);
+  if (hexMatch != null) {
+    return int.tryParse(hexMatch.group(0)!) ?? fallback;
+  }
+
+  if (RegExp('^-?\\d+\$').hasMatch(raw)) {
+    return int.tryParse(raw) ?? fallback;
+  }
+
+  final alpha = RegExp(r'alpha:\s*([0-9]*\.?[0-9]+)').firstMatch(raw);
+  final red = RegExp(r'red:\s*([0-9]*\.?[0-9]+)').firstMatch(raw);
+  final green = RegExp(r'green:\s*([0-9]*\.?[0-9]+)').firstMatch(raw);
+  final blue = RegExp(r'blue:\s*([0-9]*\.?[0-9]+)').firstMatch(raw);
+
+  if (alpha != null && red != null && green != null && blue != null) {
+    final a = _to8BitChannel(double.tryParse(alpha.group(1)!) ?? 1.0);
+    final r = _to8BitChannel(double.tryParse(red.group(1)!) ?? 0.0);
+    final g = _to8BitChannel(double.tryParse(green.group(1)!) ?? 0.0);
+    final b = _to8BitChannel(double.tryParse(blue.group(1)!) ?? 0.0);
+    return (a << 24) | (r << 16) | (g << 8) | b;
+  }
+
+  return fallback;
+}
+
 Future<void> main() async {
   debugPrint = (String? message, {int? wrapWidth}) {
     if (message!.contains("[Home")) {
@@ -60,118 +101,140 @@ Future<void> main() async {
   };
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
-  FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.dumpErrorToConsole(details, forceReport: true);
   };
   localNotification = LocalNotification();
-  Firebase.initializeApp().then((_) {
-    getApplicationDocumentsDirectory().then(
-      (dir) async {
-        Hive.init(dir.path);
-        Hive.registerAdapter(PrismUsersAdapter());
-        Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
-        Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
-        Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
-        Hive.registerAdapter<Badge>(BadgeAdapter());
-        await Hive.openBox<InAppNotif>('inAppNotifs');
-        await Hive.openBox('setups');
-        await Hive.openBox('localFav');
-        await Hive.openBox('appsCache');
-        prefs = await Hive.openBox('prefs');
-        logger.d("Box Opened");
-        if (prefs.get("systemOverlayColor") == null) {
-          prefs.put("systemOverlayColor", 0xFFE57697);
-        }
-        currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-        prefs.put("lightThemeID", currentThemeID);
-        currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-        prefs.put("darkThemeID", currentDarkThemeID);
-        currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
-        prefs.put("themeMode", currentMode);
-        lightAccent = Color(int.parse(prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
-        prefs.put("lightAccent", int.parse(lightAccent.toString().replaceAll("Color(", "").replaceAll(")", "")));
-        darkAccent = Color(int.parse(prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
-        prefs.put("darkAccent", int.parse(darkAccent.toString().replaceAll("Color(", "").replaceAll(")", "")));
-        optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
-        prefs.put('optimisedWallpapers', false);
-        categories = prefs.get('WHcategories') as int? ?? 100;
-        if (categories == 100) {
-          prefs.put('WHcategories', 100);
-        } else {
-          prefs.put('WHcategories', 111);
-        }
-        purity = prefs.get('WHpurity') as int? ?? 100;
-        if (purity == 100) {
-          prefs.put('WHpurity', 100);
-        } else {
-          prefs.put('WHpurity', 110);
-        }
-        configureDependencies();
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          systemNavigationBarColor: Color(prefs.get('systemOverlayColor') as int),
-        ));
-        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
-        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
-          (value) => runZonedGuarded<Future<void>>(
-            () {
-              runApp(
-                RestartWidget(
-                  child: MultiBlocProvider(
-                    providers: [
-                      BlocProvider<AdsBloc>(
-                        create: (_) => getIt<AdsBloc>(),
-                      ),
-                      BlocProvider<PaletteBloc>(
-                        create: (_) => getIt<PaletteBloc>(),
-                      ),
-                      BlocProvider<UserSearchBloc>(
-                        create: (_) => getIt<UserSearchBloc>(),
-                      ),
-                      BlocProvider<CategoryFeedBloc>(
-                        create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
-                      ),
-                      BlocProvider<ProfileWallsBloc>(
-                        create: (_) => getIt<ProfileWallsBloc>(),
-                      ),
-                      BlocProvider<FavouriteWallsBloc>(
-                        create: (_) => getIt<FavouriteWallsBloc>(),
-                      ),
-                      BlocProvider<FavouriteSetupsBloc>(
-                        create: (_) => getIt<FavouriteSetupsBloc>(),
-                      ),
-                      BlocProvider<ProfileSetupsBloc>(
-                        create: (_) => getIt<ProfileSetupsBloc>(),
-                      ),
-                      BlocProvider<SetupsBloc>(
-                        create: (_) => getIt<SetupsBloc>(),
-                      ),
-                      BlocProvider<PublicProfileBloc>(
-                        create: (_) => getIt<PublicProfileBloc>(),
-                      ),
-                      BlocProvider<ThemeLightBloc>(
-                        create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
-                      ),
-                      BlocProvider<ThemeDarkBloc>(
-                        create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
-                      ),
-                      BlocProvider<ThemeModeBloc>(
-                        create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
-                      ),
-                    ],
-                    child: MyApp(),
-                  ),
-                ),
-              );
-            } as Future<void> Function(),
-            (obj, stacktrace) {
-              logger.e('Uncaught zone error', error: obj, stackTrace: stacktrace);
-            },
+  const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
+  if (!skipFirebaseInit) {
+    try {
+      await Firebase.initializeApp();
+      FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
+    } catch (error, stackTrace) {
+      logger.w(
+        'Firebase initialization failed; continuing without Firebase-backed startup features.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  } else {
+    logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
+  }
+
+  final dir = await getApplicationDocumentsDirectory();
+  Hive.init(dir.path);
+  Hive.registerAdapter(PrismUsersAdapter());
+  Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
+  Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
+  Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
+  Hive.registerAdapter<Badge>(BadgeAdapter());
+  await Hive.openBox<InAppNotif>('inAppNotifs');
+  await Hive.openBox('setups');
+  await Hive.openBox('localFav');
+  await Hive.openBox('appsCache');
+  prefs = await Hive.openBox('prefs');
+  logger.d("Box Opened");
+  final systemOverlayColorValue = _colorValueFromPrefs(
+    prefs.get("systemOverlayColor"),
+    fallback: 0xFFE57697,
+  );
+  prefs.put("systemOverlayColor", systemOverlayColorValue);
+  currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+  prefs.put("lightThemeID", currentThemeID);
+  currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
+  prefs.put("darkThemeID", currentDarkThemeID);
+  currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
+  prefs.put("themeMode", currentMode);
+  final lightAccentValue = _colorValueFromPrefs(
+    prefs.get('lightAccent'),
+    fallback: 0xFFE57697,
+  );
+  lightAccent = Color(lightAccentValue);
+  prefs.put("lightAccent", lightAccentValue);
+
+  final darkAccentValue = _colorValueFromPrefs(
+    prefs.get('darkAccent'),
+    fallback: 0xFFE57697,
+  );
+  darkAccent = Color(darkAccentValue);
+  prefs.put("darkAccent", darkAccentValue);
+  optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
+  prefs.put('optimisedWallpapers', false);
+  categories = prefs.get('WHcategories') as int? ?? 100;
+  if (categories == 100) {
+    prefs.put('WHcategories', 100);
+  } else {
+    prefs.put('WHcategories', 111);
+  }
+  purity = prefs.get('WHpurity') as int? ?? 100;
+  if (purity == 100) {
+    prefs.put('WHpurity', 100);
+  } else {
+    prefs.put('WHpurity', 110);
+  }
+
+  configureDependencies();
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    systemNavigationBarColor: Color(systemOverlayColorValue),
+  ));
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  runZonedGuarded<void>(
+    () {
+      runApp(
+        RestartWidget(
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<AdsBloc>(
+                create: (_) => getIt<AdsBloc>(),
+              ),
+              BlocProvider<PaletteBloc>(
+                create: (_) => getIt<PaletteBloc>(),
+              ),
+              BlocProvider<UserSearchBloc>(
+                create: (_) => getIt<UserSearchBloc>(),
+              ),
+              BlocProvider<CategoryFeedBloc>(
+                create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
+              ),
+              BlocProvider<ProfileWallsBloc>(
+                create: (_) => getIt<ProfileWallsBloc>(),
+              ),
+              BlocProvider<FavouriteWallsBloc>(
+                create: (_) => getIt<FavouriteWallsBloc>(),
+              ),
+              BlocProvider<FavouriteSetupsBloc>(
+                create: (_) => getIt<FavouriteSetupsBloc>(),
+              ),
+              BlocProvider<ProfileSetupsBloc>(
+                create: (_) => getIt<ProfileSetupsBloc>(),
+              ),
+              BlocProvider<SetupsBloc>(
+                create: (_) => getIt<SetupsBloc>(),
+              ),
+              BlocProvider<PublicProfileBloc>(
+                create: (_) => getIt<PublicProfileBloc>(),
+              ),
+              BlocProvider<ThemeLightBloc>(
+                create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
+              ),
+              BlocProvider<ThemeDarkBloc>(
+                create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
+              ),
+              BlocProvider<ThemeModeBloc>(
+                create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
+              ),
+            ],
+            child: MyApp(),
           ),
-        );
-      },
-    );
-  });
+        ),
+      );
+    },
+    (obj, stacktrace) {
+      logger.e('Uncaught zone error', error: obj, stackTrace: stacktrace);
+    },
+  );
 }
 
 class MyApp extends StatefulWidget {

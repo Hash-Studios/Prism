@@ -20,11 +20,10 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_apps/device_apps.dart';
-import 'package:device_info/device_info.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:gallery_saver/gallery_saver.dart';
 import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -1142,9 +1141,13 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                           });
                         });
                       } else {
-                        GallerySaver.saveImage(link, albumName: "Prism Setups").then((value) {
-                          analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
-                          toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setups!");
+                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
+                          if (value as bool) {
+                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                            toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setups!");
+                          } else {
+                            toasts.error("Couldn't download! Please Retry!");
+                          }
                           setState(() {
                             isLoading = false;
                           });
