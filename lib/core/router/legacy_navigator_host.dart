@@ -1,6 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/router/undefined_screen.dart';
 import 'package:Prism/routes/router.dart' as legacy_router;
-import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:flutter/cupertino.dart';
 
 class LegacyNavigatorHost extends StatefulWidget {

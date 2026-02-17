@@ -29,7 +29,6 @@ import 'package:Prism/payments/upgrade.dart';
 import 'package:Prism/routes/router.dart' as router;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/ui/theme/theme_bloc_utils.dart';
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';

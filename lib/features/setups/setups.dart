@@ -1,2 +1,14 @@
 export 'biz/bloc/setups_bloc.j.dart';
 export 'builder/setups_builder.dart';
+export 'views/pages/draft_setup_screen.dart';
+export 'views/pages/edit_setup_review_screen.dart';
+export 'views/pages/edit_wall_screen.dart';
+export 'views/pages/review_screen.dart';
+export 'views/pages/setup_guidelines_screen.dart';
+export 'views/pages/setup_screen.dart';
+export 'views/pages/upload_setup_screen.dart';
+export 'views/pages/upload_wall_screen.dart';
+export 'views/setups_bloc_adapter.dart';
+export 'views/widgets/arrow_animation.dart';
+export 'views/widgets/clock_setup_overlay.dart';
+export 'views/widgets/loading_setup_cards.dart';
