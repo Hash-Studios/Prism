@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
@@ -26,9 +26,11 @@ import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class ShareSetupViewScreen extends StatefulWidget {
   final List? arguments;
   const ShareSetupViewScreen({this.arguments});
@@ -39,7 +41,6 @@ class ShareSetupViewScreen extends StatefulWidget {
 
 class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    popNavStack();
     return true;
   }
 
@@ -404,10 +405,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                                   ),
                                                                   labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                                   onPressed: () {
-                                                                    context.pushNamedRoute(followerProfileRoute,
-                                                                        arguments: [
+                                                                    context.router.push(ProfileRoute(arguments: [
                                                                           sdata.setup!["email"],
-                                                                        ]);
+                                                                        ]));
                                                                   }),
                                                             ),
                                                             if (globals.verifiedUsers
@@ -462,12 +462,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                         logger.d("Id Not Found!");
                                                         launch(sdata.setup!["wallpaper_url"].toString());
                                                       } else {
-                                                        context.pushNamedRoute(shareRoute, arguments: [
+                                                        context.router.push(ShareWallpaperViewRoute(arguments: [
                                                           sdata.setup!["wall_id"].toString(),
                                                           sdata.setup!["wallpaper_provider"].toString(),
                                                           sdata.setup!["wallpaper_url"].toString(),
                                                           sdata.setup!["wallpaper_url"].toString(),
-                                                        ]);
+                                                        ]));
                                                       }
                                                     } else {
                                                       launch(sdata.setup!["wallpaper_url"][1].toString());
@@ -532,12 +532,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                             logger.d("Id Not Found!");
                                                             launch(sdata.setup!["wallpaper_url"].toString());
                                                           } else {
-                                                            context.pushNamedRoute(shareRoute, arguments: [
+                                                            context.router.push(ShareWallpaperViewRoute(arguments: [
                                                               sdata.setup!["wall_id"].toString(),
                                                               sdata.setup!["wallpaper_provider"].toString(),
                                                               sdata.setup!["wallpaper_url"].toString(),
                                                               sdata.setup!["wallpaper_url"].toString(),
-                                                            ]);
+                                                            ]));
                                                           }
                                                         } else {
                                                           launch(sdata.setup!["wallpaper_url"][1].toString());
@@ -635,12 +635,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                               logger.d("Id Not Found!");
                                                               launch(sdata.setup!["wallpaper_url"].toString());
                                                             } else {
-                                                              context.pushNamedRoute(shareRoute, arguments: [
+                                                              context.router.push(ShareWallpaperViewRoute(arguments: [
                                                                 sdata.setup!["wall_id"].toString(),
                                                                 sdata.setup!["wallpaper_provider"].toString(),
                                                                 sdata.setup!["wallpaper_url"].toString(),
                                                                 sdata.setup!["wallpaper_url"].toString(),
-                                                              ]);
+                                                              ]));
                                                             }
                                                           } else {
                                                             launch(sdata.setup!["wallpaper_url"][1].toString());
@@ -810,10 +810,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                         GestureDetector(
                                           onTap: () async {
                                             if (globals.prismUser.loggedIn == true) {
-                                              context.pushNamedRoute(premiumRoute);
+                                              context.router.push(const UpgradeRoute());
                                             } else {
                                               googleSignInPopUp(context, () {
-                                                context.pushNamedRoute(premiumRoute);
+                                                context.router.push(const UpgradeRoute());
                                               });
                                             }
                                             toasts.codeSend("This is a premium wallpaper.");
@@ -924,7 +924,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                             padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                             child: IconButton(
                               onPressed: () {
-                                popNavStack();
                                 Navigator.pop(context);
                               },
                               color: Theme.of(context).colorScheme.secondary,

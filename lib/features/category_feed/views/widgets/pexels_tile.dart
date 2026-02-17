@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/features/category_feed/views/widgets/pexels_grid.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -46,8 +47,7 @@ class PexelsTile extends StatelessWidget {
               onTap: () {
                 if (PData.wallsP == []) {
                 } else {
-                  context.pushNamedRoute(wallpaperRoute,
-                      arguments: [widget.provider, index, PData.wallsP[index].src!["small"]]);
+                  context.router.push(WallpaperRoute(arguments: [widget.provider, index, PData.wallsP[index].src!["small"]]));
                 }
               },
             ),

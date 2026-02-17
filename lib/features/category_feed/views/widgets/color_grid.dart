@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
@@ -184,8 +185,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                   onTap: () {
                                     if (PData.wallsC == []) {
                                     } else {
-                                      context.pushNamedRoute(wallpaperRoute,
-                                          arguments: [widget.provider, index, PData.wallsC[index].src!["small"]]);
+                                      context.router.push(WallpaperRoute(arguments: [widget.provider, index, PData.wallsC[index].src!["small"]]));
                                     }
                                   },
                                   onLongPress: () {

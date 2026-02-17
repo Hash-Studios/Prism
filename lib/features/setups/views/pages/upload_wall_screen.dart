@@ -4,7 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -18,7 +18,9 @@ import 'package:github/github.dart';
 import 'package:path/path.dart' as Path;
 import 'package:photo_view/photo_view.dart';
 import 'package:rive/rive.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class UploadWallScreen extends StatefulWidget {
   final List? arguments;
   const UploadWallScreen({this.arguments});
@@ -159,13 +161,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     } catch (e) {
       logger.d(e.toString());
       Navigator.pop(context);
-      popNavStack();
       toasts.error("Some uploading issue, please try again.");
     }
   }
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     deleteFile();
     return true;
   }
@@ -290,13 +290,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           disabledElevation: 0,
           onPressed: !isProcessing && !isUploading
               ? () async {
-                  popNavStack();
                   Navigator.pop(context, [wallpaperUrl, id]);
                   analytics
                       .logEvent(name: 'upload_wallpaper', parameters: {'id': id ?? '', 'link': wallpaperUrl ?? ''});
                   WallStore.createRecord(id, wallpaperProvider, wallpaperThumb, wallpaperUrl, wallpaperResolution,
                       wallpaperSize, wallpaperCategory, wallpaperDesc, fromSetupRoute ? "setup" : review);
-                  context.pushNamedRoute(reviewRoute);
+                  context.router.push(const ReviewRoute());
                 }
               : null,
           child: const Icon(

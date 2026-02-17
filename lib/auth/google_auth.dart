@@ -10,7 +10,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/payments/upgrade.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 const String USER_OLD_COLLECTION = FirebaseCollections.users;

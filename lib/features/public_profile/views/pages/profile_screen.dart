@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
@@ -20,6 +20,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -28,6 +29,7 @@ import 'package:rive/rive.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
 
+@RoutePage()
 class ProfileScreen extends StatefulWidget {
   final List? arguments;
   const ProfileScreen(this.arguments);
@@ -49,7 +51,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {
-          popNavStackIfPossible();
         }
       },
       child: (email == globals.prismUser.email)
@@ -212,7 +213,6 @@ class _ProfileChildState extends State<ProfileChild> {
                                     ),
                                     onPressed: () {
                                       Navigator.pop(context);
-                                      popNavStackIfPossible();
                                     }),
                               )
                             : Padding(
@@ -228,7 +228,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                       child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
                                     ),
                                     onPressed: () {
-                                      context.pushNamedRoute(editProfileRoute);
+                                      context.router.push(const EditProfilePanelRoute());
                                     }),
                               ),
                         actions: !widget.ownProfile! || globals.prismUser.loggedIn == false

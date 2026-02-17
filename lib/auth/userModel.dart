@@ -2,7 +2,7 @@ import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'userModel.g.dart';

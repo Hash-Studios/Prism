@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$CategoryFeedEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is CategoryFeedEvent);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is CategoryFeedEvent);
   }
 
   @override
@@ -30,7 +31,8 @@ mixin _$CategoryFeedEvent {
 
 /// @nodoc
 class $CategoryFeedEventCopyWith<$Res> {
-  $CategoryFeedEventCopyWith(CategoryFeedEvent _, $Res Function(CategoryFeedEvent) __);
+  $CategoryFeedEventCopyWith(
+      CategoryFeedEvent _, $Res Function(CategoryFeedEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [CategoryFeedEvent].
@@ -190,7 +192,8 @@ extension CategoryFeedEventPatterns on CategoryFeedEvent {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function() started,
-    required TResult Function(CategoryEntity category, bool refresh) categorySelected,
+    required TResult Function(CategoryEntity category, bool refresh)
+        categorySelected,
     required TResult Function() fetchMoreRequested,
     required TResult Function() refreshRequested,
   }) {
@@ -251,7 +254,8 @@ class _Started implements CategoryFeedEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _Started);
   }
 
   @override
@@ -284,7 +288,8 @@ class _CategorySelected implements CategoryFeedEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _CategorySelected &&
-            (identical(other.category, category) || other.category == category) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
             (identical(other.refresh, refresh) || other.refresh == refresh));
   }
 
@@ -298,15 +303,18 @@ class _CategorySelected implements CategoryFeedEvent {
 }
 
 /// @nodoc
-abstract mixin class _$CategorySelectedCopyWith<$Res> implements $CategoryFeedEventCopyWith<$Res> {
-  factory _$CategorySelectedCopyWith(_CategorySelected value, $Res Function(_CategorySelected) _then) =
+abstract mixin class _$CategorySelectedCopyWith<$Res>
+    implements $CategoryFeedEventCopyWith<$Res> {
+  factory _$CategorySelectedCopyWith(
+          _CategorySelected value, $Res Function(_CategorySelected) _then) =
       __$CategorySelectedCopyWithImpl;
   @useResult
   $Res call({CategoryEntity category, bool refresh});
 }
 
 /// @nodoc
-class __$CategorySelectedCopyWithImpl<$Res> implements _$CategorySelectedCopyWith<$Res> {
+class __$CategorySelectedCopyWithImpl<$Res>
+    implements _$CategorySelectedCopyWith<$Res> {
   __$CategorySelectedCopyWithImpl(this._self, this._then);
 
   final _CategorySelected _self;
@@ -339,7 +347,8 @@ class _FetchMoreRequested implements CategoryFeedEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _FetchMoreRequested);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _FetchMoreRequested);
   }
 
   @override
@@ -358,7 +367,8 @@ class _RefreshRequested implements CategoryFeedEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _RefreshRequested);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _RefreshRequested);
   }
 
   @override
@@ -387,7 +397,8 @@ mixin _$CategoryFeedState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $CategoryFeedStateCopyWith<CategoryFeedState> get copyWith =>
-      _$CategoryFeedStateCopyWithImpl<CategoryFeedState>(this as CategoryFeedState, _$identity);
+      _$CategoryFeedStateCopyWithImpl<CategoryFeedState>(
+          this as CategoryFeedState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -395,19 +406,33 @@ mixin _$CategoryFeedState {
         (other.runtimeType == runtimeType &&
             other is CategoryFeedState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
-            const DeepCollectionEquality().equals(other.categories, categories) &&
-            (identical(other.selectedCategory, selectedCategory) || other.selectedCategory == selectedCategory) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
+            const DeepCollectionEquality()
+                .equals(other.categories, categories) &&
+            (identical(other.selectedCategory, selectedCategory) ||
+                other.selectedCategory == selectedCategory) &&
             const DeepCollectionEquality().equals(other.items, items) &&
             (identical(other.hasMore, hasMore) || other.hasMore == hasMore) &&
-            (identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor) &&
-            (identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore) &&
+            (identical(other.nextCursor, nextCursor) ||
+                other.nextCursor == nextCursor) &&
+            (identical(other.isFetchingMore, isFetchingMore) ||
+                other.isFetchingMore == isFetchingMore) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, const DeepCollectionEquality().hash(categories),
-      selectedCategory, const DeepCollectionEquality().hash(items), hasMore, nextCursor, isFetchingMore, failure);
+  int get hashCode => Object.hash(
+      runtimeType,
+      status,
+      actionStatus,
+      const DeepCollectionEquality().hash(categories),
+      selectedCategory,
+      const DeepCollectionEquality().hash(items),
+      hasMore,
+      nextCursor,
+      isFetchingMore,
+      failure);
 
   @override
   String toString() {
@@ -417,7 +442,8 @@ mixin _$CategoryFeedState {
 
 /// @nodoc
 abstract mixin class $CategoryFeedStateCopyWith<$Res> {
-  factory $CategoryFeedStateCopyWith(CategoryFeedState value, $Res Function(CategoryFeedState) _then) =
+  factory $CategoryFeedStateCopyWith(
+          CategoryFeedState value, $Res Function(CategoryFeedState) _then) =
       _$CategoryFeedStateCopyWithImpl;
   @useResult
   $Res call(
@@ -433,7 +459,8 @@ abstract mixin class $CategoryFeedStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$CategoryFeedStateCopyWithImpl<$Res> implements $CategoryFeedStateCopyWith<$Res> {
+class _$CategoryFeedStateCopyWithImpl<$Res>
+    implements $CategoryFeedStateCopyWith<$Res> {
   _$CategoryFeedStateCopyWithImpl(this._self, this._then);
 
   final CategoryFeedState _self;
@@ -604,8 +631,16 @@ extension CategoryFeedStatePatterns on CategoryFeedState {
     final _that = this;
     switch (_that) {
       case _CategoryFeedState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.categories, _that.selectedCategory, _that.items,
-            _that.hasMore, _that.nextCursor, _that.isFetchingMore, _that.failure);
+        return $default(
+            _that.status,
+            _that.actionStatus,
+            _that.categories,
+            _that.selectedCategory,
+            _that.items,
+            _that.hasMore,
+            _that.nextCursor,
+            _that.isFetchingMore,
+            _that.failure);
       case _:
         return orElse();
     }
@@ -641,8 +676,16 @@ extension CategoryFeedStatePatterns on CategoryFeedState {
     final _that = this;
     switch (_that) {
       case _CategoryFeedState():
-        return $default(_that.status, _that.actionStatus, _that.categories, _that.selectedCategory, _that.items,
-            _that.hasMore, _that.nextCursor, _that.isFetchingMore, _that.failure);
+        return $default(
+            _that.status,
+            _that.actionStatus,
+            _that.categories,
+            _that.selectedCategory,
+            _that.items,
+            _that.hasMore,
+            _that.nextCursor,
+            _that.isFetchingMore,
+            _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -677,8 +720,16 @@ extension CategoryFeedStatePatterns on CategoryFeedState {
     final _that = this;
     switch (_that) {
       case _CategoryFeedState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.categories, _that.selectedCategory, _that.items,
-            _that.hasMore, _that.nextCursor, _that.isFetchingMore, _that.failure);
+        return $default(
+            _that.status,
+            _that.actionStatus,
+            _that.categories,
+            _that.selectedCategory,
+            _that.items,
+            _that.hasMore,
+            _that.nextCursor,
+            _that.isFetchingMore,
+            _that.failure);
       case _:
         return null;
     }
@@ -746,19 +797,33 @@ class _CategoryFeedState implements CategoryFeedState {
         (other.runtimeType == runtimeType &&
             other is _CategoryFeedState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
-            const DeepCollectionEquality().equals(other._categories, _categories) &&
-            (identical(other.selectedCategory, selectedCategory) || other.selectedCategory == selectedCategory) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
+            const DeepCollectionEquality()
+                .equals(other._categories, _categories) &&
+            (identical(other.selectedCategory, selectedCategory) ||
+                other.selectedCategory == selectedCategory) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.hasMore, hasMore) || other.hasMore == hasMore) &&
-            (identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor) &&
-            (identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore) &&
+            (identical(other.nextCursor, nextCursor) ||
+                other.nextCursor == nextCursor) &&
+            (identical(other.isFetchingMore, isFetchingMore) ||
+                other.isFetchingMore == isFetchingMore) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, const DeepCollectionEquality().hash(_categories),
-      selectedCategory, const DeepCollectionEquality().hash(_items), hasMore, nextCursor, isFetchingMore, failure);
+  int get hashCode => Object.hash(
+      runtimeType,
+      status,
+      actionStatus,
+      const DeepCollectionEquality().hash(_categories),
+      selectedCategory,
+      const DeepCollectionEquality().hash(_items),
+      hasMore,
+      nextCursor,
+      isFetchingMore,
+      failure);
 
   @override
   String toString() {
@@ -767,8 +832,10 @@ class _CategoryFeedState implements CategoryFeedState {
 }
 
 /// @nodoc
-abstract mixin class _$CategoryFeedStateCopyWith<$Res> implements $CategoryFeedStateCopyWith<$Res> {
-  factory _$CategoryFeedStateCopyWith(_CategoryFeedState value, $Res Function(_CategoryFeedState) _then) =
+abstract mixin class _$CategoryFeedStateCopyWith<$Res>
+    implements $CategoryFeedStateCopyWith<$Res> {
+  factory _$CategoryFeedStateCopyWith(
+          _CategoryFeedState value, $Res Function(_CategoryFeedState) _then) =
       __$CategoryFeedStateCopyWithImpl;
   @override
   @useResult
@@ -785,7 +852,8 @@ abstract mixin class _$CategoryFeedStateCopyWith<$Res> implements $CategoryFeedS
 }
 
 /// @nodoc
-class __$CategoryFeedStateCopyWithImpl<$Res> implements _$CategoryFeedStateCopyWith<$Res> {
+class __$CategoryFeedStateCopyWithImpl<$Res>
+    implements _$CategoryFeedStateCopyWith<$Res> {
   __$CategoryFeedStateCopyWithImpl(this._self, this._then);
 
   final _CategoryFeedState _self;

@@ -31,7 +31,7 @@ class PrismUsersV2Adapter extends TypeAdapter<PrismUsersV2> {
       loggedIn: fields[11] as bool,
       badges: (fields[12] as List).cast<Badge>(),
       subPrisms: (fields[13] as List).cast<dynamic>(),
-      coins: fields[14] as int,
+      coins: (fields[14] as num).toInt(),
       transactions: (fields[15] as List).cast<PrismTransaction>(),
       name: fields[16] as String,
       coverPhoto: fields[17] as String?,
@@ -86,39 +86,42 @@ class PrismUsersV2Adapter extends TypeAdapter<PrismUsersV2> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is PrismUsersV2Adapter && runtimeType == other.runtimeType && typeId == other.typeId;
+      other is PrismUsersV2Adapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
 }
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-PrismUsersV2 _$PrismUsersV2FromJson(Map<String, dynamic> json) {
-  return PrismUsersV2(
-    username: json['username'] as String,
-    email: json['email'] as String,
-    id: json['id'] as String,
-    createdAt: json['createdAt'] as String,
-    premium: json['premium'] as bool,
-    lastLoginAt: json['lastLoginAt'] as String,
-    links: json['links'] as Map<String, dynamic>,
-    followers: json['followers'] as List<dynamic>,
-    following: json['following'] as List<dynamic>,
-    profilePhoto: json['profilePhoto'] as String,
-    bio: json['bio'] as String,
-    loggedIn: json['loggedIn'] as bool,
-    badges: (json['badges'] as List<dynamic>).map((e) => Badge.fromJson(e as Map<String, dynamic>)).toList(),
-    subPrisms: json['subPrisms'] as List<dynamic>,
-    coins: json['coins'] as int,
-    transactions: (json['transactions'] as List<dynamic>)
-        .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    name: json['name'] as String,
-    coverPhoto: json['coverPhoto'] as String?,
-  );
-}
+PrismUsersV2 _$PrismUsersV2FromJson(Map<String, dynamic> json) => PrismUsersV2(
+      username: json['username'] as String,
+      email: json['email'] as String,
+      id: json['id'] as String,
+      createdAt: json['createdAt'] as String,
+      premium: json['premium'] as bool,
+      lastLoginAt: json['lastLoginAt'] as String,
+      links: json['links'] as Map<String, dynamic>,
+      followers: json['followers'] as List<dynamic>,
+      following: json['following'] as List<dynamic>,
+      profilePhoto: json['profilePhoto'] as String,
+      bio: json['bio'] as String,
+      loggedIn: json['loggedIn'] as bool,
+      badges: (json['badges'] as List<dynamic>)
+          .map((e) => Badge.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      subPrisms: json['subPrisms'] as List<dynamic>,
+      coins: (json['coins'] as num).toInt(),
+      transactions: (json['transactions'] as List<dynamic>)
+          .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      name: json['name'] as String,
+      coverPhoto: json['coverPhoto'] as String?,
+    );
 
-Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) => <String, dynamic>{
+Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) =>
+    <String, dynamic>{
       'username': instance.username,
       'email': instance.email,
       'id': instance.id,

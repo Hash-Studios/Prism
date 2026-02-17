@@ -4,7 +4,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: FavouriteWallsRepository)

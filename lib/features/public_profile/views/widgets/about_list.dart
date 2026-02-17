@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +19,7 @@ class AboutList extends StatelessWidget {
         ),
         trailing: const Icon(JamIcons.chevron_right),
         onTap: () {
-          context.pushNamedRoute(aboutRoute);
+          context.router.push(const AboutRoute());
         });
   }
 }

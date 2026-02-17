@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
@@ -114,8 +115,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                               onTap: () {
                                 if (PData.wallsP == []) {
                                 } else {
-                                  context.pushNamedRoute(wallpaperRoute,
-                                      arguments: [widget.provider, i, PData.wallsP[i].src!["small"]]);
+                                  context.router.push(WallpaperRoute(arguments: [widget.provider, i, PData.wallsP[i].src!["small"]]));
                                 }
                               },
                               child: PData.wallsP.isEmpty

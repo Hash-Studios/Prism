@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$ThemeModeEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is ThemeModeEvent);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is ThemeModeEvent);
   }
 
   @override
@@ -215,7 +216,8 @@ class _Started implements ThemeModeEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _Started);
   }
 
   @override
@@ -238,7 +240,8 @@ class _ModeChanged implements ThemeModeEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$ModeChangedCopyWith<_ModeChanged> get copyWith => __$ModeChangedCopyWithImpl<_ModeChanged>(this, _$identity);
+  _$ModeChangedCopyWith<_ModeChanged> get copyWith =>
+      __$ModeChangedCopyWithImpl<_ModeChanged>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -258,8 +261,11 @@ class _ModeChanged implements ThemeModeEvent {
 }
 
 /// @nodoc
-abstract mixin class _$ModeChangedCopyWith<$Res> implements $ThemeModeEventCopyWith<$Res> {
-  factory _$ModeChangedCopyWith(_ModeChanged value, $Res Function(_ModeChanged) _then) = __$ModeChangedCopyWithImpl;
+abstract mixin class _$ModeChangedCopyWith<$Res>
+    implements $ThemeModeEventCopyWith<$Res> {
+  factory _$ModeChangedCopyWith(
+          _ModeChanged value, $Res Function(_ModeChanged) _then) =
+      __$ModeChangedCopyWithImpl;
   @useResult
   $Res call({String mode});
 }
@@ -298,7 +304,8 @@ mixin _$ThemeModeState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $ThemeModeStateCopyWith<ThemeModeState> get copyWith =>
-      _$ThemeModeStateCopyWithImpl<ThemeModeState>(this as ThemeModeState, _$identity);
+      _$ThemeModeStateCopyWithImpl<ThemeModeState>(
+          this as ThemeModeState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -306,13 +313,15 @@ mixin _$ThemeModeState {
         (other.runtimeType == runtimeType &&
             other is ThemeModeState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.mode, mode) || other.mode == mode) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, mode, failure);
+  int get hashCode =>
+      Object.hash(runtimeType, status, actionStatus, mode, failure);
 
   @override
   String toString() {
@@ -322,14 +331,20 @@ mixin _$ThemeModeState {
 
 /// @nodoc
 abstract mixin class $ThemeModeStateCopyWith<$Res> {
-  factory $ThemeModeStateCopyWith(ThemeModeState value, $Res Function(ThemeModeState) _then) =
+  factory $ThemeModeStateCopyWith(
+          ThemeModeState value, $Res Function(ThemeModeState) _then) =
       _$ThemeModeStateCopyWithImpl;
   @useResult
-  $Res call({LoadStatus status, ActionStatus actionStatus, ThemeModeEntity mode, Failure? failure});
+  $Res call(
+      {LoadStatus status,
+      ActionStatus actionStatus,
+      ThemeModeEntity mode,
+      Failure? failure});
 }
 
 /// @nodoc
-class _$ThemeModeStateCopyWithImpl<$Res> implements $ThemeModeStateCopyWith<$Res> {
+class _$ThemeModeStateCopyWithImpl<$Res>
+    implements $ThemeModeStateCopyWith<$Res> {
   _$ThemeModeStateCopyWithImpl(this._self, this._then);
 
   final ThemeModeState _self;
@@ -459,13 +474,16 @@ extension ThemeModeStatePatterns on ThemeModeState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, ThemeModeEntity mode, Failure? failure)? $default, {
+    TResult Function(LoadStatus status, ActionStatus actionStatus,
+            ThemeModeEntity mode, Failure? failure)?
+        $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _ThemeModeState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.mode, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.mode, _that.failure);
       case _:
         return orElse();
     }
@@ -486,12 +504,15 @@ extension ThemeModeStatePatterns on ThemeModeState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, ThemeModeEntity mode, Failure? failure) $default,
+    TResult Function(LoadStatus status, ActionStatus actionStatus,
+            ThemeModeEntity mode, Failure? failure)
+        $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ThemeModeState():
-        return $default(_that.status, _that.actionStatus, _that.mode, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.mode, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -511,12 +532,15 @@ extension ThemeModeStatePatterns on ThemeModeState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(LoadStatus status, ActionStatus actionStatus, ThemeModeEntity mode, Failure? failure)? $default,
+    TResult? Function(LoadStatus status, ActionStatus actionStatus,
+            ThemeModeEntity mode, Failure? failure)?
+        $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ThemeModeState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.mode, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.mode, _that.failure);
       case _:
         return null;
     }
@@ -526,7 +550,11 @@ extension ThemeModeStatePatterns on ThemeModeState {
 /// @nodoc
 
 class _ThemeModeState implements ThemeModeState {
-  const _ThemeModeState({required this.status, required this.actionStatus, required this.mode, this.failure});
+  const _ThemeModeState(
+      {required this.status,
+      required this.actionStatus,
+      required this.mode,
+      this.failure});
 
   @override
   final LoadStatus status;
@@ -551,13 +579,15 @@ class _ThemeModeState implements ThemeModeState {
         (other.runtimeType == runtimeType &&
             other is _ThemeModeState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.mode, mode) || other.mode == mode) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, mode, failure);
+  int get hashCode =>
+      Object.hash(runtimeType, status, actionStatus, mode, failure);
 
   @override
   String toString() {
@@ -566,16 +596,23 @@ class _ThemeModeState implements ThemeModeState {
 }
 
 /// @nodoc
-abstract mixin class _$ThemeModeStateCopyWith<$Res> implements $ThemeModeStateCopyWith<$Res> {
-  factory _$ThemeModeStateCopyWith(_ThemeModeState value, $Res Function(_ThemeModeState) _then) =
+abstract mixin class _$ThemeModeStateCopyWith<$Res>
+    implements $ThemeModeStateCopyWith<$Res> {
+  factory _$ThemeModeStateCopyWith(
+          _ThemeModeState value, $Res Function(_ThemeModeState) _then) =
       __$ThemeModeStateCopyWithImpl;
   @override
   @useResult
-  $Res call({LoadStatus status, ActionStatus actionStatus, ThemeModeEntity mode, Failure? failure});
+  $Res call(
+      {LoadStatus status,
+      ActionStatus actionStatus,
+      ThemeModeEntity mode,
+      Failure? failure});
 }
 
 /// @nodoc
-class __$ThemeModeStateCopyWithImpl<$Res> implements _$ThemeModeStateCopyWith<$Res> {
+class __$ThemeModeStateCopyWithImpl<$Res>
+    implements _$ThemeModeStateCopyWith<$Res> {
   __$ThemeModeStateCopyWithImpl(this._self, this._then);
 
   final _ThemeModeState _self;

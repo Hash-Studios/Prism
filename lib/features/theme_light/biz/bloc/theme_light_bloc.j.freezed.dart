@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$ThemeLightEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is ThemeLightEvent);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is ThemeLightEvent);
   }
 
   @override
@@ -30,7 +31,8 @@ mixin _$ThemeLightEvent {
 
 /// @nodoc
 class $ThemeLightEventCopyWith<$Res> {
-  $ThemeLightEventCopyWith(ThemeLightEvent _, $Res Function(ThemeLightEvent) __);
+  $ThemeLightEventCopyWith(
+      ThemeLightEvent _, $Res Function(ThemeLightEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [ThemeLightEvent].
@@ -251,7 +253,8 @@ class _Started implements ThemeLightEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _Started);
   }
 
   @override
@@ -270,7 +273,8 @@ class _Reloaded implements ThemeLightEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _Reloaded);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _Reloaded);
   }
 
   @override
@@ -293,7 +297,8 @@ class _ThemeChanged implements ThemeLightEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$ThemeChangedCopyWith<_ThemeChanged> get copyWith => __$ThemeChangedCopyWithImpl<_ThemeChanged>(this, _$identity);
+  _$ThemeChangedCopyWith<_ThemeChanged> get copyWith =>
+      __$ThemeChangedCopyWithImpl<_ThemeChanged>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -313,14 +318,18 @@ class _ThemeChanged implements ThemeLightEvent {
 }
 
 /// @nodoc
-abstract mixin class _$ThemeChangedCopyWith<$Res> implements $ThemeLightEventCopyWith<$Res> {
-  factory _$ThemeChangedCopyWith(_ThemeChanged value, $Res Function(_ThemeChanged) _then) = __$ThemeChangedCopyWithImpl;
+abstract mixin class _$ThemeChangedCopyWith<$Res>
+    implements $ThemeLightEventCopyWith<$Res> {
+  factory _$ThemeChangedCopyWith(
+          _ThemeChanged value, $Res Function(_ThemeChanged) _then) =
+      __$ThemeChangedCopyWithImpl;
   @useResult
   $Res call({String themeId});
 }
 
 /// @nodoc
-class __$ThemeChangedCopyWithImpl<$Res> implements _$ThemeChangedCopyWith<$Res> {
+class __$ThemeChangedCopyWithImpl<$Res>
+    implements _$ThemeChangedCopyWith<$Res> {
   __$ThemeChangedCopyWithImpl(this._self, this._then);
 
   final _ThemeChanged _self;
@@ -360,7 +369,8 @@ class _AccentChanged implements ThemeLightEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _AccentChanged &&
-            (identical(other.accentColorValue, accentColorValue) || other.accentColorValue == accentColorValue));
+            (identical(other.accentColorValue, accentColorValue) ||
+                other.accentColorValue == accentColorValue));
   }
 
   @override
@@ -373,15 +383,18 @@ class _AccentChanged implements ThemeLightEvent {
 }
 
 /// @nodoc
-abstract mixin class _$AccentChangedCopyWith<$Res> implements $ThemeLightEventCopyWith<$Res> {
-  factory _$AccentChangedCopyWith(_AccentChanged value, $Res Function(_AccentChanged) _then) =
+abstract mixin class _$AccentChangedCopyWith<$Res>
+    implements $ThemeLightEventCopyWith<$Res> {
+  factory _$AccentChangedCopyWith(
+          _AccentChanged value, $Res Function(_AccentChanged) _then) =
       __$AccentChangedCopyWithImpl;
   @useResult
   $Res call({int accentColorValue});
 }
 
 /// @nodoc
-class __$AccentChangedCopyWithImpl<$Res> implements _$AccentChangedCopyWith<$Res> {
+class __$AccentChangedCopyWithImpl<$Res>
+    implements _$AccentChangedCopyWith<$Res> {
   __$AccentChangedCopyWithImpl(this._self, this._then);
 
   final _AccentChanged _self;
@@ -414,7 +427,8 @@ mixin _$ThemeLightState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $ThemeLightStateCopyWith<ThemeLightState> get copyWith =>
-      _$ThemeLightStateCopyWithImpl<ThemeLightState>(this as ThemeLightState, _$identity);
+      _$ThemeLightStateCopyWithImpl<ThemeLightState>(
+          this as ThemeLightState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -422,13 +436,15 @@ mixin _$ThemeLightState {
         (other.runtimeType == runtimeType &&
             other is ThemeLightState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.theme, theme) || other.theme == theme) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, theme, failure);
+  int get hashCode =>
+      Object.hash(runtimeType, status, actionStatus, theme, failure);
 
   @override
   String toString() {
@@ -438,14 +454,20 @@ mixin _$ThemeLightState {
 
 /// @nodoc
 abstract mixin class $ThemeLightStateCopyWith<$Res> {
-  factory $ThemeLightStateCopyWith(ThemeLightState value, $Res Function(ThemeLightState) _then) =
+  factory $ThemeLightStateCopyWith(
+          ThemeLightState value, $Res Function(ThemeLightState) _then) =
       _$ThemeLightStateCopyWithImpl;
   @useResult
-  $Res call({LoadStatus status, ActionStatus actionStatus, ThemeLightEntity theme, Failure? failure});
+  $Res call(
+      {LoadStatus status,
+      ActionStatus actionStatus,
+      ThemeLightEntity theme,
+      Failure? failure});
 }
 
 /// @nodoc
-class _$ThemeLightStateCopyWithImpl<$Res> implements $ThemeLightStateCopyWith<$Res> {
+class _$ThemeLightStateCopyWithImpl<$Res>
+    implements $ThemeLightStateCopyWith<$Res> {
   _$ThemeLightStateCopyWithImpl(this._self, this._then);
 
   final ThemeLightState _self;
@@ -575,14 +597,16 @@ extension ThemeLightStatePatterns on ThemeLightState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, ThemeLightEntity theme, Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus,
+            ThemeLightEntity theme, Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _ThemeLightState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.theme, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.theme, _that.failure);
       case _:
         return orElse();
     }
@@ -603,12 +627,15 @@ extension ThemeLightStatePatterns on ThemeLightState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, ThemeLightEntity theme, Failure? failure) $default,
+    TResult Function(LoadStatus status, ActionStatus actionStatus,
+            ThemeLightEntity theme, Failure? failure)
+        $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ThemeLightState():
-        return $default(_that.status, _that.actionStatus, _that.theme, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.theme, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -628,12 +655,15 @@ extension ThemeLightStatePatterns on ThemeLightState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(LoadStatus status, ActionStatus actionStatus, ThemeLightEntity theme, Failure? failure)? $default,
+    TResult? Function(LoadStatus status, ActionStatus actionStatus,
+            ThemeLightEntity theme, Failure? failure)?
+        $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ThemeLightState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.theme, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.theme, _that.failure);
       case _:
         return null;
     }
@@ -643,7 +673,11 @@ extension ThemeLightStatePatterns on ThemeLightState {
 /// @nodoc
 
 class _ThemeLightState implements ThemeLightState {
-  const _ThemeLightState({required this.status, required this.actionStatus, required this.theme, this.failure});
+  const _ThemeLightState(
+      {required this.status,
+      required this.actionStatus,
+      required this.theme,
+      this.failure});
 
   @override
   final LoadStatus status;
@@ -668,13 +702,15 @@ class _ThemeLightState implements ThemeLightState {
         (other.runtimeType == runtimeType &&
             other is _ThemeLightState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.theme, theme) || other.theme == theme) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, theme, failure);
+  int get hashCode =>
+      Object.hash(runtimeType, status, actionStatus, theme, failure);
 
   @override
   String toString() {
@@ -683,16 +719,23 @@ class _ThemeLightState implements ThemeLightState {
 }
 
 /// @nodoc
-abstract mixin class _$ThemeLightStateCopyWith<$Res> implements $ThemeLightStateCopyWith<$Res> {
-  factory _$ThemeLightStateCopyWith(_ThemeLightState value, $Res Function(_ThemeLightState) _then) =
+abstract mixin class _$ThemeLightStateCopyWith<$Res>
+    implements $ThemeLightStateCopyWith<$Res> {
+  factory _$ThemeLightStateCopyWith(
+          _ThemeLightState value, $Res Function(_ThemeLightState) _then) =
       __$ThemeLightStateCopyWithImpl;
   @override
   @useResult
-  $Res call({LoadStatus status, ActionStatus actionStatus, ThemeLightEntity theme, Failure? failure});
+  $Res call(
+      {LoadStatus status,
+      ActionStatus actionStatus,
+      ThemeLightEntity theme,
+      Failure? failure});
 }
 
 /// @nodoc
-class __$ThemeLightStateCopyWithImpl<$Res> implements _$ThemeLightStateCopyWith<$Res> {
+class __$ThemeLightStateCopyWithImpl<$Res>
+    implements _$ThemeLightStateCopyWith<$Res> {
   __$ThemeLightStateCopyWithImpl(this._self, this._then);
 
   final _ThemeLightState _self;

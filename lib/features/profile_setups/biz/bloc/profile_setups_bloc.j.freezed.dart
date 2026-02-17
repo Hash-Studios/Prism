@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$ProfileSetupsEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is ProfileSetupsEvent);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is ProfileSetupsEvent);
   }
 
   @override
@@ -30,7 +31,8 @@ mixin _$ProfileSetupsEvent {
 
 /// @nodoc
 class $ProfileSetupsEventCopyWith<$Res> {
-  $ProfileSetupsEventCopyWith(ProfileSetupsEvent _, $Res Function(ProfileSetupsEvent) __);
+  $ProfileSetupsEventCopyWith(
+      ProfileSetupsEvent _, $Res Function(ProfileSetupsEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [ProfileSetupsEvent].
@@ -237,7 +239,8 @@ class _Started implements ProfileSetupsEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(this, _$identity);
+  _$StartedCopyWith<_Started> get copyWith =>
+      __$StartedCopyWithImpl<_Started>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -257,8 +260,10 @@ class _Started implements ProfileSetupsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$StartedCopyWith<$Res> implements $ProfileSetupsEventCopyWith<$Res> {
-  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
+abstract mixin class _$StartedCopyWith<$Res>
+    implements $ProfileSetupsEventCopyWith<$Res> {
+  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) =
+      __$StartedCopyWithImpl;
   @useResult
   $Res call({String email});
 }
@@ -292,7 +297,8 @@ class _RefreshRequested implements ProfileSetupsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _RefreshRequested);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _RefreshRequested);
   }
 
   @override
@@ -311,7 +317,8 @@ class _FetchMoreRequested implements ProfileSetupsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _FetchMoreRequested);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _FetchMoreRequested);
   }
 
   @override
@@ -339,7 +346,8 @@ mixin _$ProfileSetupsState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $ProfileSetupsStateCopyWith<ProfileSetupsState> get copyWith =>
-      _$ProfileSetupsStateCopyWithImpl<ProfileSetupsState>(this as ProfileSetupsState, _$identity);
+      _$ProfileSetupsStateCopyWithImpl<ProfileSetupsState>(
+          this as ProfileSetupsState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -347,18 +355,29 @@ mixin _$ProfileSetupsState {
         (other.runtimeType == runtimeType &&
             other is ProfileSetupsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.email, email) || other.email == email) &&
             const DeepCollectionEquality().equals(other.items, items) &&
             (identical(other.hasMore, hasMore) || other.hasMore == hasMore) &&
-            (identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor) &&
-            (identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore) &&
+            (identical(other.nextCursor, nextCursor) ||
+                other.nextCursor == nextCursor) &&
+            (identical(other.isFetchingMore, isFetchingMore) ||
+                other.isFetchingMore == isFetchingMore) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, email, const DeepCollectionEquality().hash(items),
-      hasMore, nextCursor, isFetchingMore, failure);
+  int get hashCode => Object.hash(
+      runtimeType,
+      status,
+      actionStatus,
+      email,
+      const DeepCollectionEquality().hash(items),
+      hasMore,
+      nextCursor,
+      isFetchingMore,
+      failure);
 
   @override
   String toString() {
@@ -368,7 +387,8 @@ mixin _$ProfileSetupsState {
 
 /// @nodoc
 abstract mixin class $ProfileSetupsStateCopyWith<$Res> {
-  factory $ProfileSetupsStateCopyWith(ProfileSetupsState value, $Res Function(ProfileSetupsState) _then) =
+  factory $ProfileSetupsStateCopyWith(
+          ProfileSetupsState value, $Res Function(ProfileSetupsState) _then) =
       _$ProfileSetupsStateCopyWithImpl;
   @useResult
   $Res call(
@@ -383,7 +403,8 @@ abstract mixin class $ProfileSetupsStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$ProfileSetupsStateCopyWithImpl<$Res> implements $ProfileSetupsStateCopyWith<$Res> {
+class _$ProfileSetupsStateCopyWithImpl<$Res>
+    implements $ProfileSetupsStateCopyWith<$Res> {
   _$ProfileSetupsStateCopyWithImpl(this._self, this._then);
 
   final ProfileSetupsState _self;
@@ -533,16 +554,30 @@ extension ProfileSetupsStatePatterns on ProfileSetupsState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, String email, List<ProfileSetupEntity> items,
-            bool hasMore, String? nextCursor, bool isFetchingMore, Failure? failure)?
+    TResult Function(
+            LoadStatus status,
+            ActionStatus actionStatus,
+            String email,
+            List<ProfileSetupEntity> items,
+            bool hasMore,
+            String? nextCursor,
+            bool isFetchingMore,
+            Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _ProfileSetupsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.email, _that.items, _that.hasMore, _that.nextCursor,
-            _that.isFetchingMore, _that.failure);
+        return $default(
+            _that.status,
+            _that.actionStatus,
+            _that.email,
+            _that.items,
+            _that.hasMore,
+            _that.nextCursor,
+            _that.isFetchingMore,
+            _that.failure);
       case _:
         return orElse();
     }
@@ -563,15 +598,29 @@ extension ProfileSetupsStatePatterns on ProfileSetupsState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, String email, List<ProfileSetupEntity> items,
-            bool hasMore, String? nextCursor, bool isFetchingMore, Failure? failure)
+    TResult Function(
+            LoadStatus status,
+            ActionStatus actionStatus,
+            String email,
+            List<ProfileSetupEntity> items,
+            bool hasMore,
+            String? nextCursor,
+            bool isFetchingMore,
+            Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ProfileSetupsState():
-        return $default(_that.status, _that.actionStatus, _that.email, _that.items, _that.hasMore, _that.nextCursor,
-            _that.isFetchingMore, _that.failure);
+        return $default(
+            _that.status,
+            _that.actionStatus,
+            _that.email,
+            _that.items,
+            _that.hasMore,
+            _that.nextCursor,
+            _that.isFetchingMore,
+            _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -591,15 +640,29 @@ extension ProfileSetupsStatePatterns on ProfileSetupsState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(LoadStatus status, ActionStatus actionStatus, String email, List<ProfileSetupEntity> items,
-            bool hasMore, String? nextCursor, bool isFetchingMore, Failure? failure)?
+    TResult? Function(
+            LoadStatus status,
+            ActionStatus actionStatus,
+            String email,
+            List<ProfileSetupEntity> items,
+            bool hasMore,
+            String? nextCursor,
+            bool isFetchingMore,
+            Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ProfileSetupsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.email, _that.items, _that.hasMore, _that.nextCursor,
-            _that.isFetchingMore, _that.failure);
+        return $default(
+            _that.status,
+            _that.actionStatus,
+            _that.email,
+            _that.items,
+            _that.hasMore,
+            _that.nextCursor,
+            _that.isFetchingMore,
+            _that.failure);
       case _:
         return null;
     }
@@ -657,18 +720,29 @@ class _ProfileSetupsState implements ProfileSetupsState {
         (other.runtimeType == runtimeType &&
             other is _ProfileSetupsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.email, email) || other.email == email) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.hasMore, hasMore) || other.hasMore == hasMore) &&
-            (identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor) &&
-            (identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore) &&
+            (identical(other.nextCursor, nextCursor) ||
+                other.nextCursor == nextCursor) &&
+            (identical(other.isFetchingMore, isFetchingMore) ||
+                other.isFetchingMore == isFetchingMore) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, email, const DeepCollectionEquality().hash(_items),
-      hasMore, nextCursor, isFetchingMore, failure);
+  int get hashCode => Object.hash(
+      runtimeType,
+      status,
+      actionStatus,
+      email,
+      const DeepCollectionEquality().hash(_items),
+      hasMore,
+      nextCursor,
+      isFetchingMore,
+      failure);
 
   @override
   String toString() {
@@ -677,8 +751,10 @@ class _ProfileSetupsState implements ProfileSetupsState {
 }
 
 /// @nodoc
-abstract mixin class _$ProfileSetupsStateCopyWith<$Res> implements $ProfileSetupsStateCopyWith<$Res> {
-  factory _$ProfileSetupsStateCopyWith(_ProfileSetupsState value, $Res Function(_ProfileSetupsState) _then) =
+abstract mixin class _$ProfileSetupsStateCopyWith<$Res>
+    implements $ProfileSetupsStateCopyWith<$Res> {
+  factory _$ProfileSetupsStateCopyWith(
+          _ProfileSetupsState value, $Res Function(_ProfileSetupsState) _then) =
       __$ProfileSetupsStateCopyWithImpl;
   @override
   @useResult
@@ -694,7 +770,8 @@ abstract mixin class _$ProfileSetupsStateCopyWith<$Res> implements $ProfileSetup
 }
 
 /// @nodoc
-class __$ProfileSetupsStateCopyWithImpl<$Res> implements _$ProfileSetupsStateCopyWith<$Res> {
+class __$ProfileSetupsStateCopyWithImpl<$Res>
+    implements _$ProfileSetupsStateCopyWith<$Res> {
   __$ProfileSetupsStateCopyWithImpl(this._self, this._then);
 
   final _ProfileSetupsState _self;

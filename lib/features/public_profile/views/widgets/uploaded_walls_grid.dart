@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
@@ -236,10 +237,10 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                                   onTap: () {
                                     if (context.profileWallsSnapshots(listen: false) == []) {
                                     } else {
-                                      context.pushNamedRoute(profileWallViewRoute, arguments: [
+                                      context.router.push(ProfileWallViewRoute(arguments: [
                                         index,
                                         context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_thumb"],
-                                      ]);
+                                      ]));
                                     }
                                   },
                                 ),

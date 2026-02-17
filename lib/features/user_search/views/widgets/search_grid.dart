@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/focussedMenu/searchFocusedMenu.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pData;
@@ -241,21 +242,21 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                     if (widget.selectedProvider == "WallHaven") {
                                       if (wData.wallsS == []) {
                                       } else {
-                                        context.pushNamedRoute(wallpaperRoute, arguments: [
+                                        context.router.push(WallpaperRoute(arguments: [
                                           widget.query,
                                           index,
                                           wData.wallsS[index].thumbs!["small"],
-                                        ]);
+                                        ]));
                                       }
                                     } else if (widget.selectedProvider == "Pexels") {
                                       if (pData.wallsPS == []) {
                                       } else {
-                                        context.pushNamedRoute(searchWallpaperRoute, arguments: [
+                                        context.router.push(SearchWallpaperRoute(arguments: [
                                           widget.selectedProvider,
                                           widget.query,
                                           index,
                                           pData.wallsPS[index].src!["medium"],
-                                        ]);
+                                        ]));
                                       }
                                     }
                                   },

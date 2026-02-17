@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -22,7 +22,9 @@ import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class UserProfileWallViewScreen extends StatefulWidget {
   final List? arguments;
   const UserProfileWallViewScreen({this.arguments});
@@ -33,7 +35,6 @@ class UserProfileWallViewScreen extends StatefulWidget {
 
 class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -589,7 +590,6 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                     padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                     child: IconButton(
                       onPressed: () {
-                        popNavStack();
                         Navigator.pop(context);
                       },
                       color: isLoading

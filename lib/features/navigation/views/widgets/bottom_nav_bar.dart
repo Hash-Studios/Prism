@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -8,6 +8,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -197,6 +198,13 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     checkSignIn();
+    final tabsRouter = AutoTabsRouter.of(context);
+    final activeIndex = tabsRouter.activeIndex;
+    final isHome = activeIndex == 0;
+    final isSearch = activeIndex == 1;
+    final isSetups = activeIndex == 2;
+    final isProfile = activeIndex == 3;
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
@@ -221,36 +229,30 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: currentNavStackEntry == "Home" ? 9 : 0,
+                      height: isHome ? 9 : 0,
                     ),
                     Icon(JamIcons.home_f, color: Theme.of(context).colorScheme.secondary),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: currentNavStackEntry == "Home"
+                        color: isHome
                             ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: currentNavStackEntry == "Home" ? const EdgeInsets.all(3) : EdgeInsets.zero,
-                      width: currentNavStackEntry == "Home" ? _paddingAnimation.value : 0,
-                      height: currentNavStackEntry == "Home" ? 3 : 0,
+                      margin: isHome ? const EdgeInsets.all(3) : EdgeInsets.zero,
+                      width: isHome ? _paddingAnimation.value : 0,
+                      height: isHome ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  currentNavStackEntry == "Home"
-                      ? logger.d("Currently on Home")
-                      : Navigator.of(context).popUntil((route) {
-                          if (currentNavStackEntry != "Home") {
-                            popNavStack();
-                            return false;
-                          } else {
-                            logNavStack();
-                            return true;
-                          }
-                        });
+                  if (isHome) {
+                    logger.d("Currently on Home");
+                  } else {
+                    tabsRouter.setActiveIndex(0);
+                  }
                 },
               ),
             ),
@@ -264,30 +266,30 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: currentNavStackEntry == "Search" ? 9 : 0,
+                      height: isSearch ? 9 : 0,
                     ),
                     Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: currentNavStackEntry == "Search"
+                        color: isSearch
                             ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: currentNavStackEntry == "Search" ? const EdgeInsets.all(3) : EdgeInsets.zero,
-                      width: currentNavStackEntry == "Search" ? _paddingAnimation.value : 0,
-                      height: currentNavStackEntry == "Search" ? 3 : 0,
+                      margin: isSearch ? const EdgeInsets.all(3) : EdgeInsets.zero,
+                      width: isSearch ? _paddingAnimation.value : 0,
+                      height: isSearch ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  currentNavStackEntry == "Search"
-                      ? logger.d("Currently on Search")
-                      : currentNavStackEntry == "Home"
-                          ? context.pushNamedRoute(searchRoute)
-                          : context.pushNamedRoute(searchRoute);
+                  if (isSearch) {
+                    logger.d("Currently on Search");
+                  } else {
+                    tabsRouter.setActiveIndex(1);
+                  }
                 },
               ),
             ),
@@ -319,7 +321,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Container(
-                          height: currentNavStackEntry == "Add" ? 9 : 0,
+                          height: 0,
                         ),
                         Icon(
                           JamIcons.plus,
@@ -328,17 +330,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                               : Theme.of(context).colorScheme.secondary,
                         ),
                         Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(500),
-                            color: currentNavStackEntry == "Add"
-                                ? Theme.of(context).colorScheme.error == Colors.black
-                                    ? Colors.white24
-                                    : Theme.of(context).colorScheme.error
-                                : Theme.of(context).colorScheme.secondary,
-                          ),
-                          margin: currentNavStackEntry == "Add" ? const EdgeInsets.all(3) : EdgeInsets.zero,
-                          width: currentNavStackEntry == "Add" ? _paddingAnimation.value : 0,
-                          height: currentNavStackEntry == "Add" ? 3 : 0,
+                          height: 0,
                         )
                       ],
                     ),
@@ -365,30 +357,30 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: currentNavStackEntry == "Setups" ? 9 : 0,
+                      height: isSetups ? 9 : 0,
                     ),
                     Icon(JamIcons.instant_picture_f, color: Theme.of(context).colorScheme.secondary),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: currentNavStackEntry == "Setups"
+                        color: isSetups
                             ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: currentNavStackEntry == "Setups" ? const EdgeInsets.all(3) : EdgeInsets.zero,
-                      width: currentNavStackEntry == "Setups" ? _paddingAnimation.value : 0,
-                      height: currentNavStackEntry == "Setups" ? 3 : 0,
+                      margin: isSetups ? const EdgeInsets.all(3) : EdgeInsets.zero,
+                      width: isSetups ? _paddingAnimation.value : 0,
+                      height: isSetups ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  currentNavStackEntry == "Setups"
-                      ? logger.d("Currently on Setups")
-                      : currentNavStackEntry == "Home"
-                          ? context.pushNamedRoute(setupRoute)
-                          : context.pushNamedRoute(setupRoute);
+                  if (isSetups) {
+                    logger.d("Currently on Setups");
+                  } else {
+                    tabsRouter.setActiveIndex(2);
+                  }
                 },
               ),
             ),
@@ -402,7 +394,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: currentNavStackEntry == "Profile" ? 9 : 0,
+                      height: isProfile ? 9 : 0,
                     ),
                     if (globals.prismUser.loggedIn == true)
                       imageNotFound
@@ -436,38 +428,23 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: currentNavStackEntry == "Profile"
+                        color: isProfile
                             ? Theme.of(context).colorScheme.error == Colors.black
                                 ? Colors.white24
                                 : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
-                      margin: currentNavStackEntry == "Profile" ? const EdgeInsets.all(3) : EdgeInsets.zero,
-                      width: currentNavStackEntry == "Profile" ? _paddingAnimation.value : 0,
-                      height: currentNavStackEntry == "Profile" ? 3 : 0,
+                      margin: isProfile ? const EdgeInsets.all(3) : EdgeInsets.zero,
+                      width: isProfile ? _paddingAnimation.value : 0,
+                      height: isProfile ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  if (currentNavStackEntry == "Profile") {
+                  if (isProfile) {
                     logger.d("Currently on Profile");
                   } else {
-                    if (currentNavStackEntry == "Home") {
-                      context.pushNamedRoute(profileRoute, arguments: [globals.prismUser.email]);
-                    } else {
-                      Navigator.of(context).popUntil((route) {
-                        if (currentNavStackEntry != "Home" && currentNavStackEntry != "Profile") {
-                          popNavStack();
-                          return false;
-                        } else {
-                          logNavStack();
-                          return true;
-                        }
-                      });
-                      if ((currentNavStackEntry == "Home") == true) {
-                        context.pushNamedRoute(profileRoute, arguments: [globals.prismUser.email]);
-                      }
-                    }
+                    tabsRouter.setActiveIndex(3);
                   }
                 },
               ),
@@ -505,8 +482,9 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       setState(() {
         _wallpaper = File(pickedFile.path);
       });
+      final router = context.router;
       Navigator.pop(context);
-      context.pushNamedRoute(editWallRoute, arguments: [_wallpaper]);
+      router.push(EditWallRoute(arguments: [_wallpaper]));
     }
   }
 
@@ -576,12 +554,14 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                             toasts.codeSend("Free users can only upload 5 walls a day.");
                             if (globals.prismUser.loggedIn == false) {
                               googleSignInPopUp(context, () {
+                                final router = context.router;
                                 Navigator.of(context).pop();
-                                context.pushNamedRoute(premiumRoute);
+                                router.push(const UpgradeRoute());
                               });
                             } else {
+                              final router = context.router;
                               Navigator.of(context).pop();
-                              context.pushNamedRoute(premiumRoute);
+                              router.push(const UpgradeRoute());
                             }
                           }
                         } else {
@@ -654,8 +634,9 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
                       onTap: () {
+                        final router = context.router;
                         Navigator.pop(context);
-                        context.pushNamedRoute(setupGuidelinesRoute);
+                        router.push(const SetupGuidelinesRoute());
                       },
                       child: SizedBox(
                         width: width / 2 - 20,

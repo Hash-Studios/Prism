@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
@@ -309,17 +310,15 @@ class PhotographerWallTile extends StatelessWidget {
                               true &&
                           globals.prismUser.premium != true
                       ? showGooglePopUp(context, () {
-                          context.pushNamedRoute(
-                            premiumRoute,
-                          );
+                          context.router.push(const UpgradeRoute());
                         })
-                      : context.pushNamedRoute(userProfileWallViewRoute, arguments: [
+                      : context.router.push(UserProfileWallViewRoute(arguments: [
                           index,
                           context
                               .publicProfileAdapter(listen: false)
                               .userProfileWalls![index]
                               .data()["wallpaper_thumb"],
-                        ]);
+                        ]));
                 }
               },
             ),

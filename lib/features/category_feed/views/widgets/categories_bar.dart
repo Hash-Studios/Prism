@@ -1,5 +1,6 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/popups/category_popup.dart';
@@ -11,7 +12,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:in_app_update/in_app_update.dart';
 
 class CategoriesBar extends StatefulWidget {
@@ -145,7 +146,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
           setState(() {
             noNotification = true;
           });
-          context.pushNamedRoute(notificationsRoute);
+          context.router.push(const NotificationRoute());
         },
       ),
       title: Align(

@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
 import 'package:Prism/features/category_feed/views/widgets/wallhaven_grid.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -49,11 +50,11 @@ class WallhavenTile extends StatelessWidget {
               onTap: () {
                 if (wData.walls == []) {
                 } else {
-                  context.pushNamedRoute(wallpaperRoute, arguments: [
+                  context.router.push(WallpaperRoute(arguments: [
                     widget.provider,
                     index,
                     wData.walls[index].thumbs!["small"].toString(),
-                  ]);
+                  ]));
                 }
               },
             ),

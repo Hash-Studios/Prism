@@ -1,6 +1,7 @@
+import 'package:auto_route/auto_route.dart';
 import 'dart:developer';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_grid.dart';
@@ -82,18 +83,13 @@ class WallpaperTile extends StatelessWidget {
                 globals.isPremiumWall(globals.premiumCollections, collections) == true &&
                         globals.prismUser.premium != true
                     ? showGooglePopUp(context, () {
-                        context.pushNamedRoute(
-                          premiumRoute,
-                        );
+                        context.router.push(const UpgradeRoute());
                       })
-                    : context.pushNamedRoute(
-                        wallpaperRoute,
-                        arguments: [
+                    : context.router.push(WallpaperRoute(arguments: [
                           widget.provider,
                           index,
                           wallData["wallpaper_thumb"],
-                        ],
-                      );
+                        ]));
               },
             ),
           ),

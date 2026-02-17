@@ -1,8 +1,10 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+@RoutePage()
 class FollowersScreen extends StatefulWidget {
   final List? arguments;
   const FollowersScreen({required this.arguments});
@@ -25,7 +27,6 @@ class _FollowersScreenState extends State<FollowersScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
         onWillPop: () async {
-          popNavStackIfPossible();
           return true;
         },
         child: Scaffold(
@@ -54,7 +55,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
                           .copyWith(color: Theme.of(context).colorScheme.secondary),
                     ),
                     onTap: () {
-                      context.pushNamedRoute(followerProfileRoute, arguments: [followers![index].toString()]);
+                      context.router.push(ProfileRoute(arguments: [followers![index].toString()]));
                     },
                   );
                 })));

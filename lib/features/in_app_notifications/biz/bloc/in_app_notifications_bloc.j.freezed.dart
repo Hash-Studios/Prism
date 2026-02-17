@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$InAppNotificationsEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is InAppNotificationsEvent);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is InAppNotificationsEvent);
   }
 
   @override
@@ -30,7 +31,8 @@ mixin _$InAppNotificationsEvent {
 
 /// @nodoc
 class $InAppNotificationsEventCopyWith<$Res> {
-  $InAppNotificationsEventCopyWith(InAppNotificationsEvent _, $Res Function(InAppNotificationsEvent) __);
+  $InAppNotificationsEventCopyWith(
+      InAppNotificationsEvent _, $Res Function(InAppNotificationsEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [InAppNotificationsEvent].
@@ -274,14 +276,16 @@ class _Started implements InAppNotificationsEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(this, _$identity);
+  _$StartedCopyWith<_Started> get copyWith =>
+      __$StartedCopyWithImpl<_Started>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _Started &&
-            (identical(other.syncRemote, syncRemote) || other.syncRemote == syncRemote));
+            (identical(other.syncRemote, syncRemote) ||
+                other.syncRemote == syncRemote));
   }
 
   @override
@@ -294,8 +298,10 @@ class _Started implements InAppNotificationsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$StartedCopyWith<$Res> implements $InAppNotificationsEventCopyWith<$Res> {
-  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
+abstract mixin class _$StartedCopyWith<$Res>
+    implements $InAppNotificationsEventCopyWith<$Res> {
+  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) =
+      __$StartedCopyWithImpl;
   @useResult
   $Res call({bool syncRemote});
 }
@@ -329,7 +335,8 @@ class _RefreshRequested implements InAppNotificationsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _RefreshRequested);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _RefreshRequested);
   }
 
   @override
@@ -373,15 +380,18 @@ class _MarkReadRequested implements InAppNotificationsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$MarkReadRequestedCopyWith<$Res> implements $InAppNotificationsEventCopyWith<$Res> {
-  factory _$MarkReadRequestedCopyWith(_MarkReadRequested value, $Res Function(_MarkReadRequested) _then) =
+abstract mixin class _$MarkReadRequestedCopyWith<$Res>
+    implements $InAppNotificationsEventCopyWith<$Res> {
+  factory _$MarkReadRequestedCopyWith(
+          _MarkReadRequested value, $Res Function(_MarkReadRequested) _then) =
       __$MarkReadRequestedCopyWithImpl;
   @useResult
   $Res call({int index});
 }
 
 /// @nodoc
-class __$MarkReadRequestedCopyWithImpl<$Res> implements _$MarkReadRequestedCopyWith<$Res> {
+class __$MarkReadRequestedCopyWithImpl<$Res>
+    implements _$MarkReadRequestedCopyWith<$Res> {
   __$MarkReadRequestedCopyWithImpl(this._self, this._then);
 
   final _MarkReadRequested _self;
@@ -434,15 +444,18 @@ class _DeleteRequested implements InAppNotificationsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$DeleteRequestedCopyWith<$Res> implements $InAppNotificationsEventCopyWith<$Res> {
-  factory _$DeleteRequestedCopyWith(_DeleteRequested value, $Res Function(_DeleteRequested) _then) =
+abstract mixin class _$DeleteRequestedCopyWith<$Res>
+    implements $InAppNotificationsEventCopyWith<$Res> {
+  factory _$DeleteRequestedCopyWith(
+          _DeleteRequested value, $Res Function(_DeleteRequested) _then) =
       __$DeleteRequestedCopyWithImpl;
   @useResult
   $Res call({int index});
 }
 
 /// @nodoc
-class __$DeleteRequestedCopyWithImpl<$Res> implements _$DeleteRequestedCopyWith<$Res> {
+class __$DeleteRequestedCopyWithImpl<$Res>
+    implements _$DeleteRequestedCopyWith<$Res> {
   __$DeleteRequestedCopyWithImpl(this._self, this._then);
 
   final _DeleteRequested _self;
@@ -470,7 +483,8 @@ class _ClearRequested implements InAppNotificationsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _ClearRequested);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _ClearRequested);
   }
 
   @override
@@ -495,7 +509,8 @@ mixin _$InAppNotificationsState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $InAppNotificationsStateCopyWith<InAppNotificationsState> get copyWith =>
-      _$InAppNotificationsStateCopyWithImpl<InAppNotificationsState>(this as InAppNotificationsState, _$identity);
+      _$InAppNotificationsStateCopyWithImpl<InAppNotificationsState>(
+          this as InAppNotificationsState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -503,15 +518,17 @@ mixin _$InAppNotificationsState {
         (other.runtimeType == runtimeType &&
             other is InAppNotificationsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             const DeepCollectionEquality().equals(other.items, items) &&
-            (identical(other.unreadCount, unreadCount) || other.unreadCount == unreadCount) &&
+            (identical(other.unreadCount, unreadCount) ||
+                other.unreadCount == unreadCount) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, const DeepCollectionEquality().hash(items), unreadCount, failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus,
+      const DeepCollectionEquality().hash(items), unreadCount, failure);
 
   @override
   String toString() {
@@ -521,8 +538,8 @@ mixin _$InAppNotificationsState {
 
 /// @nodoc
 abstract mixin class $InAppNotificationsStateCopyWith<$Res> {
-  factory $InAppNotificationsStateCopyWith(
-          InAppNotificationsState value, $Res Function(InAppNotificationsState) _then) =
+  factory $InAppNotificationsStateCopyWith(InAppNotificationsState value,
+          $Res Function(InAppNotificationsState) _then) =
       _$InAppNotificationsStateCopyWithImpl;
   @useResult
   $Res call(
@@ -534,7 +551,8 @@ abstract mixin class $InAppNotificationsStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$InAppNotificationsStateCopyWithImpl<$Res> implements $InAppNotificationsStateCopyWith<$Res> {
+class _$InAppNotificationsStateCopyWithImpl<$Res>
+    implements $InAppNotificationsStateCopyWith<$Res> {
   _$InAppNotificationsStateCopyWithImpl(this._self, this._then);
 
   final InAppNotificationsState _self;
@@ -669,7 +687,11 @@ extension InAppNotificationsStatePatterns on InAppNotificationsState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, List<InAppNotificationEntity> items, int unreadCount,
+    TResult Function(
+            LoadStatus status,
+            ActionStatus actionStatus,
+            List<InAppNotificationEntity> items,
+            int unreadCount,
             Failure? failure)?
         $default, {
     required TResult orElse(),
@@ -677,7 +699,8 @@ extension InAppNotificationsStatePatterns on InAppNotificationsState {
     final _that = this;
     switch (_that) {
       case _InAppNotificationsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.items, _that.unreadCount, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.items,
+            _that.unreadCount, _that.failure);
       case _:
         return orElse();
     }
@@ -698,14 +721,19 @@ extension InAppNotificationsStatePatterns on InAppNotificationsState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, List<InAppNotificationEntity> items, int unreadCount,
+    TResult Function(
+            LoadStatus status,
+            ActionStatus actionStatus,
+            List<InAppNotificationEntity> items,
+            int unreadCount,
             Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _InAppNotificationsState():
-        return $default(_that.status, _that.actionStatus, _that.items, _that.unreadCount, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.items,
+            _that.unreadCount, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -725,14 +753,19 @@ extension InAppNotificationsStatePatterns on InAppNotificationsState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(LoadStatus status, ActionStatus actionStatus, List<InAppNotificationEntity> items,
-            int unreadCount, Failure? failure)?
+    TResult? Function(
+            LoadStatus status,
+            ActionStatus actionStatus,
+            List<InAppNotificationEntity> items,
+            int unreadCount,
+            Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _InAppNotificationsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.items, _that.unreadCount, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.items,
+            _that.unreadCount, _that.failure);
       case _:
         return null;
     }
@@ -773,7 +806,8 @@ class _InAppNotificationsState implements InAppNotificationsState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   _$InAppNotificationsStateCopyWith<_InAppNotificationsState> get copyWith =>
-      __$InAppNotificationsStateCopyWithImpl<_InAppNotificationsState>(this, _$identity);
+      __$InAppNotificationsStateCopyWithImpl<_InAppNotificationsState>(
+          this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -781,15 +815,17 @@ class _InAppNotificationsState implements InAppNotificationsState {
         (other.runtimeType == runtimeType &&
             other is _InAppNotificationsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
-            (identical(other.unreadCount, unreadCount) || other.unreadCount == unreadCount) &&
+            (identical(other.unreadCount, unreadCount) ||
+                other.unreadCount == unreadCount) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, const DeepCollectionEquality().hash(_items), unreadCount, failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus,
+      const DeepCollectionEquality().hash(_items), unreadCount, failure);
 
   @override
   String toString() {
@@ -798,9 +834,10 @@ class _InAppNotificationsState implements InAppNotificationsState {
 }
 
 /// @nodoc
-abstract mixin class _$InAppNotificationsStateCopyWith<$Res> implements $InAppNotificationsStateCopyWith<$Res> {
-  factory _$InAppNotificationsStateCopyWith(
-          _InAppNotificationsState value, $Res Function(_InAppNotificationsState) _then) =
+abstract mixin class _$InAppNotificationsStateCopyWith<$Res>
+    implements $InAppNotificationsStateCopyWith<$Res> {
+  factory _$InAppNotificationsStateCopyWith(_InAppNotificationsState value,
+          $Res Function(_InAppNotificationsState) _then) =
       __$InAppNotificationsStateCopyWithImpl;
   @override
   @useResult
@@ -813,7 +850,8 @@ abstract mixin class _$InAppNotificationsStateCopyWith<$Res> implements $InAppNo
 }
 
 /// @nodoc
-class __$InAppNotificationsStateCopyWithImpl<$Res> implements _$InAppNotificationsStateCopyWith<$Res> {
+class __$InAppNotificationsStateCopyWithImpl<$Res>
+    implements _$InAppNotificationsStateCopyWith<$Res> {
   __$InAppNotificationsStateCopyWithImpl(this._self, this._then);
 
   final _InAppNotificationsState _self;

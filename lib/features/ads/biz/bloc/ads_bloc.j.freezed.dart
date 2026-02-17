@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$AdsEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is AdsEvent);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is AdsEvent);
   }
 
   @override
@@ -91,7 +92,8 @@ extension AdsEventPatterns on AdsEvent {
     required TResult Function(_Started value) started,
     required TResult Function(_WatchAdRequested value) watchAdRequested,
     required TResult Function(_RewardEarned value) rewardEarned,
-    required TResult Function(_TransientStateCleared value) transientStateCleared,
+    required TResult Function(_TransientStateCleared value)
+        transientStateCleared,
     required TResult Function(_ResetRequested value) resetRequested,
   }) {
     final _that = this;
@@ -203,7 +205,8 @@ extension AdsEventPatterns on AdsEvent {
   TResult when<TResult extends Object?>({
     required TResult Function() started,
     required TResult Function(num unlockThreshold) watchAdRequested,
-    required TResult Function(num rewardAmount, num unlockThreshold) rewardEarned,
+    required TResult Function(num rewardAmount, num unlockThreshold)
+        rewardEarned,
     required TResult Function() transientStateCleared,
     required TResult Function() resetRequested,
   }) {
@@ -269,7 +272,8 @@ class _Started implements AdsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _Started);
   }
 
   @override
@@ -301,7 +305,8 @@ class _WatchAdRequested implements AdsEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _WatchAdRequested &&
-            (identical(other.unlockThreshold, unlockThreshold) || other.unlockThreshold == unlockThreshold));
+            (identical(other.unlockThreshold, unlockThreshold) ||
+                other.unlockThreshold == unlockThreshold));
   }
 
   @override
@@ -314,15 +319,18 @@ class _WatchAdRequested implements AdsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$WatchAdRequestedCopyWith<$Res> implements $AdsEventCopyWith<$Res> {
-  factory _$WatchAdRequestedCopyWith(_WatchAdRequested value, $Res Function(_WatchAdRequested) _then) =
+abstract mixin class _$WatchAdRequestedCopyWith<$Res>
+    implements $AdsEventCopyWith<$Res> {
+  factory _$WatchAdRequestedCopyWith(
+          _WatchAdRequested value, $Res Function(_WatchAdRequested) _then) =
       __$WatchAdRequestedCopyWithImpl;
   @useResult
   $Res call({num unlockThreshold});
 }
 
 /// @nodoc
-class __$WatchAdRequestedCopyWithImpl<$Res> implements _$WatchAdRequestedCopyWith<$Res> {
+class __$WatchAdRequestedCopyWithImpl<$Res>
+    implements _$WatchAdRequestedCopyWith<$Res> {
   __$WatchAdRequestedCopyWithImpl(this._self, this._then);
 
   final _WatchAdRequested _self;
@@ -356,15 +364,18 @@ class _RewardEarned implements AdsEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$RewardEarnedCopyWith<_RewardEarned> get copyWith => __$RewardEarnedCopyWithImpl<_RewardEarned>(this, _$identity);
+  _$RewardEarnedCopyWith<_RewardEarned> get copyWith =>
+      __$RewardEarnedCopyWithImpl<_RewardEarned>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _RewardEarned &&
-            (identical(other.rewardAmount, rewardAmount) || other.rewardAmount == rewardAmount) &&
-            (identical(other.unlockThreshold, unlockThreshold) || other.unlockThreshold == unlockThreshold));
+            (identical(other.rewardAmount, rewardAmount) ||
+                other.rewardAmount == rewardAmount) &&
+            (identical(other.unlockThreshold, unlockThreshold) ||
+                other.unlockThreshold == unlockThreshold));
   }
 
   @override
@@ -377,14 +388,18 @@ class _RewardEarned implements AdsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$RewardEarnedCopyWith<$Res> implements $AdsEventCopyWith<$Res> {
-  factory _$RewardEarnedCopyWith(_RewardEarned value, $Res Function(_RewardEarned) _then) = __$RewardEarnedCopyWithImpl;
+abstract mixin class _$RewardEarnedCopyWith<$Res>
+    implements $AdsEventCopyWith<$Res> {
+  factory _$RewardEarnedCopyWith(
+          _RewardEarned value, $Res Function(_RewardEarned) _then) =
+      __$RewardEarnedCopyWithImpl;
   @useResult
   $Res call({num rewardAmount, num unlockThreshold});
 }
 
 /// @nodoc
-class __$RewardEarnedCopyWithImpl<$Res> implements _$RewardEarnedCopyWith<$Res> {
+class __$RewardEarnedCopyWithImpl<$Res>
+    implements _$RewardEarnedCopyWith<$Res> {
   __$RewardEarnedCopyWithImpl(this._self, this._then);
 
   final _RewardEarned _self;
@@ -417,7 +432,8 @@ class _TransientStateCleared implements AdsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _TransientStateCleared);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _TransientStateCleared);
   }
 
   @override
@@ -436,7 +452,8 @@ class _ResetRequested implements AdsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _ResetRequested);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _ResetRequested);
   }
 
   @override
@@ -460,7 +477,8 @@ mixin _$AdsState {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  $AdsStateCopyWith<AdsState> get copyWith => _$AdsStateCopyWithImpl<AdsState>(this as AdsState, _$identity);
+  $AdsStateCopyWith<AdsState> get copyWith =>
+      _$AdsStateCopyWithImpl<AdsState>(this as AdsState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -468,7 +486,8 @@ mixin _$AdsState {
         (other.runtimeType == runtimeType &&
             other is AdsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.ads, ads) || other.ads == ads) &&
             (identical(other.shouldUnlockDownload, shouldUnlockDownload) ||
                 other.shouldUnlockDownload == shouldUnlockDownload) &&
@@ -476,7 +495,8 @@ mixin _$AdsState {
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, ads, shouldUnlockDownload, failure);
+  int get hashCode => Object.hash(
+      runtimeType, status, actionStatus, ads, shouldUnlockDownload, failure);
 
   @override
   String toString() {
@@ -486,9 +506,15 @@ mixin _$AdsState {
 
 /// @nodoc
 abstract mixin class $AdsStateCopyWith<$Res> {
-  factory $AdsStateCopyWith(AdsState value, $Res Function(AdsState) _then) = _$AdsStateCopyWithImpl;
+  factory $AdsStateCopyWith(AdsState value, $Res Function(AdsState) _then) =
+      _$AdsStateCopyWithImpl;
   @useResult
-  $Res call({LoadStatus status, ActionStatus actionStatus, AdsEntity ads, bool shouldUnlockDownload, Failure? failure});
+  $Res call(
+      {LoadStatus status,
+      ActionStatus actionStatus,
+      AdsEntity ads,
+      bool shouldUnlockDownload,
+      Failure? failure});
 }
 
 /// @nodoc
@@ -627,15 +653,16 @@ extension AdsStatePatterns on AdsState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status, ActionStatus actionStatus, AdsEntity ads, bool shouldUnlockDownload, Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus,
+            AdsEntity ads, bool shouldUnlockDownload, Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _AdsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.ads, _that.shouldUnlockDownload, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.ads,
+            _that.shouldUnlockDownload, _that.failure);
       case _:
         return orElse();
     }
@@ -656,14 +683,15 @@ extension AdsStatePatterns on AdsState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status, ActionStatus actionStatus, AdsEntity ads, bool shouldUnlockDownload, Failure? failure)
+    TResult Function(LoadStatus status, ActionStatus actionStatus,
+            AdsEntity ads, bool shouldUnlockDownload, Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _AdsState():
-        return $default(_that.status, _that.actionStatus, _that.ads, _that.shouldUnlockDownload, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.ads,
+            _that.shouldUnlockDownload, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -683,14 +711,15 @@ extension AdsStatePatterns on AdsState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(
-            LoadStatus status, ActionStatus actionStatus, AdsEntity ads, bool shouldUnlockDownload, Failure? failure)?
+    TResult? Function(LoadStatus status, ActionStatus actionStatus,
+            AdsEntity ads, bool shouldUnlockDownload, Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _AdsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.ads, _that.shouldUnlockDownload, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.ads,
+            _that.shouldUnlockDownload, _that.failure);
       case _:
         return null;
     }
@@ -723,7 +752,8 @@ class _AdsState implements AdsState {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$AdsStateCopyWith<_AdsState> get copyWith => __$AdsStateCopyWithImpl<_AdsState>(this, _$identity);
+  _$AdsStateCopyWith<_AdsState> get copyWith =>
+      __$AdsStateCopyWithImpl<_AdsState>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -731,7 +761,8 @@ class _AdsState implements AdsState {
         (other.runtimeType == runtimeType &&
             other is _AdsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.ads, ads) || other.ads == ads) &&
             (identical(other.shouldUnlockDownload, shouldUnlockDownload) ||
                 other.shouldUnlockDownload == shouldUnlockDownload) &&
@@ -739,7 +770,8 @@ class _AdsState implements AdsState {
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, ads, shouldUnlockDownload, failure);
+  int get hashCode => Object.hash(
+      runtimeType, status, actionStatus, ads, shouldUnlockDownload, failure);
 
   @override
   String toString() {
@@ -748,11 +780,18 @@ class _AdsState implements AdsState {
 }
 
 /// @nodoc
-abstract mixin class _$AdsStateCopyWith<$Res> implements $AdsStateCopyWith<$Res> {
-  factory _$AdsStateCopyWith(_AdsState value, $Res Function(_AdsState) _then) = __$AdsStateCopyWithImpl;
+abstract mixin class _$AdsStateCopyWith<$Res>
+    implements $AdsStateCopyWith<$Res> {
+  factory _$AdsStateCopyWith(_AdsState value, $Res Function(_AdsState) _then) =
+      __$AdsStateCopyWithImpl;
   @override
   @useResult
-  $Res call({LoadStatus status, ActionStatus actionStatus, AdsEntity ads, bool shouldUnlockDownload, Failure? failure});
+  $Res call(
+      {LoadStatus status,
+      ActionStatus actionStatus,
+      AdsEntity ads,
+      bool shouldUnlockDownload,
+      Failure? failure});
 }
 
 /// @nodoc

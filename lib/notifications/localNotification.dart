@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -24,7 +25,7 @@ class LocalNotification {
       return;
     }
     if (notificationAppLaunchDetails?.notificationResponse?.payload == "downloaded") {
-      context.pushNamedRoute(downloadRoute);
+      context.router.push(const DownloadRoute());
     }
   }
 

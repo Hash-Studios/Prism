@@ -5,7 +5,7 @@ import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 
 const int _defaultNotifLimit = 50;
 

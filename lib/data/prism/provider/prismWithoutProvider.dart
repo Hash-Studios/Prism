@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/logger/logger.dart';
 
 List? prismWalls;
@@ -15,16 +14,7 @@ late List wallsDataL;
 Map wall = {};
 bool prismHasMore = true;
 Future<List?> getPrismWalls() async {
-  logger.d(
-    "[PrismFeed] getPrismWalls start",
-    fields: <String, Object?>{"nav": currentNavStackEntry},
-  );
-  if (currentNavStackEntry != "Home") {
-    logger.w(
-      "[PrismFeed] getPrismWalls called while nav is not Home; continuing fetch",
-      fields: <String, Object?>{"nav": currentNavStackEntry},
-    );
-  }
+  logger.d("[PrismFeed] getPrismWalls start");
   prismWalls = [];
   subPrismWalls = [];
   prismHasMore = true;
@@ -67,7 +57,6 @@ Future<List?> getPrismWalls() async {
       "[PrismFeed] getPrismWalls failed",
       error: error,
       stackTrace: stackTrace,
-      fields: <String, Object?>{"nav": currentNavStackEntry},
     );
     rethrow;
   }

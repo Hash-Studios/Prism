@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$FavouriteWallsEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is FavouriteWallsEvent);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is FavouriteWallsEvent);
   }
 
   @override
@@ -30,7 +31,8 @@ mixin _$FavouriteWallsEvent {
 
 /// @nodoc
 class $FavouriteWallsEventCopyWith<$Res> {
-  $FavouriteWallsEventCopyWith(FavouriteWallsEvent _, $Res Function(FavouriteWallsEvent) __);
+  $FavouriteWallsEventCopyWith(
+      FavouriteWallsEvent _, $Res Function(FavouriteWallsEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [FavouriteWallsEvent].
@@ -273,7 +275,8 @@ class _Started implements FavouriteWallsEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(this, _$identity);
+  _$StartedCopyWith<_Started> get copyWith =>
+      __$StartedCopyWithImpl<_Started>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -293,8 +296,10 @@ class _Started implements FavouriteWallsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$StartedCopyWith<$Res> implements $FavouriteWallsEventCopyWith<$Res> {
-  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
+abstract mixin class _$StartedCopyWith<$Res>
+    implements $FavouriteWallsEventCopyWith<$Res> {
+  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) =
+      __$StartedCopyWithImpl;
   @useResult
   $Res call({String userId});
 }
@@ -328,7 +333,8 @@ class _RefreshRequested implements FavouriteWallsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _RefreshRequested);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _RefreshRequested);
   }
 
   @override
@@ -372,15 +378,18 @@ class _ToggleRequested implements FavouriteWallsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$ToggleRequestedCopyWith<$Res> implements $FavouriteWallsEventCopyWith<$Res> {
-  factory _$ToggleRequestedCopyWith(_ToggleRequested value, $Res Function(_ToggleRequested) _then) =
+abstract mixin class _$ToggleRequestedCopyWith<$Res>
+    implements $FavouriteWallsEventCopyWith<$Res> {
+  factory _$ToggleRequestedCopyWith(
+          _ToggleRequested value, $Res Function(_ToggleRequested) _then) =
       __$ToggleRequestedCopyWithImpl;
   @useResult
   $Res call({FavouriteWallEntity wall});
 }
 
 /// @nodoc
-class __$ToggleRequestedCopyWithImpl<$Res> implements _$ToggleRequestedCopyWith<$Res> {
+class __$ToggleRequestedCopyWithImpl<$Res>
+    implements _$ToggleRequestedCopyWith<$Res> {
   __$ToggleRequestedCopyWithImpl(this._self, this._then);
 
   final _ToggleRequested _self;
@@ -433,15 +442,18 @@ class _RemoveRequested implements FavouriteWallsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$RemoveRequestedCopyWith<$Res> implements $FavouriteWallsEventCopyWith<$Res> {
-  factory _$RemoveRequestedCopyWith(_RemoveRequested value, $Res Function(_RemoveRequested) _then) =
+abstract mixin class _$RemoveRequestedCopyWith<$Res>
+    implements $FavouriteWallsEventCopyWith<$Res> {
+  factory _$RemoveRequestedCopyWith(
+          _RemoveRequested value, $Res Function(_RemoveRequested) _then) =
       __$RemoveRequestedCopyWithImpl;
   @useResult
   $Res call({String wallId});
 }
 
 /// @nodoc
-class __$RemoveRequestedCopyWithImpl<$Res> implements _$RemoveRequestedCopyWith<$Res> {
+class __$RemoveRequestedCopyWithImpl<$Res>
+    implements _$RemoveRequestedCopyWith<$Res> {
   __$RemoveRequestedCopyWithImpl(this._self, this._then);
 
   final _RemoveRequested _self;
@@ -469,7 +481,8 @@ class _ClearRequested implements FavouriteWallsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _ClearRequested);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _ClearRequested);
   }
 
   @override
@@ -494,7 +507,8 @@ mixin _$FavouriteWallsState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $FavouriteWallsStateCopyWith<FavouriteWallsState> get copyWith =>
-      _$FavouriteWallsStateCopyWithImpl<FavouriteWallsState>(this as FavouriteWallsState, _$identity);
+      _$FavouriteWallsStateCopyWithImpl<FavouriteWallsState>(
+          this as FavouriteWallsState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -502,15 +516,16 @@ mixin _$FavouriteWallsState {
         (other.runtimeType == runtimeType &&
             other is FavouriteWallsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.userId, userId) || other.userId == userId) &&
             const DeepCollectionEquality().equals(other.items, items) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, userId, const DeepCollectionEquality().hash(items), failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, userId,
+      const DeepCollectionEquality().hash(items), failure);
 
   @override
   String toString() {
@@ -520,15 +535,21 @@ mixin _$FavouriteWallsState {
 
 /// @nodoc
 abstract mixin class $FavouriteWallsStateCopyWith<$Res> {
-  factory $FavouriteWallsStateCopyWith(FavouriteWallsState value, $Res Function(FavouriteWallsState) _then) =
+  factory $FavouriteWallsStateCopyWith(
+          FavouriteWallsState value, $Res Function(FavouriteWallsState) _then) =
       _$FavouriteWallsStateCopyWithImpl;
   @useResult
   $Res call(
-      {LoadStatus status, ActionStatus actionStatus, String userId, List<FavouriteWallEntity> items, Failure? failure});
+      {LoadStatus status,
+      ActionStatus actionStatus,
+      String userId,
+      List<FavouriteWallEntity> items,
+      Failure? failure});
 }
 
 /// @nodoc
-class _$FavouriteWallsStateCopyWithImpl<$Res> implements $FavouriteWallsStateCopyWith<$Res> {
+class _$FavouriteWallsStateCopyWithImpl<$Res>
+    implements $FavouriteWallsStateCopyWith<$Res> {
   _$FavouriteWallsStateCopyWithImpl(this._self, this._then);
 
   final FavouriteWallsState _self;
@@ -663,15 +684,16 @@ extension FavouriteWallsStatePatterns on FavouriteWallsState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, String userId, List<FavouriteWallEntity> items,
-            Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus,
+            String userId, List<FavouriteWallEntity> items, Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _FavouriteWallsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.userId, _that.items, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.userId,
+            _that.items, _that.failure);
       case _:
         return orElse();
     }
@@ -692,14 +714,15 @@ extension FavouriteWallsStatePatterns on FavouriteWallsState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, String userId, List<FavouriteWallEntity> items,
-            Failure? failure)
+    TResult Function(LoadStatus status, ActionStatus actionStatus,
+            String userId, List<FavouriteWallEntity> items, Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _FavouriteWallsState():
-        return $default(_that.status, _that.actionStatus, _that.userId, _that.items, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.userId,
+            _that.items, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -719,14 +742,15 @@ extension FavouriteWallsStatePatterns on FavouriteWallsState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(LoadStatus status, ActionStatus actionStatus, String userId, List<FavouriteWallEntity> items,
-            Failure? failure)?
+    TResult? Function(LoadStatus status, ActionStatus actionStatus,
+            String userId, List<FavouriteWallEntity> items, Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _FavouriteWallsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.userId, _that.items, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.userId,
+            _that.items, _that.failure);
       case _:
         return null;
     }
@@ -767,7 +791,8 @@ class _FavouriteWallsState implements FavouriteWallsState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   _$FavouriteWallsStateCopyWith<_FavouriteWallsState> get copyWith =>
-      __$FavouriteWallsStateCopyWithImpl<_FavouriteWallsState>(this, _$identity);
+      __$FavouriteWallsStateCopyWithImpl<_FavouriteWallsState>(
+          this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -775,15 +800,16 @@ class _FavouriteWallsState implements FavouriteWallsState {
         (other.runtimeType == runtimeType &&
             other is _FavouriteWallsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.userId, userId) || other.userId == userId) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, userId, const DeepCollectionEquality().hash(_items), failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, userId,
+      const DeepCollectionEquality().hash(_items), failure);
 
   @override
   String toString() {
@@ -792,17 +818,24 @@ class _FavouriteWallsState implements FavouriteWallsState {
 }
 
 /// @nodoc
-abstract mixin class _$FavouriteWallsStateCopyWith<$Res> implements $FavouriteWallsStateCopyWith<$Res> {
-  factory _$FavouriteWallsStateCopyWith(_FavouriteWallsState value, $Res Function(_FavouriteWallsState) _then) =
+abstract mixin class _$FavouriteWallsStateCopyWith<$Res>
+    implements $FavouriteWallsStateCopyWith<$Res> {
+  factory _$FavouriteWallsStateCopyWith(_FavouriteWallsState value,
+          $Res Function(_FavouriteWallsState) _then) =
       __$FavouriteWallsStateCopyWithImpl;
   @override
   @useResult
   $Res call(
-      {LoadStatus status, ActionStatus actionStatus, String userId, List<FavouriteWallEntity> items, Failure? failure});
+      {LoadStatus status,
+      ActionStatus actionStatus,
+      String userId,
+      List<FavouriteWallEntity> items,
+      Failure? failure});
 }
 
 /// @nodoc
-class __$FavouriteWallsStateCopyWithImpl<$Res> implements _$FavouriteWallsStateCopyWith<$Res> {
+class __$FavouriteWallsStateCopyWithImpl<$Res>
+    implements _$FavouriteWallsStateCopyWith<$Res> {
   __$FavouriteWallsStateCopyWithImpl(this._self, this._then);
 
   final _FavouriteWallsState _self;

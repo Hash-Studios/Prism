@@ -1,11 +1,12 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 
 class GeneralList extends StatefulWidget {
   final bool expanded;
@@ -39,9 +40,7 @@ class _GeneralListState extends State<GeneralList> {
       children: [
         ListTile(
           onTap: () {
-            context.pushNamedRoute(
-              themeViewRoute,
-            );
+            context.router.push(const ThemeViewRoute());
           },
           leading: const Icon(JamIcons.wrench),
           title: Text(

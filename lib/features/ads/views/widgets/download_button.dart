@@ -1,5 +1,6 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -94,7 +95,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   void showPremiumPopUp(VoidCallback func) {
     if (globals.prismUser.premium == false) {
       toasts.codeSend("Variants are a premium feature.");
-      context.pushNamedRoute(premiumRoute);
+      context.router.push(const UpgradeRoute());
     } else {
       func();
     }
@@ -190,7 +191,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
       listener: (context, state) {
         if (state.ads.adFailed) {
           context.read<AdsBloc>().add(const AdsEvent.transientStateCleared());
-          context.pushReplacementNamedRoute(adsNotLoadingRoute);
+          context.router.replace(const AdsNotLoadingRoute());
           widget.rewardFunc();
           return;
         }
@@ -261,11 +262,11 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                       if (globals.prismUser.loggedIn == false) {
                         googleSignInPopUp(context, () {
                           Navigator.of(context).pop();
-                          context.pushNamedRoute(premiumRoute);
+                          context.router.push(const UpgradeRoute());
                         });
                       } else {
                         Navigator.of(context).pop();
-                        context.pushNamedRoute(premiumRoute);
+                        context.router.push(const UpgradeRoute());
                       }
                     },
                     child: Text(

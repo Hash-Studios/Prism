@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$UserSearchEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is UserSearchEvent);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is UserSearchEvent);
   }
 
   @override
@@ -30,7 +31,8 @@ mixin _$UserSearchEvent {
 
 /// @nodoc
 class $UserSearchEventCopyWith<$Res> {
-  $UserSearchEventCopyWith(UserSearchEvent _, $Res Function(UserSearchEvent) __);
+  $UserSearchEventCopyWith(
+      UserSearchEvent _, $Res Function(UserSearchEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [UserSearchEvent].
@@ -240,15 +242,18 @@ class _SearchRequested implements UserSearchEvent {
 }
 
 /// @nodoc
-abstract mixin class _$SearchRequestedCopyWith<$Res> implements $UserSearchEventCopyWith<$Res> {
-  factory _$SearchRequestedCopyWith(_SearchRequested value, $Res Function(_SearchRequested) _then) =
+abstract mixin class _$SearchRequestedCopyWith<$Res>
+    implements $UserSearchEventCopyWith<$Res> {
+  factory _$SearchRequestedCopyWith(
+          _SearchRequested value, $Res Function(_SearchRequested) _then) =
       __$SearchRequestedCopyWithImpl;
   @useResult
   $Res call({String query});
 }
 
 /// @nodoc
-class __$SearchRequestedCopyWithImpl<$Res> implements _$SearchRequestedCopyWith<$Res> {
+class __$SearchRequestedCopyWithImpl<$Res>
+    implements _$SearchRequestedCopyWith<$Res> {
   __$SearchRequestedCopyWithImpl(this._self, this._then);
 
   final _SearchRequested _self;
@@ -276,7 +281,8 @@ class _Cleared implements UserSearchEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _Cleared);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _Cleared);
   }
 
   @override
@@ -301,7 +307,8 @@ mixin _$UserSearchState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $UserSearchStateCopyWith<UserSearchState> get copyWith =>
-      _$UserSearchStateCopyWithImpl<UserSearchState>(this as UserSearchState, _$identity);
+      _$UserSearchStateCopyWithImpl<UserSearchState>(
+          this as UserSearchState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -309,15 +316,16 @@ mixin _$UserSearchState {
         (other.runtimeType == runtimeType &&
             other is UserSearchState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.query, query) || other.query == query) &&
             const DeepCollectionEquality().equals(other.users, users) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, query, const DeepCollectionEquality().hash(users), failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, query,
+      const DeepCollectionEquality().hash(users), failure);
 
   @override
   String toString() {
@@ -327,14 +335,21 @@ mixin _$UserSearchState {
 
 /// @nodoc
 abstract mixin class $UserSearchStateCopyWith<$Res> {
-  factory $UserSearchStateCopyWith(UserSearchState value, $Res Function(UserSearchState) _then) =
+  factory $UserSearchStateCopyWith(
+          UserSearchState value, $Res Function(UserSearchState) _then) =
       _$UserSearchStateCopyWithImpl;
   @useResult
-  $Res call({LoadStatus status, ActionStatus actionStatus, String query, List<UserSearchUser> users, Failure? failure});
+  $Res call(
+      {LoadStatus status,
+      ActionStatus actionStatus,
+      String query,
+      List<UserSearchUser> users,
+      Failure? failure});
 }
 
 /// @nodoc
-class _$UserSearchStateCopyWithImpl<$Res> implements $UserSearchStateCopyWith<$Res> {
+class _$UserSearchStateCopyWithImpl<$Res>
+    implements $UserSearchStateCopyWith<$Res> {
   _$UserSearchStateCopyWithImpl(this._self, this._then);
 
   final UserSearchState _self;
@@ -469,15 +484,16 @@ extension UserSearchStatePatterns on UserSearchState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status, ActionStatus actionStatus, String query, List<UserSearchUser> users, Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus, String query,
+            List<UserSearchUser> users, Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _UserSearchState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.query, _that.users, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.query,
+            _that.users, _that.failure);
       case _:
         return orElse();
     }
@@ -498,14 +514,15 @@ extension UserSearchStatePatterns on UserSearchState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status, ActionStatus actionStatus, String query, List<UserSearchUser> users, Failure? failure)
+    TResult Function(LoadStatus status, ActionStatus actionStatus, String query,
+            List<UserSearchUser> users, Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _UserSearchState():
-        return $default(_that.status, _that.actionStatus, _that.query, _that.users, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.query,
+            _that.users, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -525,14 +542,15 @@ extension UserSearchStatePatterns on UserSearchState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(
-            LoadStatus status, ActionStatus actionStatus, String query, List<UserSearchUser> users, Failure? failure)?
+    TResult? Function(LoadStatus status, ActionStatus actionStatus,
+            String query, List<UserSearchUser> users, Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _UserSearchState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.query, _that.users, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.query,
+            _that.users, _that.failure);
       case _:
         return null;
     }
@@ -581,15 +599,16 @@ class _UserSearchState implements UserSearchState {
         (other.runtimeType == runtimeType &&
             other is _UserSearchState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             (identical(other.query, query) || other.query == query) &&
             const DeepCollectionEquality().equals(other._users, _users) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, query, const DeepCollectionEquality().hash(_users), failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, query,
+      const DeepCollectionEquality().hash(_users), failure);
 
   @override
   String toString() {
@@ -598,16 +617,24 @@ class _UserSearchState implements UserSearchState {
 }
 
 /// @nodoc
-abstract mixin class _$UserSearchStateCopyWith<$Res> implements $UserSearchStateCopyWith<$Res> {
-  factory _$UserSearchStateCopyWith(_UserSearchState value, $Res Function(_UserSearchState) _then) =
+abstract mixin class _$UserSearchStateCopyWith<$Res>
+    implements $UserSearchStateCopyWith<$Res> {
+  factory _$UserSearchStateCopyWith(
+          _UserSearchState value, $Res Function(_UserSearchState) _then) =
       __$UserSearchStateCopyWithImpl;
   @override
   @useResult
-  $Res call({LoadStatus status, ActionStatus actionStatus, String query, List<UserSearchUser> users, Failure? failure});
+  $Res call(
+      {LoadStatus status,
+      ActionStatus actionStatus,
+      String query,
+      List<UserSearchUser> users,
+      Failure? failure});
 }
 
 /// @nodoc
-class __$UserSearchStateCopyWithImpl<$Res> implements _$UserSearchStateCopyWith<$Res> {
+class __$UserSearchStateCopyWithImpl<$Res>
+    implements _$UserSearchStateCopyWith<$Res> {
   __$UserSearchStateCopyWithImpl(this._self, this._then);
 
   final _UserSearchState _self;

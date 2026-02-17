@@ -1,11 +1,13 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:share_plus/share_plus.dart';
 
+@RoutePage()
 class SharePrismScreen extends StatefulWidget {
   @override
   _SharePrismScreenState createState() => _SharePrismScreenState();
@@ -29,7 +31,6 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   }
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 

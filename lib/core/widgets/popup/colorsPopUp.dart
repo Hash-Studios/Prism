@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
@@ -96,18 +97,14 @@ Color showColors(BuildContext context) {
                 GestureDetector(
                   onTap: () {
                     currentColor = color;
-                    logNavStack();
                     Navigator.pop(context);
-                    context.pushNamedRoute(
-                      colorRoute,
-                      arguments: [
+                    context.router.push(ColorRoute(arguments: [
                         color
                             .toString()
                             .replaceAll("MaterialColor(primary value: Color(0xff", "")
                             .replaceAll("Color(0xff", "")
                             .replaceAll(")", ""),
-                      ],
-                    );
+                      ]));
                   },
                   child: Container(
                     margin: const EdgeInsets.all(6),

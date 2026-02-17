@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$NavigationEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is NavigationEvent);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is NavigationEvent);
   }
 
   @override
@@ -30,7 +31,8 @@ mixin _$NavigationEvent {
 
 /// @nodoc
 class $NavigationEventCopyWith<$Res> {
-  $NavigationEventCopyWith(NavigationEvent _, $Res Function(NavigationEvent) __);
+  $NavigationEventCopyWith(
+      NavigationEvent _, $Res Function(NavigationEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [NavigationEvent].
@@ -269,7 +271,8 @@ class _Started implements NavigationEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _Started);
   }
 
   @override
@@ -292,14 +295,16 @@ class _RoutePushed implements NavigationEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$RoutePushedCopyWith<_RoutePushed> get copyWith => __$RoutePushedCopyWithImpl<_RoutePushed>(this, _$identity);
+  _$RoutePushedCopyWith<_RoutePushed> get copyWith =>
+      __$RoutePushedCopyWithImpl<_RoutePushed>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _RoutePushed &&
-            (identical(other.routeName, routeName) || other.routeName == routeName));
+            (identical(other.routeName, routeName) ||
+                other.routeName == routeName));
   }
 
   @override
@@ -312,8 +317,11 @@ class _RoutePushed implements NavigationEvent {
 }
 
 /// @nodoc
-abstract mixin class _$RoutePushedCopyWith<$Res> implements $NavigationEventCopyWith<$Res> {
-  factory _$RoutePushedCopyWith(_RoutePushed value, $Res Function(_RoutePushed) _then) = __$RoutePushedCopyWithImpl;
+abstract mixin class _$RoutePushedCopyWith<$Res>
+    implements $NavigationEventCopyWith<$Res> {
+  factory _$RoutePushedCopyWith(
+          _RoutePushed value, $Res Function(_RoutePushed) _then) =
+      __$RoutePushedCopyWithImpl;
   @useResult
   $Res call({String routeName});
 }
@@ -347,7 +355,8 @@ class _RoutePopped implements NavigationEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType && other is _RoutePopped);
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _RoutePopped);
   }
 
   @override
@@ -379,7 +388,8 @@ class _ResetRequested implements NavigationEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _ResetRequested &&
-            (identical(other.initialRoute, initialRoute) || other.initialRoute == initialRoute));
+            (identical(other.initialRoute, initialRoute) ||
+                other.initialRoute == initialRoute));
   }
 
   @override
@@ -392,15 +402,18 @@ class _ResetRequested implements NavigationEvent {
 }
 
 /// @nodoc
-abstract mixin class _$ResetRequestedCopyWith<$Res> implements $NavigationEventCopyWith<$Res> {
-  factory _$ResetRequestedCopyWith(_ResetRequested value, $Res Function(_ResetRequested) _then) =
+abstract mixin class _$ResetRequestedCopyWith<$Res>
+    implements $NavigationEventCopyWith<$Res> {
+  factory _$ResetRequestedCopyWith(
+          _ResetRequested value, $Res Function(_ResetRequested) _then) =
       __$ResetRequestedCopyWithImpl;
   @useResult
   $Res call({String initialRoute});
 }
 
 /// @nodoc
-class __$ResetRequestedCopyWithImpl<$Res> implements _$ResetRequestedCopyWith<$Res> {
+class __$ResetRequestedCopyWithImpl<$Res>
+    implements _$ResetRequestedCopyWith<$Res> {
   __$ResetRequestedCopyWithImpl(this._self, this._then);
 
   final _ResetRequested _self;
@@ -449,7 +462,8 @@ class _StackReplaced implements NavigationEvent {
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, const DeepCollectionEquality().hash(_stack));
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(_stack));
 
   @override
   String toString() {
@@ -458,15 +472,18 @@ class _StackReplaced implements NavigationEvent {
 }
 
 /// @nodoc
-abstract mixin class _$StackReplacedCopyWith<$Res> implements $NavigationEventCopyWith<$Res> {
-  factory _$StackReplacedCopyWith(_StackReplaced value, $Res Function(_StackReplaced) _then) =
+abstract mixin class _$StackReplacedCopyWith<$Res>
+    implements $NavigationEventCopyWith<$Res> {
+  factory _$StackReplacedCopyWith(
+          _StackReplaced value, $Res Function(_StackReplaced) _then) =
       __$StackReplacedCopyWithImpl;
   @useResult
   $Res call({List<String> stack});
 }
 
 /// @nodoc
-class __$StackReplacedCopyWithImpl<$Res> implements _$StackReplacedCopyWith<$Res> {
+class __$StackReplacedCopyWithImpl<$Res>
+    implements _$StackReplacedCopyWith<$Res> {
   __$StackReplacedCopyWithImpl(this._self, this._then);
 
   final _StackReplaced _self;
@@ -501,7 +518,8 @@ mixin _$NavigationState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $NavigationStateCopyWith<NavigationState> get copyWith =>
-      _$NavigationStateCopyWithImpl<NavigationState>(this as NavigationState, _$identity);
+      _$NavigationStateCopyWithImpl<NavigationState>(
+          this as NavigationState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -509,16 +527,24 @@ mixin _$NavigationState {
         (other.runtimeType == runtimeType &&
             other is NavigationState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             const DeepCollectionEquality().equals(other.stack, stack) &&
-            (identical(other.currentRoute, currentRoute) || other.currentRoute == currentRoute) &&
+            (identical(other.currentRoute, currentRoute) ||
+                other.currentRoute == currentRoute) &&
             (identical(other.canPop, canPop) || other.canPop == canPop) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
   int get hashCode => Object.hash(
-      runtimeType, status, actionStatus, const DeepCollectionEquality().hash(stack), currentRoute, canPop, failure);
+      runtimeType,
+      status,
+      actionStatus,
+      const DeepCollectionEquality().hash(stack),
+      currentRoute,
+      canPop,
+      failure);
 
   @override
   String toString() {
@@ -528,7 +554,8 @@ mixin _$NavigationState {
 
 /// @nodoc
 abstract mixin class $NavigationStateCopyWith<$Res> {
-  factory $NavigationStateCopyWith(NavigationState value, $Res Function(NavigationState) _then) =
+  factory $NavigationStateCopyWith(
+          NavigationState value, $Res Function(NavigationState) _then) =
       _$NavigationStateCopyWithImpl;
   @useResult
   $Res call(
@@ -541,7 +568,8 @@ abstract mixin class $NavigationStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$NavigationStateCopyWithImpl<$Res> implements $NavigationStateCopyWith<$Res> {
+class _$NavigationStateCopyWithImpl<$Res>
+    implements $NavigationStateCopyWith<$Res> {
   _$NavigationStateCopyWithImpl(this._self, this._then);
 
   final NavigationState _self;
@@ -681,7 +709,12 @@ extension NavigationStatePatterns on NavigationState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, List<String> stack, String currentRoute, bool canPop,
+    TResult Function(
+            LoadStatus status,
+            ActionStatus actionStatus,
+            List<String> stack,
+            String currentRoute,
+            bool canPop,
             Failure? failure)?
         $default, {
     required TResult orElse(),
@@ -689,7 +722,8 @@ extension NavigationStatePatterns on NavigationState {
     final _that = this;
     switch (_that) {
       case _NavigationState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.stack, _that.currentRoute, _that.canPop, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.stack,
+            _that.currentRoute, _that.canPop, _that.failure);
       case _:
         return orElse();
     }
@@ -710,14 +744,20 @@ extension NavigationStatePatterns on NavigationState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus, List<String> stack, String currentRoute, bool canPop,
+    TResult Function(
+            LoadStatus status,
+            ActionStatus actionStatus,
+            List<String> stack,
+            String currentRoute,
+            bool canPop,
             Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _NavigationState():
-        return $default(_that.status, _that.actionStatus, _that.stack, _that.currentRoute, _that.canPop, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.stack,
+            _that.currentRoute, _that.canPop, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -737,14 +777,20 @@ extension NavigationStatePatterns on NavigationState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(LoadStatus status, ActionStatus actionStatus, List<String> stack, String currentRoute,
-            bool canPop, Failure? failure)?
+    TResult? Function(
+            LoadStatus status,
+            ActionStatus actionStatus,
+            List<String> stack,
+            String currentRoute,
+            bool canPop,
+            Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _NavigationState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.stack, _that.currentRoute, _that.canPop, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.stack,
+            _that.currentRoute, _that.canPop, _that.failure);
       case _:
         return null;
     }
@@ -796,16 +842,24 @@ class _NavigationState implements NavigationState {
         (other.runtimeType == runtimeType &&
             other is _NavigationState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) ||
+                other.actionStatus == actionStatus) &&
             const DeepCollectionEquality().equals(other._stack, _stack) &&
-            (identical(other.currentRoute, currentRoute) || other.currentRoute == currentRoute) &&
+            (identical(other.currentRoute, currentRoute) ||
+                other.currentRoute == currentRoute) &&
             (identical(other.canPop, canPop) || other.canPop == canPop) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
   int get hashCode => Object.hash(
-      runtimeType, status, actionStatus, const DeepCollectionEquality().hash(_stack), currentRoute, canPop, failure);
+      runtimeType,
+      status,
+      actionStatus,
+      const DeepCollectionEquality().hash(_stack),
+      currentRoute,
+      canPop,
+      failure);
 
   @override
   String toString() {
@@ -814,8 +868,10 @@ class _NavigationState implements NavigationState {
 }
 
 /// @nodoc
-abstract mixin class _$NavigationStateCopyWith<$Res> implements $NavigationStateCopyWith<$Res> {
-  factory _$NavigationStateCopyWith(_NavigationState value, $Res Function(_NavigationState) _then) =
+abstract mixin class _$NavigationStateCopyWith<$Res>
+    implements $NavigationStateCopyWith<$Res> {
+  factory _$NavigationStateCopyWith(
+          _NavigationState value, $Res Function(_NavigationState) _then) =
       __$NavigationStateCopyWithImpl;
   @override
   @useResult
@@ -829,7 +885,8 @@ abstract mixin class _$NavigationStateCopyWith<$Res> implements $NavigationState
 }
 
 /// @nodoc
-class __$NavigationStateCopyWithImpl<$Res> implements _$NavigationStateCopyWith<$Res> {
+class __$NavigationStateCopyWithImpl<$Res>
+    implements _$NavigationStateCopyWith<$Res> {
   __$NavigationStateCopyWithImpl(this._self, this._then);
 
   final _NavigationState _self;

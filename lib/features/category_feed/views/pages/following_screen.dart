@@ -4,7 +4,7 @@ import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menuButton/favIconButton.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/followingFeed.dart';
@@ -12,6 +12,7 @@ import 'package:Prism/features/navigation/views/widgets/inherited_scroll_control
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -39,7 +40,6 @@ class _FollowingScreenState extends State<FollowingScreen> {
   List<String> following = <String>[];
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     logger.d("Bye! Have a good day!");
     return true;
   }
@@ -270,16 +270,14 @@ class _FollowingTileState extends State<FollowingTile> {
                                 true &&
                             globals.prismUser.premium != true
                         ? showGooglePopUp(context, () {
-                            context.pushNamedRoute(
-                              premiumRoute,
-                            );
+                            context.router.push(const UpgradeRoute());
                           })
-                        : context.pushNamedRoute(shareRoute, arguments: [
+                        : context.router.push(ShareWallpaperViewRoute(arguments: [
                             widget.finalDocs[widget.index]["id"],
                             widget.finalDocs[widget.index]["wallpaper_provider"],
                             widget.finalDocs[widget.index]["wallpaper_url"],
                             widget.finalDocs[widget.index]["wallpaper_thumb"]
-                          ]);
+                          ]));
                   },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(25),
@@ -303,9 +301,9 @@ class _FollowingTileState extends State<FollowingTile> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    context.pushNamedRoute(followerProfileRoute, arguments: [
+                    context.router.push(ProfileRoute(arguments: [
                       widget.finalDocs[widget.index]["email"],
-                    ]);
+                    ]));
                   },
                   child: Row(
                     children: [

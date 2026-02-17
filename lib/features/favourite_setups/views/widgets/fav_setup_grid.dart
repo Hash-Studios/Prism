@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/setups/views/widgets/loading_setup_cards.dart';
@@ -217,7 +218,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                                 onTap: () {
                                   if (context.favouriteSetupsAdapter(listen: false).liked == []) {
                                   } else {
-                                    context.pushNamedRoute(favSetupViewRoute, arguments: [index]);
+                                    context.router.push(FavSetupViewRoute(arguments: [index]));
                                   }
                                 },
                               ),

@@ -1,10 +1,12 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/favourite_setups/views/widgets/fav_setup_loader.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
+@RoutePage()
 class FavouriteSetupScreen extends StatelessWidget {
   const FavouriteSetupScreen({
     super.key,
@@ -14,7 +16,6 @@ class FavouriteSetupScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        popNavStackIfPossible();
         return true;
       },
       child: Scaffold(

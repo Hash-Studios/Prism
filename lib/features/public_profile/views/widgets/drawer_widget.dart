@@ -1,6 +1,7 @@
+import 'package:auto_route/auto_route.dart';
 import 'dart:io';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/enterCodePanel.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
@@ -15,7 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class ProfileDrawer extends StatelessWidget {
@@ -128,7 +129,7 @@ class ProfileDrawer extends StatelessWidget {
                   text: 'Buy Premium',
                   onTap: () {
                     Navigator.pop(context);
-                    context.pushNamedRoute(premiumRoute);
+                    context.router.push(const UpgradeRoute());
                   },
                   context: context),
             if (globals.prismUser.premium == true) Container() else const Divider(),
@@ -138,7 +139,7 @@ class ProfileDrawer extends StatelessWidget {
                 text: 'Wallpapers',
                 onTap: () {
                   Navigator.pop(context);
-                  context.pushNamedRoute(favWallRoute);
+                  context.router.push(const FavouriteWallpaperRoute());
                 },
                 context: context),
             createDrawerBodyItem(
@@ -146,7 +147,7 @@ class ProfileDrawer extends StatelessWidget {
                 text: 'Setups',
                 onTap: () {
                   Navigator.pop(context);
-                  context.pushNamedRoute(favSetupRoute);
+                  context.router.push(const FavouriteSetupRoute());
                 },
                 context: context),
             const Divider(),
@@ -156,7 +157,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Downloaded Walls',
               onTap: () {
                 Navigator.pop(context);
-                context.pushNamedRoute(downloadRoute);
+                context.router.push(const DownloadRoute());
               },
               context: context,
             ),
@@ -263,7 +264,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Review Status',
               onTap: () {
                 Navigator.pop(context);
-                context.pushNamedRoute(reviewRoute);
+                context.router.push(const ReviewRoute());
               },
               context: context,
             ),
@@ -273,7 +274,7 @@ class ProfileDrawer extends StatelessWidget {
                 text: 'Admin Moderation',
                 onTap: () {
                   Navigator.pop(context);
-                  context.pushNamedRoute(adminReviewRoute);
+                  context.router.push(const AdminReviewRoute());
                 },
                 context: context,
               ),
@@ -284,9 +285,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Themes',
               onTap: () {
                 Navigator.pop(context);
-                context.pushNamedRoute(
-                  themeViewRoute,
-                );
+                context.router.push(const ThemeViewRoute());
               },
               context: context,
             ),
@@ -339,7 +338,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Settings',
               onTap: () {
                 Navigator.pop(context);
-                context.pushNamedRoute(settingsRoute);
+                context.router.push(const SettingsRoute());
               },
               context: context,
             ),
@@ -348,7 +347,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'About Prism',
               onTap: () {
                 Navigator.pop(context);
-                context.pushNamedRoute(aboutRoute);
+                context.router.push(const AboutRoute());
               },
               context: context,
             ),
