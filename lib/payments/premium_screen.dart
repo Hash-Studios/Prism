@@ -277,8 +277,7 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
 
   List<Package> _packages() {
     if (widget.offerings == null) return const [];
-    final offering =
-        widget.offerings!.all[PurchaseConstants.offeringUltra] ?? widget.offerings!.current;
+    final offering = widget.offerings!.all[PurchaseConstants.offeringUltra] ?? widget.offerings!.current;
     return offering?.availablePackages ?? const [];
   }
 
@@ -298,8 +297,7 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
   @override
   Widget build(BuildContext context) {
     final packages = _packages();
-    final selectedPackage =
-        packages.isNotEmpty ? packages[_selectedIndex.clamp(0, packages.length - 1)] : null;
+    final selectedPackage = packages.isNotEmpty ? packages[_selectedIndex.clamp(0, packages.length - 1)] : null;
 
     return PopScope(
       onPopInvokedWithResult: (_, __) => _onWillPop(),
@@ -334,8 +332,7 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
                     onTap: (i) => setState(() => _selectedIndex = i),
                   ),
                 ),
-                if (selectedPackage != null &&
-                    _perMonthEquivalent(selectedPackage) != null)
+                if (selectedPackage != null && _perMonthEquivalent(selectedPackage) != null)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                     child: Text(
@@ -343,10 +340,7 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
                       '${_packageTypeLabel(selectedPackage.packageType).toLowerCase()}',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .secondary
-                                .withValues(alpha: 0.7),
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
                             letterSpacing: 0.4,
                           ),
                     ),
@@ -355,21 +349,15 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
                 const _StarDivider(),
               ],
               // Offerings error / no packages warning (non-premium only)
-              if (!widget.isPremium &&
-                  (widget.offeringsError || packages.isEmpty)) ...[
+              if (!widget.isPremium && (widget.offeringsError || packages.isEmpty)) ...[
                 const SizedBox(height: 16),
                 Center(
                   child: Column(
                     children: [
                       Text(
-                        widget.offeringsError
-                            ? 'Unable to load packages'
-                            : 'No packages available',
+                        widget.offeringsError ? 'Unable to load packages' : 'No packages available',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .secondary
-                                  .withValues(alpha: 0.6),
+                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                             ),
                       ),
                       const SizedBox(height: 8),
@@ -446,9 +434,7 @@ class _UpgradeHeader extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            isPremium
-                ? (expiryDateLabel ?? 'ACTIVE SUBSCRIPTION')
-                : 'AND UNLOCK EVERY FEATURE',
+            isPremium ? (expiryDateLabel ?? 'ACTIVE SUBSCRIPTION') : 'AND UNLOCK EVERY FEATURE',
             textAlign: TextAlign.center,
             style: labelStyle,
           ),
@@ -881,8 +867,7 @@ class _PurchaseCTAButtonState extends State<_PurchaseCTAButton> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final accentColor = cs.error == Colors.black ? cs.secondary : cs.error;
-    final label =
-        'Get ${_packageTypeLabel(widget.package.packageType)} for ${widget.package.storeProduct.priceString}';
+    final label = 'Get ${_packageTypeLabel(widget.package.packageType)} for ${widget.package.storeProduct.priceString}';
 
     return GestureDetector(
       onTap: _isPurchasing ? null : _purchase,
