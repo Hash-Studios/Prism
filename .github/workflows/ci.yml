@@ -30,6 +30,15 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Generate Firebase options stub for CI
+        run: |
+          cat > lib/firebase_options.dart << 'DART'
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');
+          }
+          DART
+
       - name: Check formatting
         run: |
           find lib test -name '*.dart' \
