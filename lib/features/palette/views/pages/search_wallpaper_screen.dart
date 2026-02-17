@@ -325,7 +325,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: <Widget>[
                                         Padding(
-                                          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                                          padding: EdgeInsets.zero,
                                           child: Row(
                                             children: [
                                               Text(
