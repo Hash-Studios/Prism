@@ -6,6 +6,20 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+class _RawQueryDoc {
+  const _RawQueryDoc(this.id, this.data);
+
+  final String id;
+  final Map<String, dynamic> data;
+}
+
+class _QueryCacheEntry {
+  const _QueryCacheEntry(this.docs, this.cachedAt);
+
+  final List<_RawQueryDoc> docs;
+  final DateTime cachedAt;
+}
+
 class FirestoreTrackedClient implements FirestoreClient {
   FirestoreTrackedClient(
     this._firestore,
@@ -14,6 +28,14 @@ class FirestoreTrackedClient implements FirestoreClient {
 
   final FirebaseFirestore _firestore;
   final FirestoreTelemetrySink _telemetry;
+  final Map<String, Future<_QueryCacheEntry>> _inflightQueries = <String, Future<_QueryCacheEntry>>{};
+  final Map<String, _QueryCacheEntry> _queryCache = <String, _QueryCacheEntry>{};
+  final Map<String, DocumentSnapshot<Map<String, dynamic>>> _cursorDocCache =
+      <String, DocumentSnapshot<Map<String, dynamic>>>{};
+
+  static const int _defaultCacheWindowMs = 30000;
+  static const int _maxQueryCacheEntries = 200;
+  static const int _maxCursorDocCacheEntries = 600;
 
   Query<Map<String, dynamic>> _applySpec(FirestoreQuerySpec spec) {
     Query<Map<String, dynamic>> query = _firestore.collection(spec.collection);
@@ -62,22 +84,97 @@ class FirestoreTrackedClient implements FirestoreClient {
     unawaited(_telemetry.emit(event));
   }
 
-  @override
-  Future<List<T>> query<T>(
-    FirestoreQuerySpec spec,
+  String _queryKey(FirestoreQuerySpec spec) => spec.filtersHash;
+
+  String _cursorDocKey(String collection, String docId) => '$collection::$docId';
+
+  int _cacheWindowMs(FirestoreQuerySpec spec) {
+    if (spec.dedupeWindowMs > 0) {
+      return spec.dedupeWindowMs;
+    }
+    switch (spec.cachePolicy) {
+      case FirestoreCachePolicy.networkOnly:
+        return 0;
+      case FirestoreCachePolicy.staleWhileRevalidate:
+      case FirestoreCachePolicy.memoryFirst:
+        return _defaultCacheWindowMs;
+    }
+  }
+
+  bool _canUseCache(FirestoreQuerySpec spec) {
+    return spec.cachePolicy != FirestoreCachePolicy.networkOnly || spec.dedupeWindowMs > 0;
+  }
+
+  bool _isCacheFresh(_QueryCacheEntry entry, FirestoreQuerySpec spec) {
+    final int ttlMs = _cacheWindowMs(spec);
+    if (ttlMs <= 0) {
+      return false;
+    }
+    return DateTime.now().difference(entry.cachedAt).inMilliseconds <= ttlMs;
+  }
+
+  void _saveQueryCache(String key, _QueryCacheEntry entry) {
+    _queryCache[key] = entry;
+    while (_queryCache.length > _maxQueryCacheEntries) {
+      _queryCache.remove(_queryCache.keys.first);
+    }
+  }
+
+  void _cacheCursorDoc(DocumentSnapshot<Map<String, dynamic>> doc, String collection) {
+    if (!doc.exists) {
+      return;
+    }
+    _cursorDocCache[_cursorDocKey(collection, doc.id)] = doc;
+    while (_cursorDocCache.length > _maxCursorDocCacheEntries) {
+      _cursorDocCache.remove(_cursorDocCache.keys.first);
+    }
+  }
+
+  List<T> _mapCachedDocs<T>(
+    _QueryCacheEntry cached,
     T Function(Map<String, dynamic> data, String docId) map,
+  ) {
+    return cached.docs.map((doc) => map(Map<String, dynamic>.from(doc.data), doc.id)).toList(growable: false);
+  }
+
+  Future<Query<Map<String, dynamic>>> _applyCursorIfRequired(
+    Query<Map<String, dynamic>> query,
+    FirestoreQuerySpec spec,
   ) async {
+    final String? startAfterDocId = spec.startAfterDocId;
+    if (startAfterDocId == null || startAfterDocId.isEmpty) {
+      return query;
+    }
+    final String key = _cursorDocKey(spec.collection, startAfterDocId);
+    final DocumentSnapshot<Map<String, dynamic>>? cachedDoc = _cursorDocCache[key];
+    if (cachedDoc != null) {
+      return query.startAfterDocument(cachedDoc);
+    }
+    final DocumentSnapshot<Map<String, dynamic>> doc =
+        await _firestore.collection(spec.collection).doc(startAfterDocId).get();
+    if (doc.exists) {
+      _cacheCursorDoc(doc, spec.collection);
+      return query.startAfterDocument(doc);
+    }
+    return query;
+  }
+
+  Future<_QueryCacheEntry> _executeNetworkQuery(FirestoreQuerySpec spec) async {
     final Stopwatch sw = Stopwatch()..start();
     try {
       Query<Map<String, dynamic>> query = _applySpec(spec);
-      if (spec.startAfterDocId != null && spec.startAfterDocId!.isNotEmpty) {
-        final doc = await _firestore.collection(spec.collection).doc(spec.startAfterDocId).get();
-        if (doc.exists) {
-          query = query.startAfterDocument(doc);
-        }
-      }
+      query = await _applyCursorIfRequired(query, spec);
       final QuerySnapshot<Map<String, dynamic>> result = await query.get();
-      final List<T> output = result.docs.map((e) => map(e.data(), e.id)).toList(growable: false);
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in result.docs) {
+        _cacheCursorDoc(doc, spec.collection);
+      }
+      final _QueryCacheEntry cached = _QueryCacheEntry(
+        result.docs.map((doc) => _RawQueryDoc(doc.id, Map<String, dynamic>.from(doc.data()))).toList(growable: false),
+        DateTime.now(),
+      );
+      if (_canUseCache(spec)) {
+        _saveQueryCache(_queryKey(spec), cached);
+      }
       await _emitTelemetry(
         FirestoreTelemetryEvent(
           timestamp: DateTime.now(),
@@ -92,7 +189,7 @@ class FirestoreTrackedClient implements FirestoreClient {
           success: true,
         ),
       );
-      return output;
+      return cached;
     } catch (error) {
       final FirestoreError mapped = mapFirestoreError(error);
       await _emitTelemetry(
@@ -110,6 +207,52 @@ class FirestoreTrackedClient implements FirestoreClient {
         ),
       );
       throw mapped;
+    }
+  }
+
+  void _refreshInBackground(FirestoreQuerySpec spec) {
+    final String key = _queryKey(spec);
+    if (_inflightQueries.containsKey(key)) {
+      return;
+    }
+    final Future<_QueryCacheEntry> refresh = _executeNetworkQuery(spec);
+    _inflightQueries[key] = refresh;
+    unawaited(
+      refresh.whenComplete(() {
+        if (identical(_inflightQueries[key], refresh)) {
+          _inflightQueries.remove(key);
+        }
+      }),
+    );
+  }
+
+  @override
+  Future<List<T>> query<T>(
+    FirestoreQuerySpec spec,
+    T Function(Map<String, dynamic> data, String docId) map,
+  ) async {
+    final String key = _queryKey(spec);
+    final _QueryCacheEntry? cached = _queryCache[key];
+    if (_canUseCache(spec) && cached != null && _isCacheFresh(cached, spec)) {
+      if (spec.cachePolicy == FirestoreCachePolicy.staleWhileRevalidate) {
+        _refreshInBackground(spec);
+      }
+      return _mapCachedDocs(cached, map);
+    }
+    final Future<_QueryCacheEntry>? inflight = _inflightQueries[key];
+    if (inflight != null) {
+      final _QueryCacheEntry shared = await inflight;
+      return _mapCachedDocs(shared, map);
+    }
+    final Future<_QueryCacheEntry> request = _executeNetworkQuery(spec);
+    _inflightQueries[key] = request;
+    try {
+      final _QueryCacheEntry resolved = await request;
+      return _mapCachedDocs(resolved, map);
+    } finally {
+      if (identical(_inflightQueries[key], request)) {
+        _inflightQueries.remove(key);
+      }
     }
   }
 

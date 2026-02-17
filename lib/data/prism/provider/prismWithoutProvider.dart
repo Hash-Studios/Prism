@@ -13,6 +13,7 @@ List? sortedData;
 List? subSortedData;
 late List wallsDataL;
 Map wall = {};
+bool prismHasMore = true;
 Future<List?> getPrismWalls() async {
   logger.d(
     "[PrismFeed] getPrismWalls start",
@@ -26,6 +27,7 @@ Future<List?> getPrismWalls() async {
   }
   prismWalls = [];
   subPrismWalls = [];
+  prismHasMore = true;
   try {
     final List<Map<String, dynamic>> value = await firestoreClient.query<Map<String, dynamic>>(
       const FirestoreQuerySpec(
@@ -36,9 +38,11 @@ Future<List?> getPrismWalls() async {
         ],
         orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
         limit: 24,
+        dedupeWindowMs: 1000,
       ),
       (data, docId) => <String, dynamic>{...data, '__docId': docId},
     );
+    prismHasMore = value.length == 24;
     prismWalls = <Map<String, dynamic>>[];
     prismWallsDocSnaps = <String>[];
     for (final f in value) {
@@ -80,6 +84,7 @@ Future<List?> seeMorePrism() async {
   );
   if (!(prismWallsDocSnaps?.isNotEmpty ?? false)) {
     logger.w("[PrismFeed] seeMorePrism skipped: no cursor snapshot available");
+    prismHasMore = false;
     return subPrismWalls ?? prismWalls ?? <dynamic>[];
   }
   prismWalls ??= <Map<String, dynamic>>[];
@@ -95,9 +100,11 @@ Future<List?> seeMorePrism() async {
         orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
         startAfterDocId: prismWallsDocSnaps!.last,
         limit: 24,
+        dedupeWindowMs: 1000,
       ),
       (data, docId) => <String, dynamic>{...data, '__docId': docId},
     );
+    prismHasMore = value.length == 24;
     for (final f in value) {
       final Map<String, dynamic> map = <String, dynamic>{...f};
       map['createdAt'] = map['createdAt'].toString();
@@ -118,6 +125,7 @@ Future<List?> seeMorePrism() async {
       },
     );
   } catch (error, stackTrace) {
+    prismHasMore = false;
     logger.e(
       "[PrismFeed] seeMorePrism failed",
       error: error,

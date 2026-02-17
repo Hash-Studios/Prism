@@ -15,6 +15,8 @@ class CollectionScreen extends StatefulWidget {
 }
 
 class _CollectionScreenState extends State<CollectionScreen> {
+  late Future<List?> _collectionsFuture;
+
   Future<bool> onWillPop() async {
     popNavStackIfPossible();
     return true;
@@ -25,6 +27,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
     analytics.logEvent(
       name: 'collections_checked',
     );
+    _collectionsFuture = getCollections();
     super.initState();
   }
 
@@ -33,7 +36,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
     return WillPopScope(
       onWillPop: onWillPop,
       child: FutureBuilder<List?>(
-        future: getCollections(), // async work
+        future: _collectionsFuture,
         builder: (BuildContext context, AsyncSnapshot<List?> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
@@ -44,7 +47,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
               if (snapshot.hasError) {
                 return RefreshIndicator(
                     onRefresh: () async {
-                      getCollections();
+                      setState(() {
+                        _collectionsFuture = getCollections();
+                      });
+                      await _collectionsFuture;
                     },
                     child: const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
