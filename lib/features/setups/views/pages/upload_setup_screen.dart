@@ -3,12 +3,12 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/data/apps/appsData.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -674,7 +674,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                                     .textTheme
                                                                     .bodyLarge!
                                                                     .color!
-                                                                    .withOpacity(0.1),
+                                                                    .withValues(alpha: 0.1),
                                                                 borderRadius: BorderRadius.circular(5000),
                                                               ),
                                                             ),
@@ -737,7 +737,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                                                 .textTheme
                                                                                 .bodyLarge!
                                                                                 .color!
-                                                                                .withOpacity(0.6),
+                                                                                .withValues(alpha: 0.6),
                                                                           ),
                                                                     ),
                                                                   ),
@@ -801,7 +801,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                                                 color: Theme.of(context)
                                                                                     .colorScheme
                                                                                     .secondary
-                                                                                    .withOpacity(0.5),
+                                                                                    .withValues(alpha: 0.5),
                                                                                 fontSize: 12,
                                                                                 fontFamily: "Proxima Nova",
                                                                                 fontWeight: FontWeight.normal,
@@ -940,7 +940,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                               : () async {
                                   final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
                                   if (pickedFile != null) {
-                                    Future.delayed(const Duration()).then((value) async {
+                                    Future.delayed(Duration.zero).then((value) async {
                                       final argumentsFromWall = await context
                                           .pushNamedRoute(uploadWallRoute, arguments: [File(pickedFile.path), true]);
                                       if (argumentsFromWall != null) {
@@ -1078,7 +1078,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w100,
-                color: Theme.of(context).colorScheme.secondary.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -1091,7 +1091,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w100,
-                color: Theme.of(context).colorScheme.secondary.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -1106,7 +1106,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w100,
-                color: Theme.of(context).colorScheme.secondary.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
               ),
             ),
           )

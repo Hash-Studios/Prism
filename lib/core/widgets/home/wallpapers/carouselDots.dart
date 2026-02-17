@@ -29,7 +29,7 @@ class CarouselDots extends StatelessWidget {
                       : Theme.of(context).colorScheme.error
                   : Theme.of(context).colorScheme.error == Colors.black
                       ? Colors.white38
-                      : Theme.of(context).colorScheme.error.withOpacity(0.38),
+                      : Theme.of(context).colorScheme.error.withValues(alpha: 0.38),
             ),
           );
         }).toList(),

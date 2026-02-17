@@ -47,15 +47,15 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection> with Si
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.black12.withOpacity(.1),
-                  end: Colors.black.withOpacity(.14),
+                  begin: Colors.black12.withValues(alpha: .1),
+                  end: Colors.black.withValues(alpha: .14),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.black.withOpacity(.14),
-                  end: Colors.black.withOpacity(.1),
+                  begin: Colors.black.withValues(alpha: .14),
+                  end: Colors.black.withValues(alpha: .1),
                 ),
               ),
             ],

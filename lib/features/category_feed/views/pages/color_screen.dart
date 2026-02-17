@@ -1,9 +1,9 @@
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/features/category_feed/views/widgets/color_loader.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:flutter/material.dart';
 
 class ColorScreen extends StatelessWidget {

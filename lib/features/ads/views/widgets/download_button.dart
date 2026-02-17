@@ -1,9 +1,9 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -42,7 +42,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () async {
+      onTap: () {
         if (!isLoading) {
           if (globals.prismUser.loggedIn == true) {
             if (globals.prismUser.premium == true) {
@@ -68,7 +68,9 @@ class _DownloadButtonState extends State<DownloadButton> {
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
+              ],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
@@ -89,7 +91,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     );
   }
 
-  void showPremiumPopUp(Function func) {
+  void showPremiumPopUp(VoidCallback func) {
     if (globals.prismUser.premium == false) {
       toasts.codeSend("Variants are a premium feature.");
       context.pushNamedRoute(premiumRoute);
@@ -113,39 +115,39 @@ class _DownloadButtonState extends State<DownloadButton> {
     logger.d('(SDK $sdkInt)');
     if (widget.link!.contains("com.hash.prism")) {
       debugPrint("Downloading using Picasso");
-      await platform.invokeMethod('save_image_file', {"link": widget.link}).then((value) {
-        if (value as bool) {
-          analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link});
-          toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-        } else {
-          toasts.error("Couldn't download! Please Retry!");
+      final bool didSave = await platform.invokeMethod<bool>('save_image_file', {"link": widget.link}) ?? false;
+      if (didSave) {
+        analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link});
+        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+      } else {
+        toasts.error("Couldn't download! Please Retry!");
+      }
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } else {
+      debugPrint("Downloading using Platform Method");
+      Future.delayed(const Duration(seconds: 2)).then((value) {
+        if (!mounted) {
+          return;
         }
         setState(() {
           isLoading = false;
         });
-      }).catchError((e) {
-        logger.d(e.toString());
-        setState(() {
-          isLoading = false;
-        });
       });
-    } else {
-      debugPrint("Downloading using Platform Method");
-      Future.delayed(const Duration(seconds: 2)).then((value) => setState(() {
-            isLoading = false;
-          }));
-      platform.invokeMethod('download_image_dm', {
+      await platform.invokeMethod<void>('download_image_dm', {
         "link": widget.link,
         "filename": widget.link!.split('/').last.replaceAll(".jpg", "").replaceAll(".png", "")
-      }).then((value) {
-        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-        analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link});
       });
+      toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+      analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link});
     }
   }
 }
 
-void showDownloadPopup(BuildContext context, Function rewardFunc) {
+void showDownloadPopup(BuildContext context, VoidCallback rewardFunc) {
   showModal(
       context: context,
       builder: (BuildContext context) => StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
@@ -159,7 +161,7 @@ void showDownloadPopup(BuildContext context, Function rewardFunc) {
 }
 
 class DownloadDialogContent extends StatefulWidget {
-  final Function rewardFunc;
+  final VoidCallback rewardFunc;
 
   const DownloadDialogContent({required this.rewardFunc});
 
@@ -276,7 +278,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                   ),
                   MaterialButton(
                     shape: const StadiumBorder(),
-                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                     onPressed: () {
                       if (canWatchAd) {
                         context.read<AdsBloc>().add(const AdsEvent.watchAdRequested());
@@ -299,7 +301,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                                 'WATCH AD',
                                 style: TextStyle(
                                   fontSize: 16.0,
-                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                 ),
                               ),
                               const SizedBox(height: 16, width: 16, child: CircularProgressIndicator()),

@@ -202,7 +202,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 width: MediaQuery.of(context).size.width * 0.27,
                                                 height: MediaQuery.of(context).size.height * 0.06,
                                                 decoration: BoxDecoration(
-                                                    color: Colors.black.withOpacity(0.5),
+                                                    color: Colors.black.withValues(alpha: 0.5),
                                                     border: Border.all(color: Colors.black45),
                                                     borderRadius: BorderRadius.circular(5)),
                                                 child: const Column(
@@ -265,7 +265,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 width: MediaQuery.of(context).size.width * 0.27,
                                                 height: MediaQuery.of(context).size.height * 0.06,
                                                 decoration: BoxDecoration(
-                                                    color: Colors.white.withOpacity(0.5),
+                                                    color: Colors.white.withValues(alpha: 0.5),
                                                     border: Border.all(color: Colors.black45),
                                                     borderRadius: BorderRadius.circular(5)),
                                                 child: const Column(
@@ -333,8 +333,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 height: MediaQuery.of(context).size.height * 0.06,
                                                 decoration: BoxDecoration(
                                                     color: MediaQuery.of(context).platformBrightness == Brightness.dark
-                                                        ? Colors.white.withOpacity(0.5)
-                                                        : Colors.black.withOpacity(0.5),
+                                                        ? Colors.white.withValues(alpha: 0.5)
+                                                        : Colors.black.withValues(alpha: 0.5),
                                                     border: Border.all(color: Colors.black45),
                                                     borderRadius: BorderRadius.circular(5)),
                                                 child: Column(

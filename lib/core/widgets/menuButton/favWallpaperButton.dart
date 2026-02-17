@@ -1,11 +1,11 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
@@ -48,7 +48,9 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
         Container(
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
+              ],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),

@@ -1,9 +1,10 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -17,7 +18,6 @@ import 'package:gallery_saver/gallery_saver.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ReviewScreen extends StatefulWidget {
   @override
@@ -190,7 +190,7 @@ class WallTile extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
           child: ColoredBox(
-            color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -475,7 +475,7 @@ class RejectedWallTile extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
           child: ColoredBox(
-            color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -842,7 +842,7 @@ class SetupTile extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
           child: ColoredBox(
-            color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -1317,7 +1317,7 @@ class RejectedSetupTile extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
           child: ColoredBox(
-            color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(

@@ -22,15 +22,15 @@ class CollapsedPanel extends StatelessWidget {
           topRight: Radius.circular(30),
         ),
         color: panelCollapsed!
-            ? Theme.of(context).primaryColor.withOpacity(1)
-            : Theme.of(context).primaryColor.withOpacity(0),
+            ? Theme.of(context).primaryColor.withValues(alpha: 1)
+            : Theme.of(context).primaryColor.withValues(alpha: 0),
       ),
       child: SizedBox(
         width: MediaQuery.of(context).size.width,
         height: MediaQuery.of(context).size.height / 30,
         child: Center(
             child: AnimatedOpacity(
-          duration: const Duration(),
+          duration: Duration.zero,
           opacity: panelCollapsed! ? 1.0 : 0.0,
           child: IconButton(
             icon: Icon(

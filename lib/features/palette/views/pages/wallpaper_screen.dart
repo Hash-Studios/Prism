@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -19,7 +21,6 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -29,7 +30,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class WallpaperScreen extends StatefulWidget {
   final List? arguments;
@@ -123,7 +123,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
       updateViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
       _futureView = getViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
     }
-    Future.delayed(const Duration()).then((value) => _updatePaletteGenerator());
+    Future.delayed(Duration.zero).then((value) => _updatePaletteGenerator());
   }
 
   @override
@@ -237,8 +237,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(30),
                             color: panelCollapsed
-                                ? Theme.of(context).primaryColor.withOpacity(1)
-                                : Theme.of(context).primaryColor.withOpacity(.5),
+                                ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                                : Theme.of(context).primaryColor.withValues(alpha: .5),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,7 +247,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                   child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: AnimatedOpacity(
-                                  duration: const Duration(),
+                                  duration: Duration.zero,
                                   opacity: panelCollapsed ? 0.0 : 1.0,
                                   child: GestureDetector(
                                     onTap: () {
@@ -288,7 +288,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               Icon(
                                                 JamIcons.eye,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -306,7 +306,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               Icon(
                                                 JamIcons.heart_f,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -324,7 +324,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               Icon(
                                                 JamIcons.save,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
@@ -358,7 +358,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                 Icon(
                                                   JamIcons.unordered_list,
                                                   size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                                 ),
                                               ],
                                             ),
@@ -377,7 +377,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               Icon(
                                                 JamIcons.set_square,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                             ],
                                           ),
@@ -395,7 +395,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               Icon(
                                                 JamIcons.database,
                                                 size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                             ],
                                           ),
@@ -652,8 +652,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(30),
                                 color: panelCollapsed
-                                    ? Theme.of(context).primaryColor.withOpacity(1)
-                                    : Theme.of(context).primaryColor.withOpacity(.5),
+                                    ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                                    : Theme.of(context).primaryColor.withValues(alpha: .5),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -662,7 +662,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                       child: Padding(
                                     padding: const EdgeInsets.all(10.0),
                                     child: AnimatedOpacity(
-                                      duration: const Duration(),
+                                      duration: Duration.zero,
                                       opacity: panelCollapsed ? 0.0 : 1.0,
                                       child: GestureDetector(
                                         onTap: () {
@@ -765,7 +765,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   Icon(
                                                     JamIcons.arrow_circle_right,
                                                     size: 20,
-                                                    color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                    color:
+                                                        Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
@@ -783,7 +784,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   Icon(
                                                     JamIcons.save,
                                                     size: 20,
-                                                    color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                    color:
+                                                        Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
@@ -873,7 +875,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   Icon(
                                                     JamIcons.set_square,
                                                     size: 20,
-                                                    color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                    color:
+                                                        Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                                   ),
                                                 ],
                                               ),
@@ -899,7 +902,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                     Icon(
                                                       JamIcons.info,
                                                       size: 20,
-                                                      color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                      color:
+                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                                     ),
                                                   ],
                                                 ),
@@ -1160,8 +1164,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(30),
                                     color: panelCollapsed
-                                        ? Theme.of(context).primaryColor.withOpacity(1)
-                                        : Theme.of(context).primaryColor.withOpacity(.5),
+                                        ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                                        : Theme.of(context).primaryColor.withValues(alpha: .5),
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1170,7 +1174,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                           child: Padding(
                                         padding: const EdgeInsets.all(10.0),
                                         child: AnimatedOpacity(
-                                          duration: const Duration(),
+                                          duration: Duration.zero,
                                           opacity: panelCollapsed ? 0.0 : 1.0,
                                           child: GestureDetector(
                                             onTap: () {
@@ -1259,8 +1263,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                           Icon(
                                                             JamIcons.info,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
@@ -1276,8 +1282,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                           Icon(
                                                             JamIcons.set_square,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
@@ -1330,8 +1338,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                           Icon(
                                                             JamIcons.database,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                         ],
                                                       ),
@@ -1595,8 +1605,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(30),
                                         color: panelCollapsed
-                                            ? Theme.of(context).primaryColor.withOpacity(1)
-                                            : Theme.of(context).primaryColor.withOpacity(.5),
+                                            ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                                            : Theme.of(context).primaryColor.withValues(alpha: .5),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1605,7 +1615,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               child: Padding(
                                             padding: const EdgeInsets.all(10.0),
                                             child: AnimatedOpacity(
-                                              duration: const Duration(),
+                                              duration: Duration.zero,
                                               opacity: panelCollapsed ? 0.0 : 1.0,
                                               child: GestureDetector(
                                                 onTap: () {
@@ -1697,7 +1707,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                                 color: Theme.of(context)
                                                                     .colorScheme
                                                                     .secondary
-                                                                    .withOpacity(.7),
+                                                                    .withValues(alpha: .7),
                                                               ),
                                                               const SizedBox(width: 10),
                                                               Text(
@@ -1716,7 +1726,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                                 color: Theme.of(context)
                                                                     .colorScheme
                                                                     .secondary
-                                                                    .withOpacity(.7),
+                                                                    .withValues(alpha: .7),
                                                               ),
                                                               const SizedBox(width: 10),
                                                               Text(
@@ -1773,7 +1783,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                                 color: Theme.of(context)
                                                                     .colorScheme
                                                                     .secondary
-                                                                    .withOpacity(.7),
+                                                                    .withValues(alpha: .7),
                                                               ),
                                                             ],
                                                           ),
@@ -2038,8 +2048,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(30),
                                         color: panelCollapsed
-                                            ? Theme.of(context).primaryColor.withOpacity(1)
-                                            : Theme.of(context).primaryColor.withOpacity(.5),
+                                            ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                                            : Theme.of(context).primaryColor.withValues(alpha: .5),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2048,7 +2058,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               child: Padding(
                                             padding: const EdgeInsets.all(10.0),
                                             child: AnimatedOpacity(
-                                              duration: const Duration(),
+                                              duration: Duration.zero,
                                               opacity: panelCollapsed ? 0.0 : 1.0,
                                               child: GestureDetector(
                                                 onTap: () {
@@ -2089,8 +2099,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                           Icon(
                                                             JamIcons.eye,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
@@ -2106,8 +2118,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                           Icon(
                                                             JamIcons.heart_f,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
@@ -2123,8 +2137,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                           Icon(
                                                             JamIcons.save,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
@@ -2157,7 +2173,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                               color: Theme.of(context)
                                                                   .colorScheme
                                                                   .secondary
-                                                                  .withOpacity(.7),
+                                                                  .withValues(alpha: .7),
                                                             ),
                                                           ],
                                                         ),
@@ -2174,8 +2190,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                           Icon(
                                                             JamIcons.set_square,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                         ],
                                                       ),
@@ -2194,8 +2212,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                           Icon(
                                                             JamIcons.search,
                                                             size: 20,
-                                                            color:
-                                                                Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
                                                           ),
                                                         ],
                                                       ),

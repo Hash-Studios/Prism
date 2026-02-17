@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -14,7 +15,6 @@ import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -220,8 +220,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
                       color: panelCollapsed
-                          ? Theme.of(context).primaryColor.withOpacity(1)
-                          : Theme.of(context).primaryColor.withOpacity(.5),
+                          ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                          : Theme.of(context).primaryColor.withValues(alpha: .5),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +230,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                             child: Padding(
                           padding: const EdgeInsets.all(10.0),
                           child: AnimatedOpacity(
-                            duration: const Duration(),
+                            duration: Duration.zero,
                             opacity: panelCollapsed ? 0.0 : 1.0,
                             child: GestureDetector(
                               onTap: () {
@@ -328,7 +328,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                         Icon(
                                           JamIcons.upload,
                                           size: 20,
-                                          color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
@@ -350,7 +350,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                         Icon(
                                           JamIcons.arrow_circle_right,
                                           size: 20,
-                                          color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
@@ -372,7 +372,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                         Icon(
                                           JamIcons.save,
                                           size: 20,
-                                          color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
@@ -411,7 +411,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                         Icon(
                                           JamIcons.set_square,
                                           size: 20,
-                                          color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                         ),
                                       ],
                                     ),
@@ -433,7 +433,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                         Icon(
                                           JamIcons.database,
                                           size: 20,
-                                          color: Theme.of(context).colorScheme.secondary.withOpacity(.7),
+                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                         ),
                                       ],
                                     ),

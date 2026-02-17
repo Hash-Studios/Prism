@@ -1,3 +1,4 @@
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/setupOld.dart';
@@ -7,7 +8,6 @@ import 'package:Prism/features/setups/views/widgets/arrow_animation.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -143,7 +143,7 @@ class _SetupPageState extends State<SetupPage> {
                   logger.d("snapshot none, waiting");
                   return Center(child: Loader());
                 } else {
-                  Future.delayed(const Duration()).then((value) => setState(() {}));
+                  Future.delayed(Duration.zero).then((value) => setState(() {}));
                   return SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height * 0.9,
@@ -191,24 +191,24 @@ class _SetupPageState extends State<SetupPage> {
                                             ? context.prismModeStyleForContext() == "Light"
                                                 ? [
                                                     BoxShadow(
-                                                      color: Colors.black.withOpacity(.15),
+                                                      color: Colors.black.withValues(alpha: .15),
                                                       blurRadius: 38,
                                                       offset: const Offset(0, 19),
                                                     ),
                                                     BoxShadow(
-                                                      color: Colors.black.withOpacity(.10),
+                                                      color: Colors.black.withValues(alpha: .10),
                                                       blurRadius: 12,
                                                       offset: const Offset(0, 15),
                                                     )
                                                   ]
                                                 : [
                                                     BoxShadow(
-                                                      color: Colors.black.withOpacity(.7),
+                                                      color: Colors.black.withValues(alpha: .7),
                                                       blurRadius: 38,
                                                       offset: const Offset(0, 19),
                                                     ),
                                                     BoxShadow(
-                                                      color: Colors.black.withOpacity(.6),
+                                                      color: Colors.black.withValues(alpha: .6),
                                                       blurRadius: 12,
                                                       offset: const Offset(0, 15),
                                                     )

@@ -1,9 +1,9 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -163,12 +163,12 @@ class _ThemeViewState extends State<ThemeView> {
                   borderRadius: BorderRadius.circular(17),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(.15),
+                      color: Colors.black.withValues(alpha: .15),
                       blurRadius: 38,
                       offset: const Offset(0, 19),
                     ),
                     BoxShadow(
-                      color: Colors.black.withOpacity(.10),
+                      color: Colors.black.withValues(alpha: .10),
                       blurRadius: 12,
                       offset: const Offset(0, 15),
                     )
@@ -185,24 +185,38 @@ class _ThemeViewState extends State<ThemeView> {
                   child: changingLight
                       ? SvgPicture.string(
                           themePicture
+                              .replaceAll("181818",
+                                  context.prismLightTheme().primaryColor.toARGB32().toRadixString(16).substring(2))
+                              .replaceAll("E57697", selectedAccentColor!.toARGB32().toRadixString(16).substring(2))
                               .replaceAll(
-                                  "181818", context.prismLightTheme().primaryColor.value.toRadixString(16).substring(2))
-                              .replaceAll("E57697", selectedAccentColor!.value.toRadixString(16).substring(2))
-                              .replaceAll("F0F0F0",
-                                  context.prismLightTheme().colorScheme.secondary.value.toRadixString(16).substring(2))
-                              .replaceAll(
-                                  "2F2F2F", context.prismLightTheme().hintColor.value.toRadixString(16).substring(2)),
+                                  "F0F0F0",
+                                  context
+                                      .prismLightTheme()
+                                      .colorScheme
+                                      .secondary
+                                      .toARGB32()
+                                      .toRadixString(16)
+                                      .substring(2))
+                              .replaceAll("2F2F2F",
+                                  context.prismLightTheme().hintColor.toARGB32().toRadixString(16).substring(2)),
                           fit: BoxFit.cover,
                         )
                       : SvgPicture.string(
                           themePicture
+                              .replaceAll("181818",
+                                  context.prismDarkTheme().primaryColor.toARGB32().toRadixString(16).substring(2))
+                              .replaceAll("E57697", selectedDarkAccentColor!.toARGB32().toRadixString(16).substring(2))
                               .replaceAll(
-                                  "181818", context.prismDarkTheme().primaryColor.value.toRadixString(16).substring(2))
-                              .replaceAll("E57697", selectedDarkAccentColor!.value.toRadixString(16).substring(2))
-                              .replaceAll("F0F0F0",
-                                  context.prismDarkTheme().colorScheme.secondary.value.toRadixString(16).substring(2))
-                              .replaceAll(
-                                  "2F2F2F", context.prismDarkTheme().hintColor.value.toRadixString(16).substring(2)),
+                                  "F0F0F0",
+                                  context
+                                      .prismDarkTheme()
+                                      .colorScheme
+                                      .secondary
+                                      .toARGB32()
+                                      .toRadixString(16)
+                                      .substring(2))
+                              .replaceAll("2F2F2F",
+                                  context.prismDarkTheme().hintColor.toARGB32().toRadixString(16).substring(2)),
                           fit: BoxFit.cover,
                         ),
                 ),
@@ -278,7 +292,7 @@ class _ThemeViewState extends State<ThemeView> {
                                   width: MediaQuery.of(context).size.width * 0.3,
                                   height: MediaQuery.of(context).size.height * 0.06,
                                   decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+                                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
                                       border: Border.all(color: Colors.black45),
                                       borderRadius: BorderRadius.circular(10)),
                                   child: Column(
@@ -372,7 +386,7 @@ class _ThemeViewState extends State<ThemeView> {
                                   width: MediaQuery.of(context).size.width * 0.3,
                                   height: MediaQuery.of(context).size.height * 0.06,
                                   decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+                                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
                                       border: Border.all(color: Colors.black45),
                                       borderRadius: BorderRadius.circular(10)),
                                   child: Column(
@@ -446,7 +460,7 @@ class _ThemeViewState extends State<ThemeView> {
                             Container(
                               margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
                               ),
                               child: SizedBox(
@@ -516,7 +530,7 @@ class _ThemeViewState extends State<ThemeView> {
                             Container(
                               margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
                               ),
                               child: SizedBox(
@@ -624,8 +638,8 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       height: 60,
                       decoration: BoxDecoration(
                         color: _selectedValue != 0
-                            ? Theme.of(context).colorScheme.secondary.withOpacity(0.2)
-                            : Theme.of(context).colorScheme.error.withOpacity(0.2),
+                            ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
+                            : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                         border: Border.all(
                             color: _selectedValue != 0
                                 ? Theme.of(context).colorScheme.secondary
@@ -665,8 +679,8 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       height: 60,
                       decoration: BoxDecoration(
                         color: _selectedValue != 1
-                            ? Theme.of(context).colorScheme.secondary.withOpacity(0.2)
-                            : Theme.of(context).colorScheme.error.withOpacity(0.2),
+                            ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
+                            : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                         border: Border.all(
                             color: _selectedValue != 1
                                 ? Theme.of(context).colorScheme.secondary
@@ -706,8 +720,8 @@ class _PreferencePanelState extends State<PreferencePanel> {
                       height: 60,
                       decoration: BoxDecoration(
                         color: _selectedValue != 2
-                            ? Theme.of(context).colorScheme.secondary.withOpacity(0.2)
-                            : Theme.of(context).colorScheme.error.withOpacity(0.2),
+                            ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
+                            : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                         border: Border.all(
                             color: _selectedValue != 2
                                 ? Theme.of(context).colorScheme.secondary

@@ -1,15 +1,15 @@
+import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/contriPopUp.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatelessWidget {
   Future<List<Contributor>> printStream() async {
@@ -75,7 +75,7 @@ class AboutScreen extends StatelessWidget {
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium!
-                      .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
+                      .copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                 ),
                 const SizedBox(
                   height: 10,
@@ -86,7 +86,7 @@ class AboutScreen extends StatelessWidget {
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium!
-                      .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
+                      .copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                 ),
                 const SizedBox(
                   height: 10,
@@ -199,7 +199,7 @@ class AboutScreen extends StatelessWidget {
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium!
-                                  .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
+                                  .copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                             ),
                             onTap: () {
                               launch(c.htmlUrl!);
@@ -272,7 +272,7 @@ class ContributorWidget extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium!
-                  .copyWith(color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
+                  .copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
             ),
           ),
         ],

@@ -17,7 +17,7 @@ class SearchFocusedMenuHolder extends StatefulWidget {
 
 class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
   GlobalKey containerKey = GlobalKey();
-  Offset childOffset = const Offset(0, 0);
+  Offset childOffset = Offset.zero;
   Size? childSize;
 
   void getOffset() {
@@ -66,7 +66,7 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
                   color: Theme.of(context).hintColor,
                   borderRadius:
                       const BorderRadius.only(topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
-              padding: const EdgeInsets.all(0),
+              padding: EdgeInsets.zero,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                 child: Icon(

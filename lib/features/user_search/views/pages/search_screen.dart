@@ -1,3 +1,4 @@
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
@@ -8,7 +9,6 @@ import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -274,8 +274,8 @@ class _SearchScreenState extends State<SearchScreen> {
                         child: context.prismModeStyleForContext() == "Dark"
                             ? SvgPicture.string(
                                 loaderDark
-                                    .replaceAll(
-                                        "181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -284,19 +284,37 @@ class _SearchScreenState extends State<SearchScreen> {
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll("F0F0F0",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("2F2E41",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("3F3D56",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll(
-                                        "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
+                                        "F0F0F0",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2E41",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "3F3D56",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
                               )
                             : SvgPicture.string(
                                 loaderLight
-                                    .replaceAll(
-                                        "181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -305,14 +323,32 @@ class _SearchScreenState extends State<SearchScreen> {
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll("F0F0F0",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("2F2E41",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("3F3D56",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll(
-                                        "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
+                                        "F0F0F0",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2E41",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "3F3D56",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
                               ),
                       ),
                       SizedBox(

@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/popups/category_popup.dart';
@@ -6,7 +7,6 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -148,7 +148,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
               ? SvgPicture.string(
                   prismTextLogo.replaceAll(
                     "black",
-                    "#${Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2)}",
+                    "#${Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2)}",
                   ),
                 )
               : GestureDetector(

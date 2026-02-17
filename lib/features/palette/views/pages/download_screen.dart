@@ -1,11 +1,11 @@
 import 'dart:collection';
 import 'dart:io';
 
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -122,11 +122,11 @@ class _DownloadScreenState extends State<DownloadScreen> {
                           Container(
                             decoration: files.isEmpty
                                 ? BoxDecoration(
-                                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.12),
+                                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(20),
                                   )
                                 : BoxDecoration(
-                                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.12),
+                                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(20),
                                     image: DecorationImage(image: FileImage(files[index] as File), fit: BoxFit.cover)),
                           ),
@@ -135,8 +135,8 @@ class _DownloadScreenState extends State<DownloadScreen> {
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
-                                highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                                splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                                highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                 onTap: () {
                                   context
                                       .pushNamedRoute(downloadWallpaperRoute, arguments: ["Downloads", files[index]]);
@@ -156,8 +156,8 @@ class _DownloadScreenState extends State<DownloadScreen> {
                         child: context.prismModeStyleForContext() == "Dark"
                             ? SvgPicture.string(
                                 downloadsDark
-                                    .replaceAll(
-                                        "181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -166,19 +166,37 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll("F0F0F0",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("2F2E41",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("3F3D56",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll(
-                                        "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
+                                        "F0F0F0",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2E41",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "3F3D56",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
                               )
                             : SvgPicture.string(
                                 downloadsLight
-                                    .replaceAll(
-                                        "181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -187,14 +205,32 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll("F0F0F0",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("2F2E41",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("3F3D56",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll(
-                                        "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
+                                        "F0F0F0",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2E41",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "3F3D56",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
                               ),
                       ),
                       SizedBox(

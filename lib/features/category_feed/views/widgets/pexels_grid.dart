@@ -1,3 +1,5 @@
+import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
@@ -7,11 +9,9 @@ import 'package:Prism/features/category_feed/views/widgets/pexels_tile.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class PexelsGrid extends StatefulWidget {
   final String? provider;
@@ -80,7 +80,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                 decoration: BoxDecoration(
                                     color: context.prismModeStyleForContext() == "Dark"
                                         ? Colors.white10
-                                        : Colors.black.withOpacity(.1),
+                                        : Colors.black.withValues(alpha: .1),
                                     borderRadius: BorderRadius.circular(20),
                                     image: DecorationImage(
                                         image: CachedNetworkImageProvider(globals.topImageLink), fit: BoxFit.cover)),
@@ -88,7 +88,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                   child: Container(
                                     width: MediaQuery.of(context).size.width,
                                     color: globals.bannerTextOn == "true"
-                                        ? Colors.black.withOpacity(0.4)
+                                        ? Colors.black.withValues(alpha: 0.4)
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
@@ -123,7 +123,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                       decoration: BoxDecoration(
                                         color: context.prismModeStyleForContext() == "Dark"
                                             ? Colors.white10
-                                            : Colors.black.withOpacity(.1),
+                                            : Colors.black.withValues(alpha: .1),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                     )
@@ -131,7 +131,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                       decoration: BoxDecoration(
                                           color: context.prismModeStyleForContext() == "Dark"
                                               ? Colors.white10
-                                              : Colors.black.withOpacity(.1),
+                                              : Colors.black.withValues(alpha: .1),
                                           borderRadius: BorderRadius.circular(20),
                                           image: DecorationImage(
                                               image:

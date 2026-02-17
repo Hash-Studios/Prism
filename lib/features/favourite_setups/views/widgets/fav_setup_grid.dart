@@ -1,9 +1,9 @@
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/setups/views/widgets/loading_setup_cards.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -53,15 +53,15 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.black.withOpacity(.1),
-                  end: Colors.black.withOpacity(.14),
+                  begin: Colors.black.withValues(alpha: .1),
+                  end: Colors.black.withValues(alpha: .14),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.black.withOpacity(.14),
-                  end: Colors.black.withOpacity(.1),
+                  begin: Colors.black.withValues(alpha: .14),
+                  end: Colors.black.withValues(alpha: .1),
                 ),
               ),
             ],
@@ -100,8 +100,8 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                         child: context.prismModeStyleForContext() == "Dark"
                             ? SvgPicture.string(
                                 favouritesDark
-                                    .replaceAll(
-                                        "181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -110,19 +110,37 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll("F0F0F0",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("2F2E41",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("3F3D56",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll(
-                                        "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
+                                        "F0F0F0",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2E41",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "3F3D56",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
                               )
                             : SvgPicture.string(
                                 favouritesLight
-                                    .replaceAll(
-                                        "181818", Theme.of(context).primaryColor.value.toRadixString(16).substring(2))
+                                    .replaceAll("181818",
+                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
                                     .replaceAll(
                                         "E57697",
                                         Theme.of(context)
@@ -131,14 +149,32 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                                             .toString()
                                             .replaceAll("Color(0xff", "")
                                             .replaceAll(")", ""))
-                                    .replaceAll("F0F0F0",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("2F2E41",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
-                                    .replaceAll("3F3D56",
-                                        Theme.of(context).colorScheme.secondary.value.toRadixString(16).substring(2))
                                     .replaceAll(
-                                        "2F2F2F", Theme.of(context).hintColor.value.toRadixString(16).substring(2)),
+                                        "F0F0F0",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2E41",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll(
+                                        "3F3D56",
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .secondary
+                                            .toARGB32()
+                                            .toRadixString(16)
+                                            .substring(2))
+                                    .replaceAll("2F2F2F",
+                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
                               ),
                       ),
                       SizedBox(
@@ -176,8 +212,8 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                splashColor: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
-                                highlightColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                                splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                                highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                 onTap: () {
                                   if (context.favouriteSetupsAdapter(listen: false).liked == []) {
                                   } else {

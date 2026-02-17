@@ -1,12 +1,12 @@
 import 'dart:async';
 
+import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/payments/components.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -19,7 +19,7 @@ CustomerInfo? _purchaserInfo;
 Future<void> checkPremium() async {
   appData.isPro = false;
 
-  await Purchases.setup(apiKey, appUserId: globals.prismUser.id);
+  await Purchases.configure(PurchasesConfiguration(apiKey)..appUserID = globals.prismUser.id);
 
   CustomerInfo purchaserInfo;
   try {
@@ -56,8 +56,8 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   Future<void> initPlatformState() async {
     appData.isPro = false;
 
-    await Purchases.setDebugLogsEnabled(true);
-    await Purchases.setup(apiKey, appUserId: globals.prismUser.id);
+    await Purchases.setLogLevel(LogLevel.debug);
+    await Purchases.configure(PurchasesConfiguration(apiKey)..appUserID = globals.prismUser.id);
 
     CustomerInfo purchaserInfo;
     try {
@@ -101,8 +101,10 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   @override
   Widget build(BuildContext context) {
     if (_purchaserInfo == null) {
-      return WillPopScope(
-        onWillPop: onWillPop,
+      return PopScope(
+        onPopInvokedWithResult: (_, __) {
+          onWillPop();
+        },
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           body: Center(
@@ -189,8 +191,10 @@ class _UpsellScreenState extends State<UpsellScreen> {
       if (offering != null) {
         final lifetime = offering.lifetime;
         if (lifetime != null) {
-          return WillPopScope(
-            onWillPop: onWillPop,
+          return PopScope(
+            onPopInvokedWithResult: (_, __) {
+              onWillPop();
+            },
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -333,6 +337,9 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       try {
                                         logger.d('now trying to restore');
                                         final CustomerInfo restoredInfo = await Purchases.restorePurchases();
+                                        if (!mounted) {
+                                          return;
+                                        }
                                         logger.d('restore completed');
                                         logger.d(restoredInfo.toString());
 
@@ -365,7 +372,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       width: MediaQuery.of(context).size.width * 0.8,
                                       decoration: BoxDecoration(
                                           color: Theme.of(context).colorScheme.error == Colors.black
-                                              ? Theme.of(context).colorScheme.secondary.withOpacity(0.1)
+                                              ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)
                                               : Theme.of(context).colorScheme.secondary,
                                           borderRadius: BorderRadius.circular(500)),
                                       padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -408,8 +415,10 @@ class _UpsellScreenState extends State<UpsellScreen> {
         }
       }
     } else {
-      return WillPopScope(
-        onWillPop: onWillPop,
+      return PopScope(
+        onPopInvokedWithResult: (_, __) {
+          onWillPop();
+        },
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           body: Center(
@@ -441,7 +450,10 @@ class _PurchaseButtonState extends State<PurchaseButton> {
         onTap: () async {
           try {
             logger.d('now trying to purchase');
-            final purchaseResult = await Purchases.purchasePackage(widget.package);
+            final purchaseResult = await Purchases.purchase(PurchaseParams.package(widget.package));
+            if (!mounted) {
+              return;
+            }
             _purchaserInfo = purchaseResult.customerInfo;
             logger.d('purchase completed');
 
@@ -494,8 +506,10 @@ class _PurchaseButtonState extends State<PurchaseButton> {
 class ProScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      onPopInvokedWithResult: (_, __) {
+        onWillPop();
+      },
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           body: Center(
@@ -553,7 +567,7 @@ class FeatureChip extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 10, 8, 10),
       child: ActionChip(
-          backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.3),
+          backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
           labelPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
           avatar: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8.0),

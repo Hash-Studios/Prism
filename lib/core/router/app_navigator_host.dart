@@ -1,6 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/undefined_screen.dart';
 import 'package:Prism/core/router/app_route_factory.dart' as app_route_factory;
+import 'package:Prism/core/router/undefined_screen.dart';
 import 'package:flutter/cupertino.dart';
 
 class AppNavigatorHost extends StatefulWidget {
@@ -15,19 +15,17 @@ class AppNavigatorHost extends StatefulWidget {
 class _AppNavigatorHostState extends State<AppNavigatorHost> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
-  Future<bool> _onWillPop() async {
+  void _handleNestedPop(Object? result) {
     final NavigatorState? navigator = _navigatorKey.currentState;
     if (navigator != null && navigator.canPop()) {
-      navigator.pop();
-      return false;
+      navigator.pop(result);
     }
-    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return NavigatorPopHandler<Object?>(
+      onPopWithResult: _handleNestedPop,
       child: Navigator(
         key: _navigatorKey,
         initialRoute: widget.initialRouteName,

@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -10,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:share/share.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class PrismList extends StatelessWidget {
   @override
@@ -70,38 +70,8 @@ class PrismList extends StatelessWidget {
               style: TextStyle(fontSize: 12),
             ),
             onTap: () {
-              launch("https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md");
+              launchUrl(Uri.parse("https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md"));
             }),
-        // ListTile(
-        //     leading: const Icon(
-        //       JamIcons.info,
-        //     ),
-        //     title: Text(
-        //       "Licenses",
-        //       style: TextStyle(
-        //           color: Theme.of(context).accentColor,
-        //           fontWeight: FontWeight.w500,
-        //           fontFamily: "Proxima Nova"),
-        //     ),
-        //     subtitle: const Text(
-        //       "Licensing docs and other related stuff.",
-        //       style: TextStyle(fontSize: 12),
-        //     ),
-        //     onTap: () {
-        //       showLicensePage(
-        //           context: context,
-        //           applicationName: "Prism Wallpaper",
-        //           applicationIcon: Padding(
-        //               padding: const EdgeInsets.all(8.0),
-        //               child: SizedBox(
-        //                   height: 70,
-        //                   child: Image.asset(
-        //                     "assets/images/prism.png",
-        //                     height: 50,
-        //                   ))),
-        //           applicationVersion:
-        //               "${globals.currentAppVersion}+${globals.currentAppVersionCode}");
-        //     }),
         ListTile(
             leading: const Icon(
               JamIcons.picture,
@@ -117,7 +87,7 @@ class PrismList extends StatelessWidget {
               "Prism uses Wallhaven and Pexels API for wallpapers",
               style: TextStyle(fontSize: 12),
             ),
-            onTap: () async {
+            onTap: () {
               showModal(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -156,27 +126,27 @@ class PrismList extends StatelessWidget {
                                 style: Theme.of(context).textTheme.headlineMedium,
                               ),
                               onTap: index == 0
-                                  ? () async {
+                                  ? () {
                                       HapticFeedback.vibrate();
                                       Navigator.of(context).pop();
-                                      launch("https://wallhaven.cc/help/api");
+                                      launchUrl(Uri.parse("https://wallhaven.cc/help/api"));
                                     }
                                   : index == 1
-                                      ? () async {
+                                      ? () {
                                           HapticFeedback.vibrate();
                                           Navigator.of(context).pop();
-                                          launch("https://www.pexels.com/api/");
+                                          launchUrl(Uri.parse("https://www.pexels.com/api/"));
                                         }
                                       : index == 2
-                                          ? () async {
+                                          ? () {
                                               HapticFeedback.vibrate();
                                               Navigator.of(context).pop();
-                                              launch("https://unsplash.com/developers");
+                                              launchUrl(Uri.parse("https://unsplash.com/developers"));
                                             }
-                                          : () async {
+                                          : () {
                                               HapticFeedback.vibrate();
                                               Navigator.of(context).pop();
-                                              launch("https://developer.github.com/v3/");
+                                              launchUrl(Uri.parse("https://developer.github.com/v3/"));
                                             },
                             );
                           }),

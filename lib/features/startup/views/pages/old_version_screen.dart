@@ -1,6 +1,6 @@
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class OldVersion extends StatelessWidget {
   @override

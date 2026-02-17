@@ -10,9 +10,8 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 
-late RemoteConfig remoteConfig;
+late FirebaseRemoteConfig remoteConfig;
 
 class SplashWidget extends StatefulWidget {
   const SplashWidget({
@@ -35,7 +34,7 @@ class _SplashWidgetState extends State<SplashWidget> {
 
   Future<bool> loading() async {
     try {
-      remoteConfig = RemoteConfig.instance;
+      remoteConfig = FirebaseRemoteConfig.instance;
       await remoteConfig.setConfigSettings(
         RemoteConfigSettings(
           fetchTimeout: const Duration(seconds: 30),
@@ -141,7 +140,7 @@ class SecondarySplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = SchedulerBinding.instance.window.platformBrightness;
+    final brightness = MediaQuery.platformBrightnessOf(context);
     final bool darkModeOn = brightness == Brightness.dark;
     return Container(
       width: MediaQuery.of(context).size.width,

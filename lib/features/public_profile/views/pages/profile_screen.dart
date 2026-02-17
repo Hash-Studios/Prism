@@ -1,6 +1,7 @@
-import 'dart:async';
 import 'dart:convert';
 
+import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
@@ -17,7 +18,6 @@ import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_l
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -26,7 +26,6 @@ import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
 
@@ -46,15 +45,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
   }
 
-  Future<bool> onWillPop() async {
-    popNavStackIfPossible();
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          popNavStackIfPossible();
+        }
+      },
       child: (email == globals.prismUser.email)
           ? Scaffold(
               key: scaffoldKey,
@@ -202,12 +200,12 @@ class _ProfileChildState extends State<ProfileChild> {
                                       padding: const EdgeInsets.all(6.0),
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: Theme.of(context).primaryColor.withOpacity(0.5),
+                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                       ),
                                       child:
                                           Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
                                     ),
-                                    onPressed: () async {
+                                    onPressed: () {
                                       Navigator.pop(context);
                                       popNavStackIfPossible();
                                     }),
@@ -220,18 +218,12 @@ class _ProfileChildState extends State<ProfileChild> {
                                       padding: const EdgeInsets.all(6.0),
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: Theme.of(context).primaryColor.withOpacity(0.5),
+                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                       ),
                                       child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
                                     ),
-                                    onPressed: () async {
+                                    onPressed: () {
                                       context.pushNamedRoute(editProfileRoute);
-                                      // await showModalBottomSheet(
-                                      //   isScrollControlled: true,
-                                      //   context: context,
-                                      //   builder: (context) =>
-                                      //       const EditProfilePanel(),
-                                      // );
                                     }),
                               ),
                         actions: !widget.ownProfile! || globals.prismUser.loggedIn == false
@@ -249,7 +241,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                               padding: const EdgeInsets.all(6.0),
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                color: Theme.of(context).primaryColor.withOpacity(0.5),
+                                                color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                               ),
                                               child: Icon(JamIcons.user_remove,
                                                   color: Theme.of(context).colorScheme.secondary),
@@ -265,7 +257,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                               padding: const EdgeInsets.all(6.0),
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                color: Theme.of(context).primaryColor.withOpacity(0.5),
+                                                color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                               ),
                                               child: Icon(JamIcons.user_plus,
                                                   color: Theme.of(context).colorScheme.secondary),
@@ -315,7 +307,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                         padding: const EdgeInsets.all(6.0),
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: Theme.of(context).primaryColor.withOpacity(0.5),
+                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                         ),
                                         child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
                                       ),
@@ -340,11 +332,11 @@ class _ProfileChildState extends State<ProfileChild> {
                                         defaultHeader
                                             .replaceAll(
                                               "#181818",
-                                              "#${Theme.of(context).primaryColor.value.toRadixString(16).substring(2)}",
+                                              "#${Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2)}",
                                             )
                                             .replaceAll(
                                               "#E77597",
-                                              "#${Theme.of(context).colorScheme.error.value.toRadixString(16).substring(2)}",
+                                              "#${Theme.of(context).colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
                                             ),
                                         fit: BoxFit.cover,
                                         width: MediaQuery.of(context).size.width,
@@ -398,7 +390,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontFamily: "Proxima Nova",
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.normal,
                                               ),
@@ -416,7 +408,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontFamily: "Proxima Nova",
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.normal,
                                               ),
@@ -435,7 +427,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                                     text: "${(widget.following ?? []).length}",
                                                     style: TextStyle(
                                                       fontFamily: "Proxima Nova",
-                                                      color: Theme.of(context).colorScheme.secondary.withOpacity(1),
+                                                      color:
+                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: 1),
                                                       fontSize: 16,
                                                       fontWeight: FontWeight.bold,
                                                     ),
@@ -443,8 +436,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       TextSpan(
                                                         text: " Following",
                                                         style: TextStyle(
-                                                          color:
-                                                              Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .secondary
+                                                              .withValues(alpha: 0.6),
                                                           fontWeight: FontWeight.normal,
                                                         ),
                                                       ),
@@ -460,7 +455,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                                     text: "${(widget.followers ?? []).length}",
                                                     style: TextStyle(
                                                       fontFamily: "Proxima Nova",
-                                                      color: Theme.of(context).colorScheme.secondary.withOpacity(1),
+                                                      color:
+                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: 1),
                                                       fontSize: 16,
                                                       fontWeight: FontWeight.bold,
                                                     ),
@@ -468,8 +464,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       TextSpan(
                                                         text: " Followers",
                                                         style: TextStyle(
-                                                          color:
-                                                              Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .secondary
+                                                              .withValues(alpha: 0.6),
                                                           fontWeight: FontWeight.normal,
                                                         ),
                                                       ),
@@ -503,7 +501,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             color: Theme.of(context)
                                                                 .colorScheme
                                                                 .secondary
-                                                                .withOpacity(0.1),
+                                                                .withValues(alpha: 0.1),
                                                           ),
                                                           child: Icon(
                                                             linksData[e]!["icon"] as IconData,
@@ -511,15 +509,14 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             color: Theme.of(context)
                                                                 .colorScheme
                                                                 .secondary
-                                                                .withOpacity(0.8),
+                                                                .withValues(alpha: 0.8),
                                                           ),
                                                         ),
-                                                        onPressed: () {
-                                                          if (widget.links![e].toString().contains("@gmail.com")) {
-                                                            launch("mailto:${widget.links![e]}");
-                                                          } else {
-                                                            launch(widget.links![e].toString());
-                                                          }
+                                                        onPressed: () async {
+                                                          final String link = widget.links![e].toString();
+                                                          final String targetLink =
+                                                              link.contains("@gmail.com") ? "mailto:$link" : link;
+                                                          await launchUrl(Uri.parse(targetLink));
                                                         }))
                                                     .toList()
                                                     .sublist(
@@ -535,14 +532,18 @@ class _ProfileChildState extends State<ProfileChild> {
                                                         padding: const EdgeInsets.all(6.0),
                                                         decoration: BoxDecoration(
                                                           shape: BoxShape.circle,
-                                                          color:
-                                                              Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .secondary
+                                                              .withValues(alpha: 0.1),
                                                         ),
                                                         child: Icon(
                                                           JamIcons.more_horizontal,
                                                           size: 20,
-                                                          color:
-                                                              Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .secondary
+                                                              .withValues(alpha: 0.8),
                                                         ),
                                                       ),
                                                       onPressed: () {
@@ -582,66 +583,11 @@ class _ProfileChildState extends State<ProfileChild> {
                                   ),
                                 ],
                               ),
-                              // Stack(
-                              //   fit: StackFit.expand,
-                              //   children: [
-                              //     Container(
-                              //       color: Theme.of(context).errorColor,
-                              //     ),
-                              //     Padding(
-                              //       padding: const EdgeInsets.fromLTRB(
-                              //           16, 25, 16, 0),
-                              //       child: Column(
-                              //         children: [
-                              //           const Spacer(flex: 5),
-                              //           Table(
-                              //             columnWidths: const {
-                              //               0: FlexColumnWidth(3),
-                              //               1: FlexColumnWidth(5)
-                              //             },
-                              //             children: [
-                              //               TableRow(children: [
-                              //                 TableCell(
-                              //                   child: Stack(
-                              //                     alignment: Alignment.center,
-                              //                     children: [
-                              //                       Container(
-                              //                         padding:
-                              //                             const EdgeInsets.all(
-                              //                                 0),
-                              //                         decoration: BoxDecoration(
-                              //                           color: Theme.of(context)
-                              //                               .errorColor,
-                              //                           borderRadius:
-                              //                               BorderRadius
-                              //                                   .circular(5000),
-                              //                           boxShadow: [
-                              //                             BoxShadow(
-                              //                                 blurRadius: 16,
-                              //                                 offset:
-                              //                                     const Offset(
-                              //                                         0, 4),
-                              //                                 color: const Color(
-                              //                                         0xFF000000)
-                              //                                     .withOpacity(
-                              //                                         0.24))
-                              //                           ],
-                              //                         ),
-                              //                         child: CircleAvatar(
-                              //                           backgroundColor:
-                              //                               Colors.transparent,
-                              //                           foregroundColor:
-                              //                               Colors.transparent,
-                              //                           radius: 50,
-                              //                           child: ClipOval(
-                              //                             child: Container(
-                              //                               height: 120,
-                              //                               margin:
                             ),
                             Container(
                               width: double.maxFinite,
                               height: MediaQuery.of(context).padding.top,
-                              color: Theme.of(context).primaryColor.withOpacity(0.5),
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                             ),
                           ],
                         ),
@@ -661,7 +607,7 @@ class _ProfileChildState extends State<ProfileChild> {
                               child: TabBar(
                                   indicatorColor: Theme.of(context).colorScheme.secondary,
                                   indicatorSize: TabBarIndicatorSize.label,
-                                  unselectedLabelColor: const Color(0xFFFFFFFF).withOpacity(0.5),
+                                  unselectedLabelColor: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
                                   labelColor: const Color(0xFFFFFFFF),
                                   tabs: [
                                     Text(

@@ -67,8 +67,8 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                             width: MediaQuery.of(context).size.width * .7,
                             decoration: BoxDecoration(
                               color: initialValue == choice
-                                  ? Theme.of(context).primaryColor.withOpacity(0.7)
-                                  : Theme.of(context).primaryColor.withOpacity(0.4),
+                                  ? Theme.of(context).primaryColor.withValues(alpha: 0.7)
+                                  : Theme.of(context).primaryColor.withValues(alpha: 0.4),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Center(

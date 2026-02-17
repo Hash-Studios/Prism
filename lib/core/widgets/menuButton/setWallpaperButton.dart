@@ -235,7 +235,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
+              ],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
@@ -329,7 +331,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                       width: width - 14,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                         border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -359,7 +361,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                       width: width - 14,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                         border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -389,7 +391,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                       width: width - 14,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+                        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                         border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
                         borderRadius: BorderRadius.circular(20),
                       ),

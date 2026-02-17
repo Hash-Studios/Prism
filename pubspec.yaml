@@ -29,6 +29,7 @@ dependencies:
   file_encrypter: ^2.0.2
   firebase_analytics: ^9.3.8
   firebase_auth: ^3.11.2
+  firebase_core: ^1.1.0
   firebase_dynamic_links: ^5.3.7
   firebase_in_app_messaging: ^0.7.3+7
   firebase_messaging: ^13.1.0
@@ -37,6 +38,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_archive: ^6.0.4
+  flutter_cache_manager: ^3.4.1
   flutter_displaymode: ^0.7.0
   flutter_image_compress: ^2.4.0
   flutter_local_notifications: ^20.1.0
@@ -57,13 +59,18 @@ dependencies:
   image: ^3.0.2
   image_editor: ^1.6.0
   image_picker: ^1.2.1
+  http: ^0.13.1
   internet_connection_checker: ^3.0.1
   in_app_update: ^4.2.5
+  json_annotation: ^4.9.0
   json_serializable: ^6.8.0
   logger: ^2.6.2
+  intl: ^0.17.0
   paginate_firestore: ^1.0.3
   palette_generator: ^0.3.0
   permission_handler: ^12.0.1
+  path: ^1.8.3
+  path_provider: ^2.0.1
   photo_view: ^0.15.0
   photofilters: ^3.0.0
   pixel_perfect: ^1.1.0
