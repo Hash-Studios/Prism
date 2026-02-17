@@ -11,21 +11,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Read Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.41.0"
+          flutter-version: ${{ steps.fvm.outputs.version }}
           channel: stable
           cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Check formatting
-        run: dart format --line-length 120 --set-exit-if-changed -o none lib test
+        run: |
+          find lib test -name '*.dart' \
+            ! -name '*.g.dart' \
+            ! -name '*.freezed.dart' \
+            ! -name '*.gr.dart' \
+            ! -name '*.config.dart' \
+            -print0 | xargs -0 dart format --line-length 120 --set-exit-if-changed -o none
 
       - name: Analyze
         run: flutter analyze
 
       - name: Run tests
-        run: flutter test
+        run: |
+          if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then
+            flutter test
+          else
+            echo "No test files found, skipping."
+          fi
