@@ -3,6 +3,7 @@ import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
@@ -17,6 +18,8 @@ const String USER_OLD_COLLECTION = FirebaseCollections.users;
 const String USER_NEW_COLLECTION = FirebaseCollections.usersV2;
 
 class GoogleAuth {
+  static const String signInCancelledResult = 'signInWithGoogle canceled';
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn.instance;
   bool _googleSignInInitialized = false;
@@ -139,8 +142,18 @@ class GoogleAuth {
       assert(user.uid == currentUser!.uid);
       analytics.logLogin();
       await checkPremium();
+      await syncSentryUserScope(
+        loggedIn: globals.prismUser.loggedIn,
+        id: globals.prismUser.id,
+        email: globals.prismUser.email,
+        username: globals.prismUser.username,
+      );
       return 'signInWithGoogle succeeded: $user';
     } catch (e, st) {
+      if (_isSignInCancelled(e)) {
+        logger.i('signInWithGoogle canceled by user', tag: 'GoogleAuth');
+        return signInCancelledResult;
+      }
       logger.e(
         'signInWithGoogle failed',
         tag: 'GoogleAuth',
@@ -153,7 +166,16 @@ class GoogleAuth {
     }
   }
 
+  bool _isSignInCancelled(Object error) {
+    if (error is GoogleSignInException) {
+      return error.code == GoogleSignInExceptionCode.canceled;
+    }
+    final String message = error.toString().toLowerCase();
+    return message.contains('user canceled') || message.contains('cancelled');
+  }
+
   Future<bool> signOutGoogle() async {
+    final String existingUserId = globals.prismUser.id;
     await _ensureGoogleSignInInitialized();
     await googleSignIn.signOut();
     globals.prismUser = PrismUsersV2(
@@ -176,18 +198,25 @@ class GoogleAuth {
       transactions: [],
       coverPhoto: "",
     );
+    await syncSentryUserScope(
+      loggedIn: false,
+      id: "",
+      email: "",
+    );
     Hive.openBox('prefs').then((value) {
       value.put(main.userHiveKey, globals.prismUser);
     });
     await Purchases.logOut();
     try {
-      firestoreClient.updateDoc(
-          USER_NEW_COLLECTION,
-          globals.prismUser.id,
-          {
-            'loggedIn': false,
-          },
-          sourceTag: 'auth.signout.mark_logged_out');
+      if (existingUserId.isNotEmpty) {
+        firestoreClient.updateDoc(
+            USER_NEW_COLLECTION,
+            existingUserId,
+            {
+              'loggedIn': false,
+            },
+            sourceTag: 'auth.signout.mark_logged_out');
+      }
     } catch (e, st) {
       logger.e('Failed to mark user logged out', error: e, stackTrace: st);
     }

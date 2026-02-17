@@ -78,6 +78,7 @@ dependencies:
   rive: ^0.13.20
   rxdart: ^0.28.0
   screenshot: ^3.0.0
+  sentry_flutter: ^9.13.0
   share_plus: ^11.1.0
   sliding_up_panel: ^2.0.0+1
   timeago: ^3.0.2
@@ -96,6 +97,12 @@ dev_dependencies:
   injectable_generator: ^2.9.0
   lint: ^2.8.0
   mocktail: ^1.0.4
+  sentry_dart_plugin: ^3.2.1
+
+sentry:
+  upload_debug_symbols: true
+  upload_source_maps: false
+  upload_sources: true
 
 flutter_native_splash:
   color: "#fafafa"

@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
@@ -29,12 +30,10 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
     if (value is String) {
       return DateTime.tryParse(value);
     }
-    try {
-      final dynamic v = value;
-      return v.toDate() as DateTime?;
-    } catch (_) {
-      return null;
+    if (value is Timestamp) {
+      return value.toDate();
     }
+    return null;
   }
 
   Future<List<FavouriteWallEntity>> _read(String userId) async {
@@ -42,6 +41,8 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
       FirestoreQuerySpec(
         collection: _collectionPath(userId),
         sourceTag: 'favourite_walls.read',
+        cachePolicy: FirestoreCachePolicy.memoryFirst,
+        dedupeWindowMs: 1500,
       ),
       (data, docId) => <String, dynamic>{...data, '__docId': docId},
     );
@@ -78,24 +79,20 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>>> toggleFavourite({
+  Future<Result<bool>> toggleFavourite({
     required String userId,
     required FavouriteWallEntity wall,
+    required bool currentlyFavourited,
   }) async {
     try {
-      final existing = await _firestoreClient.getById<Map<String, dynamic>>(
-        _collectionPath(userId),
-        wall.id,
-        (data, _) => data,
-        sourceTag: 'favourite_walls.toggle.get',
-      );
-      if (existing != null) {
+      if (currentlyFavourited) {
         await _firestoreClient.deleteDoc(
           _collectionPath(userId),
           wall.id,
           sourceTag: 'favourite_walls.toggle.delete',
         );
         await _localFavBox.delete(wall.id);
+        return Result.success(false);
       } else {
         final payload = <String, dynamic>{...wall.payload};
         payload['id'] = wall.id;
@@ -108,16 +105,15 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
           sourceTag: 'favourite_walls.toggle.set',
         );
         await _localFavBox.put(wall.id, true);
+        return Result.success(true);
       }
-
-      return Result.success(await _read(userId));
     } catch (error) {
       return Result.error(ServerFailure('Unable to toggle favourite wall: $error'));
     }
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>>> removeFavourite({
+  Future<Result<bool>> removeFavourite({
     required String userId,
     required String wallId,
   }) async {
@@ -128,32 +124,29 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
         sourceTag: 'favourite_walls.remove',
       );
       await _localFavBox.delete(wallId);
-      return Result.success(await _read(userId));
+      return Result.success(true);
     } catch (error) {
       return Result.error(ServerFailure('Unable to remove favourite wall: $error'));
     }
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>>> clearAll({required String userId}) async {
+  Future<Result<bool>> clearAll({
+    required String userId,
+    required List<String> wallIds,
+  }) async {
     try {
-      final rows = await _firestoreClient.query<Map<String, dynamic>>(
-        FirestoreQuerySpec(
-          collection: _collectionPath(userId),
-          sourceTag: 'favourite_walls.clear_all.read',
-        ),
-        (data, docId) => <String, dynamic>{...data, '__docId': docId},
-      );
-      for (final row in rows) {
-        final String id = row['__docId']?.toString() ?? '';
+      for (final String rawId in wallIds) {
+        final String id = rawId.trim();
         if (id.isEmpty) continue;
         await _firestoreClient.deleteDoc(
           _collectionPath(userId),
           id,
           sourceTag: 'favourite_walls.clear_all.delete',
         );
+        await _localFavBox.delete(id);
       }
-      return Result.success(const <FavouriteWallEntity>[]);
+      return Result.success(true);
     } catch (error) {
       return Result.error(ServerFailure('Unable to clear favourite walls: $error'));
     }

@@ -6,7 +6,12 @@ import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/monitoring/error_reporter.dart';
+import 'package:Prism/core/monitoring/monitoring_runtime.dart';
+import 'package:Prism/core/monitoring/sentry_config.dart';
+import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
@@ -38,6 +43,7 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_io/hive_io.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 String userHiveKey = "prismUserV2-1";
 late Box prefs;
@@ -95,14 +101,32 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      final SentryConfig sentryConfig = _resolveSentryConfig();
+      await _initializeMonitoring(sentryConfig);
+
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
-        logger.e('Uncaught platform error', error: error, stackTrace: stackTrace);
+        logger.e(
+          'Uncaught platform error',
+          tag: 'PlatformError',
+          error: error,
+          stackTrace: stackTrace,
+        );
         return true;
       };
 
       await MobileAds.instance.initialize();
       FlutterError.onError = (FlutterErrorDetails details) {
         FlutterError.dumpErrorToConsole(details, forceReport: true);
+        logger.e(
+          'Uncaught Flutter framework error',
+          tag: 'FlutterError',
+          error: details.exception,
+          stackTrace: details.stack,
+          fields: <String, Object?>{
+            if (details.library != null) 'library': details.library,
+            if (details.context != null) 'context': details.context.toString(),
+          },
+        );
       };
 
       localNotification = LocalNotification();
@@ -234,9 +258,68 @@ Future<void> main() async {
       );
     },
     (obj, stacktrace) {
-      logger.e('Uncaught zone error', error: obj, stackTrace: stacktrace);
+      logger.e(
+        'Uncaught zone error',
+        tag: 'ZoneError',
+        error: obj,
+        stackTrace: stacktrace,
+      );
     },
   );
+}
+
+SentryConfig _resolveSentryConfig() {
+  const String fallbackEnvironment = kReleaseMode ? 'production' : 'staging';
+  final String fallbackRelease = 'Prism@${globals.currentAppVersion}+${globals.currentAppVersionCode}';
+  return SentryConfig.fromEnvironment(
+    fallbackEnvironment: fallbackEnvironment,
+    fallbackRelease: fallbackRelease,
+    fallbackDist: globals.currentAppVersionCode,
+  );
+}
+
+Future<void> _initializeMonitoring(SentryConfig config) async {
+  if (!config.enabled) {
+    MonitoringRuntime.reset();
+    return;
+  }
+
+  try {
+    await SentryFlutter.init((options) {
+      options.dsn = config.dsn;
+      options.environment = config.environment;
+      if (config.release.isNotEmpty) {
+        options.release = config.release;
+      }
+      if (config.dist.isNotEmpty) {
+        options.dist = config.dist;
+      }
+      options.sendDefaultPii = false;
+      options.tracesSampleRate = 0.1;
+      options.attachStacktrace = true;
+      options.enableAutoNativeBreadcrumbs = true;
+      options.replay.sessionSampleRate = 0.1;
+      options.replay.onErrorSampleRate = 1.0;
+    });
+    MonitoringRuntime.reporter = const SentryErrorReporter();
+    await MonitoringRuntime.reporter.addBreadcrumb(
+      message: 'Sentry initialized',
+      category: 'app.startup',
+      data: <String, Object?>{
+        'environment': config.environment,
+        if (config.release.isNotEmpty) 'release': config.release,
+        if (config.dist.isNotEmpty) 'dist': config.dist,
+      },
+    );
+  } catch (error, stackTrace) {
+    MonitoringRuntime.reset();
+    logger.w(
+      'Sentry initialization failed; continuing without remote error reporting.',
+      tag: 'Sentry',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -263,6 +346,12 @@ class _MyAppState extends State<MyApp> {
     }
     globals.prismUser.loggedIn = value;
     prefs.put(userHiveKey, globals.prismUser);
+    await syncSentryUserScope(
+      loggedIn: globals.prismUser.loggedIn,
+      id: globals.prismUser.id,
+      email: globals.prismUser.email,
+      username: globals.prismUser.username,
+    );
     return value;
   }
 
@@ -335,7 +424,16 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      routerConfig: _appRouter.config(),
+      routerConfig: _appRouter.config(
+        navigatorObservers: () => [
+          observer,
+          if (MonitoringRuntime.reporter.isEnabled)
+            SentryNavigatorObserver(
+              enableAutoTransactions: false,
+              ignoreRoutes: <String>['/'],
+            ),
+        ],
+      ),
       theme: context.prismLightTheme(),
       darkTheme: context.prismDarkTheme(),
       themeMode: context.prismThemeMode(),
