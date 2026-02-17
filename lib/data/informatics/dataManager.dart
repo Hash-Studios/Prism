@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:Prism/gitkey.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:github/github.dart';
 
@@ -19,7 +19,7 @@ class _RepoSnapshot {
 }
 
 GitHub _buildGitHubClient() {
-  final String trimmedToken = token.trim();
+  final String trimmedToken = Env.ghToken.trim();
   if (trimmedToken.isEmpty) {
     return GitHub();
   }
@@ -58,7 +58,7 @@ Future<_RepoSnapshot?> _loadRepoSnapshot(
 }) async {
   try {
     final RepositoryContents repoContents = await github.repositories.getContents(
-      RepositorySlug(gitUserName, repoName3),
+      RepositorySlug(Env.ghUserName, Env.ghRepoData),
       jsonFile,
     );
     final String? encodedContent = repoContents.file?.content;
@@ -144,7 +144,7 @@ Future<void> _incrementCounter(
     }
 
     await github.repositories.updateFile(
-      RepositorySlug(gitUserName, repoName3),
+      RepositorySlug(Env.ghUserName, Env.ghRepoData),
       jsonFile,
       'Updated $field for $id',
       _stringToBase64.encode(json.encode(snapshot.jsonMap)),

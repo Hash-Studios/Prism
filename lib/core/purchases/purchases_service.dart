@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/core/purchases/purchase_constants.dart';
-import 'package:Prism/gitkey.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -19,8 +19,8 @@ class PurchasesService {
   bool _configured = false;
   String _configuredUserId = '';
 
-  static const String _rcAndroidApiKey = String.fromEnvironment('RC_ANDROID_API_KEY', defaultValue: apiKey);
-  static const String _rcIosApiKey = String.fromEnvironment('RC_IOS_API_KEY', defaultValue: apiKey);
+  static const String _rcAndroidApiKey = String.fromEnvironment('RC_ANDROID_API_KEY', defaultValue: Env.rcApiKey);
+  static const String _rcIosApiKey = String.fromEnvironment('RC_IOS_API_KEY', defaultValue: Env.rcApiKey);
 
   static String _resolveApiKey() {
     if (Platform.isIOS) return _rcIosApiKey;

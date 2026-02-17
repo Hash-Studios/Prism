@@ -16,7 +16,7 @@ import 'package:Prism/features/public_profile/views/widgets/premium_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
-import 'package:Prism/gitkey.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -278,7 +278,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 ),
                                                 headers: <String, String>{
                                                   'Content-Type': 'application/json',
-                                                  'Authorization': 'key=$fcmServerToken',
+                                                  'Authorization': 'key=${Env.fcmServerKey}',
                                                 },
                                                 body: jsonEncode(
                                                   <String, dynamic>{

@@ -6,7 +6,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/apps/appsData.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
-import 'package:Prism/gitkey.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -167,9 +167,9 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
     });
     try {
       final String base64Image = base64Encode(imageBytes);
-      final github = GitHub(auth: const Authentication.withToken(token));
+      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
       await github.repositories
-          .createFile(RepositorySlug(gitUserName, repoName2),
+          .createFile(RepositorySlug(Env.ghUserName, Env.ghRepoSetups),
               CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)))
           .then((value) => setState(() {
                 imageURL = value.content!.downloadUrl;

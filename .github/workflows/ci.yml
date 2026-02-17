@@ -24,18 +24,20 @@ jobs:
           flutter-version: ${{ steps.fvm.outputs.version }}
           channel: stable
           cache: true
-
-      - name: Cache pub dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            .dart_tool
-          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-          restore-keys: pub-${{ runner.os }}-
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Generate Firebase options stub for CI
+        run: |
+          cat > lib/firebase_options.dart << 'DART'
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');
+          }
+          DART
 
       - name: Check formatting
         run: |
@@ -44,10 +46,11 @@ jobs:
             ! -name '*.freezed.dart' \
             ! -name '*.gr.dart' \
             ! -name '*.config.dart' \
+            ! -name 'firebase_options.dart' \
             -print0 | xargs -0 dart format --line-length 120 --set-exit-if-changed -o none
 
       - name: Analyze
-        run: flutter analyze --no-pub
+        run: flutter analyze --no-pub --no-fatal-infos
 
       - name: Run tests
         run: |

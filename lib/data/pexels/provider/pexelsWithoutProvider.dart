@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
-import 'package:Prism/gitkey.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:http/http.dart' as http;
 
@@ -32,7 +32,7 @@ Future<List<WallPaperP>> categoryDataFetcherP(String categoryName, String mode) 
   http.get(
       Uri.parse(
           "https://api.pexels.com/v1/search?query=$categoryName&per_page=80&page=${pageNumbersP[index][categoryName]}"),
-      headers: {"Authorization": pexelApiKey}).then(
+      headers: {"Authorization": Env.pexelsApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
       for (int i = 0; i < (resp["photos"].length as int); i++) {
@@ -64,7 +64,7 @@ Future<List<WallPaperP>> getDataP(String mode) async {
     pageGetDataP = pageGetDataP + 1;
   }
   http.get(Uri.parse("https://api.pexels.com/v1/curated?per_page=24&page=$pageGetDataP"),
-      headers: {"Authorization": pexelApiKey}).then(
+      headers: {"Authorization": Env.pexelsApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
       for (int i = 0; i < (resp["photos"].length as int); i++) {
@@ -90,7 +90,7 @@ Future<List<WallPaperP>> getDataP(String mode) async {
 Future<WallPaperP> getWallbyIDP(String? id) async {
   logger.d("https://api.pexels.com/v1/photos/$id");
   wall = null;
-  http.get(Uri.parse("https://api.pexels.com/v1/photos/$id"), headers: {"Authorization": pexelApiKey}).then(
+  http.get(Uri.parse("https://api.pexels.com/v1/photos/$id"), headers: {"Authorization": Env.pexelsApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
       return wall = WallPaperP(
@@ -107,7 +107,7 @@ Future<WallPaperP> getWallbyIDP(String? id) async {
 
 Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
   http.get(Uri.parse("https://api.pexels.com/v1/search?query=$query&per_page=80&page=1"),
-      headers: {"Authorization": pexelApiKey}).then(
+      headers: {"Authorization": Env.pexelsApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
       for (int i = 0; i < (resp["photos"].length as int); i++) {
@@ -132,7 +132,7 @@ Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
 
 Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
   http.get(Uri.parse("https://api.pexels.com/v1/search?query=$query&per_page=80&page=$pageGetQueryP"),
-      headers: {"Authorization": pexelApiKey}).then(
+      headers: {"Authorization": Env.pexelsApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
       for (int i = 0; i < (resp["photos"].length as int); i++) {
@@ -158,7 +158,7 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
 Future<List<WallPaperP>> getWallsPbyColor(String query) async {
   logger.d("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1");
   http.get(Uri.parse("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1"),
-      headers: {"Authorization": pexelApiKey}).then(
+      headers: {"Authorization": Env.pexelsApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
       for (int i = 0; i < (resp["photos"].length as int); i++) {
@@ -184,7 +184,7 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
 Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
   logger.d("https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP");
   http.get(Uri.parse("https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP"),
-      headers: {"Authorization": pexelApiKey}).then(
+      headers: {"Authorization": Env.pexelsApiKey}).then(
     (http.Response response) {
       final resp = json.decode(response.body);
       for (int i = 0; i < (resp["photos"].length as int); i++) {

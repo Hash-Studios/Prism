@@ -7,13 +7,12 @@ RUN_ARGS ?=
 BUILD_ARGS ?=
 IOS_BUILD_ARGS ?=
 FIREBASE_RUN_ARG ?= $(shell [ -f android/app/google-services.json ] && echo "" || echo "--dart-define=SKIP_FIREBASE_INIT=true")
-SENTRY_DSN ?=
+ENV_DART_DEFINES ?= $(shell ./tool/dart_defines_from_env.sh)
 SENTRY_ENV ?=
 SENTRY_RELEASE ?=
 SENTRY_DIST ?=
 SENTRY_ENABLED ?=
 SENTRY_DART_DEFINES = $(strip \
-	$(if $(SENTRY_DSN),--dart-define=SENTRY_DSN=$(SENTRY_DSN),) \
 	$(if $(SENTRY_ENV),--dart-define=SENTRY_ENV=$(SENTRY_ENV),) \
 	$(if $(SENTRY_RELEASE),--dart-define=SENTRY_RELEASE=$(SENTRY_RELEASE),) \
 	$(if $(SENTRY_DIST),--dart-define=SENTRY_DIST=$(SENTRY_DIST),) \
@@ -60,9 +59,9 @@ run: ensure-fvm
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
 	if [ -n "$(DEVICE)" ]; then \
-		fvm flutter run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
+		fvm flutter run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
 	else \
-		fvm flutter run $(FIREBASE_RUN_ARG) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
+		fvm flutter run $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
 	fi
 
 build: ensure-fvm
@@ -73,7 +72,7 @@ build: ensure-fvm
 	fi; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
-	fvm flutter build apk $(FIREBASE_RUN_ARG) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	fvm flutter build apk $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 
 attach: ensure-fvm
 	@if [ -n "$(DEVICE)" ]; then \
@@ -96,7 +95,7 @@ ios-setup: ensure-fvm
 	@echo "iOS pods setup complete."
 
 build-ios: ensure-fvm
-	@fvm flutter build ios $(IOS_BUILD_ARGS)
+	@fvm flutter build ios $(ENV_DART_DEFINES) $(IOS_BUILD_ARGS)
 
 ensure-fvm:
 	@command -v fvm >/dev/null 2>&1 || { \
