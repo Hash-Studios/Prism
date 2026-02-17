@@ -94,7 +94,13 @@ class PurchasesService {
     }
   }
 
-  Future<void> logOut() async => Purchases.logOut();
+  /// Logs out the current RC user. No-op if the SDK has not been configured yet,
+  /// since there is no session to end and calling logOut before configure
+  /// triggers a native fatalError on iOS.
+  Future<void> logOut() async {
+    if (!_configured) return;
+    await Purchases.logOut();
+  }
 
   /// Returns true if [info] grants premium access (prism_premium or prism_ultra).
   bool isPremiumFromCustomerInfo(CustomerInfo info) =>

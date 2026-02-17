@@ -1,6 +1,12 @@
+// This file has been superseded by premium_screen.dart (Orbit-inspired redesign).
+// Its contents are preserved below for reference.
+/*
+import 'dart:math';
+
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
@@ -10,6 +16,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 final _purchasesService = PurchasesService.instance;
@@ -115,18 +122,13 @@ class UpsellScreen extends StatefulWidget {
 }
 
 class _UpsellScreenState extends State<UpsellScreen> {
-  final ScrollController _scrollController = ScrollController();
+  // Horizontal scroll controller for the feature chips row
+  final ScrollController _chipScrollController = ScrollController();
+  // Main page scroll controller — drives the parallax hero
+  final ScrollController _mainScrollController = ScrollController();
+  double _scrollOffset = 0;
+  int _selectedIndex = 0;
   late List<Widget> features;
-
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOut,
-      );
-    }
-  }
 
   @override
   void initState() {
@@ -143,12 +145,33 @@ class _UpsellScreenState extends State<UpsellScreen> {
       const FeatureChip(icon: JamIcons.stop_sign, text: "Remove Ads"),
       const FeatureChip(icon: JamIcons.coffee_cup, text: "Support development, and content growth"),
     ];
+    _mainScrollController.addListener(() {
+      if (mounted) {
+        setState(() => _scrollOffset = _mainScrollController.offset);
+      }
+    });
+    // Pre-select annual if available, otherwise first package
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final offering = widget.offerings?.all[PurchaseConstants.offeringUltra] ?? widget.offerings?.current;
+      if (offering != null && offering.availablePackages.isNotEmpty) {
+        final idx = offering.availablePackages.indexWhere((p) => p.packageType == PackageType.annual);
+        if (idx >= 0) {
+          setState(() => _selectedIndex = idx);
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _chipScrollController.dispose();
+    _mainScrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-
     if (widget.offeringsError || widget.offerings == null) {
       return PopScope(
         onPopInvokedWithResult: (_, __) => onWillPop(),
@@ -209,6 +232,9 @@ class _UpsellScreenState extends State<UpsellScreen> {
       );
     }
 
+    final packages = offering.availablePackages;
+    final selectedPackage = packages[_selectedIndex.clamp(0, packages.length - 1)];
+
     return PopScope(
       onPopInvokedWithResult: (_, __) => onWillPop(),
       child: Container(
@@ -224,92 +250,134 @@ class _UpsellScreenState extends State<UpsellScreen> {
           child: Scaffold(
             backgroundColor: Colors.transparent,
             body: SingleChildScrollView(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height - (globals.notchSize ?? 24),
-                child: Stack(
-                  children: [
-                    SizedBox(
-                      height: 420,
-                      width: MediaQuery.of(context).size.width,
-                      child: CachedNetworkImage(
-                        imageUrl: PurchaseConstants.defaultHeroImageUrl,
-                        fit: BoxFit.fitHeight,
-                      ),
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        const Spacer(flex: 12),
+              controller: _mainScrollController,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _HeroParallaxZone(scrollOffset: _scrollOffset),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Row(
                           children: [
-                            const SizedBox(width: 30),
                             SizedBox(width: 40, height: 40, child: Image.asset("assets/images/prism.png")),
                             const SizedBox(width: 10),
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: Text(
-                                "Premium",
-                                style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.secondary,
-                                    ),
-                              ),
+                            Text(
+                              "Premium",
+                              style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.secondary,
+                                  ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            const SizedBox(width: 30),
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: Text(
-                                "Unlock everything",
-                                style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                                      color: const Color(0xFFE57697),
-                                    ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Unlock everything",
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                color: const Color(0xFFE57697),
                               ),
-                            ),
-                          ],
                         ),
-                        Container(
-                          margin: const EdgeInsets.fromLTRB(0, 10, 0, 0),
-                          width: MediaQuery.of(context).size.width,
-                          height: 58,
-                          child: GestureDetector(
-                            onTap: _scrollToBottom,
-                            child: ListView(
-                              controller: _scrollController,
-                              scrollDirection: Axis.horizontal,
-                              children: features,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        ...offering.availablePackages.map(
-                          (package) => _PackageCard(
-                            package: package,
-                            onPremiumUnlocked: widget.onPremiumUnlocked,
-                          ),
-                        ),
-                        _RestoreButton(onPremiumUnlocked: widget.onPremiumUnlocked),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 16),
                         SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.8,
-                          child: Text(
-                            "By purchasing this product you will be able to access the Prism premium functionalities on all the devices logged into your Google account.",
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                                  fontSize: 12,
-                                  color: Theme.of(context).colorScheme.secondary,
+                          height: 58,
+                          child: ListView(
+                            controller: _chipScrollController,
+                            scrollDirection: Axis.horizontal,
+                            children: features,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: List.generate(
+                            packages.length,
+                            (i) => Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.only(right: i < packages.length - 1 ? 12 : 0),
+                                child: _PackagePill(
+                                  package: packages[i],
+                                  isSelected: _selectedIndex == i,
+                                  onTap: () => setState(() => _selectedIndex = i),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (_perMonthEquivalent(selectedPackage) != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            '${_perMonthEquivalent(selectedPackage)!} when billed ${_packageTypeLabel(selectedPackage.packageType).toLowerCase()}',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.9),
                                 ),
                           ),
+                        ],
+                        const SizedBox(height: 24),
+                        PurchaseButton(
+                          package: selectedPackage,
+                          onPremiumUnlocked: widget.onPremiumUnlocked,
                         ),
-                        const Spacer(),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TextButton(
+                              onPressed: () => launchUrl(
+                                Uri.parse(PurchaseConstants.termsOfUseUrl),
+                              ),
+                              child: Text(
+                                'Terms of Use',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
+                                    ),
+                              ),
+                            ),
+                            Text(
+                              '  ·  ',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
+                                  ),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                try {
+                                  logger.d('Restoring purchases');
+                                  final customerInfo = await _purchasesService.restore();
+                                  if (!context.mounted) return;
+                                  final isPremium = _purchasesService.isPremiumFromCustomerInfo(customerInfo);
+                                  await _purchasesService.checkAndPersistPremium();
+                                  if (isPremium) {
+                                    toasts.codeSend("You are now a premium member.");
+                                    widget.onPremiumUnlocked();
+                                  } else {
+                                    toasts.error("There was an error. Please try again later.");
+                                  }
+                                } on PlatformException catch (e) {
+                                  final errorCode = PurchasesErrorHelper.getErrorCode(e);
+                                  if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
+                                    toasts.error("User cancelled purchase.");
+                                  } else if (errorCode == PurchasesErrorCode.purchaseNotAllowedError) {
+                                    toasts.error("User not allowed to purchase.");
+                                  } else {
+                                    toasts.error(e.toString());
+                                  }
+                                }
+                              },
+                              child: Text(
+                                'Restore',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -340,78 +408,136 @@ String _packageTypeLabel(PackageType type) {
   }
 }
 
+String _currencySymbol(String currencyCode) {
+  const symbols = {
+    'INR': '₹',
+    'USD': '\$',
+    'EUR': '€',
+    'GBP': '£',
+    'AUD': 'A\$',
+    'CAD': 'C\$',
+    'JPY': '¥',
+  };
+  return symbols[currencyCode] ?? currencyCode;
+}
+
+String? _perMonthEquivalent(Package package) {
+  final months = switch (package.packageType) {
+    PackageType.annual => 12,
+    PackageType.sixMonth => 6,
+    PackageType.threeMonth => 3,
+    PackageType.twoMonth => 2,
+    _ => null,
+  };
+  if (months == null) return null;
+  final perMonth = package.storeProduct.price / months;
+  final currency = package.storeProduct.currencyCode;
+  return '${NumberFormat.currency(
+        symbol: _currencySymbol(currency),
+        decimalDigits: 0,
+      ).format(perMonth)}/mo';
+}
+
 bool _hasSaleOrIntroOffer(Package package) {
   final intro = package.storeProduct.introductoryPrice;
   final title = package.storeProduct.title.toLowerCase();
   return (intro != null) || title.contains('sale');
 }
 
-class _PackageCard extends StatelessWidget {
+class _PackagePill extends StatelessWidget {
   final Package package;
-  final VoidCallback onPremiumUnlocked;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  const _PackageCard({required this.package, required this.onPremiumUnlocked});
+  const _PackagePill({
+    required this.package,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final label = _packageTypeLabel(package.packageType);
     final hasSale = _hasSaleOrIntroOffer(package);
+    final isAnnual = package.packageType == PackageType.annual;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        Container(
-          width: MediaQuery.of(context).size.width * 0.8,
-          margin: const EdgeInsets.only(top: 12),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Theme.of(context).colorScheme.error == Colors.black
-                  ? Theme.of(context).colorScheme.secondary
-                  : Theme.of(context).colorScheme.error,
-              width: 4,
-            ),
-            color: const Color(0x15ffffff),
-            borderRadius: BorderRadius.circular(10),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (colorScheme.error == Colors.black ? colorScheme.secondary : colorScheme.error)
+              : Colors.white10,
+          border: Border.all(
+            color: isSelected
+                ? (colorScheme.error == Colors.black ? colorScheme.secondary : colorScheme.error)
+                : Colors.white24,
+            width: isSelected ? 2 : 1,
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            children: [
-              const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                    textAlign: TextAlign.center,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.secondary,
+                      ),
+                ),
+                if (isAnnual) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.amber,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'BEST',
+                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                    ),
                   ),
-                  if (hasSale)
-                    Text(
-                      'SALE',
-                      style: Theme.of(context).textTheme.titleLarge!.copyWith(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
                 ],
-              ),
-              const Spacer(flex: 4),
-              Text(
-                package.storeProduct.priceString,
-                style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
+                if (hasSale) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                textAlign: TextAlign.center,
-              ),
-              const Spacer(),
-            ],
-          ),
+                    child: Text(
+                      'SALE',
+                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              package.storeProduct.priceString,
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    color: colorScheme.secondary,
+                  ),
+            ),
+          ],
         ),
-        PurchaseButton(
-          package: package,
-          onPremiumUnlocked: onPremiumUnlocked,
-        ),
-      ],
+      ),
     );
   }
 }
@@ -464,91 +590,41 @@ class _PurchaseButtonState extends State<PurchaseButton> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 18.0),
-      child: GestureDetector(
-        onTap: _isPurchasing ? null : _purchase,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.8,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.error == Colors.black
-                ? Theme.of(context).colorScheme.secondary
-                : Theme.of(context).colorScheme.error,
-            borderRadius: BorderRadius.circular(500),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: _isPurchasing
-              ? const Center(child: SizedBox(height: 24, width: 24, child: CircularProgressIndicator()))
-              : Text(
-                  'Purchase',
-                  style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
+    final label = 'Get ${_packageTypeLabel(widget.package.packageType)} for ${widget.package.storeProduct.priceString}';
+
+    return GestureDetector(
+      onTap: _isPurchasing ? null : _purchase,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.error == Colors.black
+              ? Theme.of(context).colorScheme.secondary
+              : Theme.of(context).colorScheme.error,
+          borderRadius: BorderRadius.circular(500),
         ),
-      ),
-    );
-  }
-}
-
-class _RestoreButton extends StatelessWidget {
-  final VoidCallback onPremiumUnlocked;
-
-  const _RestoreButton({required this.onPremiumUnlocked});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 18.0),
-      child: GestureDetector(
-        onTap: () async {
-          try {
-            logger.d('Restoring purchases');
-            final customerInfo = await _purchasesService.restore();
-            if (!context.mounted) return;
-
-            final isPremium = _purchasesService.isPremiumFromCustomerInfo(customerInfo);
-            await _purchasesService.checkAndPersistPremium();
-
-            if (isPremium) {
-              toasts.codeSend("You are now a premium member.");
-              onPremiumUnlocked();
-            } else {
-              toasts.error("There was an error. Please try again later.");
-            }
-          } on PlatformException catch (e) {
-            final errorCode = PurchasesErrorHelper.getErrorCode(e);
-            if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
-              toasts.error("User cancelled purchase.");
-            } else if (errorCode == PurchasesErrorCode.purchaseNotAllowedError) {
-              toasts.error("User not allowed to purchase.");
-            } else {
-              toasts.error(e.toString());
-            }
-          }
-        },
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.8,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.error == Colors.black
-                ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)
-                : Theme.of(context).colorScheme.secondary,
-            borderRadius: BorderRadius.circular(500),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
-          child: Text(
-            'Restore',
-            style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.error == Colors.black
-                      ? Colors.white
-                      : Theme.of(context).primaryColor,
-                ),
-            textAlign: TextAlign.center,
-          ),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: _isPurchasing
+            ? const Center(
+                child: SizedBox(height: 24, width: 24, child: CircularProgressIndicator()),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 20,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -605,6 +681,156 @@ class ProScreen extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Parallax hero zone — background image + 3 floating wallpaper cards
+// ---------------------------------------------------------------------------
+
+class _HeroParallaxZone extends StatefulWidget {
+  final double scrollOffset;
+
+  const _HeroParallaxZone({required this.scrollOffset});
+
+  @override
+  State<_HeroParallaxZone> createState() => _HeroParallaxZoneState();
+}
+
+class _HeroParallaxZoneState extends State<_HeroParallaxZone>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _driftCtrl;
+
+  // (left %, top %, phase in radians)
+  static const List<(double, double, double)> _cardConfig = [
+    (0.06, 0.12, 0.0),
+    (0.38, 0.30, 2 * pi / 3),
+    (0.65, 0.08, 4 * pi / 3),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _driftCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _driftCtrl.dispose();
+    super.dispose();
+  }
+
+  Widget _wallpaperCard(String url) {
+    return Container(
+      width: 72,
+      height: 110,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: CachedNetworkImage(
+          imageUrl: url,
+          fit: BoxFit.cover,
+          placeholder: (_, __) => Container(color: Colors.white12),
+          errorWidget: (_, __, ___) => Container(color: Colors.white12),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenH = MediaQuery.of(context).size.height;
+    final screenW = MediaQuery.of(context).size.width;
+    final heroH = screenH * 0.40;
+    // Oversized background avoids blank edges when parallax-shifted
+    final bgH = heroH * 1.30;
+
+    final urls = PurchaseConstants.previewWallpaperUrls;
+
+    return ClipRect(
+      child: SizedBox(
+        height: heroH,
+        width: screenW,
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            // ----- background (parallax shift up as user scrolls down) -----
+            Positioned(
+              top: -(bgH - heroH) / 2 - widget.scrollOffset * 0.35,
+              left: 0,
+              right: 0,
+              child: SizedBox(
+                height: bgH,
+                child: CachedNetworkImage(
+                  imageUrl: PurchaseConstants.defaultHeroImageUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => Container(color: Colors.black),
+                  errorWidget: (_, __, ___) => Container(color: Colors.black),
+                ),
+              ),
+            ),
+
+            // ----- floating wallpaper cards -----
+            ...List.generate(_cardConfig.length, (i) {
+              final (leftFrac, topFrac, phase) = _cardConfig[i];
+              return AnimatedBuilder(
+                animation: _driftCtrl,
+                builder: (_, child) {
+                  final t = _driftCtrl.value * 2 * pi + phase;
+                  return Positioned(
+                    left: screenW * leftFrac + sin(t) * 6,
+                    top: heroH * topFrac + sin(t) * 14,
+                    child: Transform.rotate(
+                      angle: sin(t) * 0.06,
+                      child: child,
+                    ),
+                  );
+                },
+                child: _wallpaperCard(urls[i % urls.length]),
+              );
+            }),
+
+            // ----- bottom gradient fade into the page background -----
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                child: Container(
+                  height: heroH * 0.45,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Theme.of(context).colorScheme.error.withValues(alpha: 0.6),
+                        Theme.of(context).primaryColor,
+                      ],
+                      stops: const [0.0, 0.6, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
 class FeatureChip extends StatelessWidget {
   final IconData icon;
   final String text;
@@ -637,3 +863,4 @@ class FeatureChip extends StatelessWidget {
     );
   }
 }
+*/
