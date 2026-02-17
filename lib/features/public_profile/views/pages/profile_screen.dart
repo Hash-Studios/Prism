@@ -59,6 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               body: BottomBar(
                 child: ProfileChild(
                   ownProfile: true,
+                  parentScaffoldKey: _scaffoldKey,
                   id: globals.prismUser.id,
                   bio: globals.prismUser.bio,
                   coverPhoto: globals.prismUser.coverPhoto,
@@ -142,6 +143,7 @@ class ProfileChild extends StatefulWidget {
   final String? bio;
   final List? followers;
   final List? following;
+  final GlobalKey<ScaffoldState>? parentScaffoldKey;
   const ProfileChild({
     required this.name,
     required this.username,
@@ -155,6 +157,7 @@ class ProfileChild extends StatefulWidget {
     required this.bio,
     required this.followers,
     required this.following,
+    this.parentScaffoldKey,
   });
   @override
   _ProfileChildState createState() => _ProfileChildState();
@@ -317,7 +320,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                         child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
                                       ),
                                       onPressed: () {
-                                        Scaffold.maybeOf(context)?.openEndDrawer();
+                                        widget.parentScaffoldKey?.currentState?.openEndDrawer();
                                       }),
                                 )
                               ],
