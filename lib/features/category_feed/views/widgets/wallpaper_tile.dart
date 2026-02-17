@@ -21,7 +21,7 @@ class WallpaperTile extends StatelessWidget {
   final WallpaperGrid widget;
   final int index;
 
-  void showGooglePopUp(BuildContext context, Function func) {
+  void showGooglePopUp(BuildContext context, VoidCallback func) {
     logger.d(globals.prismUser.loggedIn.toString());
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);

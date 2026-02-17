@@ -261,7 +261,7 @@ class PhotographerWallTile extends StatelessWidget {
   final Animation<Color?>? animation;
   final int index;
 
-  void showGooglePopUp(BuildContext context, Function func) {
+  void showGooglePopUp(BuildContext context, VoidCallback func) {
     logger.d(globals.prismUser.loggedIn.toString());
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);
