@@ -1,13 +1,10 @@
-import 'dart:async';
-import 'dart:io';
-
+import 'package:Prism/core/purchases/purchase_constants.dart';
+import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/payments/components.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -15,65 +12,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
-CustomerInfo? _purchaserInfo;
-bool _purchasesConfigured = false;
-String _configuredAppUserId = "";
+final _purchasesService = PurchasesService.instance;
 
-const String _rcAndroidApiKey = String.fromEnvironment('RC_ANDROID_API_KEY', defaultValue: apiKey);
-const String _rcIosApiKey = String.fromEnvironment('RC_IOS_API_KEY', defaultValue: apiKey);
-
-String _resolveRevenueCatApiKey() {
-  if (Platform.isIOS) {
-    return _rcIosApiKey;
-  }
-  if (Platform.isAndroid) {
-    return _rcAndroidApiKey;
-  }
-  return _rcAndroidApiKey;
-}
-
-Future<void> _ensurePurchasesConfigured() async {
-  final String targetUserId = globals.prismUser.id.trim();
-  if (!_purchasesConfigured) {
-    final PurchasesConfiguration configuration = PurchasesConfiguration(_resolveRevenueCatApiKey());
-    if (targetUserId.isNotEmpty) {
-      configuration.appUserID = targetUserId;
-    }
-    await Purchases.configure(configuration);
-    _purchasesConfigured = true;
-    _configuredAppUserId = targetUserId;
-    return;
-  }
-  if (targetUserId.isNotEmpty && targetUserId != _configuredAppUserId) {
-    try {
-      await Purchases.logIn(targetUserId);
-      _configuredAppUserId = targetUserId;
-    } on PlatformException catch (e) {
-      logger.w('RevenueCat login sync failed: $e');
-    }
-  }
-}
-
-Future<void> checkPremium() async {
-  appData.isPro = false;
-
-  await _ensurePurchasesConfigured();
-
-  CustomerInfo purchaserInfo;
-  try {
-    purchaserInfo = await Purchases.getCustomerInfo();
-    if (purchaserInfo.entitlements.all['prism_premium'] != null) {
-      appData.isPro = purchaserInfo.entitlements.all['prism_premium']!.isActive;
-    } else {
-      appData.isPro = false;
-    }
-  } on PlatformException catch (e) {
-    logger.d(e.toString());
-  }
-
-  globals.prismUser.premium = appData.isPro!;
-  main.prefs.put(main.userHiveKey, globals.prismUser);
-  logger.d('#### is user pro? ${appData.isPro}');
+Future<bool> onWillPop() async {
+  popNavStackIfPossible();
+  return true;
 }
 
 class UpgradeScreen extends StatefulWidget {
@@ -82,433 +25,500 @@ class UpgradeScreen extends StatefulWidget {
 }
 
 class _UpgradeScreenState extends State<UpgradeScreen> {
+  CustomerInfo? _customerInfo;
   Offerings? _offerings;
+  bool _offeringsError = false;
 
   @override
   void initState() {
     super.initState();
-    initPlatformState();
-    fetchData();
+    _fetchData();
   }
 
-  Future<void> initPlatformState() async {
-    appData.isPro = false;
+  Future<void> _fetchData() async {
+    setState(() {
+      _customerInfo = null;
+      _offerings = null;
+      _offeringsError = false;
+    });
 
-    await Purchases.setLogLevel(LogLevel.debug);
-    await _ensurePurchasesConfigured();
+    await _purchasesService.ensureConfigured(globals.prismUser.id);
 
-    CustomerInfo purchaserInfo;
+    CustomerInfo? customerInfo;
     try {
-      purchaserInfo = await Purchases.getCustomerInfo();
-      logger.d(purchaserInfo.toString());
-      if (purchaserInfo.entitlements.all['prism_premium'] != null) {
-        appData.isPro = purchaserInfo.entitlements.all['prism_premium']!.isActive;
-      } else {
-        appData.isPro = false;
-      }
+      customerInfo = await Purchases.getCustomerInfo();
     } on PlatformException catch (e) {
-      logger.d(e.toString());
-    }
-
-    logger.d('#### is user pro? ${appData.isPro}');
-    setState(() {});
-  }
-
-  Future<void> fetchData() async {
-    await _ensurePurchasesConfigured();
-    CustomerInfo? purchaserInfo;
-    try {
-      purchaserInfo = await Purchases.getCustomerInfo();
-    } on PlatformException catch (e) {
-      logger.d(e.toString());
+      logger.d('getCustomerInfo failed: $e');
     }
 
     Offerings? offerings;
     try {
-      offerings = await Purchases.getOfferings();
+      offerings = await _purchasesService.getOfferings();
     } on PlatformException catch (e) {
-      logger.d(e.toString());
+      logger.d('getOfferings failed: $e');
     }
+
     if (!mounted) return;
 
     setState(() {
-      _purchaserInfo = purchaserInfo;
+      _customerInfo = customerInfo;
       _offerings = offerings;
+      _offeringsError = offerings == null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_purchaserInfo == null) {
+    if (_customerInfo == null) {
       return PopScope(
-        onPopInvokedWithResult: (_, __) {
-          onWillPop();
-        },
+        onPopInvokedWithResult: (_, __) => onWillPop(),
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
-          body: Center(
-            child: Loader(),
-          ),
+          body: Center(child: Loader()),
         ),
       );
-    } else {
-      if (_purchaserInfo!.entitlements.all.isNotEmpty && _purchaserInfo!.entitlements.all['prism_premium'] != null) {
-        appData.isPro = _purchaserInfo!.entitlements.all['prism_premium']!.isActive;
-      } else {
-        appData.isPro = false;
-      }
-      if (appData.isPro!) {
-        return ProScreen();
-      } else {
-        return UpsellScreen(
-          offerings: _offerings,
-        );
-      }
     }
+
+    final isPremium = _purchasesService.isPremiumFromCustomerInfo(_customerInfo!);
+    globals.prismUser.premium = isPremium;
+    main.prefs.put(main.userHiveKey, globals.prismUser);
+
+    if (isPremium) {
+      return ProScreen();
+    }
+
+    return UpsellScreen(
+      offerings: _offerings,
+      offeringsError: _offeringsError,
+      onRetry: _fetchData,
+      onPremiumUnlocked: _fetchData,
+    );
   }
 }
 
 class UpsellScreen extends StatefulWidget {
   final Offerings? offerings;
+  final bool offeringsError;
+  final VoidCallback onRetry;
+  final VoidCallback onPremiumUnlocked;
 
-  const UpsellScreen({super.key, required this.offerings});
+  const UpsellScreen({
+    super.key,
+    required this.offerings,
+    required this.offeringsError,
+    required this.onRetry,
+    required this.onPremiumUnlocked,
+  });
 
   @override
   _UpsellScreenState createState() => _UpsellScreenState();
 }
 
-Future<bool> onWillPop() async {
-  popNavStackIfPossible();
-  return true;
-}
-
 class _UpsellScreenState extends State<UpsellScreen> {
   final ScrollController _scrollController = ScrollController();
-  List<Widget> features = [
-    const SizedBox(
-      width: 30,
-    ),
-    const FeatureChip(icon: JamIcons.picture, text: "Exclusive wallpapers"),
-    const FeatureChip(icon: JamIcons.picture, text: "Upload unlimited walls"),
-    const FeatureChip(icon: JamIcons.instant_picture, text: "No restrictions on setups"),
-    const FeatureChip(icon: JamIcons.trophy, text: "Premium only giveaways"),
-    const FeatureChip(icon: JamIcons.filter, text: "Apply filters on walls"),
-    const FeatureChip(icon: JamIcons.user, text: "Unique PRO badge on your profile"),
-    const FeatureChip(icon: JamIcons.upload, text: "Faster upload reviews"),
-    const FeatureChip(icon: JamIcons.stop_sign, text: "Remove Ads"),
-    const FeatureChip(icon: JamIcons.coffee_cup, text: "Support development, and content growth"),
-  ];
+  late List<Widget> features;
 
   void _scrollToBottom() {
-    _scrollController.animateTo(_scrollController.position.maxScrollExtent,
-        duration: const Duration(seconds: 6000), curve: Curves.linear);
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
   void initState() {
-    for (var i = 0; i < 100; i++) {
-      features.addAll(const [
-        FeatureChip(icon: JamIcons.picture, text: "Exclusive wallpapers"),
-        FeatureChip(icon: JamIcons.picture, text: "Upload unlimited walls"),
-        FeatureChip(icon: JamIcons.instant_picture, text: "No restrictions on setups"),
-        FeatureChip(icon: JamIcons.trophy, text: "Premium only giveaways"),
-        FeatureChip(icon: JamIcons.filter, text: "Apply filters on walls"),
-        FeatureChip(icon: JamIcons.user, text: "Unique PRO badge on your profile"),
-        FeatureChip(icon: JamIcons.upload, text: "Faster upload reviews"),
-        FeatureChip(icon: JamIcons.stop_sign, text: "Remove Ads"),
-        FeatureChip(icon: JamIcons.coffee_cup, text: "Support development, and content growth"),
-      ]);
-    }
     super.initState();
+    features = [
+      const SizedBox(width: 30),
+      const FeatureChip(icon: JamIcons.picture, text: "Exclusive wallpapers"),
+      const FeatureChip(icon: JamIcons.picture, text: "Upload unlimited walls"),
+      const FeatureChip(icon: JamIcons.instant_picture, text: "No restrictions on setups"),
+      const FeatureChip(icon: JamIcons.trophy, text: "Premium only giveaways"),
+      const FeatureChip(icon: JamIcons.filter, text: "Apply filters on walls"),
+      const FeatureChip(icon: JamIcons.user, text: "Unique PRO badge on your profile"),
+      const FeatureChip(icon: JamIcons.upload, text: "Faster upload reviews"),
+      const FeatureChip(icon: JamIcons.stop_sign, text: "Remove Ads"),
+      const FeatureChip(icon: JamIcons.coffee_cup, text: "Support development, and content growth"),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-    if (widget.offerings != null) {
-      final offering = widget.offerings!.current;
-      if (offering != null) {
-        final lifetime = offering.lifetime;
-        if (lifetime != null) {
-          return PopScope(
-            onPopInvokedWithResult: (_, __) {
-              onWillPop();
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomCenter,
-                    colors: [Theme.of(context).colorScheme.error, Theme.of(context).primaryColor],
-                    stops: const [0.1, 0.6]),
-              ),
-              child: SafeArea(
-                child: Scaffold(
-                    backgroundColor: Colors.transparent,
-                    body: SingleChildScrollView(
-                      child: SizedBox(
-                        height: MediaQuery.of(context).size.height - (globals.notchSize ?? 24),
-                        child: Stack(
-                          children: [
-                            SizedBox(
-                              height: 420,
-                              width: MediaQuery.of(context).size.width,
-                              child: CachedNetworkImage(
-                                imageUrl:
-                                    "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fprism%20mock.png?alt=media&token=a86d1386-dbb5-493f-8399-ff0160b1a86a",
-                                fit: BoxFit.fitHeight,
-                              ),
-                            ),
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                const Spacer(
-                                  flex: 12,
-                                ),
-                                Row(
-                                  children: [
-                                    const SizedBox(
-                                      width: 30,
-                                    ),
-                                    SizedBox(width: 40, height: 40, child: Image.asset("assets/images/prism.png")),
-                                    const SizedBox(
-                                      width: 10,
-                                    ),
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width * 0.8,
-                                      child: Text(
-                                        "Premium",
-                                        style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).colorScheme.secondary),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                Row(
-                                  children: [
-                                    const SizedBox(
-                                      width: 30,
-                                    ),
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width * 0.8,
-                                      child: Text(
-                                        "Unlock everything",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headlineSmall!
-                                            .copyWith(color: const Color(0xFFE57697)),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(0, 10, 0, 0),
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 58,
-                                  child: GestureDetector(
-                                    onTap: _scrollToBottom,
-                                    child: ListView(
-                                      controller: _scrollController,
-                                      scrollDirection: Axis.horizontal,
-                                      children: features,
-                                    ),
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  width: MediaQuery.of(context).size.width * 0.8,
-                                  decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: Theme.of(context).colorScheme.error == Colors.black
-                                              ? Theme.of(context).colorScheme.secondary
-                                              : Theme.of(context).colorScheme.error,
-                                          width: 4),
-                                      color: const Color(0x15ffffff),
-                                      borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  child: Row(
-                                    children: [
-                                      const Spacer(),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Lifetime',
-                                            style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).colorScheme.secondary),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          if (lifetime.storeProduct.title.contains("SALE"))
-                                            Text(
-                                              'SALE',
-                                              style:
-                                                  Theme.of(context).textTheme.titleLarge!.copyWith(color: Colors.red),
-                                              textAlign: TextAlign.center,
-                                            )
-                                          else
-                                            Container(),
-                                        ],
-                                      ),
-                                      const Spacer(flex: 4),
-                                      Text(
-                                        lifetime.storeProduct.priceString,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .displaySmall!
-                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const Spacer(),
-                                    ],
-                                  ),
-                                ),
-                                PurchaseButton(package: lifetime),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 18.0),
-                                  child: GestureDetector(
-                                    // ignore: void_checks
-                                    onTap: () async {
-                                      try {
-                                        logger.d('now trying to restore');
-                                        final CustomerInfo restoredInfo = await Purchases.restorePurchases();
-                                        if (!context.mounted) {
-                                          return;
-                                        }
-                                        logger.d('restore completed');
-                                        logger.d(restoredInfo.toString());
 
-                                        appData.isPro = restoredInfo.entitlements.all["prism_premium"]!.isActive;
-
-                                        logger.d('is user pro? ${appData.isPro}');
-
-                                        if (appData.isPro!) {
-                                          globals.prismUser.premium = appData.isPro!;
-                                          main.prefs.put(main.userHiveKey, globals.prismUser);
-                                          toasts.codeSend("You are now a premium member.");
-                                          main.RestartWidget.restartApp(context);
-                                        } else {
-                                          toasts.error("There was an error. Please try again later.");
-                                        }
-                                      } on PlatformException catch (e) {
-                                        logger.d('----xx-----');
-                                        final errorCode = PurchasesErrorHelper.getErrorCode(e);
-                                        if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
-                                          toasts.error("User cancelled purchase.");
-                                        } else if (errorCode == PurchasesErrorCode.purchaseNotAllowedError) {
-                                          toasts.error("User not allowed to purchase.");
-                                        } else {
-                                          toasts.error(e.toString());
-                                        }
-                                      }
-                                      // return UpgradeScreen();
-                                    },
-                                    child: Container(
-                                      width: MediaQuery.of(context).size.width * 0.8,
-                                      decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.error == Colors.black
-                                              ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)
-                                              : Theme.of(context).colorScheme.secondary,
-                                          borderRadius: BorderRadius.circular(500)),
-                                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                                      child: Text(
-                                        'Restore',
-                                        style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).colorScheme.error == Colors.black
-                                                ? Colors.white
-                                                : Theme.of(context).primaryColor),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                SizedBox(
-                                  width: MediaQuery.of(context).size.width * 0.8,
-                                  child: Text(
-                                    "By purchasing this product you will be able to access the Prism premium functionalities on all the devices logged into your Google account.",
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge!
-                                        .copyWith(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
-                                  ),
-                                ),
-                                const Spacer(),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    )),
-              ),
-            ),
-          );
-        }
-      }
-    } else {
+    if (widget.offeringsError || widget.offerings == null) {
       return PopScope(
-        onPopInvokedWithResult: (_, __) {
-          onWillPop();
-        },
+        onPopInvokedWithResult: (_, __) => onWillPop(),
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           body: Center(
-            child: Loader(),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Unable to load offerings",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    widget.onRetry();
+                  },
+                  child: const Text("Retry"),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
-    return Container();
+
+    // Prefer 'ultra' (subscriptions) by explicit key so the new release always shows
+    // monthly + annual packages regardless of what RC marks as is_current.
+    // Falls back to the RC current offering as a safety net.
+    final offering = widget.offerings!.all[PurchaseConstants.offeringUltra] ?? widget.offerings!.current;
+    if (offering == null || offering.availablePackages.isEmpty) {
+      return PopScope(
+        onPopInvokedWithResult: (_, __) => onWillPop(),
+        child: Scaffold(
+          backgroundColor: Theme.of(context).primaryColor,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "No packages available",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: widget.onRetry,
+                  child: const Text("Retry"),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return PopScope(
+      onPopInvokedWithResult: (_, __) => onWillPop(),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomCenter,
+            colors: [Theme.of(context).colorScheme.error, Theme.of(context).primaryColor],
+            stops: const [0.1, 0.6],
+          ),
+        ),
+        child: SafeArea(
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: SingleChildScrollView(
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height - (globals.notchSize ?? 24),
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      height: 420,
+                      width: MediaQuery.of(context).size.width,
+                      child: CachedNetworkImage(
+                        imageUrl: PurchaseConstants.defaultHeroImageUrl,
+                        fit: BoxFit.fitHeight,
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Spacer(flex: 12),
+                        Row(
+                          children: [
+                            const SizedBox(width: 30),
+                            SizedBox(width: 40, height: 40, child: Image.asset("assets/images/prism.png")),
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Text(
+                                "Premium",
+                                style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.secondary,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            const SizedBox(width: 30),
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Text(
+                                "Unlock everything",
+                                style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                      color: const Color(0xFFE57697),
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          margin: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+                          width: MediaQuery.of(context).size.width,
+                          height: 58,
+                          child: GestureDetector(
+                            onTap: _scrollToBottom,
+                            child: ListView(
+                              controller: _scrollController,
+                              scrollDirection: Axis.horizontal,
+                              children: features,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        ...offering.availablePackages.map(
+                          (package) => _PackageCard(
+                            package: package,
+                            onPremiumUnlocked: widget.onPremiumUnlocked,
+                          ),
+                        ),
+                        _RestoreButton(onPremiumUnlocked: widget.onPremiumUnlocked),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.8,
+                          child: Text(
+                            "By purchasing this product you will be able to access the Prism premium functionalities on all the devices logged into your Google account.",
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                  fontSize: 12,
+                                  color: Theme.of(context).colorScheme.secondary,
+                                ),
+                          ),
+                        ),
+                        const Spacer(),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _packageTypeLabel(PackageType type) {
+  switch (type) {
+    case PackageType.lifetime:
+      return 'Lifetime';
+    case PackageType.annual:
+      return 'Annual';
+    case PackageType.monthly:
+      return 'Monthly';
+    case PackageType.weekly:
+      return 'Weekly';
+    case PackageType.sixMonth:
+      return '6 Months';
+    case PackageType.threeMonth:
+      return '3 Months';
+    case PackageType.twoMonth:
+      return '2 Months';
+    default:
+      return 'Premium';
+  }
+}
+
+bool _hasSaleOrIntroOffer(Package package) {
+  final intro = package.storeProduct.introductoryPrice;
+  final title = package.storeProduct.title.toLowerCase();
+  return (intro != null) || title.contains('sale');
+}
+
+class _PackageCard extends StatelessWidget {
+  final Package package;
+  final VoidCallback onPremiumUnlocked;
+
+  const _PackageCard({required this.package, required this.onPremiumUnlocked});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = _packageTypeLabel(package.packageType);
+    final hasSale = _hasSaleOrIntroOffer(package);
+
+    return Column(
+      children: [
+        Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          margin: const EdgeInsets.only(top: 12),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).colorScheme.error == Colors.black
+                  ? Theme.of(context).colorScheme.secondary
+                  : Theme.of(context).colorScheme.error,
+              width: 4,
+            ),
+            color: const Color(0x15ffffff),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: [
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.displaySmall!.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (hasSale)
+                    Text(
+                      'SALE',
+                      style: Theme.of(context).textTheme.titleLarge!.copyWith(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                ],
+              ),
+              const Spacer(flex: 4),
+              Text(
+                package.storeProduct.priceString,
+                style: Theme.of(context).textTheme.displaySmall!.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const Spacer(),
+            ],
+          ),
+        ),
+        PurchaseButton(
+          package: package,
+          onPremiumUnlocked: onPremiumUnlocked,
+        ),
+      ],
+    );
   }
 }
 
 class PurchaseButton extends StatefulWidget {
   final Package package;
+  final VoidCallback onPremiumUnlocked;
 
-  const PurchaseButton({super.key, required this.package});
+  const PurchaseButton({super.key, required this.package, required this.onPremiumUnlocked});
 
   @override
   _PurchaseButtonState createState() => _PurchaseButtonState();
 }
 
 class _PurchaseButtonState extends State<PurchaseButton> {
+  bool _isPurchasing = false;
+
+  Future<void> _purchase() async {
+    if (_isPurchasing) return;
+
+    setState(() => _isPurchasing = true);
+
+    try {
+      final customerInfo = await _purchasesService.purchase(widget.package);
+      if (!mounted) return;
+
+      final isPremium = _purchasesService.isPremiumFromCustomerInfo(customerInfo);
+      await _purchasesService.checkAndPersistPremium();
+
+      if (isPremium) {
+        toasts.codeSend("You are now a premium member.");
+        widget.onPremiumUnlocked();
+      } else {
+        toasts.error("There was an error, please try again later.");
+      }
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      final errorCode = PurchasesErrorHelper.getErrorCode(e);
+      if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
+        toasts.error("User cancelled purchase.");
+      } else if (errorCode == PurchasesErrorCode.purchaseNotAllowedError) {
+        toasts.error("User not allowed to purchase.");
+      } else {
+        toasts.error(e.toString());
+      }
+    } finally {
+      if (mounted) setState(() => _isPurchasing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 18.0),
       child: GestureDetector(
-        // ignore: void_checks
+        onTap: _isPurchasing ? null : _purchase,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.error == Colors.black
+                ? Theme.of(context).colorScheme.secondary
+                : Theme.of(context).colorScheme.error,
+            borderRadius: BorderRadius.circular(500),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: _isPurchasing
+              ? const Center(child: SizedBox(height: 24, width: 24, child: CircularProgressIndicator()))
+              : Text(
+                  'Purchase',
+                  style: Theme.of(context).textTheme.displaySmall!.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RestoreButton extends StatelessWidget {
+  final VoidCallback onPremiumUnlocked;
+
+  const _RestoreButton({required this.onPremiumUnlocked});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 18.0),
+      child: GestureDetector(
         onTap: () async {
           try {
-            logger.d('now trying to purchase');
-            final purchaseResult = await Purchases.purchase(PurchaseParams.package(widget.package));
-            if (!context.mounted) {
-              return;
-            }
-            _purchaserInfo = purchaseResult.customerInfo;
-            logger.d('purchase completed');
+            logger.d('Restoring purchases');
+            final customerInfo = await _purchasesService.restore();
+            if (!context.mounted) return;
 
-            appData.isPro = _purchaserInfo!.entitlements.all["prism_premium"]!.isActive;
-            globals.prismUser.premium = appData.isPro!;
-            main.prefs.put(main.userHiveKey, globals.prismUser);
-            logger.d('is user pro? ${appData.isPro}');
+            final isPremium = _purchasesService.isPremiumFromCustomerInfo(customerInfo);
+            await _purchasesService.checkAndPersistPremium();
 
-            if (appData.isPro!) {
+            if (isPremium) {
               toasts.codeSend("You are now a premium member.");
-              main.RestartWidget.restartApp(context);
+              onPremiumUnlocked();
             } else {
-              toasts.error("There was an error, please try again later.");
+              toasts.error("There was an error. Please try again later.");
             }
           } on PlatformException catch (e) {
-            logger.d('----xx-----');
             final errorCode = PurchasesErrorHelper.getErrorCode(e);
             if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
               toasts.error("User cancelled purchase.");
@@ -518,22 +528,24 @@ class _PurchaseButtonState extends State<PurchaseButton> {
               toasts.error(e.toString());
             }
           }
-          // return UpgradeScreen();
         },
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
           decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.error == Colors.black
-                  ? Theme.of(context).colorScheme.secondary
-                  : Theme.of(context).colorScheme.error,
-              borderRadius: BorderRadius.circular(500)),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+            color: Theme.of(context).colorScheme.error == Colors.black
+                ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)
+                : Theme.of(context).colorScheme.secondary,
+            borderRadius: BorderRadius.circular(500),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12.0),
           child: Text(
-            'Purchase',
-            style: Theme.of(context)
-                .textTheme
-                .displaySmall!
-                .copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+            'Restore',
+            style: Theme.of(context).textTheme.displaySmall!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.error == Colors.black
+                      ? Colors.white
+                      : Theme.of(context).primaryColor,
+                ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -546,48 +558,49 @@ class ProScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      onPopInvokedWithResult: (_, __) {
-        onWillPop();
-      },
+      onPopInvokedWithResult: (_, __) => onWillPop(),
       child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(18.0),
-                  child: Icon(
-                    Icons.star,
-                    color: Theme.of(context).colorScheme.error,
-                    size: 44.0,
+        backgroundColor: Theme.of(context).primaryColor,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(18.0),
+                child: Icon(
+                  Icons.star,
+                  color: Theme.of(context).colorScheme.error,
+                  size: 44.0,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(18.0),
+                child: Text(
+                  "You are a Prism Premium user.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
                   ),
                 ),
-                Padding(
-                    padding: const EdgeInsets.all(18.0),
-                    child: Text(
-                      "You are a Prism Premium user.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    )),
-                Padding(
-                    padding: const EdgeInsets.all(18.0),
-                    child: Text(
-                      "You can use the app in all its functionality.\n\nPlease contact us at hash.studios.inc@gmail.com if you have any problem.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ).copyWith(fontSize: 14),
-                    )),
-              ],
-            ),
-          )),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(18.0),
+                child: Text(
+                  "You can use the app in all its functionality.\n\nPlease contact us at hash.studios.inc@gmail.com if you have any problem.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ).copyWith(fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -595,32 +608,32 @@ class ProScreen extends StatelessWidget {
 class FeatureChip extends StatelessWidget {
   final IconData icon;
   final String text;
-  const FeatureChip({
-    required this.icon,
-    required this.text,
-    super.key,
-  });
+
+  const FeatureChip({required this.icon, required this.text, super.key});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 10, 8, 10),
       child: ActionChip(
-          backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
-          labelPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          avatar: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8.0),
-            child: Icon(
-              icon,
-              size: 22,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+        backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+        labelPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        avatar: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8.0),
+          child: Icon(
+            icon,
+            size: 22,
+            color: Theme.of(context).colorScheme.secondary,
           ),
-          label: Text(
-            " $text",
-            style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-          ),
-          onPressed: () {}),
+        ),
+        label: Text(
+          " $text",
+          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+        ),
+        onPressed: () {},
+      ),
     );
   }
 }

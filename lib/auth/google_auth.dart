@@ -4,15 +4,14 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
+import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/payments/upgrade.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 
 const String USER_OLD_COLLECTION = FirebaseCollections.users;
 const String USER_NEW_COLLECTION = FirebaseCollections.usersV2;
@@ -141,7 +140,7 @@ class GoogleAuth {
       final User? currentUser = _auth.currentUser;
       assert(user.uid == currentUser!.uid);
       analytics.logLogin();
-      await checkPremium();
+      await PurchasesService.instance.checkAndPersistPremium();
       await syncSentryUserScope(
         loggedIn: globals.prismUser.loggedIn,
         id: globals.prismUser.id,
@@ -206,7 +205,7 @@ class GoogleAuth {
     Hive.openBox('prefs').then((value) {
       value.put(main.userHiveKey, globals.prismUser);
     });
-    await Purchases.logOut();
+    await PurchasesService.instance.logOut();
     try {
       if (existingUserId.isNotEmpty) {
         firestoreClient.updateDoc(
