@@ -38,7 +38,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
     }
   }
 
-  void showGooglePopUp(Function func) {
+  void showGooglePopUp(VoidCallback func) {
     logger.d(globals.prismUser.loggedIn.toString());
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, func);

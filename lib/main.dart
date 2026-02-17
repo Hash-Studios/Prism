@@ -10,6 +10,7 @@ import 'package:Prism/core/monitoring/error_reporter.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
+import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/nav_stack.dart' as router;
 import 'package:Prism/core/router/route_names.dart';
@@ -31,7 +32,6 @@ import 'package:Prism/firebase_options.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
-import 'package:Prism/payments/upgrade.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -332,18 +332,42 @@ class _MyAppState extends State<MyApp> {
   late final AppRouter _appRouter;
 
   Future<bool> getLoginStatus() async {
-    final bool value = await globals.gAuth.isSignedIn();
+    bool value = await globals.gAuth.isSignedIn();
     if (value) {
       if (prefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
-        globals.gAuth.signOutGoogle();
+        try {
+          await globals.gAuth.signOutGoogle();
+        } catch (e, st) {
+          logger.w(
+            'Forced sign-out migration failed; continuing with signed-out state.',
+            tag: 'Auth',
+            error: e,
+            stackTrace: st,
+          );
+        }
         prefs.put("logouteveryoneaugust2021", true);
         toasts.codeSend("Please login again, to enjoy the app!");
+        value = false;
       }
     } else if (!value) {
       prefs.put("logouteveryoneaugust2021", true);
+      // Ensure stale profile data from previous sessions cannot make the app behave as logged in.
+      globals.prismUser
+        ..loggedIn = false
+        ..premium = false
+        ..id = ''
+        ..email = ''
+        ..username = ''
+        ..name = ''
+        ..bio = ''
+        ..profilePhoto = ''
+        ..coverPhoto = ''
+        ..followers = <dynamic>[]
+        ..following = <dynamic>[]
+        ..links = <String, dynamic>{};
     }
     if (value) {
-      checkPremium();
+      await PurchasesService.instance.checkAndPersistPremium();
     }
     globals.prismUser.loggedIn = value;
     prefs.put(userHiveKey, globals.prismUser);
