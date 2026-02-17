@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/badgeModel.dart';
@@ -31,6 +32,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -100,7 +102,16 @@ Future<void> main() async {
     }
   };
   WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
+    logger.e('Uncaught platform error', error: error, stackTrace: stackTrace);
+    return true;
+  };
+  const enableAdsInDebug = bool.fromEnvironment('ENABLE_ADS_IN_DEBUG');
+  if (!kDebugMode || enableAdsInDebug) {
+    MobileAds.instance.initialize();
+  } else {
+    logger.i('Skipping Mobile Ads initialization in debug mode.');
+  }
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.dumpErrorToConsole(details, forceReport: true);
   };
@@ -300,7 +311,12 @@ class RestartWidget extends StatefulWidget {
   static void restartApp(BuildContext context) {
     router.resetNavStack();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: Color(prefs.get('systemOverlayColor') as int),
+      systemNavigationBarColor: Color(
+        _colorValueFromPrefs(
+          prefs.get('systemOverlayColor'),
+          fallback: 0xFFE57697,
+        ),
+      ),
     ));
     observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
@@ -324,10 +340,19 @@ class _RestartWidgetState extends State<RestartWidget> {
       prefs.put("darkThemeID", currentDarkThemeID);
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);
-      lightAccent = Color(int.parse(prefs.get('lightAccent', defaultValue: "0xffe57697").toString()));
-      prefs.put("lightAccent", int.parse(lightAccent.toString().replaceAll("Color(", "").replaceAll(")", "")));
-      darkAccent = Color(int.parse(prefs.get('darkAccent', defaultValue: "0xffe57697").toString()));
-      prefs.put("darkAccent", int.parse(darkAccent.toString().replaceAll("Color(", "").replaceAll(")", "")));
+      final lightAccentValue = _colorValueFromPrefs(
+        prefs.get('lightAccent'),
+        fallback: 0xFFE57697,
+      );
+      lightAccent = Color(lightAccentValue);
+      prefs.put("lightAccent", lightAccentValue);
+
+      final darkAccentValue = _colorValueFromPrefs(
+        prefs.get('darkAccent'),
+        fallback: 0xFFE57697,
+      );
+      darkAccent = Color(darkAccentValue);
+      prefs.put("darkAccent", darkAccentValue);
     });
   }
 
