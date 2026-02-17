@@ -3,6 +3,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:bloc/bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -29,6 +30,43 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   final ToggleFavouriteWallUseCase _toggleFavouriteWallUseCase;
   final RemoveFavouriteWallUseCase _removeFavouriteWallUseCase;
   final ClearFavouriteWallsUseCase _clearFavouriteWallsUseCase;
+
+  bool _containsWall(String wallId) {
+    return state.items.any((item) => item.id == wallId);
+  }
+
+  List<FavouriteWallEntity> _upsertWall(FavouriteWallEntity wall) {
+    final List<FavouriteWallEntity> next = <FavouriteWallEntity>[
+      ...state.items.where((item) => item.id != wall.id),
+      wall,
+    ];
+    next.sort((a, b) {
+      final DateTime? aDate = _toDateTime(a.payload['createdAt']);
+      final DateTime? bDate = _toDateTime(b.payload['createdAt']);
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+    return next;
+  }
+
+  List<FavouriteWallEntity> _removeWall(String wallId) {
+    return state.items.where((item) => item.id != wallId).toList(growable: false);
+  }
+
+  DateTime? _toDateTime(Object? value) {
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+    return null;
+  }
 
   Future<void> _onStarted(_Started event, Emitter<FavouriteWallsState> emit) async {
     emit(state.copyWith(
@@ -82,15 +120,20 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     Emitter<FavouriteWallsState> emit,
   ) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+    final bool currentlyFavourited = _containsWall(event.wall.id);
     final result = await _toggleFavouriteWallUseCase(
-      ToggleFavouriteWallParams(userId: state.userId, wall: event.wall),
+      ToggleFavouriteWallParams(
+        userId: state.userId,
+        wall: event.wall,
+        currentlyFavourited: currentlyFavourited,
+      ),
     );
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
+      onSuccess: (isNowFavourite) => emit(state.copyWith(
         status: LoadStatus.success,
         actionStatus: ActionStatus.success,
-        items: items,
+        items: isNowFavourite ? _upsertWall(event.wall) : _removeWall(event.wall.id),
         failure: null,
       )),
       onFailure: (failure) => emit(state.copyWith(
@@ -110,10 +153,10 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     );
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
+      onSuccess: (_) => emit(state.copyWith(
         status: LoadStatus.success,
         actionStatus: ActionStatus.success,
-        items: items,
+        items: _removeWall(event.wallId),
         failure: null,
       )),
       onFailure: (failure) => emit(state.copyWith(
@@ -129,14 +172,17 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   ) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final result = await _clearFavouriteWallsUseCase(
-      ClearFavouriteWallsParams(userId: state.userId),
+      ClearFavouriteWallsParams(
+        userId: state.userId,
+        wallIds: state.items.map((item) => item.id).toList(growable: false),
+      ),
     );
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
+      onSuccess: (_) => emit(state.copyWith(
         status: LoadStatus.success,
         actionStatus: ActionStatus.success,
-        items: items,
+        items: const <FavouriteWallEntity>[],
         failure: null,
       )),
       onFailure: (failure) => emit(state.copyWith(

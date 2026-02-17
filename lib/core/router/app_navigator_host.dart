@@ -1,7 +1,9 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/router/app_route_factory.dart' as app_route_factory;
 import 'package:Prism/core/router/undefined_screen.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class AppNavigatorHost extends StatefulWidget {
   const AppNavigatorHost({super.key, required this.initialRouteName});
@@ -14,6 +16,10 @@ class AppNavigatorHost extends StatefulWidget {
 
 class _AppNavigatorHostState extends State<AppNavigatorHost> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final SentryNavigatorObserver _sentryNavigatorObserver = SentryNavigatorObserver(
+    enableAutoTransactions: false,
+    ignoreRoutes: <String>['/'],
+  );
 
   void _handleNestedPop(Object? result) {
     final NavigatorState? navigator = _navigatorKey.currentState;
@@ -24,6 +30,11 @@ class _AppNavigatorHostState extends State<AppNavigatorHost> {
 
   @override
   Widget build(BuildContext context) {
+    final List<NavigatorObserver> observers = <NavigatorObserver>[observer];
+    if (MonitoringRuntime.reporter.isEnabled) {
+      observers.add(_sentryNavigatorObserver);
+    }
+
     return NavigatorPopHandler<Object?>(
       onPopWithResult: _handleNestedPop,
       child: Navigator(
@@ -33,7 +44,7 @@ class _AppNavigatorHostState extends State<AppNavigatorHost> {
         onUnknownRoute: (settings) => CupertinoPageRoute(
           builder: (context) => UndefinedScreen(name: settings.name),
         ),
-        observers: <NavigatorObserver>[observer],
+        observers: observers,
       ),
     );
   }
