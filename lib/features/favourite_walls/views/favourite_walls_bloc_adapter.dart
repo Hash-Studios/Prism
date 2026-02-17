@@ -31,8 +31,8 @@ class FavouriteWallsAdapter {
     return state.items.map((item) => FavouriteWallSnapshot(item.payload)).toList(growable: false);
   }
 
-  Future<List<FavouriteWallSnapshot>?> getDataBase() async {
-    await _ensureLoaded();
+  Future<List<FavouriteWallSnapshot>?> getDataBase({bool forceRefresh = false}) async {
+    await _ensureLoaded(forceRefresh: forceRefresh);
     return liked;
   }
 
@@ -87,7 +87,7 @@ class FavouriteWallsAdapter {
     return _bloc.state.actionStatus == ActionStatus.success;
   }
 
-  Future<void> _ensureLoaded() async {
+  Future<void> _ensureLoaded({bool forceRefresh = false}) async {
     final userId = globals.prismUser.id;
     if (userId.isEmpty) {
       return;
@@ -95,8 +95,10 @@ class FavouriteWallsAdapter {
 
     if (_bloc.state.userId != userId || _bloc.state.status == LoadStatus.initial) {
       _bloc.add(FavouriteWallsEvent.started(userId: userId));
-    } else {
+    } else if (forceRefresh || _bloc.state.status == LoadStatus.failure) {
       _bloc.add(const FavouriteWallsEvent.refreshRequested());
+    } else {
+      return;
     }
 
     await _bloc.stream.firstWhere((state) => state.status != LoadStatus.loading);

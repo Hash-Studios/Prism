@@ -5,6 +5,19 @@ abstract class LogSink {
   void write(AppLogRecord record);
 }
 
+class CompositeLogSink implements LogSink {
+  CompositeLogSink(this._sinks);
+
+  final List<LogSink> _sinks;
+
+  @override
+  void write(AppLogRecord record) {
+    for (final LogSink sink in _sinks) {
+      sink.write(record);
+    }
+  }
+}
+
 class PrintLogSink implements LogSink {
   PrintLogSink({AnsiCompactFormatter? formatter}) : _formatter = formatter ?? AnsiCompactFormatter();
 

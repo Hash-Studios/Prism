@@ -81,7 +81,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
 
   Future<void> refreshList() async {
     refreshFavKey.currentState?.show();
-    context.favouriteWallsAdapter(listen: false).getDataBase();
+    await context.favouriteWallsAdapter(listen: false).getDataBase(forceRefresh: true);
   }
 
   @override

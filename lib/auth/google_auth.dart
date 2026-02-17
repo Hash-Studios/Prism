@@ -3,6 +3,7 @@ import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
@@ -139,6 +140,12 @@ class GoogleAuth {
       assert(user.uid == currentUser!.uid);
       analytics.logLogin();
       await checkPremium();
+      await syncSentryUserScope(
+        loggedIn: globals.prismUser.loggedIn,
+        id: globals.prismUser.id,
+        email: globals.prismUser.email,
+        username: globals.prismUser.username,
+      );
       return 'signInWithGoogle succeeded: $user';
     } catch (e, st) {
       logger.e(
@@ -175,6 +182,11 @@ class GoogleAuth {
       subPrisms: [],
       transactions: [],
       coverPhoto: "",
+    );
+    await syncSentryUserScope(
+      loggedIn: false,
+      id: "",
+      email: "",
     );
     Hive.openBox('prefs').then((value) {
       value.put(main.userHiveKey, globals.prismUser);

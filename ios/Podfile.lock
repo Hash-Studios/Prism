@@ -288,6 +288,8 @@ PODS:
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
+  - package_info_plus (0.4.5):
+    - Flutter
   - permission_handler_apple (9.3.0):
     - Flutter
   - PromisesObjC (2.4.0)
@@ -308,6 +310,11 @@ PODS:
   - SDWebImageWebPCoder (0.15.0):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
+  - Sentry/HybridSDK (8.56.2)
+  - sentry_flutter (9.13.0):
+    - Flutter
+    - FlutterMacOS
+    - Sentry/HybridSDK (= 8.56.2)
   - share_plus (0.0.1):
     - Flutter
   - sqflite_darwin (0.0.4):
@@ -344,10 +351,12 @@ DEPENDENCIES:
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
   - image_editor_common (from `.symlinks/plugins/image_editor_common/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
   - quick_actions_ios (from `.symlinks/plugins/quick_actions_ios/ios`)
   - rive_common (from `.symlinks/plugins/rive_common/ios`)
+  - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
@@ -398,6 +407,7 @@ SPEC REPOS:
     - RevenueCat
     - SDWebImage
     - SDWebImageWebPCoder
+    - Sentry
     - ZIPFoundation
 
 EXTERNAL SOURCES:
@@ -448,6 +458,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/image_editor_common/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
+  package_info_plus:
+    :path: ".symlinks/plugins/package_info_plus/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   purchases_flutter:
@@ -456,6 +468,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/quick_actions_ios/ios"
   rive_common:
     :path: ".symlinks/plugins/rive_common/ios"
+  sentry_flutter:
+    :path: ".symlinks/plugins/sentry_flutter/ios"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   sqflite_darwin:
@@ -531,6 +545,7 @@ SPEC CHECKSUMS:
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
+  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   purchases_flutter: d0a83d9dac58e2a808778274ebf189606d41a17a
@@ -541,6 +556,8 @@ SPEC CHECKSUMS:
   rive_common: 4743dbfd2911c99066547a3c6454681e0fa907df
   SDWebImage: 1bb6a1b84b6fe87b972a102bdc77dd589df33477
   SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
+  Sentry: b53951377b78e21a734f5dc8318e333dbfc682d7
+  sentry_flutter: 65e5735fe7e30a65ec52298ca7516c6940fa740b
   share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
   sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
   url_launcher_ios: bb13df5870e8c4234ca12609d04010a21be43dfa

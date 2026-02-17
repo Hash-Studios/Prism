@@ -5,15 +5,19 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 abstract class FavouriteWallsRepository {
   Future<Result<List<FavouriteWallEntity>>> fetchFavourites({required String userId});
 
-  Future<Result<List<FavouriteWallEntity>>> toggleFavourite({
+  Future<Result<bool>> toggleFavourite({
     required String userId,
     required FavouriteWallEntity wall,
+    required bool currentlyFavourited,
   });
 
-  Future<Result<List<FavouriteWallEntity>>> removeFavourite({
+  Future<Result<bool>> removeFavourite({
     required String userId,
     required String wallId,
   });
 
-  Future<Result<List<FavouriteWallEntity>>> clearAll({required String userId});
+  Future<Result<bool>> clearAll({
+    required String userId,
+    required List<String> wallIds,
+  });
 }
