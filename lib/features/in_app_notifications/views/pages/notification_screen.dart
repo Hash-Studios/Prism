@@ -4,6 +4,7 @@ import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -370,14 +371,26 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                     followersSubscriber = value;
                   });
                   if (value) {
-                    home.f.subscribeToTopic(globals.prismUser.email.split("@")[0]);
+                    await subscribeToTopicSafely(
+                      home.f,
+                      globals.prismUser.email.split("@")[0],
+                      sourceTag: 'notification.settings.followers.enable',
+                    );
                   } else {
-                    home.f.unsubscribeFromTopic(globals.prismUser.email.split("@")[0]);
+                    await unsubscribeFromTopicSafely(
+                      home.f,
+                      globals.prismUser.email.split("@")[0],
+                      sourceTag: 'notification.settings.followers.disable',
+                    );
                     main.prefs.put("postsSubscriber", value);
                     setState(() {
                       postsSubscriber = value;
                     });
-                    home.f.unsubscribeFromTopic('posts');
+                    await unsubscribeFromTopicSafely(
+                      home.f,
+                      'posts',
+                      sourceTag: 'notification.settings.posts.disable_from_followers',
+                    );
                   }
                 } else {
                   toasts.error("Please login to change this setting.");
@@ -409,9 +422,17 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                           postsSubscriber = value;
                         });
                         if (value) {
-                          home.f.subscribeToTopic('posts');
+                          await subscribeToTopicSafely(
+                            home.f,
+                            'posts',
+                            sourceTag: 'notification.settings.posts.enable',
+                          );
                         } else {
-                          home.f.unsubscribeFromTopic('posts');
+                          await unsubscribeFromTopicSafely(
+                            home.f,
+                            'posts',
+                            sourceTag: 'notification.settings.posts.disable',
+                          );
                         }
                       } else {
                         toasts.error("Please login to change this setting.");
@@ -464,9 +485,17 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   recommendationsSubscriber = value;
                 });
                 if (value) {
-                  home.f.subscribeToTopic('recommendations');
+                  await subscribeToTopicSafely(
+                    home.f,
+                    'recommendations',
+                    sourceTag: 'notification.settings.recommendations.enable',
+                  );
                 } else {
-                  home.f.unsubscribeFromTopic('recommendations');
+                  await unsubscribeFromTopicSafely(
+                    home.f,
+                    'recommendations',
+                    sourceTag: 'notification.settings.recommendations.disable',
+                  );
                 }
               },
             ),

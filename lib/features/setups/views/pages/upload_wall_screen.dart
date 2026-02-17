@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -17,7 +18,6 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:github/github.dart';
 import 'package:path/path.dart' as Path;
 import 'package:photo_view/photo_view.dart';
-import 'package:rive/rive.dart';
 
 class UploadWallScreen extends StatefulWidget {
   final List? arguments;
@@ -201,9 +201,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               SizedBox(
                 width: MediaQuery.of(context).size.width / 2.4,
                 height: MediaQuery.of(context).size.width / 2.4,
-                child: RiveAnimation.asset(
-                  isUploading ? "assets/animations/Upload.flr" : "assets/animations/Process.flr",
-                  animations: [if (isUploading) "upload" else "process"],
+                child: SafeRiveAsset(
+                  assetName: isUploading ? "assets/animations/Upload.flr" : "assets/animations/Process.flr",
+                  animations: <String>[if (isUploading) "upload" else "process"],
                 ),
               )
             else

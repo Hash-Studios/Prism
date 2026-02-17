@@ -360,7 +360,7 @@ class _MyAppState extends State<MyApp> {
         ..username = ''
         ..name = ''
         ..bio = ''
-        ..profilePhoto = ''
+        ..profilePhoto = globals.defaultProfilePhotoUrl
         ..coverPhoto = ''
         ..followers = <dynamic>[]
         ..following = <dynamic>[]

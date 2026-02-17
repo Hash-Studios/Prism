@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -30,14 +31,16 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
   ScrollController scrollBottomBarController = ScrollController();
   late AnimationController _controller;
   late Animation<Offset> _offsetAnimation;
+  late final VoidCallback _scrollListener;
   bool isScrollingDown = false;
   bool isOnTop = true;
   late double bottom;
 
   @override
   void initState() {
-    myScroll();
     super.initState();
+    _scrollListener = _handleScrollChange;
+    myScroll();
     bottom = 10;
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -68,27 +71,40 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
   }
 
   Future<void> myScroll() async {
-    scrollBottomBarController.addListener(() {
-      if (scrollBottomBarController.position.userScrollDirection == ScrollDirection.reverse) {
-        if (!isScrollingDown) {
-          isScrollingDown = true;
-          isOnTop = false;
-          hideBottomBar();
-        }
+    scrollBottomBarController.addListener(_scrollListener);
+  }
+
+  void _handleScrollChange() {
+    if (!mounted || !scrollBottomBarController.hasClients) {
+      return;
+    }
+    final ScrollDirection direction = _currentScrollDirection();
+    if (direction == ScrollDirection.reverse) {
+      if (!isScrollingDown) {
+        isScrollingDown = true;
+        isOnTop = false;
+        hideBottomBar();
       }
-      if (scrollBottomBarController.position.userScrollDirection == ScrollDirection.forward) {
-        if (isScrollingDown) {
-          isScrollingDown = false;
-          isOnTop = true;
-          showBottomBar();
-        }
+    } else if (direction == ScrollDirection.forward) {
+      if (isScrollingDown) {
+        isScrollingDown = false;
+        isOnTop = true;
+        showBottomBar();
       }
-    });
+    }
+  }
+
+  ScrollDirection _currentScrollDirection() {
+    if (scrollBottomBarController.positions.isEmpty) {
+      return ScrollDirection.idle;
+    }
+    return scrollBottomBarController.positions.last.userScrollDirection;
   }
 
   @override
   void dispose() {
-    scrollBottomBarController.removeListener(() {});
+    scrollBottomBarController.removeListener(_scrollListener);
+    scrollBottomBarController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -119,17 +135,31 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
             child: FloatingActionButton(
               backgroundColor: Theme.of(context).colorScheme.secondary,
               mini: true,
-              onPressed: () {
-                scrollBottomBarController
-                    .animateTo(scrollBottomBarController.position.minScrollExtent,
-                        duration: const Duration(milliseconds: 500), curve: Curves.easeIn)
-                    .then((value) {
-                  setState(() {
-                    isOnTop = true;
-                    isScrollingDown = false;
-                  });
-                  showBottomBar();
+              onPressed: () async {
+                if (scrollBottomBarController.hasClients) {
+                  try {
+                    await scrollBottomBarController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeIn,
+                    );
+                  } catch (e, st) {
+                    logger.w(
+                      'Failed to scroll to top from bottom bar.',
+                      tag: 'BottomBar',
+                      error: e,
+                      stackTrace: st,
+                    );
+                  }
+                }
+                if (!mounted) {
+                  return;
+                }
+                setState(() {
+                  isOnTop = true;
+                  isScrollingDown = false;
                 });
+                showBottomBar();
               },
               child: Icon(
                 JamIcons.arrow_up,
@@ -197,6 +227,8 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     checkSignIn();
+    final String profilePhotoUrl = globals.prismUser.profilePhoto.trim();
+    final bool hasValidProfilePhoto = isValidNetworkUrl(profilePhotoUrl);
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
@@ -405,7 +437,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                       height: currentNavStackEntry == "Profile" ? 9 : 0,
                     ),
                     if (globals.prismUser.loggedIn == true)
-                      imageNotFound
+                      imageNotFound || !hasValidProfilePhoto
                           ? Icon(
                               JamIcons.user_circle,
                               color: Theme.of(context).primaryColor,
@@ -419,7 +451,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                                 backgroundColor: Theme.of(context).colorScheme.secondary,
                                 radius: 11,
                                 backgroundImage: NetworkImage(
-                                  globals.prismUser.profilePhoto,
+                                  profilePhotoUrl,
                                 ),
                                 onBackgroundImageError: (_, st) {
                                   setState(() {
