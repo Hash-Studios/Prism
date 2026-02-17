@@ -7,7 +7,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
-import 'package:Prism/gitkey.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -117,11 +117,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future deleteFile() async {
-    final github = GitHub(auth: const Authentication.withToken(token));
+    final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
     await github.repositories
-        .deleteFile(RepositorySlug(gitUserName, repoName), wallpaperPath, wallpaperPath, wallpaperSha, "master");
+        .deleteFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls), wallpaperPath, wallpaperPath, wallpaperSha, "master");
     await github.repositories
-        .deleteFile(RepositorySlug(gitUserName, repoName), thumbPath, thumbPath, thumbSha, "master");
+        .deleteFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls), thumbPath, thumbPath, thumbSha, "master");
     logger.d("Files deleted");
   }
 
@@ -133,9 +133,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     try {
       final String base64Image = base64Encode(imageBytes);
       final String base64ImageThumb = base64Encode(imageBytesThumb);
-      final github = GitHub(auth: const Authentication.withToken(token));
+      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
       await github.repositories
-          .createFile(RepositorySlug(gitUserName, repoName),
+          .createFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
               CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)))
           .then((value) => setState(() {
                 wallpaperUrl = value.content!.downloadUrl;
@@ -144,7 +144,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               }));
       await github.repositories
           .createFile(
-              RepositorySlug(gitUserName, repoName),
+              RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
               CreateFile(
                   message: "thumb_${Path.basename(image.path)}",
                   content: base64ImageThumb,

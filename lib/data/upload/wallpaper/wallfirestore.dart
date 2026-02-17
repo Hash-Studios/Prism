@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/gitkey.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -61,7 +61,7 @@ Future<void> createRecord(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
       headers: <String, String>{
         'Content-Type': 'application/json',
-        'Authorization': 'key=$fcmServerToken',
+        'Authorization': 'key=${Env.fcmServerKey}',
       },
       body: jsonEncode(
         <String, dynamic>{
@@ -82,7 +82,7 @@ Future<void> createRecord(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
       headers: <String, String>{
         'Content-Type': 'application/json',
-        'Authorization': 'key=$fcmServerToken',
+        'Authorization': 'key=${Env.fcmServerKey}',
       },
       body: jsonEncode(
         <String, dynamic>{
@@ -151,7 +151,7 @@ Future<void> createSetup(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
       headers: <String, String>{
         'Content-Type': 'application/json',
-        'Authorization': 'key=$fcmServerToken',
+        'Authorization': 'key=${Env.fcmServerKey}',
       },
       body: jsonEncode(
         <String, dynamic>{
@@ -172,7 +172,7 @@ Future<void> createSetup(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
       headers: <String, String>{
         'Content-Type': 'application/json',
-        'Authorization': 'key=$fcmServerToken',
+        'Authorization': 'key=${Env.fcmServerKey}',
       },
       body: jsonEncode(
         <String, dynamic>{

@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/gitkey.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
@@ -289,9 +289,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   Future uploadFile() async {
     try {
       final String base64Image = base64Encode(_compressedPFP);
-      final github = GitHub(auth: const Authentication.withToken(token));
+      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
       await github.repositories
-          .createFile(RepositorySlug(gitUserName, repoName),
+          .createFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
               CreateFile(message: Path.basename(_pfp!.path), content: base64Image, path: Path.basename(_pfp!.path)))
           .then((value) => setState(() {
                 pfpUrl = value.content!.downloadUrl!;
@@ -313,9 +313,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   Future uploadFileCover() async {
     try {
       final String base64Image = base64Encode(_compressedCover);
-      final github = GitHub(auth: const Authentication.withToken(token));
+      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
       await github.repositories
-          .createFile(RepositorySlug(gitUserName, repoName),
+          .createFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
               CreateFile(message: Path.basename(_cover!.path), content: base64Image, path: Path.basename(_cover!.path)))
           .then((value) => setState(() {
                 coverUrl = value.content!.downloadUrl!;
