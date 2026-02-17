@@ -15,7 +15,6 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image/image.dart' as imagelib;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -282,19 +281,20 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   setState(() {
                     isLoading = true;
                   });
-                  GallerySaver.saveImage(imageFile.path, albumName: "Prism").then((value) {
-                    analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
-                    toasts.codeSend("Wall Saved in Pictures!");
+                  platform.invokeMethod('save_image_file', {"link": imageFile.path}).then((value) {
+                    if (value as bool) {
+                      analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
+                      toasts.codeSend("Wall Saved in Pictures!");
+                    } else {
+                      toasts.error("Couldn't save wallpaper. Please retry!");
+                    }
                     setState(() {
                       isLoading = false;
                     });
-                    // main.localNotification.cancelDownloadNotification();
                   }).catchError((e) {
                     setState(() {
                       isLoading = false;
                     });
-                    // TODO Cancel all
-                    // main.localNotification.cancelDownloadNotification();
                   });
                 },
               ),

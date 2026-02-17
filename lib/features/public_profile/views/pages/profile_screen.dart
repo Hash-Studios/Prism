@@ -22,10 +22,10 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
+import 'package:rive/rive.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
 
@@ -669,9 +669,9 @@ class _ProfileChildState extends State<ProfileChild> {
                             child: Center(
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width / 2,
-                                child: const FlareActor(
+                                child: const RiveAnimation.asset(
                                   "assets/animations/Text.flr",
-                                  animation: "Untitled",
+                                  animations: ["Untitled"],
                                 ),
                               ),
                             ),

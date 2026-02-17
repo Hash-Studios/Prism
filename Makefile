@@ -1,7 +1,13 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze run build
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
+DEVICE ?=
+RUN_ARGS ?=
+BUILD_ARGS ?=
+FIREBASE_RUN_ARG ?= $(shell [ -f android/app/google-services.json ] && echo "" || echo "--dart-define=SKIP_FIREBASE_INIT=true")
+ANDROID_JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17 2>/dev/null)
+GRADLE_USER_HOME_DIR ?= $(CURDIR)/.gradle-local
 
 setup: ensure-fvm
 	@echo "Installing Flutter SDK from .fvmrc..."
@@ -25,6 +31,30 @@ format-check: ensure-fvm
 
 analyze: ensure-fvm
 	@fvm flutter analyze
+
+run: ensure-fvm
+	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
+		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
+		export PATH="$$JAVA_HOME/bin:$$PATH"; \
+		fvm flutter config --jdk-dir "$$JAVA_HOME" >/dev/null; \
+	fi; \
+	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
+	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
+	if [ -n "$(DEVICE)" ]; then \
+		fvm flutter run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(RUN_ARGS); \
+	else \
+		fvm flutter run $(FIREBASE_RUN_ARG) $(RUN_ARGS); \
+	fi
+
+build: ensure-fvm
+	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
+		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
+		export PATH="$$JAVA_HOME/bin:$$PATH"; \
+		fvm flutter config --jdk-dir "$$JAVA_HOME" >/dev/null; \
+	fi; \
+	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
+	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
+	fvm flutter build apk $(FIREBASE_RUN_ARG) $(BUILD_ARGS)
 
 ensure-fvm:
 	@command -v fvm >/dev/null 2>&1 || { \

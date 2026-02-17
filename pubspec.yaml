@@ -22,19 +22,18 @@ dependencies:
   animations: ^2.0.0
   cached_network_image: ^3.0.0
   carousel_slider: ^5.1.2
-  cloud_firestore: ^3.5.1
+  cloud_firestore: ^5.6.12
   device_apps: ^2.1.1
-  device_info: ^2.0.0
+  device_info_plus: ^11.5.0
   extended_image: ^10.0.1
   file_encrypter: ^2.0.2
-  firebase_analytics: ^9.3.8
-  firebase_auth: ^3.11.2
-  firebase_core: ^1.1.0
-  firebase_dynamic_links: ^5.3.7
-  firebase_in_app_messaging: ^0.7.3+7
-  firebase_messaging: ^13.1.0
-  firebase_remote_config: ^2.0.20
-  flare_flutter: ^3.0.2
+  firebase_analytics: ^11.5.0
+  firebase_auth: ^5.6.0
+  firebase_core: ^3.15.2
+  firebase_dynamic_links: ^6.0.1
+  firebase_in_app_messaging: ^0.8.0
+  firebase_messaging: ^15.0.0
+  firebase_remote_config: ^5.4.0
   flutter:
     sdk: flutter
   flutter_archive: ^6.0.4
@@ -49,7 +48,6 @@ dependencies:
   flutter_bloc: ^8.1.6
   fluttertoast: ^9.0.0
   freezed_annotation: ^3.1.0
-  gallery_saver: ^2.1.0
   get_it: ^9.2.0
   github: ^9.25.0
   google_mobile_ads: ^7.0.0
@@ -59,14 +57,13 @@ dependencies:
   image: ^3.0.2
   image_editor: ^1.6.0
   image_picker: ^1.2.1
-  http: ^0.13.1
+  http: ^1.6.0
   internet_connection_checker: ^3.0.1
   in_app_update: ^4.2.5
   json_annotation: ^4.9.0
   json_serializable: ^6.8.0
   logger: ^2.6.2
   intl: ^0.17.0
-  paginate_firestore: ^1.0.3
   palette_generator: ^0.3.0
   permission_handler: ^12.0.1
   path: ^1.8.3
@@ -78,20 +75,15 @@ dependencies:
   injectable: ^2.5.1
   purchases_flutter: ^9.12.0
   quick_actions: ^1.1.0
+  rive: ^0.13.20
   rxdart: ^0.28.0
   screenshot: ^3.0.0
-  share: ^2.0.1
+  share_plus: ^11.1.0
   sliding_up_panel: ^2.0.0+1
   timeago: ^3.0.2
   url_launcher: ^6.0.3
   auto_route: ^11.1.0
 
-dependency_overrides:
-  firebase_core: ^1.1.0
-  path_provider: ^2.0.1
-  http: ^0.13.1
-  crypto: ^3.0.0
-  # convert: ^2.1.0
 dev_dependencies:
   analyzer: ^9.0.0
   bloc_test: ^9.1.7

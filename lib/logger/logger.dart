@@ -60,8 +60,8 @@ class LogOutputPrinter extends PrettyPrinter {
     final prefix = SimplePrinter.levelPrefixes[logLvl];
     final str =
         "---------------------------------------------------------------------------\nLEVEL : $logLvl\nMESSAGE : ${DateTime.now().toString().substring(11, 22)} :: $logMsg\nERROR : $logError\nSTACKTRACE : $logStrace";
-    Future.delayed(const Duration(seconds: 1)).then((value) => _logFile!.writeStringSync('$str\n'));
-    final timeStr = getTime(DateTime.now()).substring(0, 12);
+    Future.delayed(const Duration(seconds: 1)).then((value) => _logFile?.writeStringSync('$str\n'));
+    final timeStr = DateTime.now().toString().substring(11, 23);
     if (logStrace != null) {
       // print(color!('$timeStr $prefix - $logMsg \n$logStrace'));
       developer.log(

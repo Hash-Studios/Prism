@@ -2,8 +2,8 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
-import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
+import 'package:rive/rive.dart';
 
 void showChangelog(BuildContext context, Function func) {
   final controller = ScrollController();
@@ -22,9 +22,9 @@ void showChangelog(BuildContext context, Function func) {
             decoration: BoxDecoration(
                 borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
                 color: Theme.of(context).hintColor),
-            child: const FlareActor(
+            child: const RiveAnimation.asset(
               "assets/animations/Changelog.flr",
-              animation: "changelog",
+              animations: ["changelog"],
             ),
           ),
           SizedBox(

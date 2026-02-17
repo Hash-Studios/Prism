@@ -245,7 +245,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                       } else {
                         popNavStack();
                         Navigator.pop(context);
-                        analytics.logEvent(name: 'edit_setup', parameters: {'id': id, 'link': imageURL});
+                        analytics.logEvent(name: 'edit_setup', parameters: {'id': id ?? '', 'link': imageURL ?? ''});
                         WallStore.updateSetup(
                           setupDoc.id,
                           id,

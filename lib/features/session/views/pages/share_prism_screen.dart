@@ -2,9 +2,9 @@ import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:share/share.dart';
+import 'package:rive/rive.dart';
+import 'package:share_plus/share_plus.dart';
 
 class SharePrismScreen extends StatefulWidget {
   @override
@@ -60,9 +60,9 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                     child: SizedBox(
                       width: MediaQuery.of(context).size.width / 2,
                       height: 70,
-                      child: const FlareActor(
+                      child: const RiveAnimation.asset(
                         "assets/animations/Text.flr",
-                        animation: "Untitled",
+                        animations: ["Untitled"],
                       ),
                     ),
                   ),
@@ -74,9 +74,9 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                     child: SizedBox(
                       width: MediaQuery.of(context).size.width / 2,
                       height: 70,
-                      child: const FlareActor(
+                      child: const RiveAnimation.asset(
                         "assets/animations/Text.flr",
-                        animation: "Untitled",
+                        animations: ["Untitled"],
                       ),
                     ),
                   ),
@@ -130,7 +130,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                           );
                         }
                       : () {
-                          Share.share(link);
+                          SharePlus.instance.share(ShareParams(text: link));
                         },
                   child: const Text(
                     'SHARE INVITE',

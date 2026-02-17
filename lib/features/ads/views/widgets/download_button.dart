@@ -7,12 +7,12 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
-import 'package:device_info/device_info.dart';
-import 'package:flare_flutter/flare_actor.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:rive/rive.dart';
 
 class DownloadButton extends StatefulWidget {
   final String? link;
@@ -117,7 +117,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       debugPrint("Downloading using Picasso");
       final bool didSave = await platform.invokeMethod<bool>('save_image_file', {"link": widget.link}) ?? false;
       if (didSave) {
-        analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link});
+        analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
         toasts.codeSend("Wall Downloaded in Pictures/Prism!");
       } else {
         toasts.error("Couldn't download! Please Retry!");
@@ -142,7 +142,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         "filename": widget.link!.split('/').last.replaceAll(".jpg", "").replaceAll(".png", "")
       });
       toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-      analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link});
+      analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
     }
   }
 }
@@ -218,9 +218,9 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                 decoration: BoxDecoration(
                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
                     color: Theme.of(context).hintColor),
-                child: const FlareActor(
+                child: const RiveAnimation.asset(
                   "assets/animations/Update.flr",
-                  animation: "update",
+                  animations: ["update"],
                 ),
               ),
               Column(
