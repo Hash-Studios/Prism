@@ -13,72 +13,105 @@ List? subSortedData;
 late List wallsDataL;
 Map wall = {};
 Future<List?> getPrismWalls() async {
-  if (currentNavStackEntry == "Home") {
-    logger.d("Fetching first 24 walls!");
-    prismWalls = [];
-    subPrismWalls = [];
-    await databaseReference
+  logger.d(
+    "[PrismFeed] getPrismWalls start",
+    fields: <String, Object?>{"nav": currentNavStackEntry},
+  );
+  if (currentNavStackEntry != "Home") {
+    logger.w(
+      "[PrismFeed] getPrismWalls called while nav is not Home; continuing fetch",
+      fields: <String, Object?>{"nav": currentNavStackEntry},
+    );
+  }
+  prismWalls = [];
+  subPrismWalls = [];
+  try {
+    final QuerySnapshot<Map<String, dynamic>> value = await databaseReference
         .collection("walls")
         .where('review', isEqualTo: true)
         .orderBy("createdAt", descending: true)
         .limit(24)
-        .get()
-        .then((value) {
-      prismWalls = [];
-      prismWallsDocSnaps = value.docs;
-      for (final f in value.docs) {
-        Map<String, dynamic> map;
-        map = f.data();
-        map['createdAt'] = map['createdAt'].toString();
-        prismWalls!.add(map);
-      }
-      if (prismWalls != []) {
-        logger.d("${prismWalls!.length} walls fetched!");
-        subPrismWalls = prismWalls;
-      } else {
-        logger.d("Not connected to Internet");
-        subPrismWalls = [];
-      }
-    }).catchError((e) {
-      logger.d(e.toString());
-      logger.d("data done with error");
-    });
-  } else {
-    logger.d("Refresh blocked");
+        .get();
+
+    prismWalls = <Map<String, dynamic>>[];
+    prismWallsDocSnaps = value.docs;
+    for (final f in value.docs) {
+      final Map<String, dynamic> map = f.data();
+      map['createdAt'] = map['createdAt'].toString();
+      prismWalls!.add(map);
+    }
+
+    subPrismWalls = prismWalls;
+    logger.i(
+      "[PrismFeed] getPrismWalls success",
+      fields: <String, Object?>{
+        "count": prismWalls!.length,
+        "docSnaps": prismWallsDocSnaps?.length ?? 0,
+      },
+    );
+  } catch (error, stackTrace) {
+    subPrismWalls = <Map<String, dynamic>>[];
+    logger.e(
+      "[PrismFeed] getPrismWalls failed",
+      error: error,
+      stackTrace: stackTrace,
+      fields: <String, Object?>{"nav": currentNavStackEntry},
+    );
+    rethrow;
   }
   return subPrismWalls;
 }
 
 Future<List?> seeMorePrism() async {
-  logger.d("Fetching more walls!");
-  await databaseReference
-      .collection("walls")
-      .where('review', isEqualTo: true)
-      .orderBy("createdAt", descending: true)
-      .startAfterDocument(prismWallsDocSnaps![prismWallsDocSnaps!.length - 1])
-      .limit(24)
-      .get()
-      .then((value) {
+  logger.d(
+    "[PrismFeed] seeMorePrism start",
+    fields: <String, Object?>{
+      "existing": subPrismWalls?.length ?? 0,
+      "docSnaps": prismWallsDocSnaps?.length ?? 0,
+    },
+  );
+  if (!(prismWallsDocSnaps?.isNotEmpty ?? false)) {
+    logger.w("[PrismFeed] seeMorePrism skipped: no cursor snapshot available");
+    return subPrismWalls ?? prismWalls ?? <dynamic>[];
+  }
+  prismWalls ??= <Map<String, dynamic>>[];
+  subPrismWalls ??= <Map<String, dynamic>>[];
+  try {
+    final QuerySnapshot<Map<String, dynamic>> value = await databaseReference
+        .collection("walls")
+        .where('review', isEqualTo: true)
+        .orderBy("createdAt", descending: true)
+        .startAfterDocument(prismWallsDocSnaps![prismWallsDocSnaps!.length - 1])
+        .limit(24)
+        .get();
     for (final doc in value.docs) {
       prismWallsDocSnaps!.add(doc);
     }
     for (final f in value.docs) {
-      Map<String, dynamic> map;
-      map = f.data();
+      final Map<String, dynamic> map = f.data();
       map['createdAt'] = map['createdAt'].toString();
       prismWalls!.add(map);
     }
-    if (prismWalls != []) {
-      final int len = prismWalls!.length;
-      final double pageNumber = len / 24;
-      logger.d("${value.docs.length} walls fetched!");
-      logger.d("$len total walls fetched!");
-      logger.d("PageNumber: $pageNumber");
-      subPrismWalls!.addAll(prismWalls!.sublist(subPrismWalls!.length));
-    } else {
-      logger.d("Not connected to Internet");
+    final int len = prismWalls!.length;
+    final int oldLen = subPrismWalls!.length;
+    if (oldLen < len) {
+      subPrismWalls!.addAll(prismWalls!.sublist(oldLen));
     }
-  });
+    logger.i(
+      "[PrismFeed] seeMorePrism success",
+      fields: <String, Object?>{
+        "fetched": value.docs.length,
+        "total": subPrismWalls!.length,
+      },
+    );
+  } catch (error, stackTrace) {
+    logger.e(
+      "[PrismFeed] seeMorePrism failed",
+      error: error,
+      stackTrace: stackTrace,
+    );
+    rethrow;
+  }
   return subPrismWalls;
 }
 

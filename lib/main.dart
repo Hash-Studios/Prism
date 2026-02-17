@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show PlatformDispatcher;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/badgeModel.dart';
@@ -33,6 +32,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -51,7 +51,7 @@ Color? darkAccent;
 late bool optimisedWallpapers;
 int? categories;
 int? purity;
-LocalNotification localNotification = LocalNotification();
+late LocalNotification localNotification;
 
 int _to8BitChannel(double value) {
   final channel = (value * 255).round();
@@ -94,102 +94,105 @@ int _colorValueFromPrefs(dynamic rawValue, {required int fallback}) {
 }
 
 Future<void> main() async {
-  debugPrint = (String? message, {int? wrapWidth}) {
-    if (message!.contains("[Home")) {
-      logger.i(message);
-    } else {
-      logger.d(message);
-    }
-  };
-  WidgetsFlutterBinding.ensureInitialized();
-  PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
-    logger.e('Uncaught platform error', error: error, stackTrace: stackTrace);
-    return true;
-  };
-  await MobileAds.instance.initialize();
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.dumpErrorToConsole(details, forceReport: true);
-  };
-  localNotification = LocalNotification();
-  const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
-  if (!skipFirebaseInit) {
-    try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
+  await runZonedGuarded<Future<void>>(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      PlatformDispatcher.instance.onError =
+          (Object error, StackTrace stackTrace) {
+        logger.e('Uncaught platform error',
+            error: error, stackTrace: stackTrace);
+        return true;
+      };
+
+      await MobileAds.instance.initialize();
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FlutterError.dumpErrorToConsole(details, forceReport: true);
+      };
+
+      localNotification = LocalNotification();
+
+      const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
+      if (!skipFirebaseInit) {
+        try {
+          await Firebase.initializeApp(
+            options: DefaultFirebaseOptions.currentPlatform,
+          );
+          FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
+        } catch (error, stackTrace) {
+          logger.w(
+            'Firebase initialization failed; continuing without Firebase-backed startup features.',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
+      } else {
+        logger.w(
+            'Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
+      }
+
+      final dir = await getApplicationDocumentsDirectory();
+      Hive.init(dir.path);
+      Hive.registerAdapter(PrismUsersAdapter());
+      Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
+      Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
+      Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
+      Hive.registerAdapter<Badge>(BadgeAdapter());
+      await Hive.openBox<InAppNotif>('inAppNotifs');
+      await Hive.openBox('setups');
+      await Hive.openBox('localFav');
+      await Hive.openBox('appsCache');
+      prefs = await Hive.openBox('prefs');
+      logger.d("Box Opened");
+      final systemOverlayColorValue = _colorValueFromPrefs(
+        prefs.get("systemOverlayColor"),
+        fallback: 0xFFE57697,
       );
-      FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
-    } catch (error, stackTrace) {
-      logger.w(
-        'Firebase initialization failed; continuing without Firebase-backed startup features.',
-        error: error,
-        stackTrace: stackTrace,
+      prefs.put("systemOverlayColor", systemOverlayColorValue);
+      currentThemeID =
+          prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+      prefs.put("lightThemeID", currentThemeID);
+      currentDarkThemeID =
+          prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
+      prefs.put("darkThemeID", currentDarkThemeID);
+      currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
+      prefs.put("themeMode", currentMode);
+      final lightAccentValue = _colorValueFromPrefs(
+        prefs.get('lightAccent'),
+        fallback: 0xFFE57697,
       );
-    }
-  } else {
-    logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
-  }
+      lightAccent = Color(lightAccentValue);
+      prefs.put("lightAccent", lightAccentValue);
 
-  final dir = await getApplicationDocumentsDirectory();
-  Hive.init(dir.path);
-  Hive.registerAdapter(PrismUsersAdapter());
-  Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
-  Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
-  Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
-  Hive.registerAdapter<Badge>(BadgeAdapter());
-  await Hive.openBox<InAppNotif>('inAppNotifs');
-  await Hive.openBox('setups');
-  await Hive.openBox('localFav');
-  await Hive.openBox('appsCache');
-  prefs = await Hive.openBox('prefs');
-  logger.d("Box Opened");
-  final systemOverlayColorValue = _colorValueFromPrefs(
-    prefs.get("systemOverlayColor"),
-    fallback: 0xFFE57697,
-  );
-  prefs.put("systemOverlayColor", systemOverlayColorValue);
-  currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-  prefs.put("lightThemeID", currentThemeID);
-  currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-  prefs.put("darkThemeID", currentDarkThemeID);
-  currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
-  prefs.put("themeMode", currentMode);
-  final lightAccentValue = _colorValueFromPrefs(
-    prefs.get('lightAccent'),
-    fallback: 0xFFE57697,
-  );
-  lightAccent = Color(lightAccentValue);
-  prefs.put("lightAccent", lightAccentValue);
+      final darkAccentValue = _colorValueFromPrefs(
+        prefs.get('darkAccent'),
+        fallback: 0xFFE57697,
+      );
+      darkAccent = Color(darkAccentValue);
+      prefs.put("darkAccent", darkAccentValue);
+      optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
+      prefs.put('optimisedWallpapers', false);
+      categories = prefs.get('WHcategories') as int? ?? 100;
+      if (categories == 100) {
+        prefs.put('WHcategories', 100);
+      } else {
+        prefs.put('WHcategories', 111);
+      }
+      purity = prefs.get('WHpurity') as int? ?? 100;
+      if (purity == 100) {
+        prefs.put('WHpurity', 100);
+      } else {
+        prefs.put('WHpurity', 110);
+      }
 
-  final darkAccentValue = _colorValueFromPrefs(
-    prefs.get('darkAccent'),
-    fallback: 0xFFE57697,
-  );
-  darkAccent = Color(darkAccentValue);
-  prefs.put("darkAccent", darkAccentValue);
-  optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
-  prefs.put('optimisedWallpapers', false);
-  categories = prefs.get('WHcategories') as int? ?? 100;
-  if (categories == 100) {
-    prefs.put('WHcategories', 100);
-  } else {
-    prefs.put('WHcategories', 111);
-  }
-  purity = prefs.get('WHpurity') as int? ?? 100;
-  if (purity == 100) {
-    prefs.put('WHpurity', 100);
-  } else {
-    prefs.put('WHpurity', 110);
-  }
+      configureDependencies();
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+        systemNavigationBarColor: Color(systemOverlayColorValue),
+      ));
+      SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+      await SystemChrome.setPreferredOrientations(
+          [DeviceOrientation.portraitUp]);
 
-  configureDependencies();
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    systemNavigationBarColor: Color(systemOverlayColorValue),
-  ));
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
-  runZonedGuarded<void>(
-    () {
       runApp(
         RestartWidget(
           child: MultiBlocProvider(
@@ -204,7 +207,8 @@ Future<void> main() async {
                 create: (_) => getIt<UserSearchBloc>(),
               ),
               BlocProvider<CategoryFeedBloc>(
-                create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
+                create: (_) => getIt<CategoryFeedBloc>()
+                  ..add(const CategoryFeedEvent.started()),
               ),
               BlocProvider<ProfileWallsBloc>(
                 create: (_) => getIt<ProfileWallsBloc>(),
@@ -225,13 +229,16 @@ Future<void> main() async {
                 create: (_) => getIt<PublicProfileBloc>(),
               ),
               BlocProvider<ThemeLightBloc>(
-                create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
+                create: (_) => getIt<ThemeLightBloc>()
+                  ..add(const ThemeLightEvent.started()),
               ),
               BlocProvider<ThemeDarkBloc>(
-                create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
+                create: (_) =>
+                    getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
               ),
               BlocProvider<ThemeModeBloc>(
-                create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
+                create: (_) =>
+                    getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
               ),
             ],
             child: MyApp(),
@@ -272,22 +279,74 @@ class _MyAppState extends State<MyApp> {
     return value;
   }
 
+  Future<void> _configureDisplayMode() async {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+    try {
+      await FlutterDisplayMode.setHighRefreshRate();
+    } on MissingPluginException catch (e, st) {
+      logger.w(
+        'Display mode plugin unavailable on this platform/build.',
+        error: e,
+        stackTrace: st,
+      );
+    } catch (e, st) {
+      logger.w(
+        'Failed to set high refresh rate.',
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  Future<void> _configureLocalNotificationChannels() async {
+    try {
+      await localNotification.createNotificationChannel(
+        "followers",
+        "Followers",
+        "Get notifications for new followers.",
+        true,
+      );
+      await localNotification.createNotificationChannel(
+        "recommendations",
+        "Recommendations",
+        "Get notifications for recommendations from Prism.",
+        true,
+      );
+      await localNotification.createNotificationChannel(
+        "posts",
+        "Posts",
+        "Get notifications for posts from artists you follow.",
+        true,
+      );
+      await localNotification.createNotificationChannel(
+        "downloads",
+        "Downloads",
+        "Get notifications for download progress of wallpapers.",
+        false,
+      );
+    } catch (e, st) {
+      logger.w(
+        'Failed to configure local notification channels.',
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
   @override
   void initState() {
-    _appRouter = AppRouter(
-      initialRouteName: ((prefs.get('onboarded_new') as bool?) ?? false) ? splashRoute : onboardingRoute,
-    );
-    FlutterDisplayMode.setHighRefreshRate();
-    localNotification.createNotificationChannel("followers", "Followers", "Get notifications for new followers.", true);
-    localNotification.createNotificationChannel(
-        "recommendations", "Recommendations", "Get notifications for recommendations from Prism.", true);
-    localNotification.createNotificationChannel(
-        "posts", "Posts", "Get notifications for posts from artists you follow.", true);
-    localNotification.createNotificationChannel(
-        "downloads", "Downloads", "Get notifications for download progress of wallpapers.", false);
-    getLoginStatus();
-    localNotification.fetchNotificationData(context);
     super.initState();
+    _appRouter = AppRouter(
+      initialRouteName: ((prefs.get('onboarded_new') as bool?) ?? false)
+          ? splashRoute
+          : onboardingRoute,
+    );
+    unawaited(_configureDisplayMode());
+    unawaited(_configureLocalNotificationChannels());
+    unawaited(getLoginStatus());
+    unawaited(localNotification.fetchNotificationData(context));
   }
 
   @override
@@ -331,9 +390,11 @@ class _RestartWidgetState extends State<RestartWidget> {
       key = UniqueKey();
     });
     Hive.openBox('prefs').then((prefs) {
-      currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+      currentThemeID =
+          prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
       prefs.put("lightThemeID", currentThemeID);
-      currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
+      currentDarkThemeID =
+          prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
       prefs.put("darkThemeID", currentDarkThemeID);
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);

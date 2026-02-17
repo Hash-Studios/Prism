@@ -99,9 +99,10 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
         onRefresh: refreshList,
         child: context.publicProfileAdapter().userProfileWalls != null
             ? context.publicProfileAdapter().userProfileWalls!.isEmpty
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     children: <Widget>[
+                      const SizedBox(height: 12),
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
                         child: context.prismModeStyleForContext() == "Dark"
@@ -184,10 +185,7 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                                         Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
                               ),
                       ),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height * 0.1,
-                      )
+                      const SizedBox(height: 12),
                     ],
                   )
                 : GridView.builder(
@@ -265,17 +263,23 @@ class PhotographerWallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String imageUrl = context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_thumb"] == null
+        ? ""
+        : context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_thumb"].toString().trim();
+    final bool hasValidImageUrl = imageUrl.startsWith("http://") || imageUrl.startsWith("https://");
     return Stack(
       children: [
         Container(
           decoration: BoxDecoration(
-              color: animation!.value,
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                  image: CachedNetworkImageProvider(
-                    context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_thumb"].toString(),
-                  ),
-                  fit: BoxFit.cover)),
+            color: animation!.value,
+            borderRadius: BorderRadius.circular(20),
+            image: hasValidImageUrl
+                ? DecorationImage(
+                    image: CachedNetworkImageProvider(imageUrl),
+                    fit: BoxFit.cover,
+                  )
+                : null,
+          ),
         ),
         ClipRRect(
           borderRadius: BorderRadius.circular(20),

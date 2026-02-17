@@ -27,6 +27,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
   GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
   int _current = 0;
   bool seeMoreLoader = false;
+  int _lastLoggedSubWallsCount = -1;
   @override
   void initState() {
     super.initState();
@@ -34,9 +35,13 @@ class _WallpaperGridState extends State<WallpaperGrid> {
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
+    logger.i(
+      "[WallpaperGrid] manual refresh",
+      fields: <String, Object?>{"provider": widget.provider},
+    );
     Data.prismWalls = [];
     Data.subPrismWalls = [];
-    Data.getPrismWalls();
+    await Data.getPrismWalls();
   }
 
   void showGooglePopUp(BuildContext context, Function func) {
@@ -52,6 +57,32 @@ class _WallpaperGridState extends State<WallpaperGrid> {
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     final CarouselSliderController carouselController = CarouselSliderController();
+    final List<dynamic> subWalls = Data.subPrismWalls?.cast<dynamic>() ?? <dynamic>[];
+    if (_lastLoggedSubWallsCount != subWalls.length) {
+      _lastLoggedSubWallsCount = subWalls.length;
+      logger.d(
+        "[WallpaperGrid] build",
+        fields: <String, Object?>{
+          "provider": widget.provider,
+          "items": subWalls.length,
+          "docSnaps": Data.prismWallsDocSnaps?.length ?? 0,
+        },
+      );
+    }
+    Map<String, dynamic>? wallAt(int index) {
+      if (index < 0 || index >= subWalls.length) {
+        return null;
+      }
+      final dynamic wall = subWalls[index];
+      if (wall is Map<String, dynamic>) {
+        return wall;
+      }
+      if (wall is Map) {
+        return wall.cast<String, dynamic>();
+      }
+      return null;
+    }
+
     return Padding(
       padding: const EdgeInsets.only(top: 5.0),
       child: NestedScrollView(
@@ -81,110 +112,115 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             });
                           }
                         }),
-                    itemBuilder: (BuildContext context, int i, int rI) => i == 4
-                        ? Container(
-                            width: MediaQuery.of(context).size.width,
-                            margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
-                            child: GestureDetector(
-                              onTap: () {
-                                launch(globals.bannerURL);
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    color: context.prismModeStyleForContext() == "Dark"
-                                        ? Colors.white10
-                                        : Colors.black.withValues(alpha: .1),
-                                    borderRadius: BorderRadius.circular(20),
-                                    image: DecorationImage(
-                                        image: CachedNetworkImageProvider(globals.topImageLink), fit: BoxFit.cover)),
-                                child: Center(
-                                  child: Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    color: globals.bannerTextOn == "true"
-                                        ? Colors.black.withValues(alpha: 0.4)
-                                        : Colors.transparent,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text(
-                                        globals.bannerTextOn == "true" ? globals.bannerText.toUpperCase() : "",
-                                        textAlign: TextAlign.center,
-                                        maxLines: 1,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .displayMedium!
-                                            .copyWith(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
-                                      ),
+                    itemBuilder: (BuildContext context, int i, int rI) {
+                      if (i == 4) {
+                        return Container(
+                          width: MediaQuery.of(context).size.width,
+                          margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
+                          child: GestureDetector(
+                            onTap: () {
+                              launch(globals.bannerURL);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  color: context.prismModeStyleForContext() == "Dark"
+                                      ? Colors.white10
+                                      : Colors.black.withValues(alpha: .1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                      image: CachedNetworkImageProvider(globals.topImageLink), fit: BoxFit.cover)),
+                              child: Center(
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  color: globals.bannerTextOn == "true"
+                                      ? Colors.black.withValues(alpha: 0.4)
+                                      : Colors.transparent,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      globals.bannerTextOn == "true" ? globals.bannerText.toUpperCase() : "",
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .displayMedium!
+                                          .copyWith(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          )
-                        : Container(
-                            width: MediaQuery.of(context).size.width,
-                            margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
-                            child: GestureDetector(
-                              onTap: () {
-                                if (Data.subPrismWalls == []) {
-                                } else {
-                                  globals.isPremiumWall(globals.premiumCollections,
-                                                  Data.subPrismWalls![i]["collections"] as List? ?? []) ==
-                                              true &&
-                                          globals.prismUser.premium != true
-                                      ? showGooglePopUp(context, () {
-                                          context.pushNamedRoute(
-                                            premiumRoute,
-                                          );
-                                        })
-                                      : context.pushNamedRoute(wallpaperRoute, arguments: [
-                                          widget.provider,
-                                          i,
-                                          Data.subPrismWalls![i]["wallpaper_thumb"],
-                                        ]);
-                                }
-                              },
-                              child: Data.subPrismWalls!.isEmpty
-                                  ? Container(
-                                      decoration: BoxDecoration(
+                          ),
+                        );
+                      }
+                      final Map<String, dynamic>? wall = wallAt(i);
+                      return Container(
+                        width: MediaQuery.of(context).size.width,
+                        margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (wall == null) {
+                              return;
+                            }
+                            globals.isPremiumWall(globals.premiumCollections, wall["collections"] as List? ?? []) ==
+                                        true &&
+                                    globals.prismUser.premium != true
+                                ? showGooglePopUp(context, () {
+                                    context.pushNamedRoute(
+                                      premiumRoute,
+                                    );
+                                  })
+                                : context.pushNamedRoute(
+                                    wallpaperRoute,
+                                    arguments: [
+                                      widget.provider,
+                                      i,
+                                      wall["wallpaper_thumb"],
+                                    ],
+                                  );
+                          },
+                          child: wall == null
+                              ? Container(
+                                  decoration: BoxDecoration(
+                                    color: context.prismModeStyleForContext() == "Dark"
+                                        ? Colors.white10
+                                        : Colors.black.withValues(alpha: .1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                )
+                              : PremiumBannerWallsCarousel(
+                                  comparator: !globals.isPremiumWall(
+                                      globals.premiumCollections, wall["collections"] as List? ?? []),
+                                  child: Container(
+                                    decoration: BoxDecoration(
                                         color: context.prismModeStyleForContext() == "Dark"
                                             ? Colors.white10
                                             : Colors.black.withValues(alpha: .1),
                                         borderRadius: BorderRadius.circular(20),
-                                      ),
-                                    )
-                                  : PremiumBannerWallsCarousel(
-                                      comparator: !globals.isPremiumWall(globals.premiumCollections,
-                                          Data.subPrismWalls![i]["collections"] as List? ?? []),
+                                        image: DecorationImage(
+                                            image: CachedNetworkImageProvider(wall["wallpaper_thumb"].toString()),
+                                            fit: BoxFit.cover)),
+                                    child: Center(
                                       child: Container(
-                                        decoration: BoxDecoration(
-                                            color: context.prismModeStyleForContext() == "Dark"
-                                                ? Colors.white10
-                                                : Colors.black.withValues(alpha: .1),
-                                            borderRadius: BorderRadius.circular(20),
-                                            image: DecorationImage(
-                                                image: CachedNetworkImageProvider(
-                                                    Data.subPrismWalls![i]["wallpaper_thumb"].toString()),
-                                                fit: BoxFit.cover)),
-                                        child: Center(
-                                          child: Container(
-                                            width: MediaQuery.of(context).size.width,
-                                            color: Colors.transparent,
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: Text(
-                                                "",
-                                                textAlign: TextAlign.center,
-                                                maxLines: 1,
-                                                style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                                    color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                                              ),
-                                            ),
+                                        width: MediaQuery.of(context).size.width,
+                                        color: Colors.transparent,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(
+                                            "",
+                                            textAlign: TextAlign.center,
+                                            maxLines: 1,
+                                            style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                                                color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       ),
                                     ),
-                            ),
-                          ),
+                                  ),
+                                ),
+                        ),
+                      );
+                    },
                   ),
                   CarouselDots(current: _current),
                 ],
@@ -200,9 +236,20 @@ class _WallpaperGridState extends State<WallpaperGrid> {
             onNotification: (ScrollNotification scrollInfo) {
               if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
                 if (!seeMoreLoader) {
+                  if (!(Data.prismWallsDocSnaps?.isNotEmpty ?? false)) {
+                    logger.w("[WallpaperGrid] see more skipped: no doc snapshots");
+                    return false;
+                  }
                   setState(() {
                     seeMoreLoader = true;
                   });
+                  logger.d(
+                    "[WallpaperGrid] see more triggered",
+                    fields: <String, Object?>{
+                      "currentItems": subWalls.length,
+                      "docSnaps": Data.prismWallsDocSnaps?.length ?? 0,
+                    },
+                  );
                   Data.seeMorePrism();
                   setState(() {
                     Future.delayed(const Duration(seconds: 1)).then((value) => seeMoreLoader = false);
@@ -214,7 +261,11 @@ class _WallpaperGridState extends State<WallpaperGrid> {
             child: GridView.builder(
               physics: const ScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-              itemCount: Data.subPrismWalls!.isEmpty ? 20 : Data.subPrismWalls!.length - 4,
+              itemCount: subWalls.isEmpty
+                  ? 20
+                  : subWalls.length > 4
+                      ? subWalls.length - 4
+                      : 0,
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                   maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
@@ -222,12 +273,29 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                   mainAxisSpacing: 8,
                   crossAxisSpacing: 8),
               itemBuilder: (context, index) {
+                if (subWalls.isEmpty) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: context.prismModeStyleForContext() == "Dark"
+                          ? Colors.white10
+                          : Colors.black.withValues(alpha: .1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  );
+                }
+
                 index = index + 4;
-                if (index == Data.subPrismWalls!.length - 1) {
+                if (index >= subWalls.length) {
+                  return const SizedBox.shrink();
+                }
+                if (index == subWalls.length - 1) {
                   return SeeMoreButton(
                     seeMoreLoader: seeMoreLoader,
                     func: () {
                       if (!seeMoreLoader) {
+                        if (!(Data.prismWallsDocSnaps?.isNotEmpty ?? false)) {
+                          return;
+                        }
                         setState(() {
                           seeMoreLoader = true;
                         });
@@ -247,10 +315,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                       )
                     : PremiumBannerWalls(
                         comparator: !globals.isPremiumWall(
-                            globals.premiumCollections,
-                            Data.subPrismWalls!.isEmpty
-                                ? []
-                                : Data.subPrismWalls![index]["collections"] as List? ?? []),
+                            globals.premiumCollections, wallAt(index)?["collections"] as List? ?? []),
                         defaultChild: FocusedMenuHolder(
                           provider: widget.provider,
                           index: index,

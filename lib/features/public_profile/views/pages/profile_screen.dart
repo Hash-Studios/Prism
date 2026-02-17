@@ -98,19 +98,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                     final doc = snapshot.data!.docs[0];
                     final data = doc.data()! as Map<String, dynamic>;
+                    final Map links = data["links"] is Map ? (data["links"] as Map) : <String, dynamic>{};
+                    final bool premium = data["premium"] is bool ? data["premium"] as bool : false;
+                    final List followers = data["followers"] is List ? data["followers"] as List : <dynamic>[];
+                    final List following = data["following"] is List ? data["following"] as List : <dynamic>[];
                     return ProfileChild(
                       ownProfile: false,
                       id: doc.id,
                       bio: data["bio"].toString(),
-                      coverPhoto: data["coverPhoto"] as String,
+                      coverPhoto: data["coverPhoto"]?.toString() ?? "",
                       email: data["email"].toString(),
-                      links: data["links"] as Map,
+                      links: links,
                       name: data["name"].toString(),
-                      premium: data["premium"] as bool,
+                      premium: premium,
                       userPhoto: data["profilePhoto"].toString(),
                       username: data["username"].toString(),
-                      followers: data["followers"] as List,
-                      following: data["following"] as List,
+                      followers: followers,
+                      following: following,
                     );
                   }
                   return ColoredBox(
@@ -173,6 +177,10 @@ class _ProfileChildState extends State<ProfileChild> {
 
   @override
   Widget build(BuildContext context) {
+    final String safeCoverPhoto = (widget.coverPhoto ?? "").trim();
+    final String safeUserPhoto = (widget.userPhoto ?? "").trim();
+    final bool hasCoverPhoto = safeCoverPhoto.isNotEmpty;
+    final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
     final ScrollController? controller =
         widget.ownProfile! ? InheritedDataProvider.of(context)!.scrollController : ScrollController();
 
@@ -327,7 +335,7 @@ class _ProfileChildState extends State<ProfileChild> {
                               background: Stack(
                                 children: [
                                   Column(children: [
-                                    if (widget.coverPhoto == null)
+                                    if (!hasCoverPhoto)
                                       SvgPicture.string(
                                         defaultHeader
                                             .replaceAll(
@@ -344,8 +352,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                       )
                                     else
                                       CachedNetworkImage(
-                                        imageUrl: widget.coverPhoto ??
-                                            "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Headers%2FheaderDefault.png?alt=media&token=1a10b128-c355-45d8-af96-678c13c05b3c",
+                                        imageUrl: safeCoverPhoto,
                                         fit: BoxFit.cover,
                                         width: MediaQuery.of(context).size.width,
                                         height: MediaQuery.of(context).size.height * 0.19,
@@ -361,7 +368,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                           ? MediaQuery.of(context).size.height * 0.21 - 37
                                           : MediaQuery.of(context).size.height * 0.27 - 37,
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                        mainAxisAlignment: MainAxisAlignment.start,
                                         children: [
                                           SizedBox(
                                             width: MediaQuery.of(context).size.width * 0.7,
@@ -397,14 +404,14 @@ class _ProfileChildState extends State<ProfileChild> {
                                             ),
                                           ),
                                           const SizedBox(
-                                            height: 15,
+                                            height: 8,
                                           ),
                                           SizedBox(
                                             width: MediaQuery.of(context).size.width * 0.7,
                                             child: Text(
                                               widget.bio ?? "",
                                               textAlign: TextAlign.center,
-                                              maxLines: 2,
+                                              maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontFamily: "Proxima Nova",
@@ -415,7 +422,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                             ),
                                           ),
                                           const SizedBox(
-                                            height: 15,
+                                            height: 8,
                                           ),
                                           SizedBox(
                                             width: MediaQuery.of(context).size.width * 0.7,
@@ -570,12 +577,24 @@ class _ProfileChildState extends State<ProfileChild> {
                                             color: Theme.of(context).colorScheme.secondary,
                                           ),
                                           child: ClipOval(
-                                            child: CachedNetworkImage(
-                                              imageUrl: widget.userPhoto ?? "",
-                                              width: 78,
-                                              height: 78,
-                                              fit: BoxFit.cover,
-                                            ),
+                                            child: hasUserPhoto
+                                                ? CachedNetworkImage(
+                                                    imageUrl: safeUserPhoto,
+                                                    width: 78,
+                                                    height: 78,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : Container(
+                                                    width: 78,
+                                                    height: 78,
+                                                    color: Theme.of(context).primaryColor,
+                                                    alignment: Alignment.center,
+                                                    child: Icon(
+                                                      JamIcons.user,
+                                                      color: Theme.of(context).colorScheme.error,
+                                                      size: 30,
+                                                    ),
+                                                  ),
                                           ),
                                         ),
                                       ),

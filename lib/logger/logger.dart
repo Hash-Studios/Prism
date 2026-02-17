@@ -1,179 +1,29 @@
-import 'dart:developer' as developer;
-import 'dart:io';
-
-import 'package:file_encrypter/file_encrypter.dart';
+import 'package:Prism/logger/app_logger.dart';
+import 'package:Prism/logger/log_sink.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_archive/flutter_archive.dart';
-import 'package:logger/logger.dart';
-import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 
-final printer = LogOutputPrinter();
-final logger = Logger(
-  level: Level.debug,
-  printer: printer,
-  filter: kDebugMode ? PassThroughFilter() : ProductionFilter(),
+final AppLogger logger = AppLogger(
+  minimumLevel: kReleaseMode ? AppLogLevel.warn : AppLogLevel.trace,
+  sink: PrintLogSink(),
 );
 
-class PassThroughFilter extends LogFilter {
-  @override
-  bool shouldLog(LogEvent event) {
-    return true;
-  }
-}
-
-class LogOutputPrinter extends PrettyPrinter {
-  late String _logFolderPath;
-  RandomAccessFile? _logFile;
-
-  LogOutputPrinter() {
-    getExternalStorageDirectory().then((cacheDir) async {
-      if (cacheDir == null) {
-        getApplicationDocumentsDirectory().then((cDir) async {
-          _logFolderPath = join(cDir.path, "logs");
-          try {
-            await Directory(_logFolderPath).create();
-          } catch (e) {
-            // Ignore if it already exists
-          }
-          await setLogCapture(true);
-        });
-      } else {
-        _logFolderPath = join(cacheDir.path, "logs");
-        try {
-          await Directory(_logFolderPath).create();
-        } catch (e) {
-          // Ignore if it already exists
-        }
-        await setLogCapture(true);
-      }
-    });
-  }
-
-  @override
-  List<String> log(LogEvent event) {
-    final logMsg = event.message;
-    final logLvl = event.level;
-    final logStrace = event.stackTrace;
-    final logError = event.error;
-    final color = levelColors?[logLvl] ?? const AnsiColor.none();
-    final prefix = SimplePrinter.levelPrefixes[logLvl];
-    final str =
-        "---------------------------------------------------------------------------\nLEVEL : $logLvl\nMESSAGE : ${DateTime.now().toString().substring(11, 22)} :: $logMsg\nERROR : $logError\nSTACKTRACE : $logStrace";
-    Future.delayed(const Duration(seconds: 1)).then((value) => _logFile?.writeStringSync('$str\n'));
-    final timeStr = DateTime.now().toString().substring(11, 23);
-    if (logStrace != null) {
-      // print(color!('$timeStr $prefix - $logMsg \n$logStrace'));
-      developer.log(
-        color('$logMsg \n$logStrace'),
-        name: "$timeStr :: ${prefix!.replaceAll("[", "").replaceAll("]", "")}",
-        stackTrace: logStrace,
-        level: 2000,
-      );
-    } else {
-      // print(color!('$timeStr $prefix - $logMsg'));
-      developer.log(
-        color('$logMsg'),
-        name: "$timeStr :: ${prefix!.replaceAll("[", "").replaceAll("]", "")}",
-      );
-    }
-    return [];
-  }
-
-  Future<void> setLogCapture(bool state) async {
-    if (state) {
-      final today = DateTime.now().toString().substring(0, 10);
-      final logFilePath = join(_logFolderPath, '$today.txt');
-      _logFile = await File(logFilePath).open(mode: FileMode.append);
-    } else {
-      if (_logFile != null) {
-        await _logFile!.close();
-      }
-      _logFile = null;
-    }
-  }
-
-  String filePathForDate(DateTime dt) {
-    final date = dt.toString().substring(0, 10);
-    return join(_logFolderPath, '$date.txt');
-  }
-
-  String logsFolderPath() {
-    return _logFolderPath;
-  }
-
-  List<String> filePathsForDates(int n) {
-    final DateTime today = DateTime.now();
-    final l = <String>[];
-    for (var i = 0; i < n; i++) {
-      final String fp = filePathForDate(
-        today.subtract(
-          Duration(days: i),
-        ),
-      );
-      if (File(fp).existsSync()) {
-        l.add(fp);
-      } else {
-        logger.i("Log file $fp not found");
-      }
-    }
-
-    return l;
-  }
-
-  Iterable<String> fetchLogs() sync* {
-    final today = DateTime.now();
-    for (final msg in fetchLogsForDate(today)) {
-      yield msg;
-    }
-  }
-
-  Iterable<String> fetchLogsForDate(DateTime date) sync* {
-    final file = File(filePathForDate(date));
-    if (!file.existsSync()) {
-      logger.i("No log file for $date, path = ${file.path}");
-      return;
-    }
-
-    final str = file.readAsStringSync();
-    for (final line in str.split("\n")) {
-      yield line;
-    }
-  }
-}
+const String logExportDisabledMarker = 'DISABLED::::';
 
 Future<String> zipLogs() async {
-  logger.t("Zipping Logs");
-  final sourceDir = Directory(printer.logsFolderPath());
-  final files = printer.filePathsForDates(2).map((e) => File(e)).toList();
-  final zipFile = File(join(printer.logsFolderPath(), 'logs.zip'));
-  try {
-    logger.t("Zipping Started");
-    await ZipFile.createFromFiles(sourceDir: sourceDir, files: files, zipFile: zipFile);
-    logger.t("Zipping Finished Successfully");
-  } catch (e, strace) {
-    logger.e('Failed to zip logs', error: e, stackTrace: strace);
-  }
-  final String encryptedString = await encryptLogsZip(zipFile.path);
-  return encryptedString;
+  logger.w(
+    'Log export is temporarily disabled during the phase-1 logger migration.',
+    tag: 'Logger',
+  );
+  return logExportDisabledMarker;
 }
 
 Future<String> encryptLogsZip(String zipPath) async {
-  final List<String> pathList = zipPath.split('/');
-  pathList.removeLast();
-  final String outFilename = "${pathList.join("/")}/logs_zip.dat";
-  logger.t("Encryption Started");
-  final String secretKey = await FileEncrypter.encrypt(
-    inFileName: zipPath,
-    outFileName: outFilename,
+  logger.w(
+    'encryptLogsZip is temporarily disabled during the phase-1 logger migration.',
+    tag: 'Logger',
+    fields: <String, Object?>{
+      'zipPath': zipPath,
+    },
   );
-  logger.t("Encryption Done");
-  logger.d(outFilename);
-  // logger.d(secretKey);
-  // logger.t("Renaming File");
-  // final String secretOutFilename = "${pathList.join("/")}/$secretKey";
-  // final File zipOut = File(outFilename);
-  // await zipOut.rename(secretOutFilename);
-  // logger.t("Renaming Done");
-  return "$secretKey::::$outFilename";
+  return logExportDisabledMarker;
 }

@@ -487,34 +487,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 : isLoading
                                     ? () {}
                                     : () async {
+                                        logger.i('Sign in tapped', tag: 'Onboarding');
                                         setState(() {
                                           isLoading = true;
                                         });
-                                        await globals.gAuth.signInWithGoogle().then((value) {
+                                        try {
+                                          await globals.gAuth.signInWithGoogle();
                                           toasts.codeSend("Login Successful!");
                                           globals.prismUser.loggedIn = true;
                                           main.prefs.put(main.userHiveKey, globals.prismUser);
-                                          Future.delayed(const Duration(milliseconds: 500)).then((value) {
-                                            main.prefs.put('onboarded_new', true);
-                                            Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => const OptionalInfo3(
-                                                  heading: 'Follow top creators',
-                                                  subheading: 'Never miss the latest and greatest',
-                                                  showSkip: false,
-                                                  skipText: "Skip",
-                                                  doneText: "DONE",
-                                                ),
+                                          await Future.delayed(const Duration(milliseconds: 500));
+                                          if (!context.mounted) {
+                                            return;
+                                          }
+                                          main.prefs.put('onboarded_new', true);
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => const OptionalInfo3(
+                                                heading: 'Follow top creators',
+                                                subheading: 'Never miss the latest and greatest',
+                                                showSkip: false,
+                                                skipText: "Skip",
+                                                doneText: "DONE",
                                               ),
-                                            );
-                                          });
-                                        }).catchError((e) {
-                                          logger.d(e.toString());
+                                            ),
+                                          );
+                                        } catch (e, st) {
+                                          logger.e(
+                                            'Google sign-in failed',
+                                            tag: 'Onboarding',
+                                            error: e,
+                                            stackTrace: st,
+                                          );
                                           globals.prismUser.loggedIn = false;
                                           main.prefs.put(main.userHiveKey, globals.prismUser);
                                           toasts.error("Something went wrong, please try again!");
-                                        });
+                                        }
                                         setState(() {
                                           isLoading = false;
                                           isSignedIn = globals.prismUser.loggedIn;
