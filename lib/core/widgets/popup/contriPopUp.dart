@@ -1,3 +1,4 @@
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/logger/logger.dart';
@@ -48,8 +49,11 @@ void showContributorDetails(BuildContext context, String username) {
                           width: 20,
                         ),
                         CircleAvatar(
-                          backgroundImage: CachedNetworkImageProvider(snapshot.data!.avatarUrl ?? ""),
+                          backgroundImage: isValidNetworkUrl(snapshot.data?.avatarUrl)
+                              ? CachedNetworkImageProvider(snapshot.data!.avatarUrl!.trim())
+                              : null,
                           radius: 40,
+                          child: isValidNetworkUrl(snapshot.data?.avatarUrl) ? null : const Icon(JamIcons.user),
                         ),
                         const SizedBox(
                           width: 20,

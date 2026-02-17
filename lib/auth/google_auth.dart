@@ -9,6 +9,7 @@ import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as ho
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive_io/hive_io.dart';
@@ -135,7 +136,11 @@ class GoogleAuth {
       }
 
       await prefs.put(main.userHiveKey, globals.prismUser);
-      home.f.subscribeToTopic(user.email!.split("@")[0]);
+      await subscribeToTopicSafely(
+        home.f,
+        user.email!.split("@")[0],
+        sourceTag: 'auth.signin.followers_topic',
+      );
       assert(!user.isAnonymous);
       final User? currentUser = _auth.currentUser;
       assert(user.uid == currentUser!.uid);
@@ -199,7 +204,7 @@ class GoogleAuth {
       links: {},
       premium: false,
       loggedIn: false,
-      profilePhoto: "",
+      profilePhoto: globals.defaultProfilePhotoUrl,
       badges: [],
       coins: 0,
       subPrisms: [],

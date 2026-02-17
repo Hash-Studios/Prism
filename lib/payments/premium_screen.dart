@@ -399,7 +399,6 @@ class _UpgradeHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             isPremium ? 'UPGRADED TO' : 'UPGRADE TO',
@@ -410,8 +409,6 @@ class _UpgradeHeader extends StatelessWidget {
           ShaderMask(
             shaderCallback: (bounds) => const LinearGradient(
               colors: [Color(0xFFE57697), Colors.white],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
             ).createShader(bounds),
             child: Text(
               'PRISM PREMIUM',
@@ -700,7 +697,6 @@ class _StickyBottomSheet extends StatelessWidget {
         border: Border(
           top: BorderSide(
             color: secondary.withValues(alpha: 0.12),
-            width: 1,
           ),
         ),
       ),

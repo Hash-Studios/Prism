@@ -99,7 +99,17 @@ class PurchasesService {
   /// triggers a native fatalError on iOS.
   Future<void> logOut() async {
     if (!_configured) return;
-    await Purchases.logOut();
+    try {
+      await Purchases.logOut();
+    } on PlatformException catch (e) {
+      final String details = e.details?.toString().toLowerCase() ?? '';
+      final String message = e.message?.toLowerCase() ?? '';
+      if (e.code == '22' || details.contains('logout_called_with_anonymous_user') || message.contains('anonymous')) {
+        logger.w('Skipping RevenueCat logout for anonymous user.');
+        return;
+      }
+      rethrow;
+    }
   }
 
   /// Returns true if [info] grants premium access (prism_premium or prism_ultra).

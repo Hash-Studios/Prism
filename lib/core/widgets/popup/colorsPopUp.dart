@@ -1,8 +1,8 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:animations/animations.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:rive/rive.dart';
 
 List<Color> colors = [
   const Color(0xFFFF0000),
@@ -71,9 +71,9 @@ Color showColors(BuildContext context) {
             decoration: BoxDecoration(
                 borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
                 color: Theme.of(context).hintColor),
-            child: const RiveAnimation.asset(
-              "assets/animations/Color.flr",
-              animations: ["color"],
+            child: const SafeRiveAsset(
+              assetName: "assets/animations/Color.flr",
+              animations: <String>["color"],
             ),
           ),
           Row(
