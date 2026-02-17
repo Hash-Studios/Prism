@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:Prism/features/deep_link/domain/repositories/deep_link_repository.dart';
@@ -30,7 +29,7 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
     if (path == 'share') {
       return DeepLinkActionEntity(
         type: DeepLinkActionType.share,
-        route: shareRoute,
+        route: '/share',
         arguments: <dynamic>[
           uri.queryParameters['id'],
           uri.queryParameters['provider'],
@@ -43,7 +42,7 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
     if (path == 'user') {
       return DeepLinkActionEntity(
         type: DeepLinkActionType.user,
-        route: followerProfileRoute,
+        route: '/follower-profile',
         arguments: <dynamic>[uri.queryParameters['email']],
         rawUri: uri.toString(),
       );
@@ -51,7 +50,7 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
     if (path == 'setup') {
       return DeepLinkActionEntity(
         type: DeepLinkActionType.setup,
-        route: shareSetupViewRoute,
+        route: '/share-setup',
         arguments: <dynamic>[
           uri.queryParameters['name'],
           uri.queryParameters['thumbUrl'],

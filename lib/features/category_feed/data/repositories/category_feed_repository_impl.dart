@@ -9,7 +9,7 @@ import 'package:Prism/features/category_feed/domain/entities/category_feed_page.
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: CategoryFeedRepository)

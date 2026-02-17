@@ -1,7 +1,7 @@
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 
 Future<List> getIcons() async {
   logger.i("Fethcing icons");

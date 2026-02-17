@@ -1,6 +1,4 @@
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/contriPopUp.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
@@ -9,9 +7,11 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
 
+@RoutePage()
 class AboutScreen extends StatelessWidget {
   Future<List<Contributor>> printStream() async {
     final github = GitHub();
@@ -24,7 +24,6 @@ class AboutScreen extends StatelessWidget {
   }
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -37,7 +36,6 @@ class AboutScreen extends StatelessWidget {
           leading: IconButton(
               icon: const Icon(JamIcons.close),
               onPressed: () {
-                popNavStack();
                 Navigator.pop(context);
               }),
           title: Text(
@@ -186,10 +184,7 @@ class AboutScreen extends StatelessWidget {
                         } else {
                           tiles.add(ListTile(
                             leading: CircleAvatar(
-                              backgroundImage: isValidNetworkUrl(c.avatarUrl)
-                                  ? CachedNetworkImageProvider(c.avatarUrl!.trim())
-                                  : null,
-                              child: isValidNetworkUrl(c.avatarUrl) ? null : const Icon(JamIcons.user),
+                              backgroundImage: CachedNetworkImageProvider(c.avatarUrl!),
                             ),
                             title: Text(
                               c.login!,
@@ -253,11 +248,8 @@ class ContributorWidget extends StatelessWidget {
       child: Column(
         children: [
           CircleAvatar(
-            backgroundImage: isValidNetworkUrl(contributor.avatarUrl)
-                ? CachedNetworkImageProvider(contributor.avatarUrl!.trim())
-                : null,
+            backgroundImage: CachedNetworkImageProvider(contributor.avatarUrl ?? ""),
             radius: radius,
-            child: isValidNetworkUrl(contributor.avatarUrl) ? null : const Icon(JamIcons.user),
           ),
           const SizedBox(
             height: 5,

@@ -2,7 +2,7 @@ import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 
 part 'userOldModel.g.dart';
 

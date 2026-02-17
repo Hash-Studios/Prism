@@ -1,6 +1,7 @@
+import 'package:auto_route/auto_route.dart';
 import 'dart:math';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
@@ -83,7 +84,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
 
   void showPremiumPopUp(VoidCallback func) {
     if (globals.prismUser.premium == false) {
-      context.pushNamedRoute(premiumRoute);
+      context.router.push(const UpgradeRoute());
     } else {
       func();
     }
@@ -137,17 +138,13 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
             ? null
             : () {
                 if (!isPremium) {
-                  context.pushNamedRoute(
-                    collectionViewRoute,
-                    arguments: [collection['name'].toString().trim().toLowerCase()],
-                  );
+                  context.router
+                      .push(CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]));
                   return;
                 }
                 if (globals.prismUser.premium == true) {
-                  context.pushNamedRoute(
-                    collectionViewRoute,
-                    arguments: [collection['name'].toString().trim().toLowerCase()],
-                  );
+                  context.router
+                      .push(CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]));
                   return;
                 }
                 showGooglePopUp(() {

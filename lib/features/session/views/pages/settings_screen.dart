@@ -1,5 +1,5 @@
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
@@ -11,10 +11,12 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 
+@RoutePage()
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
     super.key,
@@ -33,9 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          popNavStackIfPossible();
-        }
+        if (didPop) {}
       },
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
@@ -77,11 +77,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (globals.prismUser.premium == true) {
                             main.RestartWidget.restartApp(context);
                           } else {
-                            context.pushNamedRoute(premiumRoute);
+                            context.router.push(const UpgradeRoute());
                           }
                         });
                       } else {
-                        context.pushNamedRoute(premiumRoute);
+                        context.router.push(const UpgradeRoute());
                       }
                     },
                     leading: const Icon(JamIcons.instant_picture_f),

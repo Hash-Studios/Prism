@@ -14,7 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart' as _i59;
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart' as _i538;
 import 'package:firebase_remote_config/firebase_remote_config.dart' as _i627;
 import 'package:get_it/get_it.dart' as _i174;
-import 'package:hive/hive.dart' as _i979;
+import 'package:hive_io/hive_io.dart' as _i851;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:internet_connection_checker/internet_connection_checker.dart' as _i973;
 import 'package:quick_actions/quick_actions.dart' as _i578;
@@ -120,43 +120,35 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i627.FirebaseRemoteConfig>(() => appModule.remoteConfig);
   gh.lazySingleton<_i973.InternetConnectionChecker>(() => appModule.internetConnectionChecker);
   gh.lazySingleton<_i578.QuickActions>(() => appModule.quickActions);
-  gh.lazySingleton<_i979.Box<_i1047.InAppNotif>>(
+  gh.lazySingleton<_i851.Box<_i1047.InAppNotif>>(
     () => appModule.inAppNotificationsBox,
     instanceName: 'inAppNotificationsBox',
   );
   gh.lazySingleton<_i738.SessionRepository>(() => _i1021.SessionRepositoryImpl());
-  gh.lazySingleton<_i979.Box<dynamic>>(
+  gh.lazySingleton<_i851.Box<dynamic>>(
     () => appModule.prefsBox,
     instanceName: 'prefsBox',
   );
-  gh.lazySingleton<_i721.StartupRepository>(() => _i152.StartupRepositoryImpl(
-        gh<_i627.FirebaseRemoteConfig>(),
-        gh<_i979.Box<dynamic>>(instanceName: 'prefsBox'),
-      ));
   gh.lazySingleton<_i1055.AdsRepository>(() => _i418.AdsRepositoryImpl());
-  gh.lazySingleton<_i979.Box<dynamic>>(
+  gh.lazySingleton<_i851.Box<dynamic>>(
     () => appModule.localFavBox,
     instanceName: 'localFavBox',
   );
   gh.lazySingleton<_i986.GetSessionUseCase>(() => _i986.GetSessionUseCase(gh<_i738.SessionRepository>()));
   gh.lazySingleton<_i986.RefreshPremiumUseCase>(() => _i986.RefreshPremiumUseCase(gh<_i738.SessionRepository>()));
   gh.lazySingleton<_i986.SignOutUseCase>(() => _i986.SignOutUseCase(gh<_i738.SessionRepository>()));
-  gh.lazySingleton<_i366.NotificationsRepository>(() =>
-      _i1017.NotificationsRepositoryImpl(gh<_i979.Box<_i1047.InAppNotif>>(instanceName: 'inAppNotificationsBox')));
+  gh.lazySingleton<_i563.CategoryFeedRepository>(
+      () => _i307.CategoryFeedRepositoryImpl(gh<_i851.Box<dynamic>>(instanceName: 'prefsBox')));
   gh.lazySingleton<_i647.NavigationRepository>(() => _i69.NavigationRepositoryImpl());
   gh.lazySingleton<_i226.DeepLinkRepository>(() => _i857.DeepLinkRepositoryImpl(gh<_i538.FirebaseDynamicLinks>()));
   gh.lazySingleton<_i1019.PaletteRepository>(() => _i401.PaletteRepositoryImpl());
-  gh.lazySingleton<_i474.FetchNotificationsUseCase>(
-      () => _i474.FetchNotificationsUseCase(gh<_i366.NotificationsRepository>()));
-  gh.lazySingleton<_i474.MarkNotificationAsReadUseCase>(
-      () => _i474.MarkNotificationAsReadUseCase(gh<_i366.NotificationsRepository>()));
-  gh.lazySingleton<_i474.DeleteNotificationUseCase>(
-      () => _i474.DeleteNotificationUseCase(gh<_i366.NotificationsRepository>()));
-  gh.lazySingleton<_i474.ClearNotificationsUseCase>(
-      () => _i474.ClearNotificationsUseCase(gh<_i366.NotificationsRepository>()));
   gh.lazySingleton<_i349.FirestoreClient>(() => appModule.firestoreClient(
         gh<_i974.FirebaseFirestore>(),
         gh<_i393.FirestoreTelemetrySink>(),
+      ));
+  gh.lazySingleton<_i721.StartupRepository>(() => _i152.StartupRepositoryImpl(
+        gh<_i627.FirebaseRemoteConfig>(),
+        gh<_i851.Box<dynamic>>(instanceName: 'prefsBox'),
       ));
   gh.lazySingleton<_i415.BootstrapAppUseCase>(() => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()));
   gh.factory<_i364.SessionBloc>(() => _i364.SessionBloc(
@@ -165,11 +157,11 @@ _i174.GetIt initGetIt(
         gh<_i986.SignOutUseCase>(),
       ));
   gh.lazySingleton<_i576.GeneratePaletteUseCase>(() => _i576.GeneratePaletteUseCase(gh<_i1019.PaletteRepository>()));
-  gh.lazySingleton<_i425.ThemeRepository>(
-      () => _i404.ThemeRepositoryImpl(gh<_i979.Box<dynamic>>(instanceName: 'prefsBox')));
+  gh.lazySingleton<_i366.NotificationsRepository>(() =>
+      _i1017.NotificationsRepositoryImpl(gh<_i851.Box<_i1047.InAppNotif>>(instanceName: 'inAppNotificationsBox')));
   gh.lazySingleton<_i643.FavouriteWallsRepository>(() => _i176.FavouriteWallsRepositoryImpl(
         gh<_i349.FirestoreClient>(),
-        gh<_i979.Box<dynamic>>(instanceName: 'localFavBox'),
+        gh<_i851.Box<dynamic>>(instanceName: 'localFavBox'),
       ));
   gh.lazySingleton<_i321.CreateRewardedAdUseCase>(() => _i321.CreateRewardedAdUseCase(gh<_i1055.AdsRepository>()));
   gh.lazySingleton<_i321.AddRewardUseCase>(() => _i321.AddRewardUseCase(gh<_i1055.AdsRepository>()));
@@ -184,11 +176,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i406.ClearFavouriteWallsUseCase>(
       () => _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()));
   gh.lazySingleton<_i865.QuickActionsRepository>(() => _i207.QuickActionsRepositoryImpl(gh<_i578.QuickActions>()));
-  gh.lazySingleton<_i563.CategoryFeedRepository>(
-      () => _i307.CategoryFeedRepositoryImpl(gh<_i979.Box<dynamic>>(instanceName: 'prefsBox')));
   gh.lazySingleton<_i841.FavouriteSetupsRepository>(() => _i934.FavouriteSetupsRepositoryImpl(
         gh<_i349.FirestoreClient>(),
-        gh<_i979.Box<dynamic>>(instanceName: 'localFavBox'),
+        gh<_i851.Box<dynamic>>(instanceName: 'localFavBox'),
       ));
   gh.lazySingleton<_i491.ConnectivityService>(
       () => _i491.InternetConnectivityService(gh<_i973.InternetConnectionChecker>()));
@@ -198,6 +188,8 @@ _i174.GetIt initGetIt(
         gh<_i406.RemoveFavouriteWallUseCase>(),
         gh<_i406.ClearFavouriteWallsUseCase>(),
       ));
+  gh.lazySingleton<_i425.ThemeRepository>(
+      () => _i404.ThemeRepositoryImpl(gh<_i851.Box<dynamic>>(instanceName: 'prefsBox')));
   gh.factory<_i689.PaletteBloc>(() => _i689.PaletteBloc(gh<_i576.GeneratePaletteUseCase>()));
   gh.lazySingleton<_i294.GetNavigationStackUseCase>(
       () => _i294.GetNavigationStackUseCase(gh<_i647.NavigationRepository>()));
@@ -213,12 +205,6 @@ _i174.GetIt initGetIt(
       () => _i663.GetInitialDeepLinkActionUseCase(gh<_i226.DeepLinkRepository>()));
   gh.lazySingleton<_i663.ObserveDeepLinkActionsUseCase>(
       () => _i663.ObserveDeepLinkActionsUseCase(gh<_i226.DeepLinkRepository>()));
-  gh.factory<_i584.InAppNotificationsBloc>(() => _i584.InAppNotificationsBloc(
-        gh<_i474.FetchNotificationsUseCase>(),
-        gh<_i474.MarkNotificationAsReadUseCase>(),
-        gh<_i474.DeleteNotificationUseCase>(),
-        gh<_i474.ClearNotificationsUseCase>(),
-      ));
   gh.lazySingleton<_i204.UserSearchRepository>(() => _i352.UserSearchRepositoryImpl(gh<_i349.FirestoreClient>()));
   gh.lazySingleton<_i411.SetupsRepository>(() => _i415.SetupsRepositoryImpl(gh<_i349.FirestoreClient>()));
   gh.factory<_i313.StartupBloc>(() => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()));
@@ -243,6 +229,14 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i446.UnfollowUserUseCase>(() => _i446.UnfollowUserUseCase(gh<_i817.PublicProfileRepository>()));
   gh.lazySingleton<_i446.UpdatePublicProfileLinksUseCase>(
       () => _i446.UpdatePublicProfileLinksUseCase(gh<_i817.PublicProfileRepository>()));
+  gh.lazySingleton<_i474.FetchNotificationsUseCase>(
+      () => _i474.FetchNotificationsUseCase(gh<_i366.NotificationsRepository>()));
+  gh.lazySingleton<_i474.MarkNotificationAsReadUseCase>(
+      () => _i474.MarkNotificationAsReadUseCase(gh<_i366.NotificationsRepository>()));
+  gh.lazySingleton<_i474.DeleteNotificationUseCase>(
+      () => _i474.DeleteNotificationUseCase(gh<_i366.NotificationsRepository>()));
+  gh.lazySingleton<_i474.ClearNotificationsUseCase>(
+      () => _i474.ClearNotificationsUseCase(gh<_i366.NotificationsRepository>()));
   gh.lazySingleton<_i247.FetchSetupsUseCase>(() => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()));
   gh.factory<_i924.NavigationBloc>(() => _i924.NavigationBloc(
         gh<_i294.GetNavigationStackUseCase>(),
@@ -317,6 +311,12 @@ _i174.GetIt initGetIt(
         gh<_i96.LoadThemeDarkUseCase>(),
         gh<_i96.UpdateThemeDarkUseCase>(),
         gh<_i96.UpdateThemeDarkAccentUseCase>(),
+      ));
+  gh.factory<_i584.InAppNotificationsBloc>(() => _i584.InAppNotificationsBloc(
+        gh<_i474.FetchNotificationsUseCase>(),
+        gh<_i474.MarkNotificationAsReadUseCase>(),
+        gh<_i474.DeleteNotificationUseCase>(),
+        gh<_i474.ClearNotificationsUseCase>(),
       ));
   gh.factory<_i471.ProfileWallsBloc>(() => _i471.ProfileWallsBloc(gh<_i58.FetchProfileWallsUseCase>()));
   gh.factory<_i941.ProfileSetupsBloc>(() => _i941.ProfileSetupsBloc(gh<_i272.FetchProfileSetupsUseCase>()));

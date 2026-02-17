@@ -52,8 +52,8 @@ dependencies:
   github: ^9.25.0
   google_mobile_ads: ^7.0.0
   google_sign_in: ^7.2.0
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
+  hive_io: ^3.2.2
+  hive_flutter_io: ^3.2.2
   image: ^3.0.2
   image_editor: ^1.6.0
   image_picker: ^1.2.1
@@ -86,13 +86,14 @@ dependencies:
   auto_route: ^11.1.0
 
 dev_dependencies:
-  analyzer: ^9.0.0
+  auto_route_generator: ^10.4.0
   bloc_test: ^9.1.7
   build_runner: ^2.11.1
   flutter_test:
     sdk: flutter
   freezed: ^3.2.3
   flutter_launcher_icons: ^0.11.0
+  hive_generator_io: ^3.2.2
   injectable_generator: ^2.9.0
   lint: ^2.8.0
   mocktail: ^1.0.4

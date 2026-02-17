@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/features/profile_setups/views/profile_setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/loading_setup_cards.dart';
@@ -235,7 +236,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
                                 onTap: () {
                                   if (context.profileSetupsAdapter(listen: false).profileSetups == []) {
                                   } else {
-                                    context.pushNamedRoute(profileSetupViewRoute, arguments: [index]);
+                                    context.router.push(ProfileSetupViewRoute(arguments: [index]));
                                   }
                                 },
                               ),

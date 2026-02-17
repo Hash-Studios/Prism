@@ -1,6 +1,7 @@
+import 'package:auto_route/auto_route.dart';
 import 'dart:io';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
@@ -27,7 +28,7 @@ class DownloadList extends StatelessWidget {
         children: [
           ListTile(
             onTap: () {
-              context.pushNamedRoute(downloadRoute);
+              context.router.push(const DownloadRoute());
             },
             leading: const Icon(JamIcons.download),
             title: Text(

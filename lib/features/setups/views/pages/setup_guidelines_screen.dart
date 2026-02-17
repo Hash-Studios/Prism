@@ -1,13 +1,15 @@
 import 'dart:io';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 
+@RoutePage()
 class SetupGuidelinesScreen extends StatefulWidget {
   const SetupGuidelinesScreen();
 
@@ -21,7 +23,6 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
   final picker2 = ImagePicker();
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -32,8 +33,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
         _setup = File(pickedFile.path);
       });
       Navigator.pop(context);
-      popNavStackIfPossible();
-      Future.delayed(Duration.zero).then((value) => context.pushNamedRoute(uploadSetupRoute, arguments: [_setup]));
+      Future.delayed(Duration.zero).then((value) => context.router.push(UploadSetupRoute(arguments: [_setup])));
     }
   }
 
@@ -51,9 +51,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  context.pushNamedRoute(
-                    draftSetupRoute,
-                  );
+                  context.router.push(const DraftSetupRoute());
                 },
                 child: Text(
                   "Drafts",

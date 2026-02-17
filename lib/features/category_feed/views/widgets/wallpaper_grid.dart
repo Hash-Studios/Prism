@@ -1,6 +1,7 @@
+import 'package:auto_route/auto_route.dart';
 import 'dart:async';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
@@ -198,18 +199,13 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                         true &&
                                     globals.prismUser.premium != true
                                 ? showGooglePopUp(context, () {
-                                    context.pushNamedRoute(
-                                      premiumRoute,
-                                    );
+                                    context.router.push(const UpgradeRoute());
                                   })
-                                : context.pushNamedRoute(
-                                    wallpaperRoute,
-                                    arguments: [
-                                      widget.provider,
-                                      i,
-                                      wall["wallpaper_thumb"],
-                                    ],
-                                  );
+                                : context.router.push(WallpaperRoute(arguments: [
+                                    widget.provider,
+                                    i,
+                                    wall["wallpaper_thumb"],
+                                  ]));
                           },
                           child: wall == null
                               ? Container(

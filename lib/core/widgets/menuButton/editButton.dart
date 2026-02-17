@@ -1,6 +1,7 @@
+import 'package:auto_route/auto_route.dart';
 import 'dart:io';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/foundation.dart';
@@ -89,12 +90,12 @@ class _EditButtonState extends State<EditButton> {
       imageThumbData = filePathAndNameThumb;
       isLoading = false;
     });
-    context.pushNamedRoute(wallpaperFilterRoute, arguments: [
+    context.router.push(WallpaperFilterRoute(arguments: [
       imagelib.decodeImage(File(imageThumbData).readAsBytesSync()),
       imagelib.decodeImage(File(imageData).readAsBytesSync()),
       path.basename(File(imageThumbData).path),
       path.basename(File(imageData).path),
-    ]);
+    ]));
   }
 
   static Future<List<int>> _resizeImage(File file) async {

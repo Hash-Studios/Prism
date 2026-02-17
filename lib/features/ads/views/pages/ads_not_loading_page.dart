@@ -1,15 +1,16 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
+@RoutePage(name: 'AdsNotLoadingRoute')
 class AdsNotLoading extends StatelessWidget {
   const AdsNotLoading({super.key});
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -22,7 +23,6 @@ class AdsNotLoading extends StatelessWidget {
           leading: IconButton(
               icon: const Icon(JamIcons.close),
               onPressed: () {
-                popNavStack();
                 Navigator.pop(context);
               }),
           title: Text(
@@ -140,11 +140,11 @@ class AdsNotLoading extends StatelessWidget {
                         if (globals.prismUser.loggedIn == false) {
                           googleSignInPopUp(context, () {
                             Navigator.of(context).pop();
-                            context.pushNamedRoute(premiumRoute);
+                            context.router.push(const UpgradeRoute());
                           });
                         } else {
                           Navigator.of(context).pop();
-                          context.pushNamedRoute(premiumRoute);
+                          context.router.push(const UpgradeRoute());
                         }
                       },
                       child: Text(

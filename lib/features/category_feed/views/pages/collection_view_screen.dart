@@ -1,11 +1,12 @@
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class CollectionViewScreen extends StatelessWidget {
   final List? arguments;
   const CollectionViewScreen({
@@ -16,7 +17,6 @@ class CollectionViewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        popNavStackIfPossible();
         return true;
       },
       child: Scaffold(

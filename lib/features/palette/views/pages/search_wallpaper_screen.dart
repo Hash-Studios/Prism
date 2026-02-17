@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
@@ -23,7 +22,9 @@ import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class SearchWallpaperScreen extends StatefulWidget {
   final List? arguments;
   const SearchWallpaperScreen({required this.arguments});
@@ -33,7 +34,6 @@ class SearchWallpaperScreen extends StatefulWidget {
 
 class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -496,7 +496,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
-                            popNavStack();
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -930,7 +929,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
-                            popNavStack();
                             Navigator.pop(context);
                           },
                           color: isLoading

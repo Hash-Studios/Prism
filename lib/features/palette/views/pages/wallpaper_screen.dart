@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
@@ -30,7 +30,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class WallpaperScreen extends StatefulWidget {
   final List? arguments;
   const WallpaperScreen({required this.arguments});
@@ -40,7 +42,6 @@ class WallpaperScreen extends StatefulWidget {
 
 class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -513,7 +514,6 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                           padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                           child: IconButton(
                             onPressed: () {
-                              popNavStack();
                               Navigator.pop(context);
                             },
                             color: paletteLoading
@@ -813,9 +813,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                         alignment: Alignment.topRight,
                                                         child: ActionChip(
                                                           onPressed: () {
-                                                            context.pushNamedRoute(followerProfileRoute, arguments: [
+                                                            context.router.push(ProfileRoute(arguments: [
                                                               data.subPrismWalls![index]["email"],
-                                                            ]);
+                                                            ]));
                                                           },
                                                           padding:
                                                               const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
@@ -1025,7 +1025,6 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                               padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                               child: IconButton(
                                 onPressed: () {
-                                  popNavStack();
                                   Navigator.pop(context);
                                 },
                                 color: paletteLoading
@@ -1466,7 +1465,6 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                   padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                                   child: IconButton(
                                     onPressed: () {
-                                      popNavStack();
                                       Navigator.pop(context);
                                     },
                                     color: paletteLoading
@@ -1910,7 +1908,6 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                       padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                                       child: IconButton(
                                         onPressed: () {
-                                          popNavStack();
                                           Navigator.pop(context);
                                         },
                                         color: paletteLoading
@@ -2338,7 +2335,6 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                       padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                                       child: IconButton(
                                         onPressed: () {
-                                          popNavStack();
                                           Navigator.pop(context);
                                         },
                                         color: paletteLoading

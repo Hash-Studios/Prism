@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,12 +31,9 @@ class ColorBar extends StatelessWidget {
                 });
               },
               onTap: () {
-                Future.delayed(Duration.zero).then((value) => context.pushNamedRoute(
-                      colorRoute,
-                      arguments: [
-                        colors![color].toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                      ],
-                    ));
+                Future.delayed(Duration.zero).then((value) => context.router.push(ColorRoute(arguments: [
+                      colors![color].toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
+                    ])));
               },
               child: Container(
                 decoration: BoxDecoration(

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
@@ -33,7 +32,6 @@ class _HomeScreenState extends State<HomeScreen> {
       await context.categoryChangeWallpaperFuture(choice, "r");
       return false;
     }
-    popNavStackIfPossible();
     logger.d("Bye! Have a good day!");
     return true;
   }

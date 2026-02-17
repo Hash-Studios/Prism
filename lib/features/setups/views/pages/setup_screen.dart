@@ -1,4 +1,4 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/setupOld.dart';
@@ -9,10 +9,12 @@ import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+@RoutePage()
 class SetupScreen extends StatefulWidget {
   const SetupScreen({
     super.key,
@@ -24,7 +26,6 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   Future<bool> onWillPop() async {
-    popNavStack();
     return true;
   }
 
@@ -76,14 +77,14 @@ class _SetupPageState extends State<SetupPage> {
     if (globals.prismUser.loggedIn == false) {
       googleSignInPopUp(context, () {
         if (globals.prismUser.premium == false) {
-          context.pushNamedRoute(premiumRoute);
+          context.router.push(const UpgradeRoute());
         } else {
           func();
         }
       });
     } else {
       if (globals.prismUser.premium == false) {
-        context.pushNamedRoute(premiumRoute);
+        context.router.push(const UpgradeRoute());
       } else {
         func();
       }
@@ -165,10 +166,10 @@ class _SetupPageState extends State<SetupPage> {
                               onTap: () {
                                 if (index >= 5) {
                                   showPremiumPopUp(() {
-                                    context.pushNamedRoute(setupViewRoute, arguments: [index]);
+                                    context.router.push(SetupViewRoute(arguments: [index]));
                                   });
                                 } else {
-                                  context.pushNamedRoute(setupViewRoute, arguments: [index]);
+                                  context.router.push(SetupViewRoute(arguments: [index]));
                                 }
                               },
                               child: AnimatedContainer(

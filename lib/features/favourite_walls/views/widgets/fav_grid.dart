@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
@@ -221,10 +222,10 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                   onTap: () {
                                     if (context.favouriteWallsAdapter(listen: false).liked == []) {
                                     } else {
-                                      context.pushNamedRoute(favWallViewRoute, arguments: [
+                                      context.router.push(FavWallpaperViewRoute(arguments: [
                                         index,
                                         context.favouriteWallsAdapter(listen: false).liked![index]["thumb"],
-                                      ]);
+                                      ]));
                                     }
                                   },
                                 ),

@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
@@ -158,12 +159,12 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                           splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                           highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                           onTap: () {
-                            context.pushNamedRoute(shareRoute, arguments: [
+                            context.router.push(ShareWallpaperViewRoute(arguments: [
                               walls[index]["id"],
                               walls[index]["wallpaper_provider"],
                               walls[index]["wallpaper_url"],
                               walls[index]["wallpaper_thumb"]
-                            ]);
+                            ]));
                           },
                           onLongPress: () {
                             setState(() {

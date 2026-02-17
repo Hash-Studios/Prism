@@ -1,5 +1,5 @@
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
-import 'package:Prism/features/navigation/views/pages/page_manager.dart' as PM;
+import 'package:Prism/features/navigation/views/pages/home_tab_page.dart' as HTP;
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -59,7 +59,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                           onPressed: () {
                             Navigator.pop(context);
                             context.categoryChangeWallpaperFuture(choice, "r");
-                            PM.tabController!
+                            HTP.tabController!
                                 .animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeInCubic);
                           },
                           child: Container(

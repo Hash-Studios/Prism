@@ -8,7 +8,7 @@ import 'package:Prism/features/startup/domain/entities/startup_config_entity.dar
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: StartupRepository)

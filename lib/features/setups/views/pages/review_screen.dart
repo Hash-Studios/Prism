@@ -3,7 +3,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -19,8 +19,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:photo_view/photo_view.dart';
 
+@RoutePage()
 class ReviewScreen extends StatefulWidget {
   @override
   _ReviewScreenState createState() => _ReviewScreenState();
@@ -29,7 +31,6 @@ class ReviewScreen extends StatefulWidget {
 class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderStateMixin {
   TabController? tabController;
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -73,7 +74,6 @@ class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderSt
             leading: IconButton(
                 icon: const Icon(JamIcons.chevron_left),
                 onPressed: () {
-                  popNavStack();
                   Navigator.pop(context);
                 }),
             backgroundColor: Theme.of(context).primaryColor,
@@ -1204,7 +1204,7 @@ class SetupTile extends StatelessWidget {
                                   child: IconButton(
                                     icon: Icon(JamIcons.pencil, color: Theme.of(context).primaryColor),
                                     onPressed: () {
-                                      context.pushNamedRoute(editSetupDetailsRoute, arguments: [wallpaper]);
+                                      context.router.push(EditSetupReviewRoute(arguments: [wallpaper]));
                                     },
                                   ),
                                 ),

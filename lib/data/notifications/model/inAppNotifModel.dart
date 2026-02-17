@@ -1,4 +1,4 @@
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 part 'inAppNotifModel.g.dart';
 
 @HiveType(typeId: 9)

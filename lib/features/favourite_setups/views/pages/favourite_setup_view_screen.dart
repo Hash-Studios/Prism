@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
@@ -22,9 +22,11 @@ import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class FavSetupViewScreen extends StatefulWidget {
   final List? arguments;
   const FavSetupViewScreen({this.arguments});
@@ -35,7 +37,6 @@ class FavSetupViewScreen extends StatefulWidget {
 
 class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    popNavStack();
     return true;
   }
 
@@ -71,7 +72,6 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
     setState(() {
       isLoading = true;
     });
-    popNavStack();
     Navigator.pop(context);
     context.favouriteSetupsAdapter(listen: false).favCheck(id, setupMap).then((value) {
       analytics.logEvent(name: 'setup_fav_status_changed', parameters: {
@@ -362,10 +362,10 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                         ),
                                                         labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                         onPressed: () {
-                                                          context.pushNamedRoute(followerProfileRoute, arguments: [
+                                                          context.router.push(ProfileRoute(arguments: [
                                                             context.favouriteSetupsAdapter(listen: false).liked![index!]
                                                                 ["email"],
-                                                          ]);
+                                                          ]));
                                                         }),
                                                   ),
                                                   if (globals.verifiedUsers.contains(context
@@ -430,7 +430,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                 .liked![index!]["wallpaper_url"]
                                                 .toString());
                                           } else {
-                                            context.pushNamedRoute(shareRoute, arguments: [
+                                            context.router.push(ShareWallpaperViewRoute(arguments: [
                                               context
                                                   .favouriteSetupsAdapter(listen: false)
                                                   .liked![index!]["wall_id"]
@@ -447,7 +447,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                   .favouriteSetupsAdapter(listen: false)
                                                   .liked![index!]["wallpaper_url"]
                                                   .toString(),
-                                            ]);
+                                            ]));
                                           }
                                         } else {
                                           launch(context
@@ -552,7 +552,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                     .liked![index!]["wallpaper_url"]
                                                     .toString());
                                               } else {
-                                                context.pushNamedRoute(shareRoute, arguments: [
+                                                context.router.push(ShareWallpaperViewRoute(arguments: [
                                                   context
                                                       .favouriteSetupsAdapter(listen: false)
                                                       .liked![index!]["wall_id"]
@@ -569,7 +569,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                       .favouriteSetupsAdapter(listen: false)
                                                       .liked![index!]["wallpaper_url"]
                                                       .toString(),
-                                                ]);
+                                                ]));
                                               }
                                             } else {
                                               launch(context
@@ -725,7 +725,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                       .liked![index!]["wallpaper_url"]
                                                       .toString());
                                                 } else {
-                                                  context.pushNamedRoute(shareRoute, arguments: [
+                                                  context.router.push(ShareWallpaperViewRoute(arguments: [
                                                     context
                                                         .favouriteSetupsAdapter(listen: false)
                                                         .liked![index!]["wall_id"]
@@ -742,7 +742,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                         .favouriteSetupsAdapter(listen: false)
                                                         .liked![index!]["wallpaper_url"]
                                                         .toString(),
-                                                  ]);
+                                                  ]));
                                                 }
                                               } else {
                                                 launch(context
@@ -1075,7 +1075,6 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                   padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                   child: IconButton(
                     onPressed: () {
-                      popNavStack();
                       Navigator.pop(context);
                     },
                     color: Theme.of(context).colorScheme.secondary,

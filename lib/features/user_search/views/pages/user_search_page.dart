@@ -1,4 +1,4 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
@@ -8,10 +8,12 @@ import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+@RoutePage(name: 'UserSearchRoute')
 class UserSearch extends StatefulWidget {
   const UserSearch({super.key});
 
@@ -24,7 +26,6 @@ class _UserSearchState extends State<UserSearch> {
   late bool isSubmitted;
 
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -454,9 +455,9 @@ class _UsersResultListState extends State<UsersResultList> {
                       Positioned(
                         child: IconButton(
                           onPressed: () {
-                            context.pushNamedRoute(followerProfileRoute, arguments: [
+                            context.router.push(ProfileRoute(arguments: [
                               user.email,
-                            ]);
+                            ]));
                           },
                           icon: const Icon(
                             JamIcons.user_circle,

@@ -1,4 +1,5 @@
-import 'package:Prism/core/router/route_names.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
@@ -20,11 +21,11 @@ class PremiumList extends StatelessWidget {
                   if (globals.prismUser.premium == true) {
                     main.RestartWidget.restartApp(context);
                   } else {
-                    context.pushNamedRoute(premiumRoute);
+                    context.router.push(const UpgradeRoute());
                   }
                 });
               } else {
-                context.pushNamedRoute(premiumRoute);
+                context.router.push(const UpgradeRoute());
               }
             },
             leading: const Icon(JamIcons.instant_picture_f),

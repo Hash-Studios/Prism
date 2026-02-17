@@ -4,7 +4,7 @@ import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/in_app_notifications/domain/repositories/notifications_repository.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: NotificationsRepository)

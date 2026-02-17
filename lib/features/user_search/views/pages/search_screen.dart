@@ -1,4 +1,3 @@
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
@@ -10,9 +9,11 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+@RoutePage()
 class SearchScreen extends StatefulWidget {
   @override
   _SearchScreenState createState() => _SearchScreenState();
@@ -20,7 +21,6 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -211,7 +211,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       return Container();
                       // return IconButton(
                       //   onPressed: () {
-                      //     context.pushNamedRoute(userSearchRoute);
+                      //     context.router.push(const UserSearchRoute());
                       //   },
                       //   icon: const Icon(
                       //     JamIcons.users,

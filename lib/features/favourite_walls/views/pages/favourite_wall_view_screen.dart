@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -22,7 +21,9 @@ import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class FavWallpaperViewScreen extends StatefulWidget {
   final List? arguments;
   const FavWallpaperViewScreen({this.arguments});
@@ -33,7 +34,6 @@ class FavWallpaperViewScreen extends StatefulWidget {
 
 class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    popNavStackIfPossible();
     return true;
   }
 
@@ -867,7 +867,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
-                            popNavStack();
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -1411,7 +1410,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
-                            popNavStack();
                             Navigator.pop(context);
                           },
                           color: isLoading

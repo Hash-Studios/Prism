@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:Prism/core/router/route_names.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
@@ -21,14 +21,16 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 
+@RoutePage()
 class ProfileScreen extends StatefulWidget {
   final List? arguments;
-  const ProfileScreen(this.arguments);
+  const ProfileScreen({this.arguments});
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
@@ -39,7 +41,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void initState() {
-    email = widget.arguments![0].toString();
+    email = (widget.arguments != null && widget.arguments!.isNotEmpty)
+        ? widget.arguments![0].toString()
+        : globals.prismUser.email;
     super.initState();
   }
 
@@ -47,9 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          popNavStackIfPossible();
-        }
+        if (didPop) {}
       },
       child: (email == globals.prismUser.email)
           ? Scaffold(
@@ -57,6 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               body: BottomBar(
                 child: ProfileChild(
                   ownProfile: true,
+                  parentScaffoldKey: _scaffoldKey,
                   id: globals.prismUser.id,
                   bio: globals.prismUser.bio,
                   coverPhoto: globals.prismUser.coverPhoto,
@@ -140,6 +143,7 @@ class ProfileChild extends StatefulWidget {
   final String? bio;
   final List? followers;
   final List? following;
+  final GlobalKey<ScaffoldState>? parentScaffoldKey;
   const ProfileChild({
     required this.name,
     required this.username,
@@ -153,6 +157,7 @@ class ProfileChild extends StatefulWidget {
     required this.bio,
     required this.followers,
     required this.following,
+    this.parentScaffoldKey,
   });
   @override
   _ProfileChildState createState() => _ProfileChildState();
@@ -211,7 +216,6 @@ class _ProfileChildState extends State<ProfileChild> {
                                     ),
                                     onPressed: () {
                                       Navigator.pop(context);
-                                      popNavStackIfPossible();
                                     }),
                               )
                             : Padding(
@@ -227,7 +231,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                       child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
                                     ),
                                     onPressed: () {
-                                      context.pushNamedRoute(editProfileRoute);
+                                      context.router.push(const EditProfilePanelRoute());
                                     }),
                               ),
                         actions: !widget.ownProfile! || globals.prismUser.loggedIn == false
@@ -316,7 +320,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                         child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
                                       ),
                                       onPressed: () {
-                                        Scaffold.maybeOf(context)?.openEndDrawer();
+                                        widget.parentScaffoldKey?.currentState?.openEndDrawer();
                                       }),
                                 )
                               ],
