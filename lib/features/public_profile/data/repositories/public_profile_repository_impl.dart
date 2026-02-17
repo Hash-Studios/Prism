@@ -18,6 +18,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   final FirestoreClient _firestoreClient;
   final Map<String, String> _wallCursorByEmail = <String, String>{};
   final Map<String, String> _setupCursorByEmail = <String, String>{};
+  static const int _profileReadDedupeMs = 30000;
 
   Future<Map<String, dynamic>?> _findUser(String email) async {
     final usersv2 = await _firestoreClient.query<Map<String, dynamic>>(
@@ -28,6 +29,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
         ],
         limit: 1,
+        cachePolicy: FirestoreCachePolicy.memoryFirst,
+        dedupeWindowMs: _profileReadDedupeMs,
       ),
       (data, docId) => <String, dynamic>{...data, '__docId': docId},
     );
@@ -43,6 +46,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
         ],
         limit: 1,
+        cachePolicy: FirestoreCachePolicy.memoryFirst,
+        dedupeWindowMs: _profileReadDedupeMs,
       ),
       (data, docId) => <String, dynamic>{...data, '__docId': docId},
     );
@@ -98,6 +103,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
           limit: 12,
           startAfterDocId: refresh ? null : _wallCursorByEmail[email],
+          cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
+          dedupeWindowMs: refresh ? 0 : _profileReadDedupeMs,
         ),
         (data, docId) => <String, dynamic>{...data, '__docId': docId},
       );
@@ -143,6 +150,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at', descending: true)],
           limit: 8,
           startAfterDocId: refresh ? null : _setupCursorByEmail[email],
+          cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
+          dedupeWindowMs: refresh ? 0 : _profileReadDedupeMs,
         ),
         (data, docId) => <String, dynamic>{...data, '__docId': docId},
       );

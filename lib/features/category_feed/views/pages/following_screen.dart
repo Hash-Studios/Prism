@@ -31,7 +31,7 @@ class FollowingScreen extends StatefulWidget {
 
 class _FollowingScreenState extends State<FollowingScreen> {
   static const int _followingChunkSize = 10;
-  static const int _perChunkLimit = 20;
+  static const int _maxPerChunkLimit = 20;
   static const int _maxFeedItems = 30;
 
   StreamSubscription<List<_FirestoreDoc>>? _feedSubscription;
@@ -74,7 +74,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
           FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email.trim()),
         ],
         limit: 1,
-        dedupeWindowMs: 1200,
+        cachePolicy: FirestoreCachePolicy.memoryFirst,
+        dedupeWindowMs: 30000,
       ),
       (data, _) => data,
     );
@@ -110,6 +111,14 @@ class _FollowingScreenState extends State<FollowingScreen> {
     return result.sublist(0, _maxFeedItems);
   }
 
+  int _resolvePerChunkLimit(int chunkCount) {
+    if (chunkCount <= 0) {
+      return _maxPerChunkLimit;
+    }
+    final int computed = (_maxFeedItems / chunkCount).ceil();
+    return computed.clamp(8, _maxPerChunkLimit);
+  }
+
   Future<void> _loadFollowingFeed() async {
     await _feedSubscription?.cancel();
     final List<String> currentFollowing = await _resolveFollowingEmails();
@@ -125,6 +134,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
     }
 
     final List<List<String>> chunked = _chunks(currentFollowing, _followingChunkSize);
+    final int perChunkLimit = _resolvePerChunkLimit(chunked.length);
     final List<Stream<List<_FirestoreDoc>>> streams = chunked.asMap().entries.map((entry) {
       final int index = entry.key;
       final List<String> chunk = entry.value;
@@ -137,7 +147,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
             FirestoreFilter(field: "email", op: FirestoreFilterOp.whereIn, value: chunk),
           ],
           orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-          limit: _perChunkLimit,
+          limit: perChunkLimit,
           isStream: true,
         ),
         (data, docId) => _FirestoreDoc(docId, data),

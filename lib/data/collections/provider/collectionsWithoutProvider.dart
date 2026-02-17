@@ -18,7 +18,8 @@ Future<List?> getCollections() async {
       collection: FirebaseCollections.collections,
       sourceTag: 'collections.getCollections',
       orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'lastEditTime', descending: true)],
-      dedupeWindowMs: 1200,
+      cachePolicy: FirestoreCachePolicy.memoryFirst,
+      dedupeWindowMs: 30000,
     ),
     (data, _) => data,
   )
