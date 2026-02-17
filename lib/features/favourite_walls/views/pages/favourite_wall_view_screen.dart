@@ -333,7 +333,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                         crossAxisAlignment: CrossAxisAlignment.end,
                                         children: <Widget>[
                                           Padding(
-                                            padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                                            padding: EdgeInsets.zero,
                                             child: Row(
                                               children: [
                                                 Text(

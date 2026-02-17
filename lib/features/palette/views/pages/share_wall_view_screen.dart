@@ -368,7 +368,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                 crossAxisAlignment: CrossAxisAlignment.end,
                                                 children: <Widget>[
                                                   Padding(
-                                                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                                                    padding: EdgeInsets.zero,
                                                     child: Row(
                                                       children: [
                                                         Text(

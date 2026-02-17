@@ -343,7 +343,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         crossAxisAlignment: CrossAxisAlignment.end,
                                         children: <Widget>[
                                           Padding(
-                                            padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                                            padding: EdgeInsets.zero,
                                             child: Row(
                                               children: [
                                                 Text(
@@ -2157,7 +2157,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                     crossAxisAlignment: CrossAxisAlignment.end,
                                                     children: <Widget>[
                                                       Padding(
-                                                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                                                        padding: EdgeInsets.zero,
                                                         child: Row(
                                                           children: [
                                                             Text(

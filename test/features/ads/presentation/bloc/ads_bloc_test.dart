@@ -60,12 +60,7 @@ void main() {
 
     when(() => showUseCase(const NoParams())).thenAnswer(
       (_) async => Result.success(
-        const AdsEntity(
-          downloadCoins: 0,
-          loadingAd: false,
-          adLoaded: false,
-          adFailed: false,
-        ),
+        AdsEntity.empty,
       ),
     );
   });

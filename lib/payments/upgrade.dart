@@ -337,7 +337,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       try {
                                         logger.d('now trying to restore');
                                         final CustomerInfo restoredInfo = await Purchases.restorePurchases();
-                                        if (!mounted) {
+                                        if (!context.mounted) {
                                           return;
                                         }
                                         logger.d('restore completed');
@@ -451,7 +451,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
           try {
             logger.d('now trying to purchase');
             final purchaseResult = await Purchases.purchase(PurchaseParams.package(widget.package));
-            if (!mounted) {
+            if (!context.mounted) {
               return;
             }
             _purchaserInfo = purchaseResult.customerInfo;
