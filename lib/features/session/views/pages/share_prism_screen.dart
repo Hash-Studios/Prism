@@ -1,9 +1,9 @@
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
-import 'package:rive/rive.dart';
 import 'package:share_plus/share_plus.dart';
 
 class SharePrismScreen extends StatefulWidget {
@@ -60,9 +60,10 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                     child: SizedBox(
                       width: MediaQuery.of(context).size.width / 2,
                       height: 70,
-                      child: const RiveAnimation.asset(
-                        "assets/animations/Text.flr",
-                        animations: ["Untitled"],
+                      child: Icon(
+                        JamIcons.share,
+                        size: 46,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                   ),
@@ -74,9 +75,10 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                     child: SizedBox(
                       width: MediaQuery.of(context).size.width / 2,
                       height: 70,
-                      child: const RiveAnimation.asset(
-                        "assets/animations/Text.flr",
-                        animations: ["Untitled"],
+                      child: Icon(
+                        JamIcons.link,
+                        size: 46,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                   ),
@@ -130,7 +132,12 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                           );
                         }
                       : () {
-                          SharePlus.instance.share(ShareParams(text: link));
+                          SharePlus.instance.share(
+                            ShareParams(
+                              text: link,
+                              sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
+                            ),
+                          );
                         },
                   child: const Text(
                     'SHARE INVITE',

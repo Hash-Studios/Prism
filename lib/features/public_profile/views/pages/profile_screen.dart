@@ -26,8 +26,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:rive/rive.dart';
 
-final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
-
 class ProfileScreen extends StatefulWidget {
   final List? arguments;
   const ProfileScreen(this.arguments);
@@ -36,6 +34,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? email;
 
   @override
@@ -54,7 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
       child: (email == globals.prismUser.email)
           ? Scaffold(
-              key: scaffoldKey,
+              key: _scaffoldKey,
               body: BottomBar(
                 child: ProfileChild(
                   ownProfile: true,
@@ -76,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   : null,
             )
           : Scaffold(
-              key: scaffoldKey,
+              key: _scaffoldKey,
               body: StreamBuilder<List<Map<String, dynamic>>>(
                 stream: getUserProfile(email!),
                 builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
@@ -317,7 +316,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                         child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
                                       ),
                                       onPressed: () {
-                                        scaffoldKey.currentState!.openEndDrawer();
+                                        Scaffold.maybeOf(context)?.openEndDrawer();
                                       }),
                                 )
                               ],
