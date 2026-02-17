@@ -426,7 +426,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp.router(
       routerConfig: _appRouter.config(
         navigatorObservers: () => [
-          observer,
+          FirebaseAnalyticsObserver(analytics: analytics),
           if (MonitoringRuntime.reporter.isEnabled)
             SentryNavigatorObserver(
               enableAutoTransactions: false,
