@@ -1,10 +1,11 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze run build attach
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze run build attach ios-setup build-ios
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
 DEVICE ?=
 RUN_ARGS ?=
 BUILD_ARGS ?=
+IOS_BUILD_ARGS ?=
 FIREBASE_RUN_ARG ?= $(shell [ -f android/app/google-services.json ] && echo "" || echo "--dart-define=SKIP_FIREBASE_INIT=true")
 ANDROID_JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17 2>/dev/null)
 GRADLE_USER_HOME_DIR ?= $(CURDIR)/.gradle-local
@@ -16,6 +17,7 @@ setup: ensure-fvm
 	@fvm use --force
 	@fvm flutter --version
 	@fvm flutter pub get
+	@if [ "$$(uname -s)" = "Darwin" ]; then $(MAKE) ios-setup; fi
 	@echo "Setup complete. Use 'fvm flutter <command>' for project commands."
 
 get: ensure-fvm
@@ -62,6 +64,22 @@ attach: ensure-fvm
 	else \
 		fvm flutter attach; \
 	fi
+
+ios-setup: ensure-fvm
+	@if [ "$$(uname -s)" != "Darwin" ]; then \
+		echo "Skipping iOS setup (requires macOS)."; \
+		exit 0; \
+	fi
+	@command -v pod >/dev/null 2>&1 || { \
+		echo "CocoaPods is not installed. Install it first (example): sudo gem install cocoapods"; \
+		exit 1; \
+	}
+	@fvm flutter precache --ios
+	@cd ios && export LANG=en_US.UTF-8 && export LC_ALL=en_US.UTF-8 && pod deintegrate && pod install --repo-update
+	@echo "iOS pods setup complete."
+
+build-ios: ensure-fvm ios-setup
+	@fvm flutter build ios --no-codesign $(IOS_BUILD_ARGS)
 
 ensure-fvm:
 	@command -v fvm >/dev/null 2>&1 || { \
