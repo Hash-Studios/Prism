@@ -406,8 +406,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                                   labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                                   onPressed: () {
                                                                     context.router.push(ProfileRoute(arguments: [
-                                                                          sdata.setup!["email"],
-                                                                        ]));
+                                                                      sdata.setup!["email"],
+                                                                    ]));
                                                                   }),
                                                             ),
                                                             if (globals.verifiedUsers

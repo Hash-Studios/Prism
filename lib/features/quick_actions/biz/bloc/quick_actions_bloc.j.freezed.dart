@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$QuickActionsEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is QuickActionsEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is QuickActionsEvent);
   }
 
   @override
@@ -31,8 +30,7 @@ mixin _$QuickActionsEvent {
 
 /// @nodoc
 class $QuickActionsEventCopyWith<$Res> {
-  $QuickActionsEventCopyWith(
-      QuickActionsEvent _, $Res Function(QuickActionsEvent) __);
+  $QuickActionsEventCopyWith(QuickActionsEvent _, $Res Function(QuickActionsEvent) __);
 }
 
 /// Adds pattern-matching-related methods to [QuickActionsEvent].
@@ -88,8 +86,7 @@ extension QuickActionsEventPatterns on QuickActionsEvent {
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(_Started value) started,
-    required TResult Function(_ShortcutsSetupRequested value)
-        shortcutsSetupRequested,
+    required TResult Function(_ShortcutsSetupRequested value) shortcutsSetupRequested,
     required TResult Function(_ActionReceived value) actionReceived,
     required TResult Function(_HistoryCleared value) historyCleared,
   }) {
@@ -259,16 +256,14 @@ class _Started implements QuickActionsEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$StartedCopyWith<_Started> get copyWith =>
-      __$StartedCopyWithImpl<_Started>(this, _$identity);
+  _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _Started &&
-            (identical(other.setupShortcuts, setupShortcuts) ||
-                other.setupShortcuts == setupShortcuts));
+            (identical(other.setupShortcuts, setupShortcuts) || other.setupShortcuts == setupShortcuts));
   }
 
   @override
@@ -281,10 +276,8 @@ class _Started implements QuickActionsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$StartedCopyWith<$Res>
-    implements $QuickActionsEventCopyWith<$Res> {
-  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) =
-      __$StartedCopyWithImpl;
+abstract mixin class _$StartedCopyWith<$Res> implements $QuickActionsEventCopyWith<$Res> {
+  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
   @useResult
   $Res call({bool setupShortcuts});
 }
@@ -318,8 +311,7 @@ class _ShortcutsSetupRequested implements QuickActionsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _ShortcutsSetupRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _ShortcutsSetupRequested);
   }
 
   @override
@@ -363,18 +355,15 @@ class _ActionReceived implements QuickActionsEvent {
 }
 
 /// @nodoc
-abstract mixin class _$ActionReceivedCopyWith<$Res>
-    implements $QuickActionsEventCopyWith<$Res> {
-  factory _$ActionReceivedCopyWith(
-          _ActionReceived value, $Res Function(_ActionReceived) _then) =
+abstract mixin class _$ActionReceivedCopyWith<$Res> implements $QuickActionsEventCopyWith<$Res> {
+  factory _$ActionReceivedCopyWith(_ActionReceived value, $Res Function(_ActionReceived) _then) =
       __$ActionReceivedCopyWithImpl;
   @useResult
   $Res call({QuickActionEntity action});
 }
 
 /// @nodoc
-class __$ActionReceivedCopyWithImpl<$Res>
-    implements _$ActionReceivedCopyWith<$Res> {
+class __$ActionReceivedCopyWithImpl<$Res> implements _$ActionReceivedCopyWith<$Res> {
   __$ActionReceivedCopyWithImpl(this._self, this._then);
 
   final _ActionReceived _self;
@@ -402,8 +391,7 @@ class _HistoryCleared implements QuickActionsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _HistoryCleared);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _HistoryCleared);
   }
 
   @override
@@ -428,8 +416,7 @@ mixin _$QuickActionsState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $QuickActionsStateCopyWith<QuickActionsState> get copyWith =>
-      _$QuickActionsStateCopyWithImpl<QuickActionsState>(
-          this as QuickActionsState, _$identity);
+      _$QuickActionsStateCopyWithImpl<QuickActionsState>(this as QuickActionsState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -437,17 +424,15 @@ mixin _$QuickActionsState {
         (other.runtimeType == runtimeType &&
             other is QuickActionsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
-            (identical(other.latestAction, latestAction) ||
-                other.latestAction == latestAction) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.latestAction, latestAction) || other.latestAction == latestAction) &&
             const DeepCollectionEquality().equals(other.history, history) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus,
-      latestAction, const DeepCollectionEquality().hash(history), failure);
+  int get hashCode => Object.hash(
+      runtimeType, status, actionStatus, latestAction, const DeepCollectionEquality().hash(history), failure);
 
   @override
   String toString() {
@@ -457,8 +442,7 @@ mixin _$QuickActionsState {
 
 /// @nodoc
 abstract mixin class $QuickActionsStateCopyWith<$Res> {
-  factory $QuickActionsStateCopyWith(
-          QuickActionsState value, $Res Function(QuickActionsState) _then) =
+  factory $QuickActionsStateCopyWith(QuickActionsState value, $Res Function(QuickActionsState) _then) =
       _$QuickActionsStateCopyWithImpl;
   @useResult
   $Res call(
@@ -470,8 +454,7 @@ abstract mixin class $QuickActionsStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$QuickActionsStateCopyWithImpl<$Res>
-    implements $QuickActionsStateCopyWith<$Res> {
+class _$QuickActionsStateCopyWithImpl<$Res> implements $QuickActionsStateCopyWith<$Res> {
   _$QuickActionsStateCopyWithImpl(this._self, this._then);
 
   final QuickActionsState _self;
@@ -606,20 +589,15 @@ extension QuickActionsStatePatterns on QuickActionsState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            QuickActionEntity? latestAction,
-            List<QuickActionEntity> history,
-            Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus, QuickActionEntity? latestAction,
+            List<QuickActionEntity> history, Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _QuickActionsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.latestAction,
-            _that.history, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.latestAction, _that.history, _that.failure);
       case _:
         return orElse();
     }
@@ -640,19 +618,14 @@ extension QuickActionsStatePatterns on QuickActionsState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            QuickActionEntity? latestAction,
-            List<QuickActionEntity> history,
-            Failure? failure)
+    TResult Function(LoadStatus status, ActionStatus actionStatus, QuickActionEntity? latestAction,
+            List<QuickActionEntity> history, Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _QuickActionsState():
-        return $default(_that.status, _that.actionStatus, _that.latestAction,
-            _that.history, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.latestAction, _that.history, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -672,19 +645,14 @@ extension QuickActionsStatePatterns on QuickActionsState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            QuickActionEntity? latestAction,
-            List<QuickActionEntity> history,
-            Failure? failure)?
+    TResult? Function(LoadStatus status, ActionStatus actionStatus, QuickActionEntity? latestAction,
+            List<QuickActionEntity> history, Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _QuickActionsState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.latestAction,
-            _that.history, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.latestAction, _that.history, _that.failure);
       case _:
         return null;
     }
@@ -733,17 +701,15 @@ class _QuickActionsState implements QuickActionsState {
         (other.runtimeType == runtimeType &&
             other is _QuickActionsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
-            (identical(other.latestAction, latestAction) ||
-                other.latestAction == latestAction) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.latestAction, latestAction) || other.latestAction == latestAction) &&
             const DeepCollectionEquality().equals(other._history, _history) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus,
-      latestAction, const DeepCollectionEquality().hash(_history), failure);
+  int get hashCode => Object.hash(
+      runtimeType, status, actionStatus, latestAction, const DeepCollectionEquality().hash(_history), failure);
 
   @override
   String toString() {
@@ -752,10 +718,8 @@ class _QuickActionsState implements QuickActionsState {
 }
 
 /// @nodoc
-abstract mixin class _$QuickActionsStateCopyWith<$Res>
-    implements $QuickActionsStateCopyWith<$Res> {
-  factory _$QuickActionsStateCopyWith(
-          _QuickActionsState value, $Res Function(_QuickActionsState) _then) =
+abstract mixin class _$QuickActionsStateCopyWith<$Res> implements $QuickActionsStateCopyWith<$Res> {
+  factory _$QuickActionsStateCopyWith(_QuickActionsState value, $Res Function(_QuickActionsState) _then) =
       __$QuickActionsStateCopyWithImpl;
   @override
   @useResult
@@ -768,8 +732,7 @@ abstract mixin class _$QuickActionsStateCopyWith<$Res>
 }
 
 /// @nodoc
-class __$QuickActionsStateCopyWithImpl<$Res>
-    implements _$QuickActionsStateCopyWith<$Res> {
+class __$QuickActionsStateCopyWithImpl<$Res> implements _$QuickActionsStateCopyWith<$Res> {
   __$QuickActionsStateCopyWithImpl(this._self, this._then);
 
   final _QuickActionsState _self;

@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$SetupsEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is SetupsEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is SetupsEvent);
   }
 
   @override
@@ -234,8 +233,7 @@ class _Started implements SetupsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _Started);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
   }
 
   @override
@@ -254,8 +252,7 @@ class _RefreshRequested implements SetupsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _RefreshRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _RefreshRequested);
   }
 
   @override
@@ -274,8 +271,7 @@ class _FetchMoreRequested implements SetupsEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _FetchMoreRequested);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _FetchMoreRequested);
   }
 
   @override
@@ -310,27 +306,17 @@ mixin _$SetupsState {
         (other.runtimeType == runtimeType &&
             other is SetupsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             const DeepCollectionEquality().equals(other.items, items) &&
             (identical(other.hasMore, hasMore) || other.hasMore == hasMore) &&
-            (identical(other.nextCursor, nextCursor) ||
-                other.nextCursor == nextCursor) &&
-            (identical(other.isFetchingMore, isFetchingMore) ||
-                other.isFetchingMore == isFetchingMore) &&
+            (identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor) &&
+            (identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      status,
-      actionStatus,
-      const DeepCollectionEquality().hash(items),
-      hasMore,
-      nextCursor,
-      isFetchingMore,
-      failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, const DeepCollectionEquality().hash(items),
+      hasMore, nextCursor, isFetchingMore, failure);
 
   @override
   String toString() {
@@ -340,9 +326,7 @@ mixin _$SetupsState {
 
 /// @nodoc
 abstract mixin class $SetupsStateCopyWith<$Res> {
-  factory $SetupsStateCopyWith(
-          SetupsState value, $Res Function(SetupsState) _then) =
-      _$SetupsStateCopyWithImpl;
+  factory $SetupsStateCopyWith(SetupsState value, $Res Function(SetupsState) _then) = _$SetupsStateCopyWithImpl;
   @useResult
   $Res call(
       {LoadStatus status,
@@ -500,28 +484,16 @@ extension SetupsStatePatterns on SetupsState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            List<SetupEntity> items,
-            bool hasMore,
-            String? nextCursor,
-            bool isFetchingMore,
-            Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus, List<SetupEntity> items, bool hasMore,
+            String? nextCursor, bool isFetchingMore, Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _SetupsState() when $default != null:
-        return $default(
-            _that.status,
-            _that.actionStatus,
-            _that.items,
-            _that.hasMore,
-            _that.nextCursor,
-            _that.isFetchingMore,
-            _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.items, _that.hasMore, _that.nextCursor,
+            _that.isFetchingMore, _that.failure);
       case _:
         return orElse();
     }
@@ -542,27 +514,15 @@ extension SetupsStatePatterns on SetupsState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            List<SetupEntity> items,
-            bool hasMore,
-            String? nextCursor,
-            bool isFetchingMore,
-            Failure? failure)
+    TResult Function(LoadStatus status, ActionStatus actionStatus, List<SetupEntity> items, bool hasMore,
+            String? nextCursor, bool isFetchingMore, Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _SetupsState():
-        return $default(
-            _that.status,
-            _that.actionStatus,
-            _that.items,
-            _that.hasMore,
-            _that.nextCursor,
-            _that.isFetchingMore,
-            _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.items, _that.hasMore, _that.nextCursor,
+            _that.isFetchingMore, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -582,27 +542,15 @@ extension SetupsStatePatterns on SetupsState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            List<SetupEntity> items,
-            bool hasMore,
-            String? nextCursor,
-            bool isFetchingMore,
-            Failure? failure)?
+    TResult? Function(LoadStatus status, ActionStatus actionStatus, List<SetupEntity> items, bool hasMore,
+            String? nextCursor, bool isFetchingMore, Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _SetupsState() when $default != null:
-        return $default(
-            _that.status,
-            _that.actionStatus,
-            _that.items,
-            _that.hasMore,
-            _that.nextCursor,
-            _that.isFetchingMore,
-            _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.items, _that.hasMore, _that.nextCursor,
+            _that.isFetchingMore, _that.failure);
       case _:
         return null;
     }
@@ -648,8 +596,7 @@ class _SetupsState implements SetupsState {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$SetupsStateCopyWith<_SetupsState> get copyWith =>
-      __$SetupsStateCopyWithImpl<_SetupsState>(this, _$identity);
+  _$SetupsStateCopyWith<_SetupsState> get copyWith => __$SetupsStateCopyWithImpl<_SetupsState>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -657,27 +604,17 @@ class _SetupsState implements SetupsState {
         (other.runtimeType == runtimeType &&
             other is _SetupsState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.hasMore, hasMore) || other.hasMore == hasMore) &&
-            (identical(other.nextCursor, nextCursor) ||
-                other.nextCursor == nextCursor) &&
-            (identical(other.isFetchingMore, isFetchingMore) ||
-                other.isFetchingMore == isFetchingMore) &&
+            (identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor) &&
+            (identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      status,
-      actionStatus,
-      const DeepCollectionEquality().hash(_items),
-      hasMore,
-      nextCursor,
-      isFetchingMore,
-      failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, const DeepCollectionEquality().hash(_items),
+      hasMore, nextCursor, isFetchingMore, failure);
 
   @override
   String toString() {
@@ -686,11 +623,8 @@ class _SetupsState implements SetupsState {
 }
 
 /// @nodoc
-abstract mixin class _$SetupsStateCopyWith<$Res>
-    implements $SetupsStateCopyWith<$Res> {
-  factory _$SetupsStateCopyWith(
-          _SetupsState value, $Res Function(_SetupsState) _then) =
-      __$SetupsStateCopyWithImpl;
+abstract mixin class _$SetupsStateCopyWith<$Res> implements $SetupsStateCopyWith<$Res> {
+  factory _$SetupsStateCopyWith(_SetupsState value, $Res Function(_SetupsState) _then) = __$SetupsStateCopyWithImpl;
   @override
   @useResult
   $Res call(

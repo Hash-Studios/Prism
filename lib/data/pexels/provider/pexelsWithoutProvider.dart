@@ -27,8 +27,8 @@ Future<List<WallPaperP>> categoryDataFetcherP(String categoryName, String mode) 
     final int origPageNumber = pageNumbersP[index][categoryName]!;
     pageNumbersP[index] = {categoryName: origPageNumber + 1};
   }
-  logger.d(
-      "https://api.pexels.com/v1/search?query=$categoryName&per_page=80&page=${pageNumbersP[index][categoryName]}");
+  logger
+      .d("https://api.pexels.com/v1/search?query=$categoryName&per_page=80&page=${pageNumbersP[index][categoryName]}");
   http.get(
       Uri.parse(
           "https://api.pexels.com/v1/search?query=$categoryName&per_page=80&page=${pageNumbersP[index][categoryName]}"),

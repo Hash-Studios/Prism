@@ -375,8 +375,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     final Duration diff = DateTime.now().difference(start);
     image!.writeAsBytesSync(result);
     logger.d('image_editor time : $diff');
-    Future.delayed(Duration.zero)
-        .then((value) => context.router.replace(UploadWallRoute(arguments: [image, false])));
+    Future.delayed(Duration.zero).then((value) => context.router.replace(UploadWallRoute(arguments: [image, false])));
   }
 
   void flip() {

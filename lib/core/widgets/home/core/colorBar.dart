@@ -32,8 +32,8 @@ class ColorBar extends StatelessWidget {
               },
               onTap: () {
                 Future.delayed(Duration.zero).then((value) => context.router.push(ColorRoute(arguments: [
-                        colors![color].toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                      ])));
+                      colors![color].toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
+                    ])));
               },
               child: Container(
                 decoration: BoxDecoration(

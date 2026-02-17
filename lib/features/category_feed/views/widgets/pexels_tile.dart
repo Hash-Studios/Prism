@@ -47,7 +47,8 @@ class PexelsTile extends StatelessWidget {
               onTap: () {
                 if (PData.wallsP == []) {
                 } else {
-                  context.router.push(WallpaperRoute(arguments: [widget.provider, index, PData.wallsP[index].src!["small"]]));
+                  context.router
+                      .push(WallpaperRoute(arguments: [widget.provider, index, PData.wallsP[index].src!["small"]]));
                 }
               },
             ),

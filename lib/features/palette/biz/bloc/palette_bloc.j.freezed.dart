@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$PaletteEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is PaletteEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is PaletteEvent);
   }
 
   @override
@@ -228,8 +227,7 @@ class _PaletteRequested implements PaletteEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _PaletteRequested &&
-            (identical(other.imageUrl, imageUrl) ||
-                other.imageUrl == imageUrl));
+            (identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl));
   }
 
   @override
@@ -242,18 +240,15 @@ class _PaletteRequested implements PaletteEvent {
 }
 
 /// @nodoc
-abstract mixin class _$PaletteRequestedCopyWith<$Res>
-    implements $PaletteEventCopyWith<$Res> {
-  factory _$PaletteRequestedCopyWith(
-          _PaletteRequested value, $Res Function(_PaletteRequested) _then) =
+abstract mixin class _$PaletteRequestedCopyWith<$Res> implements $PaletteEventCopyWith<$Res> {
+  factory _$PaletteRequestedCopyWith(_PaletteRequested value, $Res Function(_PaletteRequested) _then) =
       __$PaletteRequestedCopyWithImpl;
   @useResult
   $Res call({String imageUrl});
 }
 
 /// @nodoc
-class __$PaletteRequestedCopyWithImpl<$Res>
-    implements _$PaletteRequestedCopyWith<$Res> {
+class __$PaletteRequestedCopyWithImpl<$Res> implements _$PaletteRequestedCopyWith<$Res> {
   __$PaletteRequestedCopyWithImpl(this._self, this._then);
 
   final _PaletteRequested _self;
@@ -281,8 +276,7 @@ class _PaletteCleared implements PaletteEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _PaletteCleared);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _PaletteCleared);
   }
 
   @override
@@ -305,8 +299,7 @@ mixin _$PaletteState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $PaletteStateCopyWith<PaletteState> get copyWith =>
-      _$PaletteStateCopyWithImpl<PaletteState>(
-          this as PaletteState, _$identity);
+      _$PaletteStateCopyWithImpl<PaletteState>(this as PaletteState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -329,9 +322,7 @@ mixin _$PaletteState {
 
 /// @nodoc
 abstract mixin class $PaletteStateCopyWith<$Res> {
-  factory $PaletteStateCopyWith(
-          PaletteState value, $Res Function(PaletteState) _then) =
-      _$PaletteStateCopyWithImpl;
+  factory $PaletteStateCopyWith(PaletteState value, $Res Function(PaletteState) _then) = _$PaletteStateCopyWithImpl;
   @useResult
   $Res call({LoadStatus status, PaletteEntity palette, Failure? failure});
 }
@@ -462,9 +453,7 @@ extension PaletteStatePatterns on PaletteState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status, PaletteEntity palette, Failure? failure)?
-        $default, {
+    TResult Function(LoadStatus status, PaletteEntity palette, Failure? failure)? $default, {
     required TResult orElse(),
   }) {
     final _that = this;
@@ -491,8 +480,7 @@ extension PaletteStatePatterns on PaletteState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, PaletteEntity palette, Failure? failure)
-        $default,
+    TResult Function(LoadStatus status, PaletteEntity palette, Failure? failure) $default,
   ) {
     final _that = this;
     switch (_that) {
@@ -517,9 +505,7 @@ extension PaletteStatePatterns on PaletteState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(
-            LoadStatus status, PaletteEntity palette, Failure? failure)?
-        $default,
+    TResult? Function(LoadStatus status, PaletteEntity palette, Failure? failure)? $default,
   ) {
     final _that = this;
     switch (_that) {
@@ -534,8 +520,7 @@ extension PaletteStatePatterns on PaletteState {
 /// @nodoc
 
 class _PaletteState implements PaletteState {
-  const _PaletteState(
-      {required this.status, required this.palette, this.failure});
+  const _PaletteState({required this.status, required this.palette, this.failure});
 
   @override
   final LoadStatus status;
@@ -549,8 +534,7 @@ class _PaletteState implements PaletteState {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$PaletteStateCopyWith<_PaletteState> get copyWith =>
-      __$PaletteStateCopyWithImpl<_PaletteState>(this, _$identity);
+  _$PaletteStateCopyWith<_PaletteState> get copyWith => __$PaletteStateCopyWithImpl<_PaletteState>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -572,19 +556,15 @@ class _PaletteState implements PaletteState {
 }
 
 /// @nodoc
-abstract mixin class _$PaletteStateCopyWith<$Res>
-    implements $PaletteStateCopyWith<$Res> {
-  factory _$PaletteStateCopyWith(
-          _PaletteState value, $Res Function(_PaletteState) _then) =
-      __$PaletteStateCopyWithImpl;
+abstract mixin class _$PaletteStateCopyWith<$Res> implements $PaletteStateCopyWith<$Res> {
+  factory _$PaletteStateCopyWith(_PaletteState value, $Res Function(_PaletteState) _then) = __$PaletteStateCopyWithImpl;
   @override
   @useResult
   $Res call({LoadStatus status, PaletteEntity palette, Failure? failure});
 }
 
 /// @nodoc
-class __$PaletteStateCopyWithImpl<$Res>
-    implements _$PaletteStateCopyWith<$Res> {
+class __$PaletteStateCopyWithImpl<$Res> implements _$PaletteStateCopyWith<$Res> {
   __$PaletteStateCopyWithImpl(this._self, this._then);
 
   final _PaletteState _self;

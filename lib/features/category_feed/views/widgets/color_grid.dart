@@ -185,7 +185,8 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                   onTap: () {
                                     if (PData.wallsC == []) {
                                     } else {
-                                      context.router.push(WallpaperRoute(arguments: [widget.provider, index, PData.wallsC[index].src!["small"]]));
+                                      context.router.push(WallpaperRoute(
+                                          arguments: [widget.provider, index, PData.wallsC[index].src!["small"]]));
                                     }
                                   },
                                   onLongPress: () {

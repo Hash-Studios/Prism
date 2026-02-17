@@ -99,12 +99,12 @@ Color showColors(BuildContext context) {
                     currentColor = color;
                     Navigator.pop(context);
                     context.router.push(ColorRoute(arguments: [
-                        color
-                            .toString()
-                            .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                            .replaceAll("Color(0xff", "")
-                            .replaceAll(")", ""),
-                      ]));
+                      color
+                          .toString()
+                          .replaceAll("MaterialColor(primary value: Color(0xff", "")
+                          .replaceAll("Color(0xff", "")
+                          .replaceAll(")", ""),
+                    ]));
                   },
                   child: Container(
                     margin: const EdgeInsets.all(6),

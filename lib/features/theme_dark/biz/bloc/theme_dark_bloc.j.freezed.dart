@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$ThemeDarkEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is ThemeDarkEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is ThemeDarkEvent);
   }
 
   @override
@@ -252,8 +251,7 @@ class _Started implements ThemeDarkEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _Started);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
   }
 
   @override
@@ -272,8 +270,7 @@ class _Reloaded implements ThemeDarkEvent {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _Reloaded);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _Reloaded);
   }
 
   @override
@@ -296,8 +293,7 @@ class _ThemeChanged implements ThemeDarkEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$ThemeChangedCopyWith<_ThemeChanged> get copyWith =>
-      __$ThemeChangedCopyWithImpl<_ThemeChanged>(this, _$identity);
+  _$ThemeChangedCopyWith<_ThemeChanged> get copyWith => __$ThemeChangedCopyWithImpl<_ThemeChanged>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -317,18 +313,14 @@ class _ThemeChanged implements ThemeDarkEvent {
 }
 
 /// @nodoc
-abstract mixin class _$ThemeChangedCopyWith<$Res>
-    implements $ThemeDarkEventCopyWith<$Res> {
-  factory _$ThemeChangedCopyWith(
-          _ThemeChanged value, $Res Function(_ThemeChanged) _then) =
-      __$ThemeChangedCopyWithImpl;
+abstract mixin class _$ThemeChangedCopyWith<$Res> implements $ThemeDarkEventCopyWith<$Res> {
+  factory _$ThemeChangedCopyWith(_ThemeChanged value, $Res Function(_ThemeChanged) _then) = __$ThemeChangedCopyWithImpl;
   @useResult
   $Res call({String themeId});
 }
 
 /// @nodoc
-class __$ThemeChangedCopyWithImpl<$Res>
-    implements _$ThemeChangedCopyWith<$Res> {
+class __$ThemeChangedCopyWithImpl<$Res> implements _$ThemeChangedCopyWith<$Res> {
   __$ThemeChangedCopyWithImpl(this._self, this._then);
 
   final _ThemeChanged _self;
@@ -368,8 +360,7 @@ class _AccentChanged implements ThemeDarkEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _AccentChanged &&
-            (identical(other.accentColorValue, accentColorValue) ||
-                other.accentColorValue == accentColorValue));
+            (identical(other.accentColorValue, accentColorValue) || other.accentColorValue == accentColorValue));
   }
 
   @override
@@ -382,18 +373,15 @@ class _AccentChanged implements ThemeDarkEvent {
 }
 
 /// @nodoc
-abstract mixin class _$AccentChangedCopyWith<$Res>
-    implements $ThemeDarkEventCopyWith<$Res> {
-  factory _$AccentChangedCopyWith(
-          _AccentChanged value, $Res Function(_AccentChanged) _then) =
+abstract mixin class _$AccentChangedCopyWith<$Res> implements $ThemeDarkEventCopyWith<$Res> {
+  factory _$AccentChangedCopyWith(_AccentChanged value, $Res Function(_AccentChanged) _then) =
       __$AccentChangedCopyWithImpl;
   @useResult
   $Res call({int accentColorValue});
 }
 
 /// @nodoc
-class __$AccentChangedCopyWithImpl<$Res>
-    implements _$AccentChangedCopyWith<$Res> {
+class __$AccentChangedCopyWithImpl<$Res> implements _$AccentChangedCopyWith<$Res> {
   __$AccentChangedCopyWithImpl(this._self, this._then);
 
   final _AccentChanged _self;
@@ -426,8 +414,7 @@ mixin _$ThemeDarkState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $ThemeDarkStateCopyWith<ThemeDarkState> get copyWith =>
-      _$ThemeDarkStateCopyWithImpl<ThemeDarkState>(
-          this as ThemeDarkState, _$identity);
+      _$ThemeDarkStateCopyWithImpl<ThemeDarkState>(this as ThemeDarkState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -435,15 +422,13 @@ mixin _$ThemeDarkState {
         (other.runtimeType == runtimeType &&
             other is ThemeDarkState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.theme, theme) || other.theme == theme) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, theme, failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, theme, failure);
 
   @override
   String toString() {
@@ -453,20 +438,14 @@ mixin _$ThemeDarkState {
 
 /// @nodoc
 abstract mixin class $ThemeDarkStateCopyWith<$Res> {
-  factory $ThemeDarkStateCopyWith(
-          ThemeDarkState value, $Res Function(ThemeDarkState) _then) =
+  factory $ThemeDarkStateCopyWith(ThemeDarkState value, $Res Function(ThemeDarkState) _then) =
       _$ThemeDarkStateCopyWithImpl;
   @useResult
-  $Res call(
-      {LoadStatus status,
-      ActionStatus actionStatus,
-      ThemeDarkEntity theme,
-      Failure? failure});
+  $Res call({LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure});
 }
 
 /// @nodoc
-class _$ThemeDarkStateCopyWithImpl<$Res>
-    implements $ThemeDarkStateCopyWith<$Res> {
+class _$ThemeDarkStateCopyWithImpl<$Res> implements $ThemeDarkStateCopyWith<$Res> {
   _$ThemeDarkStateCopyWithImpl(this._self, this._then);
 
   final ThemeDarkState _self;
@@ -596,16 +575,13 @@ extension ThemeDarkStatePatterns on ThemeDarkState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus,
-            ThemeDarkEntity theme, Failure? failure)?
-        $default, {
+    TResult Function(LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure)? $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _ThemeDarkState() when $default != null:
-        return $default(
-            _that.status, _that.actionStatus, _that.theme, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.theme, _that.failure);
       case _:
         return orElse();
     }
@@ -626,15 +602,12 @@ extension ThemeDarkStatePatterns on ThemeDarkState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(LoadStatus status, ActionStatus actionStatus,
-            ThemeDarkEntity theme, Failure? failure)
-        $default,
+    TResult Function(LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure) $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ThemeDarkState():
-        return $default(
-            _that.status, _that.actionStatus, _that.theme, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.theme, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -654,15 +627,12 @@ extension ThemeDarkStatePatterns on ThemeDarkState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(LoadStatus status, ActionStatus actionStatus,
-            ThemeDarkEntity theme, Failure? failure)?
-        $default,
+    TResult? Function(LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure)? $default,
   ) {
     final _that = this;
     switch (_that) {
       case _ThemeDarkState() when $default != null:
-        return $default(
-            _that.status, _that.actionStatus, _that.theme, _that.failure);
+        return $default(_that.status, _that.actionStatus, _that.theme, _that.failure);
       case _:
         return null;
     }
@@ -672,11 +642,7 @@ extension ThemeDarkStatePatterns on ThemeDarkState {
 /// @nodoc
 
 class _ThemeDarkState implements ThemeDarkState {
-  const _ThemeDarkState(
-      {required this.status,
-      required this.actionStatus,
-      required this.theme,
-      this.failure});
+  const _ThemeDarkState({required this.status, required this.actionStatus, required this.theme, this.failure});
 
   @override
   final LoadStatus status;
@@ -701,15 +667,13 @@ class _ThemeDarkState implements ThemeDarkState {
         (other.runtimeType == runtimeType &&
             other is _ThemeDarkState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.theme, theme) || other.theme == theme) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, status, actionStatus, theme, failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, theme, failure);
 
   @override
   String toString() {
@@ -718,23 +682,16 @@ class _ThemeDarkState implements ThemeDarkState {
 }
 
 /// @nodoc
-abstract mixin class _$ThemeDarkStateCopyWith<$Res>
-    implements $ThemeDarkStateCopyWith<$Res> {
-  factory _$ThemeDarkStateCopyWith(
-          _ThemeDarkState value, $Res Function(_ThemeDarkState) _then) =
+abstract mixin class _$ThemeDarkStateCopyWith<$Res> implements $ThemeDarkStateCopyWith<$Res> {
+  factory _$ThemeDarkStateCopyWith(_ThemeDarkState value, $Res Function(_ThemeDarkState) _then) =
       __$ThemeDarkStateCopyWithImpl;
   @override
   @useResult
-  $Res call(
-      {LoadStatus status,
-      ActionStatus actionStatus,
-      ThemeDarkEntity theme,
-      Failure? failure});
+  $Res call({LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure});
 }
 
 /// @nodoc
-class __$ThemeDarkStateCopyWithImpl<$Res>
-    implements _$ThemeDarkStateCopyWith<$Res> {
+class __$ThemeDarkStateCopyWithImpl<$Res> implements _$ThemeDarkStateCopyWith<$Res> {
   __$ThemeDarkStateCopyWithImpl(this._self, this._then);
 
   final _ThemeDarkState _self;

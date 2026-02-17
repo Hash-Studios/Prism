@@ -56,7 +56,5 @@ class InAppNotifAdapter extends TypeAdapter<InAppNotif> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is InAppNotifAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
+      other is InAppNotifAdapter && runtimeType == other.runtimeType && typeId == other.typeId;
 }

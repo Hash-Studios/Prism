@@ -115,7 +115,8 @@ class _PexelsGridState extends State<PexelsGrid> {
                               onTap: () {
                                 if (PData.wallsP == []) {
                                 } else {
-                                  context.router.push(WallpaperRoute(arguments: [widget.provider, i, PData.wallsP[i].src!["small"]]));
+                                  context.router.push(
+                                      WallpaperRoute(arguments: [widget.provider, i, PData.wallsP[i].src!["small"]]));
                                 }
                               },
                               child: PData.wallsP.isEmpty

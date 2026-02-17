@@ -16,8 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$StartupEvent {
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is StartupEvent);
+    return identical(this, other) || (other.runtimeType == runtimeType && other is StartupEvent);
   }
 
   @override
@@ -238,16 +237,14 @@ class _Started implements StartupEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$StartedCopyWith<_Started> get copyWith =>
-      __$StartedCopyWithImpl<_Started>(this, _$identity);
+  _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _Started &&
-            (identical(other.currentVersion, currentVersion) ||
-                other.currentVersion == currentVersion));
+            (identical(other.currentVersion, currentVersion) || other.currentVersion == currentVersion));
   }
 
   @override
@@ -260,10 +257,8 @@ class _Started implements StartupEvent {
 }
 
 /// @nodoc
-abstract mixin class _$StartedCopyWith<$Res>
-    implements $StartupEventCopyWith<$Res> {
-  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) =
-      __$StartedCopyWithImpl;
+abstract mixin class _$StartedCopyWith<$Res> implements $StartupEventCopyWith<$Res> {
+  factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
   @useResult
   $Res call({String? currentVersion});
 }
@@ -309,8 +304,7 @@ class _RetryRequested implements StartupEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _RetryRequested &&
-            (identical(other.currentVersion, currentVersion) ||
-                other.currentVersion == currentVersion));
+            (identical(other.currentVersion, currentVersion) || other.currentVersion == currentVersion));
   }
 
   @override
@@ -323,18 +317,15 @@ class _RetryRequested implements StartupEvent {
 }
 
 /// @nodoc
-abstract mixin class _$RetryRequestedCopyWith<$Res>
-    implements $StartupEventCopyWith<$Res> {
-  factory _$RetryRequestedCopyWith(
-          _RetryRequested value, $Res Function(_RetryRequested) _then) =
+abstract mixin class _$RetryRequestedCopyWith<$Res> implements $StartupEventCopyWith<$Res> {
+  factory _$RetryRequestedCopyWith(_RetryRequested value, $Res Function(_RetryRequested) _then) =
       __$RetryRequestedCopyWithImpl;
   @useResult
   $Res call({String? currentVersion});
 }
 
 /// @nodoc
-class __$RetryRequestedCopyWithImpl<$Res>
-    implements _$RetryRequestedCopyWith<$Res> {
+class __$RetryRequestedCopyWithImpl<$Res> implements _$RetryRequestedCopyWith<$Res> {
   __$RetryRequestedCopyWithImpl(this._self, this._then);
 
   final _RetryRequested _self;
@@ -374,8 +365,7 @@ class _NotchMeasured implements StartupEvent {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _NotchMeasured &&
-            (identical(other.notchHeight, notchHeight) ||
-                other.notchHeight == notchHeight));
+            (identical(other.notchHeight, notchHeight) || other.notchHeight == notchHeight));
   }
 
   @override
@@ -388,18 +378,15 @@ class _NotchMeasured implements StartupEvent {
 }
 
 /// @nodoc
-abstract mixin class _$NotchMeasuredCopyWith<$Res>
-    implements $StartupEventCopyWith<$Res> {
-  factory _$NotchMeasuredCopyWith(
-          _NotchMeasured value, $Res Function(_NotchMeasured) _then) =
+abstract mixin class _$NotchMeasuredCopyWith<$Res> implements $StartupEventCopyWith<$Res> {
+  factory _$NotchMeasuredCopyWith(_NotchMeasured value, $Res Function(_NotchMeasured) _then) =
       __$NotchMeasuredCopyWithImpl;
   @useResult
   $Res call({double notchHeight});
 }
 
 /// @nodoc
-class __$NotchMeasuredCopyWithImpl<$Res>
-    implements _$NotchMeasuredCopyWith<$Res> {
+class __$NotchMeasuredCopyWithImpl<$Res> implements _$NotchMeasuredCopyWith<$Res> {
   __$NotchMeasuredCopyWithImpl(this._self, this._then);
 
   final _NotchMeasured _self;
@@ -434,8 +421,7 @@ mixin _$StartupState {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   $StartupStateCopyWith<StartupState> get copyWith =>
-      _$StartupStateCopyWithImpl<StartupState>(
-          this as StartupState, _$identity);
+      _$StartupStateCopyWithImpl<StartupState>(this as StartupState, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -443,19 +429,15 @@ mixin _$StartupState {
         (other.runtimeType == runtimeType &&
             other is StartupState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.config, config) || other.config == config) &&
-            (identical(other.isObsoleteVersion, isObsoleteVersion) ||
-                other.isObsoleteVersion == isObsoleteVersion) &&
-            (identical(other.notchHeight, notchHeight) ||
-                other.notchHeight == notchHeight) &&
+            (identical(other.isObsoleteVersion, isObsoleteVersion) || other.isObsoleteVersion == isObsoleteVersion) &&
+            (identical(other.notchHeight, notchHeight) || other.notchHeight == notchHeight) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, config,
-      isObsoleteVersion, notchHeight, failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, config, isObsoleteVersion, notchHeight, failure);
 
   @override
   String toString() {
@@ -465,9 +447,7 @@ mixin _$StartupState {
 
 /// @nodoc
 abstract mixin class $StartupStateCopyWith<$Res> {
-  factory $StartupStateCopyWith(
-          StartupState value, $Res Function(StartupState) _then) =
-      _$StartupStateCopyWithImpl;
+  factory $StartupStateCopyWith(StartupState value, $Res Function(StartupState) _then) = _$StartupStateCopyWithImpl;
   @useResult
   $Res call(
       {LoadStatus status,
@@ -619,21 +599,16 @@ extension StartupStatePatterns on StartupState {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            StartupConfigEntity? config,
-            bool isObsoleteVersion,
-            double notchHeight,
-            Failure? failure)?
+    TResult Function(LoadStatus status, ActionStatus actionStatus, StartupConfigEntity? config, bool isObsoleteVersion,
+            double notchHeight, Failure? failure)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _StartupState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.config,
-            _that.isObsoleteVersion, _that.notchHeight, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.config, _that.isObsoleteVersion, _that.notchHeight, _that.failure);
       case _:
         return orElse();
     }
@@ -654,20 +629,15 @@ extension StartupStatePatterns on StartupState {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            StartupConfigEntity? config,
-            bool isObsoleteVersion,
-            double notchHeight,
-            Failure? failure)
+    TResult Function(LoadStatus status, ActionStatus actionStatus, StartupConfigEntity? config, bool isObsoleteVersion,
+            double notchHeight, Failure? failure)
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _StartupState():
-        return $default(_that.status, _that.actionStatus, _that.config,
-            _that.isObsoleteVersion, _that.notchHeight, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.config, _that.isObsoleteVersion, _that.notchHeight, _that.failure);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -687,20 +657,15 @@ extension StartupStatePatterns on StartupState {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(
-            LoadStatus status,
-            ActionStatus actionStatus,
-            StartupConfigEntity? config,
-            bool isObsoleteVersion,
-            double notchHeight,
-            Failure? failure)?
+    TResult? Function(LoadStatus status, ActionStatus actionStatus, StartupConfigEntity? config, bool isObsoleteVersion,
+            double notchHeight, Failure? failure)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
       case _StartupState() when $default != null:
-        return $default(_that.status, _that.actionStatus, _that.config,
-            _that.isObsoleteVersion, _that.notchHeight, _that.failure);
+        return $default(
+            _that.status, _that.actionStatus, _that.config, _that.isObsoleteVersion, _that.notchHeight, _that.failure);
       case _:
         return null;
     }
@@ -736,8 +701,7 @@ class _StartupState implements StartupState {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$StartupStateCopyWith<_StartupState> get copyWith =>
-      __$StartupStateCopyWithImpl<_StartupState>(this, _$identity);
+  _$StartupStateCopyWith<_StartupState> get copyWith => __$StartupStateCopyWithImpl<_StartupState>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
@@ -745,19 +709,15 @@ class _StartupState implements StartupState {
         (other.runtimeType == runtimeType &&
             other is _StartupState &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.actionStatus, actionStatus) ||
-                other.actionStatus == actionStatus) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
             (identical(other.config, config) || other.config == config) &&
-            (identical(other.isObsoleteVersion, isObsoleteVersion) ||
-                other.isObsoleteVersion == isObsoleteVersion) &&
-            (identical(other.notchHeight, notchHeight) ||
-                other.notchHeight == notchHeight) &&
+            (identical(other.isObsoleteVersion, isObsoleteVersion) || other.isObsoleteVersion == isObsoleteVersion) &&
+            (identical(other.notchHeight, notchHeight) || other.notchHeight == notchHeight) &&
             (identical(other.failure, failure) || other.failure == failure));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, status, actionStatus, config,
-      isObsoleteVersion, notchHeight, failure);
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, config, isObsoleteVersion, notchHeight, failure);
 
   @override
   String toString() {
@@ -766,11 +726,8 @@ class _StartupState implements StartupState {
 }
 
 /// @nodoc
-abstract mixin class _$StartupStateCopyWith<$Res>
-    implements $StartupStateCopyWith<$Res> {
-  factory _$StartupStateCopyWith(
-          _StartupState value, $Res Function(_StartupState) _then) =
-      __$StartupStateCopyWithImpl;
+abstract mixin class _$StartupStateCopyWith<$Res> implements $StartupStateCopyWith<$Res> {
+  factory _$StartupStateCopyWith(_StartupState value, $Res Function(_StartupState) _then) = __$StartupStateCopyWithImpl;
   @override
   @useResult
   $Res call(
@@ -783,8 +740,7 @@ abstract mixin class _$StartupStateCopyWith<$Res>
 }
 
 /// @nodoc
-class __$StartupStateCopyWithImpl<$Res>
-    implements _$StartupStateCopyWith<$Res> {
+class __$StartupStateCopyWithImpl<$Res> implements _$StartupStateCopyWith<$Res> {
   __$StartupStateCopyWithImpl(this._self, this._then);
 
   final _StartupState _self;

@@ -138,11 +138,13 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
             ? null
             : () {
                 if (!isPremium) {
-                  context.router.push(CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]));
+                  context.router
+                      .push(CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]));
                   return;
                 }
                 if (globals.prismUser.premium == true) {
-                  context.router.push(CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]));
+                  context.router
+                      .push(CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]));
                   return;
                 }
                 showGooglePopUp(() {

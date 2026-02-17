@@ -202,10 +202,10 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                     context.router.push(const UpgradeRoute());
                                   })
                                 : context.router.push(WallpaperRoute(arguments: [
-                                      widget.provider,
-                                      i,
-                                      wall["wallpaper_thumb"],
-                                    ]));
+                                    widget.provider,
+                                    i,
+                                    wall["wallpaper_thumb"],
+                                  ]));
                           },
                           child: wall == null
                               ? Container(

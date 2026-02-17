@@ -34,8 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-        }
+        if (didPop) {}
       },
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,

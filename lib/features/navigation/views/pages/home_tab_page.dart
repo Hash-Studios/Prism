@@ -174,127 +174,126 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return PopScope(
-        canPop: tabController?.index == 0,
-        onPopInvokedWithResult: (didPop, result) {
-          if (didPop) {
-            return;
-          }
-          if (tabController?.index != 0) {
-            tabController?.animateTo(0);
-          }
-        },
-        child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            flexibleSpace: const PreferredSize(
-              preferredSize: Size(double.infinity, 55),
-              child: CategoriesBar(),
-            ),
-            bottom: TabBar(
-                controller: tabController,
-                indicatorColor: Theme.of(context).colorScheme.secondary,
-                indicatorSize: TabBarIndicatorSize.label,
-                tabs: globals.followersTab
-                    ? [
-                        Tab(
-                          icon: Icon(
-                            JamIcons.picture,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                        Tab(
-                          icon: Icon(
-                            JamIcons.user_square,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                        Tab(
-                          icon: Icon(
-                            JamIcons.pictures,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        )
-                      ]
-                    : [
-                        Tab(
-                          icon: Icon(
-                            JamIcons.picture,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                        Tab(
-                          icon: Icon(
-                            JamIcons.pictures,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        )
-                      ]),
+      canPop: tabController?.index == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+        if (tabController?.index != 0) {
+          tabController?.animateTo(0);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).primaryColor,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          flexibleSpace: const PreferredSize(
+            preferredSize: Size(double.infinity, 55),
+            child: CategoriesBar(),
           ),
-          body: Stack(
-            children: <Widget>[
-              TabBarView(
-                controller: tabController,
-                children: (globals.followersTab == true)
-                    ? <Widget>[
-                        const HomeScreen(),
-                        if (globals.prismUser.loggedIn == true)
-                          const FollowingScreen()
-                        else
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              const Spacer(),
-                              Center(
-                                child: SizedBox(
-                                  width: MediaQuery.of(context).size.width * 0.7,
-                                  child: const Text(
-                                    "Please sign-in to view the latest walls from the artists you follow here.",
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 16,
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  googleSignInPopUp(context, () {
-                                    main.RestartWidget.restartApp(context);
-                                  });
-                                },
-                                style: ButtonStyle(
-                                  backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
-                                ),
-                                child: const SizedBox(
-                                  width: 60,
-                                  child: Text(
-                                    'SIGN-IN',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Color(0xFFE57697),
-                                      fontSize: 15,
-                                      fontFamily: "Roboto",
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                            ],
-                          ),
-                        const CollectionScreen(),
-                      ]
-                    : [
-                        const HomeScreen(),
-                        const CollectionScreen(),
-                      ],
-              ),
-              if (!result) ConnectivityWidget() else Container(),
-            ],
-          ),
+          bottom: TabBar(
+              controller: tabController,
+              indicatorColor: Theme.of(context).colorScheme.secondary,
+              indicatorSize: TabBarIndicatorSize.label,
+              tabs: globals.followersTab
+                  ? [
+                      Tab(
+                        icon: Icon(
+                          JamIcons.picture,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                      Tab(
+                        icon: Icon(
+                          JamIcons.user_square,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                      Tab(
+                        icon: Icon(
+                          JamIcons.pictures,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      )
+                    ]
+                  : [
+                      Tab(
+                        icon: Icon(
+                          JamIcons.picture,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                      Tab(
+                        icon: Icon(
+                          JamIcons.pictures,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      )
+                    ]),
         ),
+        body: Stack(
+          children: <Widget>[
+            TabBarView(
+              controller: tabController,
+              children: (globals.followersTab == true)
+                  ? <Widget>[
+                      const HomeScreen(),
+                      if (globals.prismUser.loggedIn == true)
+                        const FollowingScreen()
+                      else
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            const Spacer(),
+                            Center(
+                              child: SizedBox(
+                                width: MediaQuery.of(context).size.width * 0.7,
+                                child: const Text(
+                                  "Please sign-in to view the latest walls from the artists you follow here.",
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 16,
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                googleSignInPopUp(context, () {
+                                  main.RestartWidget.restartApp(context);
+                                });
+                              },
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
+                              ),
+                              child: const SizedBox(
+                                width: 60,
+                                child: Text(
+                                  'SIGN-IN',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Color(0xFFE57697),
+                                    fontSize: 15,
+                                    fontFamily: "Roboto",
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                          ],
+                        ),
+                      const CollectionScreen(),
+                    ]
+                  : [
+                      const HomeScreen(),
+                      const CollectionScreen(),
+                    ],
+            ),
+            if (!result) ConnectivityWidget() else Container(),
+          ],
+        ),
+      ),
     );
   }
 }
-

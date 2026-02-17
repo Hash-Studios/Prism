@@ -13,8 +13,7 @@ part of 'app_router.dart';
 /// generated route for
 /// [AboutScreen]
 class AboutRoute extends PageRouteInfo<void> {
-  const AboutRoute({List<PageRouteInfo>? children})
-      : super(AboutRoute.name, initialChildren: children);
+  const AboutRoute({List<PageRouteInfo>? children}) : super(AboutRoute.name, initialChildren: children);
 
   static const String name = 'AboutRoute';
 
@@ -29,8 +28,7 @@ class AboutRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [AdminReviewScreen]
 class AdminReviewRoute extends PageRouteInfo<void> {
-  const AdminReviewRoute({List<PageRouteInfo>? children})
-      : super(AdminReviewRoute.name, initialChildren: children);
+  const AdminReviewRoute({List<PageRouteInfo>? children}) : super(AdminReviewRoute.name, initialChildren: children);
 
   static const String name = 'AdminReviewRoute';
 
@@ -45,8 +43,7 @@ class AdminReviewRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [AdsNotLoading]
 class AdsNotLoadingRoute extends PageRouteInfo<void> {
-  const AdsNotLoadingRoute({List<PageRouteInfo>? children})
-      : super(AdsNotLoadingRoute.name, initialChildren: children);
+  const AdsNotLoadingRoute({List<PageRouteInfo>? children}) : super(AdsNotLoadingRoute.name, initialChildren: children);
 
   static const String name = 'AdsNotLoadingRoute';
 
@@ -98,13 +95,11 @@ class CollectionViewRouteArgs {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! CollectionViewRouteArgs) return false;
-    return key == other.key &&
-        const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && const ListEquality<dynamic>().equals(arguments, other.arguments);
   }
 
   @override
-  int get hashCode =>
-      key.hashCode ^ const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ const ListEquality<dynamic>().hash(arguments);
 }
 
 /// generated route for
@@ -147,20 +142,17 @@ class ColorRouteArgs {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! ColorRouteArgs) return false;
-    return key == other.key &&
-        const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && const ListEquality<dynamic>().equals(arguments, other.arguments);
   }
 
   @override
-  int get hashCode =>
-      key.hashCode ^ const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ const ListEquality<dynamic>().hash(arguments);
 }
 
 /// generated route for
 /// [DashboardPage]
 class DashboardRoute extends PageRouteInfo<void> {
-  const DashboardRoute({List<PageRouteInfo>? children})
-      : super(DashboardRoute.name, initialChildren: children);
+  const DashboardRoute({List<PageRouteInfo>? children}) : super(DashboardRoute.name, initialChildren: children);
 
   static const String name = 'DashboardRoute';
 
@@ -175,8 +167,7 @@ class DashboardRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [DownloadScreen]
 class DownloadRoute extends PageRouteInfo<void> {
-  const DownloadRoute({List<PageRouteInfo>? children})
-      : super(DownloadRoute.name, initialChildren: children);
+  const DownloadRoute({List<PageRouteInfo>? children}) : super(DownloadRoute.name, initialChildren: children);
 
   static const String name = 'DownloadRoute';
 
@@ -235,8 +226,7 @@ class DownloadWallpaperRouteArgs {
 /// generated route for
 /// [DraftSetupScreen]
 class DraftSetupRoute extends PageRouteInfo<void> {
-  const DraftSetupRoute({List<PageRouteInfo>? children})
-      : super(DraftSetupRoute.name, initialChildren: children);
+  const DraftSetupRoute({List<PageRouteInfo>? children}) : super(DraftSetupRoute.name, initialChildren: children);
 
   static const String name = 'DraftSetupRoute';
 
@@ -523,8 +513,7 @@ class FollowersRouteArgs {
 /// generated route for
 /// [HomeTabPage]
 class HomeTabRoute extends PageRouteInfo<void> {
-  const HomeTabRoute({List<PageRouteInfo>? children})
-      : super(HomeTabRoute.name, initialChildren: children);
+  const HomeTabRoute({List<PageRouteInfo>? children}) : super(HomeTabRoute.name, initialChildren: children);
 
   static const String name = 'HomeTabRoute';
 
@@ -539,8 +528,7 @@ class HomeTabRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [NotificationScreen]
 class NotificationRoute extends PageRouteInfo<void> {
-  const NotificationRoute({List<PageRouteInfo>? children})
-      : super(NotificationRoute.name, initialChildren: children);
+  const NotificationRoute({List<PageRouteInfo>? children}) : super(NotificationRoute.name, initialChildren: children);
 
   static const String name = 'NotificationRoute';
 
@@ -555,8 +543,7 @@ class NotificationRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [OnboardingScreen]
 class OnboardingRoute extends PageRouteInfo<void> {
-  const OnboardingRoute({List<PageRouteInfo>? children})
-      : super(OnboardingRoute.name, initialChildren: children);
+  const OnboardingRoute({List<PageRouteInfo>? children}) : super(OnboardingRoute.name, initialChildren: children);
 
   static const String name = 'OnboardingRoute';
 
@@ -661,8 +648,7 @@ class ProfileSetupViewRouteArgs {
 /// generated route for
 /// [ProfileTabPage]
 class ProfileTabRoute extends PageRouteInfo<void> {
-  const ProfileTabRoute({List<PageRouteInfo>? children})
-      : super(ProfileTabRoute.name, initialChildren: children);
+  const ProfileTabRoute({List<PageRouteInfo>? children}) : super(ProfileTabRoute.name, initialChildren: children);
 
   static const String name = 'ProfileTabRoute';
 
@@ -723,8 +709,7 @@ class ProfileWallViewRouteArgs {
 /// generated route for
 /// [ReviewScreen]
 class ReviewRoute extends PageRouteInfo<void> {
-  const ReviewRoute({List<PageRouteInfo>? children})
-      : super(ReviewRoute.name, initialChildren: children);
+  const ReviewRoute({List<PageRouteInfo>? children}) : super(ReviewRoute.name, initialChildren: children);
 
   static const String name = 'ReviewRoute';
 
@@ -739,8 +724,7 @@ class ReviewRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [SearchScreen]
 class SearchRoute extends PageRouteInfo<void> {
-  const SearchRoute({List<PageRouteInfo>? children})
-      : super(SearchRoute.name, initialChildren: children);
+  const SearchRoute({List<PageRouteInfo>? children}) : super(SearchRoute.name, initialChildren: children);
 
   static const String name = 'SearchRoute';
 
@@ -755,8 +739,7 @@ class SearchRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [SearchTabPage]
 class SearchTabRoute extends PageRouteInfo<void> {
-  const SearchTabRoute({List<PageRouteInfo>? children})
-      : super(SearchTabRoute.name, initialChildren: children);
+  const SearchTabRoute({List<PageRouteInfo>? children}) : super(SearchTabRoute.name, initialChildren: children);
 
   static const String name = 'SearchTabRoute';
 
@@ -815,8 +798,7 @@ class SearchWallpaperRouteArgs {
 /// generated route for
 /// [SettingsScreen]
 class SettingsRoute extends PageRouteInfo<void> {
-  const SettingsRoute({List<PageRouteInfo>? children})
-      : super(SettingsRoute.name, initialChildren: children);
+  const SettingsRoute({List<PageRouteInfo>? children}) : super(SettingsRoute.name, initialChildren: children);
 
   static const String name = 'SettingsRoute';
 
@@ -847,8 +829,7 @@ class SetupGuidelinesRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [SetupScreen]
 class SetupRoute extends PageRouteInfo<void> {
-  const SetupRoute({List<PageRouteInfo>? children})
-      : super(SetupRoute.name, initialChildren: children);
+  const SetupRoute({List<PageRouteInfo>? children}) : super(SetupRoute.name, initialChildren: children);
 
   static const String name = 'SetupRoute';
 
@@ -907,8 +888,7 @@ class SetupViewRouteArgs {
 /// generated route for
 /// [SetupsTabPage]
 class SetupsTabRoute extends PageRouteInfo<void> {
-  const SetupsTabRoute({List<PageRouteInfo>? children})
-      : super(SetupsTabRoute.name, initialChildren: children);
+  const SetupsTabRoute({List<PageRouteInfo>? children}) : super(SetupsTabRoute.name, initialChildren: children);
 
   static const String name = 'SetupsTabRoute';
 
@@ -923,8 +903,7 @@ class SetupsTabRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [SharePrismScreen]
 class SharePrismRoute extends PageRouteInfo<void> {
-  const SharePrismRoute({List<PageRouteInfo>? children})
-      : super(SharePrismRoute.name, initialChildren: children);
+  const SharePrismRoute({List<PageRouteInfo>? children}) : super(SharePrismRoute.name, initialChildren: children);
 
   static const String name = 'SharePrismRoute';
 
@@ -982,8 +961,7 @@ class ShareSetupViewRouteArgs {
 
 /// generated route for
 /// [ShareWallpaperViewScreen]
-class ShareWallpaperViewRoute
-    extends PageRouteInfo<ShareWallpaperViewRouteArgs> {
+class ShareWallpaperViewRoute extends PageRouteInfo<ShareWallpaperViewRouteArgs> {
   ShareWallpaperViewRoute({
     List<dynamic>? arguments,
     List<PageRouteInfo>? children,
@@ -1030,8 +1008,7 @@ class ShareWallpaperViewRouteArgs {
 /// generated route for
 /// [SplashWidget]
 class SplashWidgetRoute extends PageRouteInfo<void> {
-  const SplashWidgetRoute({List<PageRouteInfo>? children})
-      : super(SplashWidgetRoute.name, initialChildren: children);
+  const SplashWidgetRoute({List<PageRouteInfo>? children}) : super(SplashWidgetRoute.name, initialChildren: children);
 
   static const String name = 'SplashWidgetRoute';
 
@@ -1046,8 +1023,7 @@ class SplashWidgetRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [ThemeView]
 class ThemeViewRoute extends PageRouteInfo<void> {
-  const ThemeViewRoute({List<PageRouteInfo>? children})
-      : super(ThemeViewRoute.name, initialChildren: children);
+  const ThemeViewRoute({List<PageRouteInfo>? children}) : super(ThemeViewRoute.name, initialChildren: children);
 
   static const String name = 'ThemeViewRoute';
 
@@ -1062,8 +1038,7 @@ class ThemeViewRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [UpgradeScreen]
 class UpgradeRoute extends PageRouteInfo<void> {
-  const UpgradeRoute({List<PageRouteInfo>? children})
-      : super(UpgradeRoute.name, initialChildren: children);
+  const UpgradeRoute({List<PageRouteInfo>? children}) : super(UpgradeRoute.name, initialChildren: children);
 
   static const String name = 'UpgradeRoute';
 
@@ -1165,8 +1140,7 @@ class UploadWallRouteArgs {
 
 /// generated route for
 /// [UserProfileSetupViewScreen]
-class UserProfileSetupViewRoute
-    extends PageRouteInfo<UserProfileSetupViewRouteArgs> {
+class UserProfileSetupViewRoute extends PageRouteInfo<UserProfileSetupViewRouteArgs> {
   UserProfileSetupViewRoute({
     List<dynamic>? arguments,
     List<PageRouteInfo>? children,
@@ -1212,8 +1186,7 @@ class UserProfileSetupViewRouteArgs {
 
 /// generated route for
 /// [UserProfileWallViewScreen]
-class UserProfileWallViewRoute
-    extends PageRouteInfo<UserProfileWallViewRouteArgs> {
+class UserProfileWallViewRoute extends PageRouteInfo<UserProfileWallViewRouteArgs> {
   UserProfileWallViewRoute({
     List<dynamic>? arguments,
     List<PageRouteInfo>? children,
@@ -1260,8 +1233,7 @@ class UserProfileWallViewRouteArgs {
 /// generated route for
 /// [UserSearch]
 class UserSearchRoute extends PageRouteInfo<void> {
-  const UserSearchRoute({List<PageRouteInfo>? children})
-      : super(UserSearchRoute.name, initialChildren: children);
+  const UserSearchRoute({List<PageRouteInfo>? children}) : super(UserSearchRoute.name, initialChildren: children);
 
   static const String name = 'UserSearchRoute';
 
@@ -1315,13 +1287,11 @@ class WallpaperFilterRouteArgs {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! WallpaperFilterRouteArgs) return false;
-    return key == other.key &&
-        const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && const ListEquality<dynamic>().equals(arguments, other.arguments);
   }
 
   @override
-  int get hashCode =>
-      key.hashCode ^ const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ const ListEquality<dynamic>().hash(arguments);
 }
 
 /// generated route for

@@ -870,8 +870,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                 child: ActionChip(
                                                                   onPressed: () {
                                                                     context.router.push(ProfileRoute(arguments: [
-                                                                          Data.wall["email"],
-                                                                        ]));
+                                                                      Data.wall["email"],
+                                                                    ]));
                                                                   },
                                                                   padding: const EdgeInsets.symmetric(
                                                                       vertical: 5, horizontal: 5),

@@ -940,7 +940,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                   final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
                                   if (pickedFile != null) {
                                     Future.delayed(Duration.zero).then((value) async {
-                                      final argumentsFromWall = await context.router.push(UploadWallRoute(arguments: [File(pickedFile.path), true]));
+                                      final argumentsFromWall = await context.router
+                                          .push(UploadWallRoute(arguments: [File(pickedFile.path), true]));
                                       if (argumentsFromWall != null) {
                                         final List argsC = argumentsFromWall as List;
                                         if (argsC.length == 2) {
