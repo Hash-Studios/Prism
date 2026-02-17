@@ -1,12 +1,13 @@
 import 'dart:async';
 
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 List? prismWalls;
-List<QueryDocumentSnapshot>? prismWallsDocSnaps;
+List<String>? prismWallsDocSnaps;
 List? subPrismWalls;
 List? sortedData;
 List? subSortedData;
@@ -26,18 +27,25 @@ Future<List?> getPrismWalls() async {
   prismWalls = [];
   subPrismWalls = [];
   try {
-    final QuerySnapshot<Map<String, dynamic>> value = await databaseReference
-        .collection("walls")
-        .where('review', isEqualTo: true)
-        .orderBy("createdAt", descending: true)
-        .limit(24)
-        .get();
-
+    final List<Map<String, dynamic>> value = await firestoreClient.query<Map<String, dynamic>>(
+      const FirestoreQuerySpec(
+        collection: FirebaseCollections.walls,
+        sourceTag: 'prism.getPrismWalls',
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+        ],
+        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+        limit: 24,
+      ),
+      (data, docId) => <String, dynamic>{...data, '__docId': docId},
+    );
     prismWalls = <Map<String, dynamic>>[];
-    prismWallsDocSnaps = value.docs;
-    for (final f in value.docs) {
-      final Map<String, dynamic> map = f.data();
+    prismWallsDocSnaps = <String>[];
+    for (final f in value) {
+      final Map<String, dynamic> map = <String, dynamic>{...f};
       map['createdAt'] = map['createdAt'].toString();
+      prismWallsDocSnaps!.add((map['__docId'] ?? '').toString());
+      map.remove('__docId');
       prismWalls!.add(map);
     }
 
@@ -77,19 +85,24 @@ Future<List?> seeMorePrism() async {
   prismWalls ??= <Map<String, dynamic>>[];
   subPrismWalls ??= <Map<String, dynamic>>[];
   try {
-    final QuerySnapshot<Map<String, dynamic>> value = await databaseReference
-        .collection("walls")
-        .where('review', isEqualTo: true)
-        .orderBy("createdAt", descending: true)
-        .startAfterDocument(prismWallsDocSnaps![prismWallsDocSnaps!.length - 1])
-        .limit(24)
-        .get();
-    for (final doc in value.docs) {
-      prismWallsDocSnaps!.add(doc);
-    }
-    for (final f in value.docs) {
-      final Map<String, dynamic> map = f.data();
+    final List<Map<String, dynamic>> value = await firestoreClient.query<Map<String, dynamic>>(
+      FirestoreQuerySpec(
+        collection: FirebaseCollections.walls,
+        sourceTag: 'prism.seeMorePrism',
+        filters: const <FirestoreFilter>[
+          FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+        ],
+        orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+        startAfterDocId: prismWallsDocSnaps!.last,
+        limit: 24,
+      ),
+      (data, docId) => <String, dynamic>{...data, '__docId': docId},
+    );
+    for (final f in value) {
+      final Map<String, dynamic> map = <String, dynamic>{...f};
       map['createdAt'] = map['createdAt'].toString();
+      prismWallsDocSnaps!.add((map['__docId'] ?? '').toString());
+      map.remove('__docId');
       prismWalls!.add(map);
     }
     final int len = prismWalls!.length;
@@ -100,7 +113,7 @@ Future<List?> seeMorePrism() async {
     logger.i(
       "[PrismFeed] seeMorePrism success",
       fields: <String, Object?>{
-        "fetched": value.docs.length,
+        "fetched": value.length,
         "total": subPrismWalls!.length,
       },
     );
@@ -117,13 +130,22 @@ Future<List?> seeMorePrism() async {
 
 Future<Map> getDataByID(String? id) async {
   wall = {};
-  await databaseReference.collection("walls").where('id', isEqualTo: id).get().then((value) {
-    for (final element in value.docs) {
-      if (element.data()["id"] == id) {
-        wall = element.data();
-      }
+  final List<Map<String, dynamic>> rows = await firestoreClient.query<Map<String, dynamic>>(
+    FirestoreQuerySpec(
+      collection: FirebaseCollections.walls,
+      sourceTag: 'prism.getDataById',
+      filters: <FirestoreFilter>[
+        FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: id),
+      ],
+      limit: 1,
+    ),
+    (data, _) => data,
+  );
+  for (final Map<String, dynamic> element in rows) {
+    if (element["id"] == id) {
+      wall = element;
+      break;
     }
-    return wall;
-  });
+  }
   return wall;
 }

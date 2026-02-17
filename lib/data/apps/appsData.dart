@@ -1,15 +1,20 @@
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
-
-final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
 
 Future<List> getIcons() async {
   logger.i("Fethcing icons");
-  final value = await databaseReference.collection("apps").doc('icons').get();
-  logger.d("Fetched ${(value.data()!["data"] as Map).values.toList().length} icons");
+  final value = await firestoreClient.getById<Map<String, dynamic>>(
+    FirebaseCollections.apps,
+    "icons",
+    (data, _) => data,
+    sourceTag: "apps.getIcons",
+  );
+  final Map<String, dynamic> iconData = value?["data"] as Map<String, dynamic>? ?? <String, dynamic>{};
+  logger.d("Fetched ${iconData.values.toList().length} icons");
   final Box box = Hive.box('appsCache');
-  box.put('icons', value.data()!["data"] as Map);
+  box.put('icons', iconData);
   logger.i("Saved icons to cache");
   return (box.get('icons') as Map).values.toList();
 }

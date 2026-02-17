@@ -1,13 +1,12 @@
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive/hive.dart';
 
 part 'userOldModel.g.dart';
 
-Map<String, dynamic> _legacyDocumentData(DocumentSnapshot<Object?> doc) {
-  final data = doc.data();
+Map<String, dynamic> _legacyDocumentData(Object? data) {
   if (data is Map<String, dynamic>) {
     return data;
   }
@@ -76,19 +75,23 @@ class PrismUsers {
     required this.loggedIn,
   }) {
     logger.d("With Save constructor !!!!");
-    FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(id).update({
-      'bio': bio,
-      'username': username,
-      'email': email,
-      'id': id,
-      'createdAt': createdAt,
-      'premium': premium,
-      'lastLogin': lastLogin,
-      'links': links,
-      'followers': followers,
-      'following': following,
-      'profilePhoto': profilePhoto,
-    });
+    firestoreClient.updateDoc(
+        USER_NEW_COLLECTION,
+        id,
+        {
+          'bio': bio,
+          'username': username,
+          'email': email,
+          'id': id,
+          'createdAt': createdAt,
+          'premium': premium,
+          'lastLogin': lastLogin,
+          'links': links,
+          'followers': followers,
+          'following': following,
+          'profilePhoto': profilePhoto,
+        },
+        sourceTag: 'user_old.with_save');
   }
   PrismUsers.initial({
     this.bio = "",
@@ -122,18 +125,29 @@ class PrismUsers {
     required this.loggedIn,
   }) {
     logger.d("Without save constructor !!!!");
-    FirebaseFirestore.instance.collection(USER_NEW_COLLECTION).doc(id).update({
-      'bio': bio,
-      'username': username,
-      'following': following,
-      'lastLogin': DateTime.now(),
-      'links': links,
-      'profilePhoto': profilePhoto,
-    });
+    firestoreClient.updateDoc(
+        USER_NEW_COLLECTION,
+        id,
+        {
+          'bio': bio,
+          'username': username,
+          'following': following,
+          'lastLogin': DateTime.now(),
+          'links': links,
+          'profilePhoto': profilePhoto,
+        },
+        sourceTag: 'user_old.without_save');
   }
 
-  factory PrismUsers.fromDocumentSnapshot(DocumentSnapshot<Object?> doc, User user) {
-    final data = _legacyDocumentData(doc);
+  factory PrismUsers.fromMapWithUser(Map<String, dynamic> raw, User user) {
+    final data = _legacyDocumentData(raw);
+    DateTime parsedLastLogin;
+    try {
+      final dynamic lastLoginValue = data["lastLogin"];
+      parsedLastLogin = lastLoginValue?.toDate() as DateTime? ?? DateTime.now();
+    } catch (_) {
+      parsedLastLogin = DateTime.now();
+    }
     return PrismUsers.withoutSave(
       bio: (data["bio"] ?? "").toString(),
       createdAt: data["createdAt"].toString(),
@@ -142,7 +156,7 @@ class PrismUsers {
       followers: data["followers"] as List? ?? <dynamic>[],
       following: data["following"] as List? ?? <dynamic>[],
       id: data["id"].toString(),
-      lastLogin: ((data["lastLogin"] as Timestamp?) ?? Timestamp.now()).toDate(),
+      lastLogin: parsedLastLogin,
       links: data["links"] as Map? ?? <dynamic, dynamic>{},
       premium: data["premium"] as bool? ?? false,
       loggedIn: true,

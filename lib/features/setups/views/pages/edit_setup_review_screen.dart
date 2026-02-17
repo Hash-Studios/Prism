@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/data/apps/appsData.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
@@ -11,7 +12,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
@@ -30,7 +30,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
   late bool isUploading;
   late bool isProcessing;
   late File image;
-  late DocumentSnapshot setupDoc;
+  late FirestoreDocument setupDoc;
   String? imageURL;
   TextEditingController setupName = TextEditingController();
   TextEditingController setupDesc = TextEditingController();
@@ -59,13 +59,12 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
   bool wallpaperUploaded = false;
   bool secondWidgetAdded = false;
 
-  Map<String, dynamic> _setupData(DocumentSnapshot<Object?> doc) =>
-      doc.data() as Map<String, dynamic>? ?? const <String, dynamic>{};
+  Map<String, dynamic> _setupData(FirestoreDocument doc) => doc.data();
 
   @override
   void initState() {
     super.initState();
-    setupDoc = widget.arguments![0] as DocumentSnapshot;
+    setupDoc = widget.arguments![0] as FirestoreDocument;
     final Map<String, dynamic> setupData = _setupData(setupDoc);
     final dynamic wallpaperUrlData = setupData["wallpaper_url"];
     final String wallpaperUrlText = wallpaperUrlData?.toString() ?? "";

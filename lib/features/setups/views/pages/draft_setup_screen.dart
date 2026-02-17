@@ -1,8 +1,11 @@
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/features/setups/views/pages/review_screen.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class DraftSetupScreen extends StatefulWidget {
@@ -18,10 +21,8 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
     return true;
   }
 
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
   @override
   Widget build(BuildContext context) {
-    final CollectionReference<Map<String, dynamic>> draftSetups = firestore.collection('draftSetups');
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
@@ -32,22 +33,30 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
             style: TextStyle(color: Theme.of(context).colorScheme.secondary),
           ),
         ),
-        body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: draftSetups
-                .where("email", isEqualTo: globals.prismUser.email)
-                .where("review", isEqualTo: false)
-                .orderBy('created_at', descending: true)
-                .snapshots(),
-            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
+        body: StreamBuilder<List<FirestoreDocument>>(
+            stream: firestoreClient.watchQuery<FirestoreDocument>(
+              FirestoreQuerySpec(
+                collection: FirebaseCollections.draftSetups,
+                sourceTag: 'draftSetups.list',
+                filters: <FirestoreFilter>[
+                  FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email),
+                  const FirestoreFilter(field: "review", op: FirestoreFilterOp.isEqualTo, value: false),
+                ],
+                orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at', descending: true)],
+                isStream: true,
+              ),
+              (data, docId) => FirestoreDocument(docId, data),
+            ),
+            builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
               if (!snapshot.hasData) {
                 return Center(
                   child: Loader(),
                 );
               } else {
-                if (snapshot.data!.docs.isNotEmpty) {
+                if (snapshot.data!.isNotEmpty) {
                   return ListView.builder(
-                    itemCount: snapshot.data!.docs.length,
-                    itemBuilder: (context, index) => SetupTile(snapshot.data!.docs[index], true),
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) => SetupTile(snapshot.data![index], true),
                   );
                 } else {
                   return const Padding(

@@ -1,42 +1,66 @@
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
 import 'package:Prism/features/favourite_setups/domain/repositories/favourite_setups_repository.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: FavouriteSetupsRepository)
 class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
   FavouriteSetupsRepositoryImpl(
-    this._firestore,
+    this._firestoreClient,
     @Named('localFavBox') this._localFavBox,
   );
 
-  final FirebaseFirestore _firestore;
+  final FirestoreClient _firestoreClient;
   final Box<dynamic> _localFavBox;
 
-  CollectionReference<Map<String, dynamic>> _collection(String userId) {
-    return _firestore.collection('usersv2').doc(userId).collection('setups');
+  String _collectionPath(String userId) => 'usersv2/$userId/setups';
+
+  DateTime? _toDateTime(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    try {
+      final dynamic v = value;
+      return v.toDate() as DateTime?;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<List<FavouriteSetupEntity>> _read(String userId) async {
-    final snapshot = await _collection(userId).get();
-    final items = snapshot.docs.map((doc) {
-      final data = doc.data();
+    final rows = await _firestoreClient.query<Map<String, dynamic>>(
+      FirestoreQuerySpec(
+        collection: _collectionPath(userId),
+        sourceTag: 'favourite_setups.read',
+      ),
+      (data, docId) => <String, dynamic>{...data, '__docId': docId},
+    );
+    final items = rows.map((data) {
+      final payload = <String, dynamic>{...data};
+      payload.remove('__docId');
       return FavouriteSetupEntity(
-        id: (data['id'] ?? doc.id).toString(),
-        payload: data,
+        id: (payload['id'] ?? data['__docId']).toString(),
+        payload: payload,
       );
     }).toList();
 
     items.sort((a, b) {
-      final aDate = a.payload['created_at'];
-      final bDate = b.payload['created_at'];
-      if (aDate is Timestamp && bDate is Timestamp) {
-        return bDate.compareTo(aDate);
-      }
-      return 0;
+      final DateTime? aDate = _toDateTime(a.payload['created_at']);
+      final DateTime? bDate = _toDateTime(b.payload['created_at']);
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
     });
 
     return items;
@@ -57,16 +81,29 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
     required FavouriteSetupEntity setup,
   }) async {
     try {
-      final docRef = _collection(userId).doc(setup.id);
-      final existing = await docRef.get();
-      if (existing.exists) {
-        await docRef.delete();
+      final existing = await _firestoreClient.getById<Map<String, dynamic>>(
+        _collectionPath(userId),
+        setup.id,
+        (data, _) => data,
+        sourceTag: 'favourite_setups.toggle.get',
+      );
+      if (existing != null) {
+        await _firestoreClient.deleteDoc(
+          _collectionPath(userId),
+          setup.id,
+          sourceTag: 'favourite_setups.toggle.delete',
+        );
         await _localFavBox.delete(setup.id);
       } else {
         final payload = <String, dynamic>{...setup.payload};
         payload['id'] = setup.id;
         payload['created_at'] ??= DateTime.now().toUtc();
-        await docRef.set(payload);
+        await _firestoreClient.setDoc(
+          _collectionPath(userId),
+          setup.id,
+          payload,
+          sourceTag: 'favourite_setups.toggle.set',
+        );
         await _localFavBox.put(setup.id, true);
       }
       return Result.success(await _read(userId));
@@ -81,7 +118,11 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
     required String setupId,
   }) async {
     try {
-      await _collection(userId).doc(setupId).delete();
+      await _firestoreClient.deleteDoc(
+        _collectionPath(userId),
+        setupId,
+        sourceTag: 'favourite_setups.remove',
+      );
       await _localFavBox.delete(setupId);
       return Result.success(await _read(userId));
     } catch (error) {
@@ -92,9 +133,21 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
   @override
   Future<Result<List<FavouriteSetupEntity>>> clearAll({required String userId}) async {
     try {
-      final snapshot = await _collection(userId).get();
-      for (final doc in snapshot.docs) {
-        await doc.reference.delete();
+      final rows = await _firestoreClient.query<Map<String, dynamic>>(
+        FirestoreQuerySpec(
+          collection: _collectionPath(userId),
+          sourceTag: 'favourite_setups.clear_all.read',
+        ),
+        (data, docId) => <String, dynamic>{...data, '__docId': docId},
+      );
+      for (final row in rows) {
+        final String id = row['__docId']?.toString() ?? '';
+        if (id.isEmpty) continue;
+        await _firestoreClient.deleteDoc(
+          _collectionPath(userId),
+          id,
+          sourceTag: 'favourite_setups.clear_all.delete',
+        );
       }
       return Result.success(const <FavouriteSetupEntity>[]);
     } catch (error) {

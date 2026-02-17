@@ -1,15 +1,13 @@
 import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'userModel.g.dart';
 
-Map<String, dynamic> _documentData(DocumentSnapshot<Object?> doc) {
-  final data = doc.data();
+Map<String, dynamic> _mapData(Object? data) {
   if (data is Map<String, dynamic>) {
     return data;
   }
@@ -85,8 +83,8 @@ class PrismUsersV2 {
   }
 
   factory PrismUsersV2.fromJson(Map<String, dynamic> json) => _$PrismUsersV2FromJson(json);
-  factory PrismUsersV2.fromDocumentSnapshot(DocumentSnapshot<Object?> doc, User user) {
-    final data = _documentData(doc);
+  factory PrismUsersV2.fromMapWithUser(Map<String, dynamic> raw, User user) {
+    final data = _mapData(raw);
     return PrismUsersV2(
         name: (data["name"] ?? user.displayName).toString(),
         username: (data["username"] ?? user.displayName).toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
@@ -112,8 +110,8 @@ class PrismUsersV2 {
         coverPhoto: data["coverPhoto"]?.toString());
   }
 
-  factory PrismUsersV2.fromDocumentSnapshotWithoutUser(DocumentSnapshot<Object?> doc) {
-    final data = _documentData(doc);
+  factory PrismUsersV2.fromMapWithoutUser(Map<String, dynamic> raw) {
+    final data = _mapData(raw);
     return PrismUsersV2(
         name: (data["name"] ?? "").toString(),
         username: (data["username"] ?? "").toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),

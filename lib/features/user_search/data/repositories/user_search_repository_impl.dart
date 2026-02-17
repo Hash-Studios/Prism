@@ -1,15 +1,17 @@
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/domain/repositories/user_search_repository.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: UserSearchRepository)
 class UserSearchRepositoryImpl implements UserSearchRepository {
-  UserSearchRepositoryImpl(this._firestore);
+  UserSearchRepositoryImpl(this._firestoreClient);
 
-  final FirebaseFirestore _firestore;
+  final FirestoreClient _firestoreClient;
 
   @override
   Future<Result<List<UserSearchUser>>> searchUsers(String query) async {
@@ -19,17 +21,22 @@ class UserSearchRepositoryImpl implements UserSearchRepository {
     }
 
     try {
-      final snapshot = await _firestore
-          .collection('usersv2')
-          .where('name', isGreaterThanOrEqualTo: trimmed)
-          .where('name', isLessThanOrEqualTo: '$trimmed\uf8ff')
-          .limit(20)
-          .get();
+      final rows = await _firestoreClient.query<Map<String, dynamic>>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.usersV2,
+          sourceTag: 'user_search.search_users',
+          filters: <FirestoreFilter>[
+            FirestoreFilter(field: 'name', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: trimmed),
+            FirestoreFilter(field: 'name', op: FirestoreFilterOp.isLessThanOrEqualTo, value: '$trimmed\uf8ff'),
+          ],
+          limit: 20,
+        ),
+        (data, docId) => <String, dynamic>{...data, '__docId': docId},
+      );
 
-      final users = snapshot.docs.map((doc) {
-        final data = doc.data();
+      final users = rows.map((data) {
         return UserSearchUser(
-          id: (data['id'] ?? '').toString(),
+          id: (data['id'] ?? data['__docId'] ?? '').toString(),
           name: (data['name'] ?? '').toString(),
           username: (data['username'] ?? '').toString(),
           email: (data['email'] ?? '').toString(),

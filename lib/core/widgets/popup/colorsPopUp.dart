@@ -1,10 +1,8 @@
 import 'package:Prism/core/router/route_names.dart';
 import 'package:animations/animations.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
 
-final databaseReference = FirebaseFirestore.instance;
 List<Color> colors = [
   const Color(0xFFFF0000),
   const Color(0xFFF44436),

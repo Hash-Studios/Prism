@@ -1,3 +1,6 @@
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_telemetry.dart';
+import 'package:Prism/core/firestore/firestore_tracked_client.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,6 +15,21 @@ import 'package:quick_actions/quick_actions.dart';
 abstract class AppModule {
   @lazySingleton
   FirebaseFirestore get firebaseFirestore => FirebaseFirestore.instance;
+
+  @lazySingleton
+  FirestoreTelemetrySink get firestoreTelemetrySink => CompositeFirestoreTelemetrySink(
+        <FirestoreTelemetrySink>[
+          const FirestoreConsoleTelemetrySink(),
+          FirestoreFileTelemetrySink(),
+        ],
+      );
+
+  @lazySingleton
+  FirestoreClient firestoreClient(
+    FirebaseFirestore firestore,
+    FirestoreTelemetrySink telemetrySink,
+  ) =>
+      FirestoreTrackedClient(firestore, telemetrySink);
 
   @lazySingleton
   FirebaseAuth get firebaseAuth => FirebaseAuth.instance;

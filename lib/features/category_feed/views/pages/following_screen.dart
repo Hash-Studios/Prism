@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/route_names.dart';
 import 'package:Prism/core/widgets/menuButton/favIconButton.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
@@ -10,7 +13,6 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -26,12 +28,9 @@ class FollowingScreen extends StatefulWidget {
 }
 
 class _FollowingScreenState extends State<FollowingScreen> {
-  StreamController<QuerySnapshot<Map<String, dynamic>>>? _streamController;
-  late QuerySnapshot<Map<String, dynamic>> finalQuery;
-  List<QueryDocumentSnapshot<Map<String, dynamic>>> finalDocs = [];
-  late List following;
-  final FirebaseFirestore databaseReference = FirebaseFirestore.instance;
-  CollectionReference? walls;
+  StreamController<List<_FirestoreDoc>>? _streamController;
+  List<_FirestoreDoc> finalDocs = <_FirestoreDoc>[];
+  List<dynamic> following = <dynamic>[];
   Future<bool> onWillPop() async {
     popNavStackIfPossible();
     logger.d("Bye! Have a good day!");
@@ -44,9 +43,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
     _streamController = StreamController.broadcast();
     _streamController!.stream.listen((p) {
       setState(() {
-        finalQuery = p;
         finalDocs = [];
-        for (final doc in finalQuery.docs) {
+        for (final doc in p) {
           if (following.contains(doc.data()["email"]) && finalDocs.length <= 30) {
             finalDocs.add(doc);
           }
@@ -56,20 +54,34 @@ class _FollowingScreenState extends State<FollowingScreen> {
     load(_streamController!);
   }
 
-  Future<void> load(StreamController<QuerySnapshot<Map<String, dynamic>>> sc) async {
-    await databaseReference
-        .collection(USER_NEW_COLLECTION)
-        .where("email", isEqualTo: globals.prismUser.email)
-        .get()
-        .then((value) {
-      following = value.docs[0].data()["following"] as List? ?? [];
-    });
-    databaseReference
-        .collection("walls")
-        .where("review", isEqualTo: true)
-        .orderBy('createdAt', descending: true)
-        .limit(200)
-        .snapshots()
+  Future<void> load(StreamController<List<_FirestoreDoc>> sc) async {
+    final currentUserDocs = await firestoreClient.query<Map<String, dynamic>>(
+      FirestoreQuerySpec(
+        collection: USER_NEW_COLLECTION,
+        sourceTag: 'following.currentUser',
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email),
+        ],
+        limit: 1,
+      ),
+      (data, _) => data,
+    );
+    following = currentUserDocs.isNotEmpty ? (currentUserDocs.first["following"] as List? ?? <dynamic>[]) : <dynamic>[];
+
+    firestoreClient
+        .watchQuery<_FirestoreDoc>(
+          const FirestoreQuerySpec(
+            collection: FirebaseCollections.walls,
+            sourceTag: 'following.feed',
+            filters: <FirestoreFilter>[
+              FirestoreFilter(field: "review", op: FirestoreFilterOp.isEqualTo, value: true),
+            ],
+            orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+            limit: 200,
+            isStream: true,
+          ),
+          (data, docId) => _FirestoreDoc(docId, data),
+        )
         .pipe(sc);
   }
 
@@ -119,7 +131,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
 class FollowingTile extends StatefulWidget {
   final int index;
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> finalDocs;
+  final List<_FirestoreDoc> finalDocs;
   const FollowingTile(this.index, this.finalDocs);
   @override
   _FollowingTileState createState() => _FollowingTileState();
@@ -261,7 +273,7 @@ class _FollowingTileState extends State<FollowingTile> {
                               timeago.format(
                                 now.subtract(
                                   now.difference(
-                                    (widget.finalDocs[widget.index]["createdAt"] as Timestamp).toDate(),
+                                    _toDateTime(widget.finalDocs[widget.index]["createdAt"]),
                                   ),
                                 ),
                               ),
@@ -294,4 +306,25 @@ class _FollowingTileState extends State<FollowingTile> {
       ),
     );
   }
+}
+
+class _FirestoreDoc {
+  const _FirestoreDoc(this.id, this.payload);
+
+  final String id;
+  final Map<String, dynamic> payload;
+
+  Map<String, dynamic> data() => payload;
+  dynamic operator [](String key) => payload[key];
+}
+
+DateTime _toDateTime(dynamic value) {
+  if (value is DateTime) {
+    return value;
+  }
+  final dynamic withToDate = value;
+  if (withToDate != null && withToDate.toDate is Function) {
+    return withToDate.toDate() as DateTime;
+  }
+  return DateTime.now().toUtc();
 }

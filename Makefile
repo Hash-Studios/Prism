@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze run build attach ios-setup build-ios
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard file-gen run build attach ios-setup build-ios
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -33,6 +33,12 @@ format-check: ensure-fvm
 
 analyze: ensure-fvm
 	@fvm flutter analyze
+
+firestore-guard:
+	@./tool/firestore_guard.sh
+
+file-gen: ensure-fvm
+	@fvm dart run build_runner build --delete-conflicting-outputs
 
 run: ensure-fvm
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
