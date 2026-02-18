@@ -50,9 +50,7 @@ void main() {
       ),
     );
 
-    when(() => signOutUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(SessionEntity.guest),
-    );
+    when(() => signOutUseCase(const NoParams())).thenAnswer((_) async => Result.success(SessionEntity.guest));
   });
 
   blocTest<SessionBloc, SessionState>(

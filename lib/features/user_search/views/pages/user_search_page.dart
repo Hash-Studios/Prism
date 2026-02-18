@@ -58,10 +58,9 @@ class _UserSearchState extends State<UserSearch> {
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                 child: TextField(
                   cursorColor: Theme.of(context).colorScheme.error,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall!
-                      .copyWith(color: Theme.of(context).colorScheme.secondary),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                   controller: searchController,
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -70,23 +69,17 @@ class _UserSearchState extends State<UserSearch> {
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     hintText: "Search",
-                    hintStyle: Theme.of(context)
-                        .textTheme
-                        .headlineSmall!
-                        .copyWith(color: Theme.of(context).colorScheme.secondary),
-                    suffixIcon: Icon(
-                      JamIcons.search,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
+                    hintStyle: Theme.of(
+                      context,
+                    ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                    suffixIcon: Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
                   ),
                   onSubmitted: (tex) {
                     if (tex.trim().isNotEmpty) {
                       setState(() {
                         isSubmitted = true;
                       });
-                      context.read<UserSearchBloc>().add(
-                            UserSearchEvent.searchRequested(query: tex.trim()),
-                          );
+                      context.read<UserSearchBloc>().add(UserSearchEvent.searchRequested(query: tex.trim()));
                       return;
                     }
                     context.read<UserSearchBloc>().add(const UserSearchEvent.cleared());
@@ -176,17 +169,15 @@ class _UsersResultListState extends State<UsersResultList> {
                     Padding(
                       padding: EdgeInsets.all(_data[widget.users.indexOf(user)] ? 2 : 8.0),
                       child: CircleAvatar(
-                        foregroundImage: CachedNetworkImageProvider(
-                          user.profilePhoto,
-                        ),
+                        foregroundImage: CachedNetworkImageProvider(user.profilePhoto),
                         radius: _data[widget.users.indexOf(user)] ? 0 : 16,
                       ),
                     ),
                     Text(
                       user.name,
-                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                     ),
                   ],
                 ),
@@ -235,10 +226,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     height: MediaQuery.of(context).size.height * 0.19,
                                   ),
                           ),
-                          const SizedBox(
-                            width: double.maxFinite,
-                            height: 37,
-                          ),
+                          const SizedBox(width: double.maxFinite, height: 37),
                           Container(
                             padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
                             width: double.maxFinite,
@@ -263,9 +251,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 2,
-                                ),
+                                const SizedBox(height: 2),
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width * 0.7,
                                   child: Text(
@@ -281,9 +267,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 15,
-                                ),
+                                const SizedBox(height: 15),
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width * 0.7,
                                   child: Text(
@@ -299,9 +283,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 15,
-                                ),
+                                const SizedBox(height: 15),
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width * 0.7,
                                   child: Row(
@@ -357,44 +339,50 @@ class _UsersResultListState extends State<UsersResultList> {
                                     ],
                                   ),
                                 ),
-                                if (user.links.keys.toList().isNotEmpty)
-                                  const SizedBox(
-                                    height: 8,
-                                  ),
+                                if (user.links.keys.toList().isNotEmpty) const SizedBox(height: 8),
                                 if (user.links.keys.toList().isNotEmpty)
                                   SizedBox(
                                     width: MediaQuery.of(context).size.width,
                                     height: 48,
-                                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                      ...user.links.keys
-                                          .toList()
-                                          .map((e) => IconButton(
-                                              padding: const EdgeInsets.all(2),
-                                              icon: Container(
-                                                padding: const EdgeInsets.all(6.0),
-                                                decoration: BoxDecoration(
-                                                  shape: BoxShape.circle,
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        ...user.links.keys
+                                            .toList()
+                                            .map(
+                                              (e) => IconButton(
+                                                padding: const EdgeInsets.all(2),
+                                                icon: Container(
+                                                  padding: const EdgeInsets.all(6.0),
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary.withValues(alpha: 0.1),
+                                                  ),
+                                                  child: Icon(
+                                                    linksData[e]!["icon"] as IconData,
+                                                    size: 20,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary.withValues(alpha: 0.8),
+                                                  ),
                                                 ),
-                                                child: Icon(
-                                                  linksData[e]!["icon"] as IconData,
-                                                  size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
-                                                ),
+                                                onPressed: () {
+                                                  final links = user.links;
+                                                  if (links[e].toString().contains("@gmail.com")) {
+                                                    launch("mailto:${user.links[e]}");
+                                                  }
+                                                },
                                               ),
-                                              onPressed: () {
-                                                final links = user.links;
-                                                if (links[e].toString().contains("@gmail.com")) {
-                                                  launch("mailto:${user.links[e]}");
-                                                }
-                                              }))
-                                          .toList()
-                                          .sublist(
-                                            0,
-                                            user.links.keys.toList().length > 3 ? 3 : user.links.keys.toList().length,
-                                          ),
-                                      if (user.links.keys.toList().length > 3)
-                                        IconButton(
+                                            )
+                                            .toList()
+                                            .sublist(
+                                              0,
+                                              user.links.keys.toList().length > 3 ? 3 : user.links.keys.toList().length,
+                                            ),
+                                        if (user.links.keys.toList().length > 3)
+                                          IconButton(
                                             padding: const EdgeInsets.all(2),
                                             icon: Container(
                                               padding: const EdgeInsets.all(6.0),
@@ -410,12 +398,14 @@ class _UsersResultListState extends State<UsersResultList> {
                                             ),
                                             onPressed: () {
                                               showNoLoadLinksPopUp(context, user.links);
-                                            }),
-                                    ]),
-                                  )
+                                            },
+                                          ),
+                                      ],
+                                    ),
+                                  ),
                               ],
                             ),
-                          )
+                          ),
                         ],
                       ),
                       Positioned(
@@ -426,10 +416,7 @@ class _UsersResultListState extends State<UsersResultList> {
                             child: Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.error,
-                                  width: 4,
-                                ),
+                                border: Border.all(color: Theme.of(context).colorScheme.error, width: 4),
                                 color: Theme.of(context).colorScheme.secondary,
                               ),
                               child: ClipOval(
@@ -447,15 +434,11 @@ class _UsersResultListState extends State<UsersResultList> {
                       Positioned(
                         child: IconButton(
                           onPressed: () {
-                            context.router.push(ProfileRoute(arguments: [
-                              user.email,
-                            ]));
+                            context.router.push(ProfileRoute(arguments: [user.email]));
                           },
-                          icon: const Icon(
-                            JamIcons.user_circle,
-                          ),
+                          icon: const Icon(JamIcons.user_circle),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),

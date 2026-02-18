@@ -20,11 +20,7 @@ class DownloadButton extends StatefulWidget {
   final String? link;
   final bool colorChanged;
 
-  const DownloadButton({
-    required this.link,
-    required this.colorChanged,
-    super.key,
-  });
+  const DownloadButton({required this.link, required this.colorChanged, super.key});
 
   @override
   _DownloadButtonState createState() => _DownloadButtonState();
@@ -69,23 +65,20 @@ class _DownloadButtonState extends State<DownloadButton> {
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
+                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
               ],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
-            child: Icon(
-              JamIcons.download,
-              color: Theme.of(context).colorScheme.secondary,
-              size: 20,
-            ),
+            child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
           ),
           Positioned(
-              top: 0,
-              left: 0,
-              height: 53,
-              width: 53,
-              child: isLoading ? const CircularProgressIndicator() : Container())
+            top: 0,
+            left: 0,
+            height: 53,
+            width: 53,
+            child: isLoading ? const CircularProgressIndicator() : Container(),
+          ),
         ],
       ),
     );
@@ -116,11 +109,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     if (widget.link!.contains("com.hash.prism")) {
       debugPrint("Saving local file");
       try {
-        final request = SaveMediaRequest(
-          link: widget.link!,
-          isLocalFile: true,
-          kind: SaveMediaKind.wallpaper,
-        );
+        final request = SaveMediaRequest(link: widget.link!, isLocalFile: true, kind: SaveMediaKind.wallpaper);
         final result = await PrismMediaHostApi().saveMedia(request);
         if (result.success) {
           analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
@@ -170,15 +159,16 @@ class _DownloadButtonState extends State<DownloadButton> {
 
 void showDownloadPopup(BuildContext context, VoidCallback rewardFunc) {
   showModal(
-      context: context,
-      builder: (BuildContext context) => StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              child: DownloadDialogContent(
-                rewardFunc: rewardFunc,
-              ),
-            );
-          }));
+    context: context,
+    builder: (BuildContext context) => StatefulBuilder(
+      builder: (BuildContext context, StateSetter setState) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: DownloadDialogContent(rewardFunc: rewardFunc),
+        );
+      },
+    ),
+  );
 }
 
 class DownloadDialogContent extends StatefulWidget {
@@ -231,43 +221,32 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                 height: 150,
                 width: MediaQuery.of(context).size.width * .78,
                 decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-                    color: Theme.of(context).hintColor),
-                child: const SafeRiveAsset(
-                  assetName: "assets/animations/Update.flr",
-                  animations: <String>["update"],
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+                  color: Theme.of(context).hintColor,
                 ),
+                child: const SafeRiveAsset(assetName: "assets/animations/Update.flr", animations: <String>["update"]),
               ),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  const SizedBox(
-                    height: 20,
-                  ),
+                  const SizedBox(height: 20),
                   Row(
                     children: [
-                      const SizedBox(
-                        width: 20,
-                      ),
+                      const SizedBox(width: 20),
                       SizedBox(
                         width: MediaQuery.of(context).size.width * 0.7,
                         child: Text(
-                          adFailed
-                              ? "Ad failed to load. Please try again or upgrade to Pro to download without ads."
-                              : "Watch a small video ad to download this wallpaper.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                          "Watch a small video ad to download this wallpaper.",
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                       ),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(
-                height: 25,
-              ),
+              const SizedBox(height: 25),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
@@ -287,10 +266,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                     },
                     child: Text(
                       'BUY PREMIUM',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
+                      style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
                     ),
                   ),
                   MaterialButton(
@@ -308,39 +284,31 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                     },
                     child: adFailed
                         ? Text(
-                            'RETRY AD',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                            'WATCH AD',
+                            style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
                           )
                         : canWatchAd
-                            ? Text(
+                        ? Text(
+                            'WATCH AD',
+                            style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
+                          )
+                        : Stack(
+                            alignment: Alignment.center,
+                            children: <Widget>[
+                              Text(
                                 'WATCH AD',
                                 style: TextStyle(
                                   fontSize: 16.0,
-                                  color: Theme.of(context).colorScheme.secondary,
+                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                 ),
-                              )
-                            : Stack(
-                                alignment: Alignment.center,
-                                children: <Widget>[
-                                  Text(
-                                    'WATCH AD',
-                                    style: TextStyle(
-                                      fontSize: 16.0,
-                                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16, width: 16, child: CircularProgressIndicator()),
-                                ],
                               ),
+                              const SizedBox(height: 16, width: 16, child: CircularProgressIndicator()),
+                            ],
+                          ),
                   ),
                 ],
               ),
-              const SizedBox(
-                height: 15,
-              ),
+              const SizedBox(height: 15),
             ],
           ),
         );

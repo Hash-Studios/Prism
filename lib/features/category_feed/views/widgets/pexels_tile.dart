@@ -7,11 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class PexelsTile extends StatelessWidget {
-  const PexelsTile({
-    super.key,
-    required this.widget,
-    required this.index,
-  });
+  const PexelsTile({super.key, required this.widget, required this.index});
 
   final PexelsGrid widget;
   final int index;
@@ -34,8 +30,10 @@ class PexelsTile extends StatelessWidget {
                       : Colors.black.withValues(alpha: .1),
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
-                      image: CachedNetworkImageProvider(PData.wallsP[index].src!["medium"].toString()),
-                      fit: BoxFit.cover)),
+                    image: CachedNetworkImageProvider(PData.wallsP[index].src!["medium"].toString()),
+                    fit: BoxFit.cover,
+                  ),
+                ),
         ),
         ClipRRect(
           borderRadius: BorderRadius.circular(20),
@@ -47,8 +45,9 @@ class PexelsTile extends StatelessWidget {
               onTap: () {
                 if (PData.wallsP == []) {
                 } else {
-                  context.router
-                      .push(WallpaperRoute(arguments: [widget.provider, index, PData.wallsP[index].src!["small"]]));
+                  context.router.push(
+                    WallpaperRoute(arguments: [widget.provider, index, PData.wallsP[index].src!["small"]]),
+                  );
                 }
               },
             ),

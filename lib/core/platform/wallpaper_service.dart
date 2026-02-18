@@ -5,18 +5,12 @@ enum WallpaperTarget { home, lock, both }
 
 // ignore: avoid_classes_with_only_static_members
 class WallpaperService {
-  static Future<bool> setWallpaperFromSource(
-    String source,
-    WallpaperTarget target,
-  ) async {
+  static Future<bool> setWallpaperFromSource(String source, WallpaperTarget target) async {
     final normalizedSource = _normalizeSource(source);
     final filePath = await _resolveToLocalFile(normalizedSource);
     final wallpaperLocation = _mapTargetToLocation(target);
 
-    final result = await AsyncWallpaper.setWallpaperFromFile(
-      filePath: filePath,
-      wallpaperLocation: wallpaperLocation,
-    );
+    final result = await AsyncWallpaper.setWallpaperFromFile(filePath: filePath, wallpaperLocation: wallpaperLocation);
 
     return result;
   }

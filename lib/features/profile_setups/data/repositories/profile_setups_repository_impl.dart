@@ -16,10 +16,7 @@ class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
   final Map<String, String> _cursorByEmail = {};
 
   @override
-  Future<Result<ProfileSetupsPage>> fetchProfileSetups({
-    required String email,
-    required bool refresh,
-  }) async {
+  Future<Result<ProfileSetupsPage>> fetchProfileSetups({required String email, required bool refresh}) async {
     try {
       final cursor = _cursorByEmail[email];
       final rows = await _firestoreClient.query<Map<String, dynamic>>(
@@ -40,18 +37,16 @@ class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
         _cursorByEmail[email] = rows.last['__docId']?.toString() ?? '';
       }
 
-      final items = rows.map((data) {
-        final payload = <String, dynamic>{...data};
-        payload.remove('__docId');
-        return ProfileSetupEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
-      }).toList(growable: false);
+      final items = rows
+          .map((data) {
+            final payload = <String, dynamic>{...data};
+            payload.remove('__docId');
+            return ProfileSetupEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
+          })
+          .toList(growable: false);
 
       return Result.success(
-        ProfileSetupsPage(
-          items: items,
-          hasMore: rows.length == 8,
-          nextCursor: _cursorByEmail[email],
-        ),
+        ProfileSetupsPage(items: items, hasMore: rows.length == 8, nextCursor: _cursorByEmail[email]),
       );
     } catch (error) {
       return Result.error(ServerFailure('Unable to load profile setups: $error'));

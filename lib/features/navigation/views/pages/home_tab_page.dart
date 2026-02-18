@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -14,7 +12,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_io/hive_io.dart';
@@ -33,11 +30,9 @@ class HomeTabPage extends StatefulWidget {
 
 class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStateMixin {
   int page = 0;
-  int linkOpened = 0;
   bool result = true;
   final box = Hive.box('localFav');
   String shortcut = "No Action Set";
-  Timer? _deepLinkInitTimer;
 
   Future<void> checkConnection() async {
     result = await InternetConnectionChecker.instance.hasConnection;
@@ -87,7 +82,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
         }
       } else if (shortcutType == 'Setups') {
         logger.d('Setups');
-        final tabsRouter = AutoTabsRouter.of(context, watch: false);
+        final tabsRouter = AutoTabsRouter.of(context);
         tabsRouter.setActiveIndex(2);
       } else if (shortcutType == 'Downloads') {
         logger.d('Downloads');
@@ -106,69 +101,6 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       saveFavToLocal();
     }
     checkConnection();
-    _deepLinkInitTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        initDynamicLinks();
-      }
-    });
-  }
-
-  Future<void> initDynamicLinks() async {
-    void handleDeepLink(Uri deepLink, {bool shouldMarkOpened = false}) {
-      if (!mounted || deepLink.pathSegments.isEmpty) {
-        return;
-      }
-      final routeSegment = deepLink.pathSegments[0];
-      if (routeSegment == "share") {
-        context.router.push(ShareWallpaperViewRoute(arguments: [
-          deepLink.queryParameters["id"],
-          deepLink.queryParameters["provider"],
-          deepLink.queryParameters["url"],
-          deepLink.queryParameters["thumb"],
-        ]));
-      } else if (routeSegment == "user") {
-        context.router.push(ProfileRoute(arguments: [
-          deepLink.queryParameters["email"],
-        ]));
-      } else if (routeSegment == "setup") {
-        context.router.push(ShareSetupViewRoute(arguments: [
-          deepLink.queryParameters["name"],
-          deepLink.queryParameters["thumbUrl"],
-        ]));
-      } else if (routeSegment == "refer") {
-        // TODO: add referral handling.
-      }
-      if (shouldMarkOpened) {
-        linkOpened = 1;
-      }
-    }
-
-    final PendingDynamicLinkData? data = await FirebaseDynamicLinks.instance.getInitialLink();
-    if (!mounted) {
-      return;
-    }
-    final Uri? initialDeepLink = data?.link;
-    if (linkOpened == 0 && initialDeepLink != null) {
-      logger.d("opened while closed altogether via deep link");
-      handleDeepLink(initialDeepLink, shouldMarkOpened: true);
-      logger.d("opened while closed altogether via deep link2345");
-    }
-
-    FirebaseDynamicLinks.instance.onLink.listen((PendingDynamicLinkData dynamicLink) {
-      final Uri deepLink = dynamicLink.link;
-      logger.d("opened while bg via deep link1");
-      handleDeepLink(deepLink);
-      logger.d("opened while bg via deep link2345");
-    }).onError((Object error) {
-      logger.d('onLinkError');
-      logger.d(error.toString());
-    });
-  }
-
-  @override
-  void dispose() {
-    _deepLinkInitTimer?.cancel();
-    super.dispose();
   }
 
   @override
@@ -187,49 +119,22 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          flexibleSpace: const PreferredSize(
-            preferredSize: Size(double.infinity, 55),
-            child: CategoriesBar(),
-          ),
+          flexibleSpace: const PreferredSize(preferredSize: Size(double.infinity, 55), child: CategoriesBar()),
           bottom: TabBar(
-              controller: tabController,
-              indicatorColor: Theme.of(context).colorScheme.secondary,
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: globals.followersTab
-                  ? [
-                      Tab(
-                        icon: Icon(
-                          JamIcons.picture,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      Tab(
-                        icon: Icon(
-                          JamIcons.user_square,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      Tab(
-                        icon: Icon(
-                          JamIcons.pictures,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      )
-                    ]
-                  : [
-                      Tab(
-                        icon: Icon(
-                          JamIcons.picture,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      Tab(
-                        icon: Icon(
-                          JamIcons.pictures,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      )
-                    ]),
+            controller: tabController,
+            indicatorColor: Theme.of(context).colorScheme.secondary,
+            indicatorSize: TabBarIndicatorSize.label,
+            tabs: globals.followersTab
+                ? [
+                    Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
+                    Tab(icon: Icon(JamIcons.user_square, color: Theme.of(context).colorScheme.secondary)),
+                    Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
+                  ]
+                : [
+                    Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
+                    Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
+                  ],
+          ),
         ),
         body: Stack(
           children: <Widget>[
@@ -254,9 +159,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
                                 ),
                               ),
                             ),
-                            const SizedBox(
-                              height: 16,
-                            ),
+                            const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: () {
                                 googleSignInPopUp(context, () {
@@ -285,10 +188,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
                         ),
                       const CollectionScreen(),
                     ]
-                  : [
-                      const HomeScreen(),
-                      const CollectionScreen(),
-                    ],
+                  : [const HomeScreen(), const CollectionScreen()],
             ),
             if (!result) ConnectivityWidget() else Container(),
           ],

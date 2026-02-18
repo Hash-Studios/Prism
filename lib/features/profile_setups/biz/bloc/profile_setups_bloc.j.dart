@@ -20,25 +20,16 @@ class ProfileSetupsBloc extends Bloc<ProfileSetupsEvent, ProfileSetupsState> {
 
   final FetchProfileSetupsUseCase _fetchProfileSetupsUseCase;
 
-  Future<void> _onStarted(
-    _Started event,
-    Emitter<ProfileSetupsState> emit,
-  ) async {
+  Future<void> _onStarted(_Started event, Emitter<ProfileSetupsState> emit) async {
     emit(state.copyWith(email: event.email));
     await _load(refresh: true, emit: emit);
   }
 
-  Future<void> _onRefreshRequested(
-    _RefreshRequested event,
-    Emitter<ProfileSetupsState> emit,
-  ) {
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<ProfileSetupsState> emit) {
     return _load(refresh: true, emit: emit);
   }
 
-  Future<void> _onFetchMoreRequested(
-    _FetchMoreRequested event,
-    Emitter<ProfileSetupsState> emit,
-  ) async {
+  Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<ProfileSetupsState> emit) async {
     if (state.isFetchingMore || !state.hasMore) {
       return;
     }
@@ -48,11 +39,13 @@ class ProfileSetupsBloc extends Bloc<ProfileSetupsEvent, ProfileSetupsState> {
 
   Future<void> _load({required bool refresh, required Emitter<ProfileSetupsState> emit}) async {
     if (state.email.isEmpty) {
-      emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: const ValidationFailure('email is required'),
-      ));
+      emit(
+        state.copyWith(
+          status: LoadStatus.failure,
+          actionStatus: ActionStatus.failure,
+          failure: const ValidationFailure('email is required'),
+        ),
+      );
       return;
     }
 
@@ -60,9 +53,7 @@ class ProfileSetupsBloc extends Bloc<ProfileSetupsEvent, ProfileSetupsState> {
       emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
     }
 
-    final result = await _fetchProfileSetupsUseCase(
-      FetchProfileSetupsParams(email: state.email, refresh: refresh),
-    );
+    final result = await _fetchProfileSetupsUseCase(FetchProfileSetupsParams(email: state.email, refresh: refresh));
 
     result.fold(
       onSuccess: (page) {
@@ -71,22 +62,26 @@ class ProfileSetupsBloc extends Bloc<ProfileSetupsEvent, ProfileSetupsState> {
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);
 
-        emit(state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: deduped,
-          hasMore: page.hasMore,
-          nextCursor: page.nextCursor,
-          isFetchingMore: false,
-          failure: null,
-        ));
+        emit(
+          state.copyWith(
+            status: LoadStatus.success,
+            actionStatus: ActionStatus.success,
+            items: deduped,
+            hasMore: page.hasMore,
+            nextCursor: page.nextCursor,
+            isFetchingMore: false,
+            failure: null,
+          ),
+        );
       },
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        isFetchingMore: false,
-        failure: failure,
-      )),
+      onFailure: (failure) => emit(
+        state.copyWith(
+          status: LoadStatus.failure,
+          actionStatus: ActionStatus.failure,
+          isFetchingMore: false,
+          failure: failure,
+        ),
+      ),
     );
   }
 }

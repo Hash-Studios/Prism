@@ -31,113 +31,88 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
   final DeleteNotificationUseCase _deleteNotificationUseCase;
   final ClearNotificationsUseCase _clearNotificationsUseCase;
 
-  Future<void> _onStarted(
-    _Started event,
-    Emitter<InAppNotificationsState> emit,
-  ) {
+  Future<void> _onStarted(_Started event, Emitter<InAppNotificationsState> emit) {
     return _fetch(syncRemote: event.syncRemote, emit: emit);
   }
 
-  Future<void> _onRefreshRequested(
-    _RefreshRequested event,
-    Emitter<InAppNotificationsState> emit,
-  ) {
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<InAppNotificationsState> emit) {
     return _fetch(syncRemote: true, emit: emit);
   }
 
   Future<void> _fetch({required bool syncRemote, required Emitter<InAppNotificationsState> emit}) async {
-    emit(state.copyWith(
-      status: LoadStatus.loading,
-      actionStatus: ActionStatus.inProgress,
-      failure: null,
-    ));
+    emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress, failure: null));
 
-    final result = await _fetchNotificationsUseCase(
-      FetchNotificationsParams(syncRemote: syncRemote),
-    );
+    final result = await _fetchNotificationsUseCase(FetchNotificationsParams(syncRemote: syncRemote));
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        items: items,
-        unreadCount: items.where((item) => !item.read).length,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (items) => emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          items: items,
+          unreadCount: items.where((item) => !item.read).length,
+          failure: null,
+        ),
+      ),
+      onFailure: (failure) =>
+          emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onMarkReadRequested(
-    _MarkReadRequested event,
-    Emitter<InAppNotificationsState> emit,
-  ) async {
+  Future<void> _onMarkReadRequested(_MarkReadRequested event, Emitter<InAppNotificationsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
 
     final result = await _markNotificationAsReadUseCase(MarkNotificationAsReadParams(index: event.index));
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        items: items,
-        unreadCount: items.where((item) => !item.read).length,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (items) => emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          items: items,
+          unreadCount: items.where((item) => !item.read).length,
+          failure: null,
+        ),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onDeleteRequested(
-    _DeleteRequested event,
-    Emitter<InAppNotificationsState> emit,
-  ) async {
+  Future<void> _onDeleteRequested(_DeleteRequested event, Emitter<InAppNotificationsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
 
     final result = await _deleteNotificationUseCase(DeleteNotificationParams(index: event.index));
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        items: items,
-        unreadCount: items.where((item) => !item.read).length,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (items) => emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          items: items,
+          unreadCount: items.where((item) => !item.read).length,
+          failure: null,
+        ),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onClearRequested(
-    _ClearRequested event,
-    Emitter<InAppNotificationsState> emit,
-  ) async {
+  Future<void> _onClearRequested(_ClearRequested event, Emitter<InAppNotificationsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
 
     final result = await _clearNotificationsUseCase(const NoParams());
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        items: items,
-        unreadCount: 0,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (items) => emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          items: items,
+          unreadCount: 0,
+          failure: null,
+        ),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 }

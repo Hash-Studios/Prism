@@ -22,9 +22,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FollowingScreen extends StatefulWidget {
-  const FollowingScreen({
-    super.key,
-  });
+  const FollowingScreen({super.key});
 
   @override
   _FollowingScreenState createState() => _FollowingScreenState();
@@ -130,29 +128,34 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
     final List<List<String>> chunked = _chunks(currentFollowing, _followingChunkSize);
     final int perChunkLimit = _resolvePerChunkLimit(chunked.length);
-    final List<Stream<List<_FirestoreDoc>>> streams = chunked.asMap().entries.map((entry) {
-      final int index = entry.key;
-      final List<String> chunk = entry.value;
-      return firestoreClient.watchQuery<_FirestoreDoc>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.walls,
-          sourceTag: 'following.feed.chunk_${index + 1}',
-          filters: <FirestoreFilter>[
-            const FirestoreFilter(field: "review", op: FirestoreFilterOp.isEqualTo, value: true),
-            FirestoreFilter(field: "email", op: FirestoreFilterOp.whereIn, value: chunk),
-          ],
-          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-          limit: perChunkLimit,
-          isStream: true,
-        ),
-        (data, docId) => _FirestoreDoc(docId, data),
-      );
-    }).toList(growable: false);
+    final List<Stream<List<_FirestoreDoc>>> streams = chunked
+        .asMap()
+        .entries
+        .map((entry) {
+          final int index = entry.key;
+          final List<String> chunk = entry.value;
+          return firestoreClient.watchQuery<_FirestoreDoc>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.walls,
+              sourceTag: 'following.feed.chunk_${index + 1}',
+              filters: <FirestoreFilter>[
+                const FirestoreFilter(field: "review", op: FirestoreFilterOp.isEqualTo, value: true),
+                FirestoreFilter(field: "email", op: FirestoreFilterOp.whereIn, value: chunk),
+              ],
+              orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+              limit: perChunkLimit,
+              isStream: true,
+            ),
+            (data, docId) => _FirestoreDoc(docId, data),
+          );
+        })
+        .toList(growable: false);
 
     final Stream<List<_FirestoreDoc>> merged = streams.length == 1
         ? streams.first
-        : Rx.combineLatestList<List<_FirestoreDoc>>(streams)
-            .map((batches) => batches.expand((docs) => docs).toList(growable: false));
+        : Rx.combineLatestList<List<_FirestoreDoc>>(
+            streams,
+          ).map((batches) => batches.expand((docs) => docs).toList(growable: false));
 
     _feedSubscription = merged.listen(
       (docs) {
@@ -164,11 +167,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         });
       },
       onError: (Object error, StackTrace stackTrace) {
-        logger.e(
-          'Following feed stream failed',
-          error: error,
-          stackTrace: stackTrace,
-        );
+        logger.e('Following feed stream failed', error: error, stackTrace: stackTrace);
       },
     );
   }
@@ -252,34 +251,39 @@ class _FollowingTileState extends State<FollowingTile> {
         children: [
           PremiumBannerFollowingFeed(
             comparator: !globals.isPremiumWall(
-                globals.premiumCollections, widget.finalDocs[widget.index]["collections"] as List? ?? []),
+              globals.premiumCollections,
+              widget.finalDocs[widget.index]["collections"] as List? ?? [],
+            ),
             child: Stack(
               children: [
                 GestureDetector(
                   onTap: () {
-                    globals.isPremiumWall(globals.premiumCollections,
-                                    widget.finalDocs[widget.index]["collections"] as List? ?? []) ==
+                    globals.isPremiumWall(
+                                  globals.premiumCollections,
+                                  widget.finalDocs[widget.index]["collections"] as List? ?? [],
+                                ) ==
                                 true &&
                             globals.prismUser.premium != true
                         ? showGooglePopUp(context, () {
                             context.router.push(const UpgradeRoute());
                           })
-                        : context.router.push(ShareWallpaperViewRoute(arguments: [
-                            widget.finalDocs[widget.index]["id"],
-                            widget.finalDocs[widget.index]["wallpaper_provider"],
-                            widget.finalDocs[widget.index]["wallpaper_url"],
-                            widget.finalDocs[widget.index]["wallpaper_thumb"]
-                          ]));
+                        : context.router.push(
+                            ShareWallpaperViewRoute(
+                              arguments: [
+                                widget.finalDocs[widget.index]["id"],
+                                widget.finalDocs[widget.index]["wallpaper_provider"],
+                                widget.finalDocs[widget.index]["wallpaper_url"],
+                                widget.finalDocs[widget.index]["wallpaper_thumb"],
+                              ],
+                            ),
+                          );
                   },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(25),
                     child: CachedNetworkImage(
                       imageUrl: widget.finalDocs[widget.index]["wallpaper_thumb"] as String,
                       placeholder: (context, url) {
-                        return Container(
-                          height: 400,
-                          color: Theme.of(context).hintColor,
-                        );
+                        return Container(height: 400, color: Theme.of(context).hintColor);
                       },
                     ),
                   ),
@@ -293,9 +297,7 @@ class _FollowingTileState extends State<FollowingTile> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    context.router.push(ProfileRoute(arguments: [
-                      widget.finalDocs[widget.index]["email"],
-                    ]));
+                    context.router.push(ProfileRoute(arguments: [widget.finalDocs[widget.index]["email"]]));
                   },
                   child: Row(
                     children: [
@@ -305,8 +307,9 @@ class _FollowingTileState extends State<FollowingTile> {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(0, 0, 4, 0),
                             child: CircleAvatar(
-                              backgroundImage:
-                                  CachedNetworkImageProvider(widget.finalDocs[widget.index]["userPhoto"] as String),
+                              backgroundImage: CachedNetworkImageProvider(
+                                widget.finalDocs[widget.index]["userPhoto"] as String,
+                              ),
                               radius: 16,
                             ),
                           ),
@@ -314,20 +317,17 @@ class _FollowingTileState extends State<FollowingTile> {
                             Container(
                               width: 15,
                               height: 15,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                              ),
-                              child: SvgPicture.string(verifiedIcon.replaceAll(
+                              decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                              child: SvgPicture.string(
+                                verifiedIcon.replaceAll(
                                   "E57697",
                                   Theme.of(context).colorScheme.error == Colors.black
                                       ? "E57697"
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .error
-                                          .toString()
-                                          .replaceAll("Color(0xff", "")
-                                          .replaceAll(")", ""))),
+                                      : Theme.of(
+                                          context,
+                                        ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
+                                ),
+                              ),
                             )
                           else
                             Container(),
@@ -345,25 +345,24 @@ class _FollowingTileState extends State<FollowingTile> {
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                  color: Theme.of(context).colorScheme.secondary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12),
+                                color: Theme.of(context).colorScheme.secondary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.2,
                             child: Text(
                               timeago.format(
-                                now.subtract(
-                                  now.difference(
-                                    _toDateTime(widget.finalDocs[widget.index]["createdAt"]),
-                                  ),
-                                ),
+                                now.subtract(now.difference(_toDateTime(widget.finalDocs[widget.index]["createdAt"]))),
                               ),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8), fontSize: 10),
+                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
+                                fontSize: 10,
+                              ),
                             ),
                           ),
                         ],
@@ -373,7 +372,9 @@ class _FollowingTileState extends State<FollowingTile> {
                 ),
                 const Spacer(),
                 if (globals.isPremiumWall(
-                            globals.premiumCollections, widget.finalDocs[widget.index]["collections"] as List? ?? []) ==
+                          globals.premiumCollections,
+                          widget.finalDocs[widget.index]["collections"] as List? ?? [],
+                        ) ==
                         true &&
                     globals.prismUser.premium != true)
                   Container()
@@ -384,7 +385,7 @@ class _FollowingTileState extends State<FollowingTile> {
                   ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );

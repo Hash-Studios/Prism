@@ -21,23 +21,18 @@ bool _deepEquals(Object? a, Object? b) {
   }
   if (a is Map && b is Map) {
     return a.length == b.length &&
-        a.entries.every((MapEntry<Object?, Object?> entry) =>
-            (b as Map<Object?, Object?>).containsKey(entry.key) && _deepEquals(entry.value, b[entry.key]));
+        a.entries.every(
+          (MapEntry<Object?, Object?> entry) =>
+              (b as Map<Object?, Object?>).containsKey(entry.key) && _deepEquals(entry.value, b[entry.key]),
+        );
   }
   return a == b;
 }
 
-enum SaveMediaKind {
-  wallpaper,
-  setup,
-}
+enum SaveMediaKind { wallpaper, setup }
 
 class SaveMediaRequest {
-  SaveMediaRequest({
-    required this.link,
-    required this.isLocalFile,
-    required this.kind,
-  });
+  SaveMediaRequest({required this.link, required this.isLocalFile, required this.kind});
 
   String link;
 
@@ -46,11 +41,7 @@ class SaveMediaRequest {
   SaveMediaKind kind;
 
   List<Object?> _toList() {
-    return <Object?>[
-      link,
-      isLocalFile,
-      kind,
-    ];
+    return <Object?>[link, isLocalFile, kind];
   }
 
   Object encode() {
@@ -84,20 +75,14 @@ class SaveMediaRequest {
 }
 
 class DownloadRequest {
-  DownloadRequest({
-    required this.link,
-    required this.filenameWithoutExtension,
-  });
+  DownloadRequest({required this.link, required this.filenameWithoutExtension});
 
   String link;
 
   String filenameWithoutExtension;
 
   List<Object?> _toList() {
-    return <Object?>[
-      link,
-      filenameWithoutExtension,
-    ];
+    return <Object?>[link, filenameWithoutExtension];
   }
 
   Object encode() {
@@ -106,10 +91,7 @@ class DownloadRequest {
 
   static DownloadRequest decode(Object result) {
     result as List<Object?>;
-    return DownloadRequest(
-      link: result[0]! as String,
-      filenameWithoutExtension: result[1]! as String,
-    );
+    return DownloadRequest(link: result[0]! as String, filenameWithoutExtension: result[1]! as String);
   }
 
   @override
@@ -130,11 +112,7 @@ class DownloadRequest {
 }
 
 class OperationResult {
-  OperationResult({
-    required this.success,
-    this.errorCode,
-    this.message,
-  });
+  OperationResult({required this.success, this.errorCode, this.message});
 
   bool success;
 
@@ -143,11 +121,7 @@ class OperationResult {
   String? message;
 
   List<Object?> _toList() {
-    return <Object?>[
-      success,
-      errorCode,
-      message,
-    ];
+    return <Object?>[success, errorCode, message];
   }
 
   Object encode() {
@@ -156,11 +130,7 @@ class OperationResult {
 
   static OperationResult decode(Object result) {
     result as List<Object?>;
-    return OperationResult(
-      success: result[0]! as bool,
-      errorCode: result[1] as String?,
-      message: result[2] as String?,
-    );
+    return OperationResult(success: result[0]! as bool, errorCode: result[1] as String?, message: result[2] as String?);
   }
 
   @override
@@ -227,8 +197,8 @@ class PrismMediaHostApi {
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
   PrismMediaHostApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
-      : pigeonVar_binaryMessenger = binaryMessenger,
-        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+    : pigeonVar_binaryMessenger = binaryMessenger,
+      pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
   final BinaryMessenger? pigeonVar_binaryMessenger;
 
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();

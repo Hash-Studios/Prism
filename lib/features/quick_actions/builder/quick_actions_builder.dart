@@ -7,9 +7,6 @@ class QuickActionsBuilder {
   const QuickActionsBuilder._();
 
   static Widget withBloc({required Widget child, QuickActionsBloc? bloc}) {
-    return BlocProvider<QuickActionsBloc>(
-      create: (_) => bloc ?? getIt<QuickActionsBloc>(),
-      child: child,
-    );
+    return BlocProvider<QuickActionsBloc>(create: (_) => bloc ?? getIt<QuickActionsBloc>(), child: child);
   }
 }

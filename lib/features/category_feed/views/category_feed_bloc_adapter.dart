@@ -5,11 +5,8 @@ import 'package:Prism/global/categoryMenu.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-CategoryMenu _toMenu(CategoryEntity category) => CategoryMenu(
-      name: category.name,
-      provider: category.provider,
-      image: category.image,
-    );
+CategoryMenu _toMenu(CategoryEntity category) =>
+    CategoryMenu(name: category.name, provider: category.provider, image: category.image);
 
 CategoryEntity _toEntity(CategoryMenu choice, List<CategoryEntity> categories) {
   final selectedName = (choice.name ?? '').trim();
@@ -26,14 +23,16 @@ CategoryEntity _toEntity(CategoryMenu choice, List<CategoryEntity> categories) {
   );
 }
 
-final List<CategoryMenu> categoryChoices = category_data.categories.map((rawCategory) {
-  final categoryMap = rawCategory as Map<String, Object?>;
-  return CategoryMenu(
-    name: categoryMap['name'].toString(),
-    provider: categoryMap['provider'].toString(),
-    image: categoryMap['image'].toString(),
-  );
-}).toList(growable: false);
+final List<CategoryMenu> categoryChoices = category_data.categories
+    .map((rawCategory) {
+      final categoryMap = rawCategory as Map<String, Object?>;
+      return CategoryMenu(
+        name: categoryMap['name'].toString(),
+        provider: categoryMap['provider'].toString(),
+        image: categoryMap['image'].toString(),
+      );
+    })
+    .toList(growable: false);
 
 extension CategoryFeedBlocAdapterX on BuildContext {
   CategoryFeedBloc _categoryFeedBloc(bool listen) => listen ? watch<CategoryFeedBloc>() : read<CategoryFeedBloc>();

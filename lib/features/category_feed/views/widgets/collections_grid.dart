@@ -29,50 +29,38 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   void initState() {
     checkSignIn();
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
-        ? TweenSequence<Color?>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.white10,
-                  end: const Color(0x22FFFFFF),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: const Color(0x22FFFFFF),
-                  end: Colors.white10,
-                ),
-              ),
-            ],
-          ).animate(_controller!)
-        : TweenSequence<Color?>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withValues(alpha: .1),
-                  end: Colors.black.withValues(alpha: .14),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withValues(alpha: .14),
-                  end: Colors.black.withValues(alpha: .1),
-                ),
-              ),
-            ],
-          ).animate(_controller!)
-      ..addListener(() {
-        setState(() {});
-      });
+    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    animation =
+        context.prismModeStyleForWindow(listen: false) == "Dark"
+              ? TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
+                  ),
+                ]).animate(_controller!)
+              : TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .1),
+                      end: Colors.black.withValues(alpha: .14),
+                    ),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .14),
+                      end: Colors.black.withValues(alpha: .1),
+                    ),
+                  ),
+                ]).animate(_controller!)
+          ..addListener(() {
+            setState(() {});
+          });
     _controller!.repeat();
   }
 
@@ -138,13 +126,15 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
             ? null
             : () {
                 if (!isPremium) {
-                  context.router
-                      .push(CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]));
+                  context.router.push(
+                    CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]),
+                  );
                   return;
                 }
                 if (globals.prismUser.premium == true) {
-                  context.router
-                      .push(CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]));
+                  context.router.push(
+                    CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]),
+                  );
                   return;
                 }
                 showGooglePopUp(() {
@@ -158,100 +148,110 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           child: Stack(
             children: <Widget>[
               Positioned(
-                  top: 40,
-                  left: 40,
-                  child: Container(
-                      decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                                blurRadius: 20,
-                                offset: const Offset(5, 5),
-                                color: context.prismModeStyleForContext() == "Light" ? Colors.black12 : Colors.black54)
-                          ]),
-                      height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 63.5,
-                      width: MediaQuery.of(context).size.width / 2 - 59)),
+                top: 40,
+                left: 40,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 20,
+                        offset: const Offset(5, 5),
+                        color: context.prismModeStyleForContext() == "Light" ? Colors.black12 : Colors.black54,
+                      ),
+                    ],
+                  ),
+                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 63.5,
+                  width: MediaQuery.of(context).size.width / 2 - 59,
+                ),
+              ),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: 25,
-                    left: 25,
-                  ),
+                  padding: const EdgeInsets.only(bottom: 25, left: 25),
                   child: Text(
                     name,
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                        fontSize: 16,
-                        color: loading
-                            ? (context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white)
-                            : Theme.of(context).colorScheme.secondary,
-                        fontWeight: FontWeight.bold),
+                      fontSize: 16,
+                      color: loading
+                          ? (context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white)
+                          : Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
               Positioned(
-                  top: 20,
-                  left: 20,
-                  child: Container(
-                      decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
+                top: 20,
+                left: 20,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 20,
+                        offset: const Offset(5, 5),
+                        color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54,
+                      ),
+                    ],
+                  ),
+                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
+                  width: MediaQuery.of(context).size.width / 2 - 59,
+                ),
+              ),
+              Positioned(
+                top: 20,
+                left: 20,
+                child: Container(
+                  decoration: loading
+                      ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                      : BoxDecoration(
+                          color: animation.value,
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                                blurRadius: 20,
-                                offset: const Offset(5, 5),
-                                color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54)
-                          ]),
-                      height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                      width: MediaQuery.of(context).size.width / 2 - 59)),
+                          image: DecorationImage(image: CachedNetworkImageProvider(thumb2), fit: BoxFit.cover),
+                        ),
+                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
+                  width: MediaQuery.of(context).size.width / 2 - 59,
+                ),
+              ),
               Positioned(
-                  top: 20,
-                  left: 20,
-                  child: Container(
-                      decoration: loading
-                          ? BoxDecoration(
-                              color: animation.value,
-                              borderRadius: BorderRadius.circular(20),
-                            )
-                          : BoxDecoration(
-                              color: animation.value,
-                              borderRadius: BorderRadius.circular(20),
-                              image: DecorationImage(image: CachedNetworkImageProvider(thumb2), fit: BoxFit.cover)),
-                      height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                      width: MediaQuery.of(context).size.width / 2 - 59)),
+                top: 0,
+                left: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 20,
+                        offset: const Offset(5, 5),
+                        color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54,
+                      ),
+                    ],
+                  ),
+                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
+                  width: MediaQuery.of(context).size.width / 2 - 59,
+                ),
+              ),
               Positioned(
-                  top: 0,
-                  left: 0,
-                  child: Container(
-                      decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
+                top: 0,
+                left: 0,
+                child: Container(
+                  decoration: loading
+                      ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                      : BoxDecoration(
+                          color: animation.value,
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                                blurRadius: 20,
-                                offset: const Offset(5, 5),
-                                color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54)
-                          ]),
-                      height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                      width: MediaQuery.of(context).size.width / 2 - 59)),
-              Positioned(
-                  top: 0,
-                  left: 0,
-                  child: Container(
-                      decoration: loading
-                          ? BoxDecoration(
-                              color: animation.value,
-                              borderRadius: BorderRadius.circular(20),
-                            )
-                          : BoxDecoration(
-                              color: animation.value,
-                              borderRadius: BorderRadius.circular(20),
-                              image: DecorationImage(image: CachedNetworkImageProvider(thumb1), fit: BoxFit.cover)),
-                      height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                      width: MediaQuery.of(context).size.width / 2 - 59)),
+                          image: DecorationImage(image: CachedNetworkImageProvider(thumb1), fit: BoxFit.cover),
+                        ),
+                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
+                  width: MediaQuery.of(context).size.width / 2 - 59,
+                ),
+              ),
             ],
           ),
         ),

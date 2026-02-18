@@ -9,10 +9,7 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: FavouriteSetupsRepository)
 class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
-  FavouriteSetupsRepositoryImpl(
-    this._firestoreClient,
-    @Named('localFavBox') this._localFavBox,
-  );
+  FavouriteSetupsRepositoryImpl(this._firestoreClient, @Named('localFavBox') this._localFavBox);
 
   final FirestoreClient _firestoreClient;
   final Box<dynamic> _localFavBox;
@@ -39,19 +36,13 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
 
   Future<List<FavouriteSetupEntity>> _read(String userId) async {
     final rows = await _firestoreClient.query<Map<String, dynamic>>(
-      FirestoreQuerySpec(
-        collection: _collectionPath(userId),
-        sourceTag: 'favourite_setups.read',
-      ),
+      FirestoreQuerySpec(collection: _collectionPath(userId), sourceTag: 'favourite_setups.read'),
       (data, docId) => <String, dynamic>{...data, '__docId': docId},
     );
     final items = rows.map((data) {
       final payload = <String, dynamic>{...data};
       payload.remove('__docId');
-      return FavouriteSetupEntity(
-        id: (payload['id'] ?? data['__docId']).toString(),
-        payload: payload,
-      );
+      return FavouriteSetupEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
     }).toList();
 
     items.sort((a, b) {
@@ -113,16 +104,9 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
   }
 
   @override
-  Future<Result<List<FavouriteSetupEntity>>> removeFavourite({
-    required String userId,
-    required String setupId,
-  }) async {
+  Future<Result<List<FavouriteSetupEntity>>> removeFavourite({required String userId, required String setupId}) async {
     try {
-      await _firestoreClient.deleteDoc(
-        _collectionPath(userId),
-        setupId,
-        sourceTag: 'favourite_setups.remove',
-      );
+      await _firestoreClient.deleteDoc(_collectionPath(userId), setupId, sourceTag: 'favourite_setups.remove');
       await _localFavBox.delete(setupId);
       return Result.success(await _read(userId));
     } catch (error) {
@@ -134,20 +118,13 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
   Future<Result<List<FavouriteSetupEntity>>> clearAll({required String userId}) async {
     try {
       final rows = await _firestoreClient.query<Map<String, dynamic>>(
-        FirestoreQuerySpec(
-          collection: _collectionPath(userId),
-          sourceTag: 'favourite_setups.clear_all.read',
-        ),
+        FirestoreQuerySpec(collection: _collectionPath(userId), sourceTag: 'favourite_setups.clear_all.read'),
         (data, docId) => <String, dynamic>{...data, '__docId': docId},
       );
       for (final row in rows) {
         final String id = row['__docId']?.toString() ?? '';
         if (id.isEmpty) continue;
-        await _firestoreClient.deleteDoc(
-          _collectionPath(userId),
-          id,
-          sourceTag: 'favourite_setups.clear_all.delete',
-        );
+        await _firestoreClient.deleteDoc(_collectionPath(userId), id, sourceTag: 'favourite_setups.clear_all.delete');
       }
       return Result.success(const <FavouriteSetupEntity>[]);
     } catch (error) {

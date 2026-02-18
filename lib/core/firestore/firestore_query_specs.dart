@@ -14,43 +14,25 @@ enum FirestoreFilterOp {
   isNull,
 }
 
-enum FirestoreCachePolicy {
-  networkOnly,
-  staleWhileRevalidate,
-  memoryFirst,
-}
+enum FirestoreCachePolicy { networkOnly, staleWhileRevalidate, memoryFirst }
 
 class FirestoreFilter {
-  const FirestoreFilter({
-    required this.field,
-    required this.op,
-    this.value,
-  });
+  const FirestoreFilter({required this.field, required this.op, this.value});
 
   final String field;
   final FirestoreFilterOp op;
   final Object? value;
 
-  Map<String, Object?> toJson() => <String, Object?>{
-        'field': field,
-        'op': op.name,
-        'value': _jsonSafeValue(value),
-      };
+  Map<String, Object?> toJson() => <String, Object?>{'field': field, 'op': op.name, 'value': _jsonSafeValue(value)};
 }
 
 class FirestoreOrderBy {
-  const FirestoreOrderBy({
-    required this.field,
-    this.descending = false,
-  });
+  const FirestoreOrderBy({required this.field, this.descending = false});
 
   final String field;
   final bool descending;
 
-  Map<String, Object?> toJson() => <String, Object?>{
-        'field': field,
-        'descending': descending,
-      };
+  Map<String, Object?> toJson() => <String, Object?>{'field': field, 'descending': descending};
 }
 
 class FirestoreQuerySpec {
@@ -79,17 +61,17 @@ class FirestoreQuerySpec {
   final int dedupeWindowMs;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'collection': collection,
-        'sourceTag': sourceTag,
-        'filters': filters.map((f) => f.toJson()).toList(growable: false),
-        'orderBy': orderBy.map((o) => o.toJson()).toList(growable: false),
-        'limit': limit,
-        'startAfterDocId': startAfterDocId,
-        'startAfterFieldValues': startAfterFieldValues?.map(_jsonSafeValue).toList(growable: false),
-        'isStream': isStream,
-        'cachePolicy': cachePolicy.name,
-        'dedupeWindowMs': dedupeWindowMs,
-      };
+    'collection': collection,
+    'sourceTag': sourceTag,
+    'filters': filters.map((f) => f.toJson()).toList(growable: false),
+    'orderBy': orderBy.map((o) => o.toJson()).toList(growable: false),
+    'limit': limit,
+    'startAfterDocId': startAfterDocId,
+    'startAfterFieldValues': startAfterFieldValues?.map(_jsonSafeValue).toList(growable: false),
+    'isStream': isStream,
+    'cachePolicy': cachePolicy.name,
+    'dedupeWindowMs': dedupeWindowMs,
+  };
 
   String get filtersHash => base64Url.encode(utf8.encode(jsonEncode(toJson())));
 }

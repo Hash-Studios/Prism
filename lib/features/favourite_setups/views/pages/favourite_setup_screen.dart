@@ -7,24 +7,17 @@ import 'package:flutter/material.dart';
 
 @RoutePage()
 class FavouriteSetupScreen extends StatelessWidget {
-  const FavouriteSetupScreen({
-    super.key,
-  });
+  const FavouriteSetupScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: const PreferredSize(
-          preferredSize: Size(double.infinity, 55),
-          child: HeadingChipBar(
-            current: "Favourites",
-          ),
-        ),
-        body: BottomBar(
-          child: FavSetupLoader(
-            future: context.favouriteSetupsAdapter(listen: false).getDataBase(),
-          ),
-        ));
+      backgroundColor: Theme.of(context).primaryColor,
+      appBar: const PreferredSize(
+        preferredSize: Size(double.infinity, 55),
+        child: HeadingChipBar(current: "Favourites"),
+      ),
+      body: BottomBar(child: FavSetupLoader(future: context.favouriteSetupsAdapter(listen: false).getDataBase())),
+    );
   }
 }

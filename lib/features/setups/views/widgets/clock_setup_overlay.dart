@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 
 class SetupOverlay extends StatefulWidget {
   final String? link;
-  const SetupOverlay({
-    required this.link,
-  });
+  const SetupOverlay({required this.link});
   @override
   _SetupOverlayState createState() => _SetupOverlayState();
 }
@@ -20,10 +18,7 @@ class _SetupOverlayState extends State<SetupOverlay> {
             imageUrl: widget.link!,
             imageBuilder: (context, imageProvider) => Container(
               decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: imageProvider,
-                  fit: BoxFit.cover,
-                ),
+                image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
               ),
             ),
           ),
@@ -34,7 +29,7 @@ class _SetupOverlayState extends State<SetupOverlay> {
               width: MediaQuery.of(context).size.width,
               child: const Text(""),
             ),
-          )
+          ),
         ],
       ),
     );

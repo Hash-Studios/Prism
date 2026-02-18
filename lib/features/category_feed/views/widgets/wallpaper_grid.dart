@@ -38,10 +38,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
-    logger.i(
-      "[WallpaperGrid] manual refresh",
-      fields: <String, Object?>{"provider": widget.provider},
-    );
+    logger.i("[WallpaperGrid] manual refresh", fields: <String, Object?>{"provider": widget.provider});
     Data.prismWalls = [];
     Data.subPrismWalls = [];
     await Data.getPrismWalls();
@@ -70,10 +67,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
     });
     logger.d(
       "[WallpaperGrid] see more triggered",
-      fields: <String, Object?>{
-        "currentItems": subWalls.length,
-        "docSnaps": Data.prismWallsDocSnaps?.length ?? 0,
-      },
+      fields: <String, Object?>{"currentItems": subWalls.length, "docSnaps": Data.prismWallsDocSnaps?.length ?? 0},
     );
     try {
       await Data.seeMorePrism();
@@ -135,16 +129,17 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     carouselController: carouselController,
                     itemCount: 5,
                     options: CarouselOptions(
-                        height: 200,
-                        autoPlay: true,
-                        autoPlayInterval: const Duration(seconds: 3),
-                        onPageChanged: (index, reason) {
-                          if (mounted) {
-                            setState(() {
-                              _current = index;
-                            });
-                          }
-                        }),
+                      height: 200,
+                      autoPlay: true,
+                      autoPlayInterval: const Duration(seconds: 3),
+                      onPageChanged: (index, reason) {
+                        if (mounted) {
+                          setState(() {
+                            _current = index;
+                          });
+                        }
+                      },
+                    ),
                     itemBuilder: (BuildContext context, int i, int rI) {
                       if (i == 4) {
                         return Container(
@@ -156,12 +151,15 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             },
                             child: Container(
                               decoration: BoxDecoration(
-                                  color: context.prismModeStyleForContext() == "Dark"
-                                      ? Colors.white10
-                                      : Colors.black.withValues(alpha: .1),
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                      image: CachedNetworkImageProvider(globals.topImageLink), fit: BoxFit.cover)),
+                                color: context.prismModeStyleForContext() == "Dark"
+                                    ? Colors.white10
+                                    : Colors.black.withValues(alpha: .1),
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                  image: CachedNetworkImageProvider(globals.topImageLink),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                               child: Center(
                                 child: Container(
                                   width: MediaQuery.of(context).size.width,
@@ -174,10 +172,11 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                       globals.bannerTextOn == "true" ? globals.bannerText.toUpperCase() : "",
                                       textAlign: TextAlign.center,
                                       maxLines: 1,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .displayMedium!
-                                          .copyWith(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
+                                      style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                                        fontSize: 20,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -201,11 +200,9 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                 ? showGooglePopUp(context, () {
                                     context.router.push(const UpgradeRoute());
                                   })
-                                : context.router.push(WallpaperRoute(arguments: [
-                                    widget.provider,
-                                    i,
-                                    wall["wallpaper_thumb"],
-                                  ]));
+                                : context.router.push(
+                                    WallpaperRoute(arguments: [widget.provider, i, wall["wallpaper_thumb"]]),
+                                  );
                           },
                           child: wall == null
                               ? Container(
@@ -218,16 +215,20 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                 )
                               : PremiumBannerWallsCarousel(
                                   comparator: !globals.isPremiumWall(
-                                      globals.premiumCollections, wall["collections"] as List? ?? []),
+                                    globals.premiumCollections,
+                                    wall["collections"] as List? ?? [],
+                                  ),
                                   child: Container(
                                     decoration: BoxDecoration(
-                                        color: context.prismModeStyleForContext() == "Dark"
-                                            ? Colors.white10
-                                            : Colors.black.withValues(alpha: .1),
-                                        borderRadius: BorderRadius.circular(20),
-                                        image: DecorationImage(
-                                            image: CachedNetworkImageProvider(wall["wallpaper_thumb"].toString()),
-                                            fit: BoxFit.cover)),
+                                      color: context.prismModeStyleForContext() == "Dark"
+                                          ? Colors.white10
+                                          : Colors.black.withValues(alpha: .1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      image: DecorationImage(
+                                        image: CachedNetworkImageProvider(wall["wallpaper_thumb"].toString()),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                                     child: Center(
                                       child: Container(
                                         width: MediaQuery.of(context).size.width,
@@ -239,7 +240,10 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                             textAlign: TextAlign.center,
                                             maxLines: 1,
                                             style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                                color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -273,14 +277,15 @@ class _WallpaperGridState extends State<WallpaperGrid> {
               itemCount: subWalls.isEmpty
                   ? 20
                   : subWalls.length > 4
-                      ? subWalls.length - 4
-                      : 0,
+                  ? subWalls.length - 4
+                  : 0,
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                  childAspectRatio: 0.6625,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8),
+                maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+                childAspectRatio: 0.6625,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+              ),
               itemBuilder: (context, index) {
                 if (subWalls.isEmpty) {
                   return Container(
@@ -313,7 +318,9 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                       )
                     : PremiumBannerWalls(
                         comparator: !globals.isPremiumWall(
-                            globals.premiumCollections, wallAt(index)?["collections"] as List? ?? []),
+                          globals.premiumCollections,
+                          wallAt(index)?["collections"] as List? ?? [],
+                        ),
                         defaultChild: FocusedMenuHolder(
                           provider: widget.provider,
                           index: index,

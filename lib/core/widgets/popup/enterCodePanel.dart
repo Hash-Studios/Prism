@@ -7,9 +7,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
 class EnterCodePanel extends StatefulWidget {
-  const EnterCodePanel({
-    super.key,
-  });
+  const EnterCodePanel({super.key});
 
   @override
   _EnterCodePanelState createState() => _EnterCodePanelState();
@@ -33,10 +31,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
         height: MediaQuery.of(context).size.height / 2 > 400 ? MediaQuery.of(context).size.height / 2 : 400,
         decoration: BoxDecoration(
           color: Theme.of(context).primaryColor,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
+          borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
         ),
         child: Column(
           children: <Widget>[
@@ -49,17 +44,16 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                   child: Container(
                     height: 5,
                     width: 30,
-                    decoration:
-                        BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(500)),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).hintColor,
+                      borderRadius: BorderRadius.circular(500),
+                    ),
                   ),
-                )
+                ),
               ],
             ),
             const Spacer(),
-            Text(
-              "Enter Code",
-              style: Theme.of(context).textTheme.displayMedium,
-            ),
+            Text("Enter Code", style: Theme.of(context).textTheme.displayMedium),
             const Spacer(flex: 2),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -75,24 +69,26 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.only(left: 30, top: 15),
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2)),
-                        disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2)),
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2)),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2)),
-                        labelText: "Enter Code",
-                        labelStyle:
-                            Theme.of(context).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
-                        prefixIcon: const Icon(
-                          JamIcons.coin,
-                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Colors.white, width: 2),
                         ),
+                        disabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Colors.white, width: 2),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Colors.white, width: 2),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Colors.white, width: 2),
+                        ),
+                        labelText: "Enter Code",
+                        labelStyle: Theme.of(
+                          context,
+                        ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
+                        prefixIcon: const Icon(JamIcons.coin, color: Colors.white),
                       ),
                       onChanged: (value) {
                         setState(() {
@@ -133,15 +129,11 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                               if (matches.isNotEmpty) {
                                 final doc = matches.first;
                                 if (doc.data["redeemed"] == false) {
-                                  await firestoreClient.updateDoc(
-                                      FirebaseCollections.codes,
-                                      doc.id,
-                                      <String, dynamic>{
-                                        "redeemed": true,
-                                        "winner": globals.prismUser.toJson(),
-                                        "when": DateTime.now().toUtc(),
-                                      },
-                                      sourceTag: 'codes.redeem.update');
+                                  await firestoreClient.updateDoc(FirebaseCollections.codes, doc.id, <String, dynamic>{
+                                    "redeemed": true,
+                                    "winner": globals.prismUser.toJson(),
+                                    "when": DateTime.now().toUtc(),
+                                  }, sourceTag: 'codes.redeem.update');
                                   toasts.codeSend("Congratulations, we will contact you!");
                                 } else {
                                   toasts.error("Sorry, this code has already been redeemed!");
@@ -166,10 +158,11 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                               ? Theme.of(context).primaryColor
                               : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                           border: Border.all(
-                              color: !enabled
-                                  ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
-                                  : Theme.of(context).colorScheme.error,
-                              width: 3),
+                            color: !enabled
+                                ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
+                                : Theme.of(context).colorScheme.error,
+                            width: 3,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
@@ -178,11 +171,12 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                               : Text(
                                   "Redeem Code",
                                   style: TextStyle(
-                                      fontSize: 16,
-                                      color: !enabled
-                                          ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
-                                          : Theme.of(context).colorScheme.secondary,
-                                      fontWeight: FontWeight.bold),
+                                    fontSize: 16,
+                                    color: !enabled
+                                        ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
+                                        : Theme.of(context).colorScheme.secondary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                         ),
                       ),
@@ -199,10 +193,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                 child: Text(
                   "We regularly give these codes on our Twitter/ Telegram @PrismWallpapers. Enter the code here, and if you are the first to redeem it, you get Prism Premium or any other reward for free!",
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
+                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.secondary),
                 ),
               ),
             ),

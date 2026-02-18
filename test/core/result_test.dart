@@ -11,10 +11,7 @@ void main() {
       expect(result.isFailure, isFalse);
       expect(result.data, 42);
 
-      final folded = result.fold(
-        onSuccess: (value) => value + 1,
-        onFailure: (_) => 0,
-      );
+      final folded = result.fold(onSuccess: (value) => value + 1, onFailure: (_) => 0);
 
       expect(folded, 43);
     });
@@ -26,10 +23,7 @@ void main() {
       expect(result.isFailure, isTrue);
       expect(result.failure, isA<ValidationFailure>());
 
-      final folded = result.fold(
-        onSuccess: (_) => 0,
-        onFailure: (failure) => failure.message,
-      );
+      final folded = result.fold(onSuccess: (_) => 0, onFailure: (failure) => failure.message);
 
       expect(folded, 'bad input');
     });

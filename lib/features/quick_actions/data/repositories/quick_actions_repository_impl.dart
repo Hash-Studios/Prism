@@ -18,25 +18,13 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
   QuickActionEntity _mapAction(String action) {
     switch (action) {
       case 'Follow_Feed':
-        return const QuickActionEntity(
-          type: QuickActionType.followFeed,
-          rawValue: 'Follow_Feed',
-        );
+        return const QuickActionEntity(type: QuickActionType.followFeed, rawValue: 'Follow_Feed');
       case 'Collections':
-        return const QuickActionEntity(
-          type: QuickActionType.collections,
-          rawValue: 'Collections',
-        );
+        return const QuickActionEntity(type: QuickActionType.collections, rawValue: 'Collections');
       case 'Setups':
-        return const QuickActionEntity(
-          type: QuickActionType.setups,
-          rawValue: 'Setups',
-        );
+        return const QuickActionEntity(type: QuickActionType.setups, rawValue: 'Setups');
       case 'Downloads':
-        return const QuickActionEntity(
-          type: QuickActionType.downloads,
-          rawValue: 'Downloads',
-        );
+        return const QuickActionEntity(type: QuickActionType.downloads, rawValue: 'Downloads');
       default:
         return QuickActionEntity(type: QuickActionType.unknown, rawValue: action);
     }
@@ -62,26 +50,10 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
   Future<Result<void>> setDefaultShortcuts() async {
     try {
       await _quickActions.setShortcutItems(const <ShortcutItem>[
-        ShortcutItem(
-          type: 'Follow_Feed',
-          localizedTitle: 'Feed',
-          icon: '@drawable/ic_feed',
-        ),
-        ShortcutItem(
-          type: 'Collections',
-          localizedTitle: 'Collections',
-          icon: '@drawable/ic_collections',
-        ),
-        ShortcutItem(
-          type: 'Setups',
-          localizedTitle: 'Setups',
-          icon: '@drawable/ic_setups',
-        ),
-        ShortcutItem(
-          type: 'Downloads',
-          localizedTitle: 'Downloads',
-          icon: '@drawable/ic_downloads',
-        ),
+        ShortcutItem(type: 'Follow_Feed', localizedTitle: 'Feed', icon: '@drawable/ic_feed'),
+        ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
+        ShortcutItem(type: 'Setups', localizedTitle: 'Setups', icon: '@drawable/ic_setups'),
+        ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
       ]);
       return Result.success(null);
     } catch (error) {
