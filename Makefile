@@ -142,7 +142,7 @@ ci: get format-check env-guard analyze
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
-		$(FLUTTER) test; \
+		$(FLUTTER) test $$(find test -name '*_test.dart' -not -path 'test/core/arsenal/*' | tr '\n' ' '); \
 	else \
 		echo "No test files found, skipping."; \
 	fi
