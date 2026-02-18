@@ -25,6 +25,7 @@ import 'package:Prism/core/arsenal/arsenal.dart';
 | `border` | `#2A2A2A` | Dividers, card outlines |
 | `error` | `#FF4444` | Error states |
 | `scrim` | `#000000` 60% | Image overlays for legibility |
+| `gradientCenter` | `#3D0020` | Radial background glow (used by ArScaffold) |
 
 Use `.withValues(alpha: x)` for opacity, **never** `.withOpacity()`.
 
@@ -66,12 +67,15 @@ buttonHeight=52  chipHeight=32
 #### `ArScaffold` — root of every Arsenal screen
 ```dart
 ArScaffold(
-  child: ...,
-  extendBodyBehindAppBar: true,  // default
-  appBar: ...,                    // optional
+  child: ...,                                          // required — main body content
+  bottomBar: ...,                                      // optional — pinned above safe-area bottom
+  padding: const EdgeInsets.all(ArsenalSpacing.md),   // default 16px all sides
+  gradient: true,                                      // default — radial crimson-to-black bg
+  showCornerBrackets: true,                            // default — ⌐ top-left, ¬ bottom-right
 )
 ```
 Wraps content in `arsenalDarkTheme`. **Every Arsenal page must use `ArScaffold` as its root.**
+Set `gradient: false` for full-screen media or custom backgrounds.
 
 #### `ArButton` — three variants
 ```dart
@@ -103,7 +107,7 @@ Sharp rectangle. Selected: accent fill. Unselected: surface + border.
 ```dart
 ArAvatar(imageUrl: user.photoUrl, initials: 'AB', size: 48)
 ```
-Circular with accent border ring. Falls back to initials or person icon.
+Circular with accent border ring. Falls back to initials, then person icon.
 
 #### `ArTag` — status / category badge
 ```dart
@@ -141,20 +145,30 @@ Sharp corners, surface background, drag handle. Content is Arsenal-themed automa
 **Full-screen page with header:**
 ```dart
 ArScaffold(
-  child: SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.all(ArsenalSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('TITLE', style: ArsenalTypography.hero),
-          const SizedBox(height: ArsenalSpacing.sm),
-          Text('Subtitle copy', style: ArsenalTypography.body.copyWith(color: ArsenalColors.muted)),
-          ...
-        ],
-      ),
-    ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('TITLE', style: ArsenalTypography.hero),
+      const SizedBox(height: ArsenalSpacing.sm),
+      Text('Subtitle copy', style: ArsenalTypography.body.copyWith(color: ArsenalColors.muted)),
+      ...
+    ],
   ),
+)
+```
+
+**Page with pinned bottom actions:**
+```dart
+ArScaffold(
+  bottomBar: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      ArButton.primary(label: 'CONTINUE', onPressed: onNext, width: double.infinity),
+      const SizedBox(height: ArsenalSpacing.sm),
+      ArButton.ghost(label: 'SKIP', onPressed: onSkip, width: double.infinity),
+    ],
+  ),
+  child: ...,
 )
 ```
 
@@ -195,23 +209,17 @@ SingleChildScrollView(
 **Onboarding step layout:**
 ```dart
 ArScaffold(
-  child: Column(
+  bottomBar: Column(
+    mainAxisSize: MainAxisSize.min,
     children: [
-      Expanded(child: /* content */),
-      Padding(
-        padding: const EdgeInsets.all(ArsenalSpacing.md),
-        child: Column(
-          children: [
-            ArProgressSteps(total: 4, current: step),
-            const SizedBox(height: ArsenalSpacing.lg),
-            ArButton.primary(label: 'CONTINUE', onPressed: onNext, width: double.infinity),
-            const SizedBox(height: ArsenalSpacing.sm),
-            ArButton.ghost(label: 'SKIP', onPressed: onSkip, width: double.infinity),
-          ],
-        ),
-      ),
+      ArProgressSteps(total: 4, current: step),
+      const SizedBox(height: ArsenalSpacing.lg),
+      ArButton.primary(label: 'CONTINUE', onPressed: onNext, width: double.infinity),
+      const SizedBox(height: ArsenalSpacing.sm),
+      ArButton.ghost(label: 'SKIP', onPressed: onSkip, width: double.infinity),
     ],
   ),
+  child: /* screen content */,
 )
 ```
 
@@ -225,6 +233,16 @@ lib/features/<feature_name>/views/widgets/<widget_name>.dart
 ```
 
 No code generation needed. Do not add `@RoutePage()` annotations unless the user explicitly asks to wire up routing.
+
+---
+
+### Golden tests
+Every component has a committed PNG snapshot in `test/core/arsenal/goldens/`.
+After modifying any Arsenal source file, the pre-commit hook auto-regenerates and stages the affected PNGs. To regenerate manually:
+```bash
+make update-goldens   # smart — only changed components
+make verify-goldens   # confirm all goldens match current renders
+```
 
 ---
 
