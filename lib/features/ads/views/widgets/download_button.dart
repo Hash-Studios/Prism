@@ -476,6 +476,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
 
     final AdsBloc bloc = context.read<AdsBloc>();
+    bool watchRequested = false;
     try {
       final Future<AdsState> completion = bloc.stream
           .firstWhere(
@@ -483,11 +484,15 @@ class _DownloadButtonState extends State<DownloadButton> {
           )
           .timeout(const Duration(seconds: 60));
       bloc.add(const AdsEvent.watchAdRequested());
+      watchRequested = true;
       final AdsState result = await completion;
-      bloc.add(const AdsEvent.transientStateCleared());
       return result.shouldUnlockDownload;
     } catch (_) {
       return false;
+    } finally {
+      if (watchRequested) {
+        bloc.add(const AdsEvent.transientStateCleared());
+      }
     }
   }
 

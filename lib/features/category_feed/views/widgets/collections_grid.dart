@@ -364,6 +364,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     if (!await _ensureRewardedAdReady(bloc)) {
       return false;
     }
+    bool watchRequested = false;
     try {
       final Future<AdsState> completion = bloc.stream
           .firstWhere(
@@ -371,11 +372,15 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           )
           .timeout(const Duration(seconds: 60));
       bloc.add(const AdsEvent.watchAdRequested());
+      watchRequested = true;
       final AdsState result = await completion;
-      bloc.add(const AdsEvent.transientStateCleared());
       return result.shouldUnlockDownload;
     } catch (_) {
       return false;
+    } finally {
+      if (watchRequested) {
+        bloc.add(const AdsEvent.transientStateCleared());
+      }
     }
   }
 

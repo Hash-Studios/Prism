@@ -216,6 +216,7 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
     }
 
     final AdsBloc bloc = context.read<AdsBloc>();
+    bool watchRequested = false;
     try {
       final Future<AdsState> completion = bloc.stream
           .firstWhere(
@@ -223,19 +224,23 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
           )
           .timeout(const Duration(seconds: 60));
       bloc.add(const AdsEvent.watchAdRequested());
+      watchRequested = true;
       final AdsState result = await completion;
       if (result.shouldUnlockDownload) {
         await CoinsService.instance.award(
           CoinEarnAction.rewardedAd,
           sourceTag: 'coins.coin_chip.rewarded_ad',
         );
-        bloc.add(const AdsEvent.transientStateCleared());
         toasts.codeSend('+${CoinPolicy.rewardedAd} coins');
         return;
       }
       toasts.error('Ad was not completed.');
     } catch (_) {
       toasts.error('Ad was not completed.');
+    } finally {
+      if (watchRequested) {
+        bloc.add(const AdsEvent.transientStateCleared());
+      }
     }
   }
 }
