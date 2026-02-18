@@ -45,3 +45,6 @@ jobs:
 
       - name: Run tests
         run: make test CI=true
+
+      - name: Verify golden snapshots
+        run: make verify-goldens CI=true
