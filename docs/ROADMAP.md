@@ -318,8 +318,8 @@ I2  ASO update (new listing, screenshots)
 
 ## Reference Documents
 
-- **[PLAN.md](PLAN.md)** — Original feature plan & improvements list
-- **[COMPETITORS.md](COMPETITORS.md)** — Competitive landscape & feature comparison matrix
-- **[GROWTH.md](GROWTH.md)** — User data analysis, DAU/MAU/retention stats, growth strategy
-- **[REVENUE.md](REVENUE.md)** — Monetization model, Prism Coins economy, path to $10K/mo
-- **[RETENTION.md](RETENTION.md)** — Retention mechanics, push strategy, engagement plan
+- **[PLAN.md](./PLAN.md)** — Original feature plan & improvements list
+- **[COMPETITORS.md](./COMPETITORS.md)** — Competitive landscape & feature comparison matrix
+- **[GROWTH.md](./GROWTH.md)** — User data analysis, DAU/MAU/retention stats, growth strategy
+- **[REVENUE.md](./REVENUE.md)** — Monetization model, Prism Coins economy, path to $10K/mo
+- **[RETENTION.md](./RETENTION.md)** — Retention mechanics, push strategy, engagement plan
