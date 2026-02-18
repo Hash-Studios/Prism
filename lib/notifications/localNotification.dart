@@ -20,8 +20,8 @@ class LocalNotification {
   }
 
   Future<void> fetchNotificationData(BuildContext context) async {
-    final NotificationAppLaunchDetails? notificationAppLaunchDetails =
-        await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+    final NotificationAppLaunchDetails? notificationAppLaunchDetails = await flutterLocalNotificationsPlugin
+        .getNotificationAppLaunchDetails();
     if (!context.mounted) {
       return;
     }
@@ -35,8 +35,8 @@ class LocalNotification {
       return;
     }
 
-    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation = flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidImplementation == null) {
       return;
     }
@@ -93,7 +93,8 @@ class LocalNotification {
       playSound: false,
     );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
-    final List<ActiveNotification> activeNotifications = await flutterLocalNotificationsPlugin
+    final List<ActiveNotification> activeNotifications =
+        await flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
             ?.getActiveNotifications() ??
         [];

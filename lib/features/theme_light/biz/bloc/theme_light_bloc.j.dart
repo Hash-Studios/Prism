@@ -14,7 +14,7 @@ part 'theme_light_bloc.j.freezed.dart';
 @injectable
 class ThemeLightBloc extends Bloc<ThemeLightEvent, ThemeLightState> {
   ThemeLightBloc(this._loadThemeLightUseCase, this._updateThemeLightUseCase, this._updateThemeLightAccentUseCase)
-      : super(ThemeLightState.initial()) {
+    : super(ThemeLightState.initial()) {
     on<_Started>(_onStarted);
     on<_ThemeChanged>(_onThemeChanged);
     on<_AccentChanged>(_onAccentChanged);

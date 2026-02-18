@@ -163,10 +163,10 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                       textAlign: TextAlign.center,
                                       maxLines: 1,
                                       style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                            fontSize: 20,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                        fontSize: 20,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -184,11 +184,9 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             if (wall == null) {
                               return;
                             }
-                            context.router.push(WallpaperRoute(arguments: [
-                              widget.provider,
-                              i,
-                              wall["wallpaper_thumb"],
-                            ]));
+                            context.router.push(
+                              WallpaperRoute(arguments: [widget.provider, i, wall["wallpaper_thumb"]]),
+                            );
                           },
                           child: wall == null
                               ? Container(
@@ -226,10 +224,10 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                             textAlign: TextAlign.center,
                                             maxLines: 1,
                                             style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                                  color: Colors.white,
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -263,8 +261,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
               itemCount: subWalls.isEmpty
                   ? 20
                   : subWalls.length > 4
-                      ? subWalls.length - 4
-                      : 0,
+                  ? subWalls.length - 4
+                  : 0,
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,

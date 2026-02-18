@@ -58,48 +58,48 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
     menuHeight = widget.size.height * 0.14;
     leftOffset = (widget.childOffset.dx + maxMenuWidth) < widget.size.width
         ? widget.orientation == Orientation.portrait
-            ? widget.childOffset.dx + widget.childSize!.width + widget.size.width * 0.015
-            : widget.childOffset.dx + widget.childSize!.width + widget.size.width * 0.01
+              ? widget.childOffset.dx + widget.childSize!.width + widget.size.width * 0.015
+              : widget.childOffset.dx + widget.childSize!.width + widget.size.width * 0.01
         : widget.orientation == Orientation.portrait
-            ? (widget.childOffset.dx - maxMenuWidth + widget.childSize!.width)
-            : (widget.childOffset.dx - maxMenuWidth + widget.childSize!.width + widget.size.width * 0.3);
+        ? (widget.childOffset.dx - maxMenuWidth + widget.childSize!.width)
+        : (widget.childOffset.dx - maxMenuWidth + widget.childSize!.width + widget.size.width * 0.3);
     topOffset = (widget.childOffset.dy + menuHeight + widget.childSize!.height) < widget.size.height
         ? widget.orientation == Orientation.portrait
-            ? widget.childOffset.dy + widget.childSize!.height + widget.size.width * 0.015
-            : widget.childOffset.dy + widget.childSize!.height + widget.size.width * 0.015
+              ? widget.childOffset.dy + widget.childSize!.height + widget.size.width * 0.015
+              : widget.childOffset.dy + widget.childSize!.height + widget.size.width * 0.015
         : widget.orientation == Orientation.portrait
-            ? widget.childOffset.dy - menuHeight + widget.size.width * 0.125
-            : widget.childOffset.dy - menuHeight;
+        ? widget.childOffset.dy - menuHeight + widget.size.width * 0.125
+        : widget.childOffset.dy - menuHeight;
 
     fabHeartTopOffset = (widget.childOffset.dy + menuHeight + widget.childSize!.height) < widget.size.height
         ? widget.orientation == Orientation.portrait
-            ? widget.size.width * 0.175
-            : widget.size.width * 0.1
+              ? widget.size.width * 0.175
+              : widget.size.width * 0.1
         : widget.orientation == Orientation.portrait
-            ? -widget.size.width * 0.175
-            : -widget.size.width * 0.1;
+        ? -widget.size.width * 0.175
+        : -widget.size.width * 0.1;
     fabWallLeftOffset = (widget.childOffset.dx + maxMenuWidth) < widget.size.width
         ? widget.orientation == Orientation.portrait
-            ? -widget.size.width * 0.175
-            : -widget.size.width * 0.1
+              ? -widget.size.width * 0.175
+              : -widget.size.width * 0.1
         : widget.orientation == Orientation.portrait
-            ? widget.size.width * 0.175
-            : widget.size.width * 0.1;
+        ? widget.size.width * 0.175
+        : widget.size.width * 0.1;
 
     fabWallTopOffset = (widget.childOffset.dy + menuHeight + widget.childSize!.height) < widget.size.height
         ? widget.orientation == Orientation.portrait
-            ? widget.size.width * 0.05
-            : widget.size.width * 0.02
+              ? widget.size.width * 0.05
+              : widget.size.width * 0.02
         : widget.orientation == Orientation.portrait
-            ? -widget.size.width * 0.05
-            : -widget.size.width * 0.02;
+        ? -widget.size.width * 0.05
+        : -widget.size.width * 0.02;
     fabHeartLeftOffset = (widget.childOffset.dx + maxMenuWidth) < widget.size.width
         ? widget.orientation == Orientation.portrait
-            ? -widget.size.width * 0.05
-            : -widget.size.width * 0.02
+              ? -widget.size.width * 0.05
+              : -widget.size.width * 0.02
         : widget.orientation == Orientation.portrait
-            ? widget.size.width * 0.05
-            : widget.size.width * 0.02;
+        ? widget.size.width * 0.05
+        : widget.size.width * 0.02;
     super.initState();
   }
 
@@ -171,8 +171,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                   padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
                                   avatar: Icon(
                                     JamIcons.ordered_list,
-                                    color: HexColor(
-                                              WData.walls[widget.index]
+                                    color:
+                                        HexColor(
+                                              WData
+                                                  .walls[widget.index]
                                                   .colors![WData.walls[widget.index].colors!.length - 1]
                                                   .toString(),
                                             ).computeLuminance() >
@@ -189,15 +191,17 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     WData.walls[widget.index].category.toString()[0].toUpperCase() +
                                         WData.walls[widget.index].category.toString().substring(1),
                                     style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                          color: HexColor(
-                                                    WData.walls[widget.index]
-                                                        .colors![WData.walls[widget.index].colors!.length - 1]
-                                                        .toString(),
-                                                  ).computeLuminance() >
-                                                  0.5
-                                              ? Colors.black
-                                              : Colors.white,
-                                        ),
+                                      color:
+                                          HexColor(
+                                                WData
+                                                    .walls[widget.index]
+                                                    .colors![WData.walls[widget.index].colors!.length - 1]
+                                                    .toString(),
+                                              ).computeLuminance() >
+                                              0.5
+                                          ? Colors.black
+                                          : Colors.white,
+                                    ),
                                   ),
                                   onPressed: () {},
                                 ),
@@ -295,9 +299,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: <Widget>[
                                       Stack(
-                                        alignment: globals.verifiedUsers.contains(
-                                          Data.subPrismWalls![widget.index]["email"].toString(),
-                                        )
+                                        alignment:
+                                            globals.verifiedUsers.contains(
+                                              Data.subPrismWalls![widget.index]["email"].toString(),
+                                            )
                                             ? Alignment.topRight
                                             : Alignment.centerLeft,
                                         children: [
@@ -335,12 +340,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   "E57697",
                                                   Theme.of(context).colorScheme.error == Colors.black
                                                       ? "E57697"
-                                                      : Theme.of(context)
-                                                          .colorScheme
-                                                          .error
-                                                          .toString()
-                                                          .replaceAll("Color(0xff", "")
-                                                          .replaceAll(")", ""),
+                                                      : Theme.of(context).colorScheme.error
+                                                            .toString()
+                                                            .replaceAll("Color(0xff", "")
+                                                            .replaceAll(")", ""),
                                                 ),
                                               ),
                                             )
@@ -353,8 +356,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         child: Text(
                                           Data.subPrismWalls![widget.index]["id"].toString().toUpperCase(),
                                           style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                         ),
                                       ),
                                       Row(
@@ -364,8 +367,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           Text(
                                             Data.subPrismWalls![widget.index]["size"].toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -380,8 +383,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           Text(
                                             Data.subPrismWalls![widget.index]["resolution"].toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -417,1059 +420,996 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                       ),
                     )
                   : widget.provider == "ProfileWall"
-                      ? Positioned(
-                          top: widget.childOffset.dy + widget.childSize!.height * 4 / 10,
-                          left: widget.childOffset.dx,
-                          child: TweenAnimationBuilder(
-                            duration: const Duration(milliseconds: 150),
-                            builder: (BuildContext context, double value, Widget? child) {
-                              return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
-                            },
-                            tween: Tween(begin: 0.0, end: 1.0),
-                            child: Container(
-                              width: widget.childSize!.width,
-                              height: widget.childSize!.height * 6 / 10,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).hintColor,
-                                borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: <Widget>[
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: <Widget>[
-                                          ActionChip(
-                                            pressElevation: 5,
-                                            padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                            avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
-                                            backgroundColor: Colors.black,
-                                            label: Text(
-                                              context
-                                                      .profileWallsSnapshots(listen: false)![widget.index]
-                                                      .data()["by"]
-                                                      .toString()[0]
-                                                      .toUpperCase() +
-                                                  context
-                                                      .profileWallsSnapshots(listen: false)![widget.index]
-                                                      .data()["by"]
-                                                      .toString()
-                                                      .substring(1),
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.headlineMedium!.copyWith(color: Colors.white),
-                                            ),
-                                            onPressed: () {},
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                            child: Text(
+                  ? Positioned(
+                      top: widget.childOffset.dy + widget.childSize!.height * 4 / 10,
+                      left: widget.childOffset.dx,
+                      child: TweenAnimationBuilder(
+                        duration: const Duration(milliseconds: 150),
+                        builder: (BuildContext context, double value, Widget? child) {
+                          return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
+                        },
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        child: Container(
+                          width: widget.childSize!.width,
+                          height: widget.childSize!.height * 6 / 10,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).hintColor,
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: <Widget>[
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      ActionChip(
+                                        pressElevation: 5,
+                                        padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                        avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                        backgroundColor: Colors.black,
+                                        label: Text(
+                                          context
+                                                  .profileWallsSnapshots(listen: false)![widget.index]
+                                                  .data()["by"]
+                                                  .toString()[0]
+                                                  .toUpperCase() +
                                               context
                                                   .profileWallsSnapshots(listen: false)![widget.index]
-                                                  .data()["id"]
+                                                  .data()["by"]
                                                   .toString()
-                                                  .toUpperCase(),
-                                              style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
-                                                  ),
+                                                  .substring(1),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                        ),
+                                        onPressed: () {},
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                        child: Text(
+                                          context
+                                              .profileWallsSnapshots(listen: false)![widget.index]
+                                              .data()["id"]
+                                              .toString()
+                                              .toUpperCase(),
+                                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(JamIcons.save, size: 20, color: Theme.of(context).colorScheme.secondary),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            context
+                                                .profileWallsSnapshots(listen: false)![widget.index]
+                                                .data()["size"]
+                                                .toString(),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
                                             ),
-                                          ),
-                                          Row(
-                                            children: [
-                                              Icon(JamIcons.save,
-                                                  size: 20, color: Theme.of(context).colorScheme.secondary),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                context
-                                                    .profileWallsSnapshots(listen: false)![widget.index]
-                                                    .data()["size"]
-                                                    .toString(),
-                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                      color: Theme.of(context).colorScheme.secondary,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                JamIcons.set_square,
-                                                size: 20,
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                context
-                                                    .profileWallsSnapshots(listen: false)![widget.index]
-                                                    .data()["resolution"]
-                                                    .toString(),
-                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                      color: Theme.of(context).colorScheme.secondary,
-                                                    ),
-                                              ),
-                                            ],
                                           ),
                                         ],
                                       ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.bottomRight,
-                                      child: GestureDetector(
-                                        onTap: () async {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context).hintColor,
-                                            borderRadius: const BorderRadius.only(
-                                              topLeft: Radius.circular(20),
-                                              bottomRight: Radius.circular(20),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            JamIcons.set_square,
+                                            size: 20,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            context
+                                                .profileWallsSnapshots(listen: false)![widget.index]
+                                                .data()["resolution"]
+                                                .toString(),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
                                             ),
                                           ),
-                                          padding: EdgeInsets.zero,
-                                          child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                            child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
-                                          ),
-                                        ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                      : widget.provider == "UserProfileWall"
-                          ? Positioned(
-                              top: widget.childOffset.dy + widget.childSize!.height * 4 / 10,
-                              left: widget.childOffset.dx,
-                              child: TweenAnimationBuilder(
-                                duration: const Duration(milliseconds: 150),
-                                builder: (BuildContext context, double value, Widget? child) {
-                                  return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
-                                },
-                                tween: Tween(begin: 0.0, end: 1.0),
-                                child: Container(
-                                  width: widget.childSize!.width,
-                                  height: widget.childSize!.height * 6 / 10,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).hintColor,
-                                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                    child: Stack(
-                                      fit: StackFit.expand,
-                                      children: <Widget>[
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                          child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: <Widget>[
-                                              ActionChip(
-                                                pressElevation: 5,
-                                                padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
-                                                backgroundColor: Colors.black,
-                                                label: Text(
-                                                  context
-                                                          .publicProfileAdapter()
-                                                          .userProfileWalls![widget.index]
-                                                          .data()["by"]
-                                                          .toString()[0]
-                                                          .toUpperCase() +
-                                                      context
-                                                          .publicProfileAdapter()
-                                                          .userProfileWalls![widget.index]
-                                                          .data()["by"]
-                                                          .toString()
-                                                          .substring(1),
-                                                  style: Theme.of(
-                                                    context,
-                                                  ).textTheme.headlineMedium!.copyWith(color: Colors.white),
-                                                ),
-                                                onPressed: () {},
-                                              ),
-                                              Padding(
-                                                padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                                child: Text(
-                                                  context
-                                                      .publicProfileAdapter()
-                                                      .userProfileWalls![widget.index]
-                                                      .data()["id"]
-                                                      .toString()
-                                                      .toUpperCase(),
-                                                  style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                                                        color: Theme.of(context).colorScheme.secondary,
-                                                      ),
-                                                ),
-                                              ),
-                                              Row(
-                                                children: [
-                                                  Icon(JamIcons.save,
-                                                      size: 20, color: Theme.of(context).colorScheme.secondary),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    context
-                                                        .publicProfileAdapter()
-                                                        .userProfileWalls![widget.index]
-                                                        .data()["size"]
-                                                        .toString(),
-                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                          color: Theme.of(context).colorScheme.secondary,
-                                                        ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.set_square,
-                                                    size: 20,
-                                                    color: Theme.of(context).colorScheme.secondary,
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    context
-                                                        .publicProfileAdapter()
-                                                        .userProfileWalls![widget.index]
-                                                        .data()["resolution"]
-                                                        .toString(),
-                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                          color: Theme.of(context).colorScheme.secondary,
-                                                        ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Align(
-                                          alignment: Alignment.bottomRight,
-                                          child: GestureDetector(
-                                            onTap: () async {
-                                              Navigator.pop(context);
-                                            },
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context).hintColor,
-                                                borderRadius: const BorderRadius.only(
-                                                  topLeft: Radius.circular(20),
-                                                  bottomRight: Radius.circular(20),
-                                                ),
-                                              ),
-                                              padding: EdgeInsets.zero,
-                                              child: Padding(
-                                                padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                                child: Icon(JamIcons.close,
-                                                    color: Theme.of(context).colorScheme.secondary),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                            )
-                          : widget.provider == "Pexels"
-                              ? Positioned(
-                                  top: widget.childOffset.dy + widget.childSize!.height * 4 / 10,
-                                  left: widget.childOffset.dx,
-                                  child: TweenAnimationBuilder(
-                                    duration: const Duration(milliseconds: 200),
-                                    builder: (BuildContext context, double value, Widget? child) {
-                                      return Transform.scale(
-                                          scale: value, alignment: Alignment.bottomRight, child: child);
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      Navigator.pop(context);
                                     },
-                                    tween: Tween(begin: 0.0, end: 1.0),
                                     child: Container(
-                                      width: widget.childSize!.width,
-                                      height: widget.childSize!.height * 6 / 10,
                                       decoration: BoxDecoration(
                                         color: Theme.of(context).hintColor,
-                                        borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                        child: Stack(
-                                          fit: StackFit.expand,
-                                          children: <Widget>[
-                                            Padding(
-                                              padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: <Widget>[
-                                                  ActionChip(
-                                                    pressElevation: 5,
-                                                    padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                    backgroundColor: Colors.black,
-                                                    avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
-                                                    label: Text(
-                                                      PData.wallsP[widget.index].photographer.toString(),
-                                                      style: Theme.of(
-                                                        context,
-                                                      ).textTheme.headlineMedium!.copyWith(color: Colors.white),
-                                                    ),
-                                                    onPressed: () {
-                                                      launch(PData.wallsP[widget.index].url!);
-                                                    },
-                                                  ),
-                                                  Padding(
-                                                    padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                                    child: Text(
-                                                      PData.wallsP[widget.index].url
-                                                                  .toString()
-                                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                                  .replaceAll("-", " ")
-                                                                  .replaceAll("/", "")
-                                                                  .length >
-                                                              8
-                                                          ? PData.wallsP[widget.index].url
-                                                                  .toString()
-                                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                                  .replaceAll("-", " ")
-                                                                  .replaceAll("/", "")[0]
-                                                                  .toUpperCase() +
-                                                              PData.wallsP[widget.index].url
-                                                                  .toString()
-                                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                                  .replaceAll("-", " ")
-                                                                  .replaceAll("/", "")
-                                                                  .substring(
-                                                                    1,
-                                                                    PData.wallsP[widget.index].url
-                                                                            .toString()
-                                                                            .replaceAll(
-                                                                                "https://www.pexels.com/photo/", "")
-                                                                            .replaceAll("-", " ")
-                                                                            .replaceAll("/", "")
-                                                                            .length -
-                                                                        7,
-                                                                  )
-                                                          : PData.wallsP[widget.index].url
-                                                                  .toString()
-                                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                                  .replaceAll("-", " ")
-                                                                  .replaceAll("/", "")[0]
-                                                                  .toUpperCase() +
-                                                              PData.wallsP[widget.index].url
-                                                                  .toString()
-                                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                                  .replaceAll("-", " ")
-                                                                  .replaceAll("/", "")
-                                                                  .substring(1),
-                                                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                                                            color: Theme.of(context).colorScheme.secondary,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        JamIcons.set_square,
-                                                        color: Theme.of(context).colorScheme.secondary,
-                                                        size: 20,
-                                                      ),
-                                                      const SizedBox(width: 5),
-                                                      Text(
-                                                        "${PData.wallsP[widget.index].width}x${PData.wallsP[widget.index].height}",
-                                                        style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                                                              color: Theme.of(context).colorScheme.secondary,
-                                                            ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.bottomRight,
-                                              child: GestureDetector(
-                                                onTap: () async {
-                                                  Navigator.pop(context);
-                                                },
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                    color: Theme.of(context).hintColor,
-                                                    borderRadius: const BorderRadius.only(
-                                                      topLeft: Radius.circular(20),
-                                                      bottomRight: Radius.circular(20),
-                                                    ),
-                                                  ),
-                                                  padding: EdgeInsets.zero,
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                                    child: Icon(JamIcons.close,
-                                                        color: Theme.of(context).colorScheme.secondary),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(20),
+                                          bottomRight: Radius.circular(20),
                                         ),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                        child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
                                       ),
                                     ),
                                   ),
-                                )
-                              : widget.provider == "Liked"
-                                  ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["provider"] ==
-                                          "WallHaven"
-                                      ? Positioned(
-                                          top: widget.childOffset.dy + widget.childSize!.height * 2 / 8,
-                                          left: widget.childOffset.dx,
-                                          child: TweenAnimationBuilder(
-                                            duration: const Duration(milliseconds: 200),
-                                            builder: (BuildContext context, double value, Widget? child) {
-                                              return Transform.scale(
-                                                  scale: value, alignment: Alignment.bottomRight, child: child);
-                                            },
-                                            tween: Tween(begin: 0.0, end: 1.0),
-                                            child: Container(
-                                              width: widget.childSize!.width,
-                                              height: widget.childSize!.height * 6 / 8,
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context).hintColor,
-                                                borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                                child: Stack(
-                                                  fit: StackFit.expand,
-                                                  children: <Widget>[
-                                                    Padding(
-                                                      padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                                      child: Column(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                                        children: <Widget>[
-                                                          ActionChip(
-                                                            pressElevation: 5,
-                                                            padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                            avatar: const Icon(JamIcons.ordered_list,
-                                                                color: Colors.white, size: 20),
-                                                            backgroundColor: Colors.black,
-                                                            label: Text(
-                                                              context
-                                                                      .favouriteWallsAdapter(listen: false)
-                                                                      .liked![widget.index]["category"]
-                                                                      .toString()[0]
-                                                                      .toUpperCase() +
-                                                                  context
-                                                                      .favouriteWallsAdapter(listen: false)
-                                                                      .liked![widget.index]["category"]
-                                                                      .toString()
-                                                                      .substring(1),
-                                                              style: Theme.of(
-                                                                context,
-                                                              ).textTheme.headlineMedium!.copyWith(color: Colors.white),
-                                                            ),
-                                                            onPressed: () {},
-                                                          ),
-                                                          Padding(
-                                                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                                            child: Text(
-                                                              context
-                                                                  .favouriteWallsAdapter(listen: false)
-                                                                  .liked![widget.index]["id"]
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : widget.provider == "UserProfileWall"
+                  ? Positioned(
+                      top: widget.childOffset.dy + widget.childSize!.height * 4 / 10,
+                      left: widget.childOffset.dx,
+                      child: TweenAnimationBuilder(
+                        duration: const Duration(milliseconds: 150),
+                        builder: (BuildContext context, double value, Widget? child) {
+                          return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
+                        },
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        child: Container(
+                          width: widget.childSize!.width,
+                          height: widget.childSize!.height * 6 / 10,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).hintColor,
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: <Widget>[
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      ActionChip(
+                                        pressElevation: 5,
+                                        padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                        avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                        backgroundColor: Colors.black,
+                                        label: Text(
+                                          context
+                                                  .publicProfileAdapter()
+                                                  .userProfileWalls![widget.index]
+                                                  .data()["by"]
+                                                  .toString()[0]
+                                                  .toUpperCase() +
+                                              context
+                                                  .publicProfileAdapter()
+                                                  .userProfileWalls![widget.index]
+                                                  .data()["by"]
+                                                  .toString()
+                                                  .substring(1),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                        ),
+                                        onPressed: () {},
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                        child: Text(
+                                          context
+                                              .publicProfileAdapter()
+                                              .userProfileWalls![widget.index]
+                                              .data()["id"]
+                                              .toString()
+                                              .toUpperCase(),
+                                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(JamIcons.save, size: 20, color: Theme.of(context).colorScheme.secondary),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            context
+                                                .publicProfileAdapter()
+                                                .userProfileWalls![widget.index]
+                                                .data()["size"]
+                                                .toString(),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            JamIcons.set_square,
+                                            size: 20,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            context
+                                                .publicProfileAdapter()
+                                                .userProfileWalls![widget.index]
+                                                .data()["resolution"]
+                                                .toString(),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      Navigator.pop(context);
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).hintColor,
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(20),
+                                          bottomRight: Radius.circular(20),
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                        child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : widget.provider == "Pexels"
+                  ? Positioned(
+                      top: widget.childOffset.dy + widget.childSize!.height * 4 / 10,
+                      left: widget.childOffset.dx,
+                      child: TweenAnimationBuilder(
+                        duration: const Duration(milliseconds: 200),
+                        builder: (BuildContext context, double value, Widget? child) {
+                          return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
+                        },
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        child: Container(
+                          width: widget.childSize!.width,
+                          height: widget.childSize!.height * 6 / 10,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).hintColor,
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: <Widget>[
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      ActionChip(
+                                        pressElevation: 5,
+                                        padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                        backgroundColor: Colors.black,
+                                        avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                        label: Text(
+                                          PData.wallsP[widget.index].photographer.toString(),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                        ),
+                                        onPressed: () {
+                                          launch(PData.wallsP[widget.index].url!);
+                                        },
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                        child: Text(
+                                          PData.wallsP[widget.index].url
+                                                      .toString()
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .length >
+                                                  8
+                                              ? PData.wallsP[widget.index].url
+                                                        .toString()
+                                                        .replaceAll("https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")[0]
+                                                        .toUpperCase() +
+                                                    PData.wallsP[widget.index].url
+                                                        .toString()
+                                                        .replaceAll("https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")
+                                                        .substring(
+                                                          1,
+                                                          PData.wallsP[widget.index].url
                                                                   .toString()
-                                                                  .toUpperCase(),
-                                                              style:
-                                                                  Theme.of(context).textTheme.headlineSmall!.copyWith(
-                                                                        color: Theme.of(context).colorScheme.secondary,
-                                                                      ),
-                                                            ),
-                                                          ),
-                                                          Row(
-                                                            children: [
-                                                              const Icon(JamIcons.eye, size: 20, color: Colors.white70),
-                                                              const SizedBox(width: 10),
-                                                              Text(
-                                                                "Views: ${context.favouriteWallsAdapter(listen: false).liked![widget.index]["views"]}",
-                                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                      color: Theme.of(context).colorScheme.secondary,
-                                                                    ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Row(
-                                                            children: [
-                                                              const Icon(JamIcons.set_square,
-                                                                  size: 20, color: Colors.white70),
-                                                              const SizedBox(width: 10),
-                                                              Text(
-                                                                context
-                                                                    .favouriteWallsAdapter(listen: false)
-                                                                    .liked![widget.index]["resolution"]
-                                                                    .toString(),
-                                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                      color: Theme.of(context).colorScheme.secondary,
-                                                                    ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    Align(
-                                                      alignment: Alignment.bottomRight,
-                                                      child: GestureDetector(
-                                                        onTap: () async {
-                                                          Navigator.pop(context);
-                                                        },
-                                                        child: Container(
-                                                          decoration: const BoxDecoration(
-                                                            color: Color(0xFF2F2F2F),
-                                                            borderRadius: BorderRadius.only(
-                                                              topLeft: Radius.circular(20),
-                                                              bottomRight: Radius.circular(20),
-                                                            ),
-                                                          ),
-                                                          padding: EdgeInsets.zero,
-                                                          child: Padding(
-                                                            padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                                            child: Icon(
-                                                              JamIcons.close,
-                                                              color: Theme.of(context).colorScheme.secondary,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
+                                                                  .replaceAll("https://www.pexels.com/photo/", "")
+                                                                  .replaceAll("-", " ")
+                                                                  .replaceAll("/", "")
+                                                                  .length -
+                                                              7,
+                                                        )
+                                              : PData.wallsP[widget.index].url
+                                                        .toString()
+                                                        .replaceAll("https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")[0]
+                                                        .toUpperCase() +
+                                                    PData.wallsP[widget.index].url
+                                                        .toString()
+                                                        .replaceAll("https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")
+                                                        .substring(1),
+                                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            JamIcons.set_square,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            "${PData.wallsP[widget.index].width}x${PData.wallsP[widget.index].height}",
+                                            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      Navigator.pop(context);
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).hintColor,
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(20),
+                                          bottomRight: Radius.circular(20),
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                        child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : widget.provider == "Liked"
+                  ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["provider"] == "WallHaven"
+                        ? Positioned(
+                            top: widget.childOffset.dy + widget.childSize!.height * 2 / 8,
+                            left: widget.childOffset.dx,
+                            child: TweenAnimationBuilder(
+                              duration: const Duration(milliseconds: 200),
+                              builder: (BuildContext context, double value, Widget? child) {
+                                return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
+                              },
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              child: Container(
+                                width: widget.childSize!.width,
+                                height: widget.childSize!.height * 6 / 8,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).hintColor,
+                                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: <Widget>[
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            ActionChip(
+                                              pressElevation: 5,
+                                              padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                              avatar: const Icon(JamIcons.ordered_list, color: Colors.white, size: 20),
+                                              backgroundColor: Colors.black,
+                                              label: Text(
+                                                context
+                                                        .favouriteWallsAdapter(listen: false)
+                                                        .liked![widget.index]["category"]
+                                                        .toString()[0]
+                                                        .toUpperCase() +
+                                                    context
+                                                        .favouriteWallsAdapter(listen: false)
+                                                        .liked![widget.index]["category"]
+                                                        .toString()
+                                                        .substring(1),
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                              ),
+                                              onPressed: () {},
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                              child: Text(
+                                                context
+                                                    .favouriteWallsAdapter(listen: false)
+                                                    .liked![widget.index]["id"]
+                                                    .toString()
+                                                    .toUpperCase(),
+                                                style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        )
-                                      : context.favouriteWallsAdapter(listen: false).liked![widget.index]["provider"] ==
-                                              "Prism"
-                                          ? Positioned(
-                                              top: widget.childOffset.dy + widget.childSize!.height * 2 / 8,
-                                              left: widget.childOffset.dx,
-                                              child: TweenAnimationBuilder(
-                                                duration: const Duration(milliseconds: 200),
-                                                builder: (BuildContext context, double value, Widget? child) {
-                                                  return Transform.scale(
-                                                      scale: value, alignment: Alignment.bottomRight, child: child);
-                                                },
-                                                tween: Tween(begin: 0.0, end: 1.0),
-                                                child: Container(
-                                                  width: widget.childSize!.width,
-                                                  height: widget.childSize!.height * 6 / 8,
-                                                  decoration: BoxDecoration(
-                                                    color: Theme.of(context).hintColor,
-                                                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                                  ),
-                                                  child: ClipRRect(
-                                                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                                    child: Stack(
-                                                      fit: StackFit.expand,
-                                                      children: <Widget>[
-                                                        Padding(
-                                                          padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                                          child: Column(
-                                                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                            children: <Widget>[
-                                                              ActionChip(
-                                                                pressElevation: 5,
-                                                                padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                                avatar: const Icon(JamIcons.camera,
-                                                                    color: Colors.white, size: 20),
-                                                                backgroundColor: Colors.black,
-                                                                label: Text(
-                                                                  context
-                                                                          .favouriteWallsAdapter(listen: false)
-                                                                          .liked![widget.index]["photographer"]
-                                                                          .toString()[0]
-                                                                          .toUpperCase() +
-                                                                      context
-                                                                          .favouriteWallsAdapter(listen: false)
-                                                                          .liked![widget.index]["photographer"]
-                                                                          .toString()
-                                                                          .substring(1),
-                                                                  style: Theme.of(
-                                                                    context,
-                                                                  )
-                                                                      .textTheme
-                                                                      .headlineMedium!
-                                                                      .copyWith(color: Colors.white),
-                                                                ),
-                                                                onPressed: () {},
-                                                              ),
-                                                              Padding(
-                                                                padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                                                child: Text(
-                                                                  context
-                                                                      .favouriteWallsAdapter(listen: false)
-                                                                      .liked![widget.index]["id"]
-                                                                      .toString()
-                                                                      .toUpperCase(),
-                                                                  style: Theme.of(context)
-                                                                      .textTheme
-                                                                      .headlineSmall!
-                                                                      .copyWith(
-                                                                        color: Theme.of(context).colorScheme.secondary,
-                                                                      ),
-                                                                ),
-                                                              ),
-                                                              Row(
-                                                                children: [
-                                                                  const Icon(JamIcons.save,
-                                                                      size: 20, color: Colors.white70),
-                                                                  const SizedBox(width: 10),
-                                                                  Text(
-                                                                    context
-                                                                        .favouriteWallsAdapter(listen: false)
-                                                                        .liked![widget.index]["size"]
-                                                                        .toString(),
-                                                                    style: Theme.of(context)
-                                                                        .textTheme
-                                                                        .bodyMedium!
-                                                                        .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).colorScheme.secondary,
-                                                                        ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                              Row(
-                                                                children: [
-                                                                  const Icon(JamIcons.set_square,
-                                                                      size: 20, color: Colors.white70),
-                                                                  const SizedBox(width: 10),
-                                                                  Text(
-                                                                    context
-                                                                        .favouriteWallsAdapter(listen: false)
-                                                                        .liked![widget.index]["resolution"]
-                                                                        .toString(),
-                                                                    style: Theme.of(context)
-                                                                        .textTheme
-                                                                        .bodyMedium!
-                                                                        .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).colorScheme.secondary,
-                                                                        ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        Align(
-                                                          alignment: Alignment.bottomRight,
-                                                          child: GestureDetector(
-                                                            onTap: () async {
-                                                              Navigator.pop(context);
-                                                            },
-                                                            child: Container(
-                                                              decoration: const BoxDecoration(
-                                                                color: Color(0xFF2F2F2F),
-                                                                borderRadius: BorderRadius.only(
-                                                                  topLeft: Radius.circular(20),
-                                                                  bottomRight: Radius.circular(20),
-                                                                ),
-                                                              ),
-                                                              padding: EdgeInsets.zero,
-                                                              child: Padding(
-                                                                padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                                                child: Icon(
-                                                                  JamIcons.close,
-                                                                  color: Theme.of(context).colorScheme.secondary,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                          : context.favouriteWallsAdapter(listen: false).liked![widget.index]
-                                                      ["provider"] ==
-                                                  "Pexels"
-                                              ? Positioned(
-                                                  top: widget.childOffset.dy + widget.childSize!.height * 1 / 2,
-                                                  left: widget.childOffset.dx,
-                                                  child: TweenAnimationBuilder(
-                                                    duration: const Duration(milliseconds: 200),
-                                                    builder: (BuildContext context, double value, Widget? child) {
-                                                      return Transform.scale(
-                                                          scale: value, alignment: Alignment.bottomRight, child: child);
-                                                    },
-                                                    tween: Tween(begin: 0.0, end: 1.0),
-                                                    child: Container(
-                                                      width: widget.childSize!.width,
-                                                      height: widget.childSize!.height * 1 / 2,
-                                                      decoration: const BoxDecoration(
-                                                        color: Color(0xFF2F2F2F),
-                                                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                                                      ),
-                                                      child: ClipRRect(
-                                                        borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                                        child: Stack(
-                                                          fit: StackFit.expand,
-                                                          children: <Widget>[
-                                                            Padding(
-                                                              padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                                              child: Column(
-                                                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                                children: <Widget>[
-                                                                  ActionChip(
-                                                                    pressElevation: 5,
-                                                                    padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                                    backgroundColor: Colors.black,
-                                                                    avatar: const Icon(JamIcons.camera,
-                                                                        color: Colors.white, size: 20),
-                                                                    label: Text(
-                                                                      context
-                                                                          .favouriteWallsAdapter(listen: false)
-                                                                          .liked![widget.index]["photographer"]
-                                                                          .toString(),
-                                                                      style: Theme.of(
-                                                                        context,
-                                                                      )
-                                                                          .textTheme
-                                                                          .headlineMedium!
-                                                                          .copyWith(color: Colors.white),
-                                                                    ),
-                                                                    onPressed: () {},
-                                                                  ),
-                                                                  Row(
-                                                                    children: [
-                                                                      Icon(
-                                                                        JamIcons.set_square,
-                                                                        color: Theme.of(context).colorScheme.secondary,
-                                                                        size: 20,
-                                                                      ),
-                                                                      const SizedBox(width: 5),
-                                                                      Text(
-                                                                        context
-                                                                            .favouriteWallsAdapter(listen: false)
-                                                                            .liked![widget.index]["resolution"]
-                                                                            .toString(),
-                                                                        style: Theme.of(context)
-                                                                            .textTheme
-                                                                            .bodyMedium!
-                                                                            .copyWith(
-                                                                              color: Theme.of(context)
-                                                                                  .colorScheme
-                                                                                  .secondary,
-                                                                            ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                            Align(
-                                                              alignment: Alignment.bottomRight,
-                                                              child: GestureDetector(
-                                                                onTap: () async {
-                                                                  Navigator.pop(context);
-                                                                },
-                                                                child: Container(
-                                                                  decoration: const BoxDecoration(
-                                                                    color: Color(0xFF2F2F2F),
-                                                                    borderRadius: BorderRadius.only(
-                                                                      topLeft: Radius.circular(20),
-                                                                      bottomRight: Radius.circular(20),
-                                                                    ),
-                                                                  ),
-                                                                  padding: EdgeInsets.zero,
-                                                                  child: Padding(
-                                                                    padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                                                    child: Icon(
-                                                                      JamIcons.close,
-                                                                      color: Theme.of(context).colorScheme.secondary,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                )
-                                              : Positioned(
-                                                  top: widget.childOffset.dy + widget.childSize!.height * 1 / 2,
-                                                  left: widget.childOffset.dx,
-                                                  child: TweenAnimationBuilder(
-                                                    duration: const Duration(milliseconds: 200),
-                                                    builder: (BuildContext context, double value, Widget? child) {
-                                                      return Transform.scale(
-                                                          scale: value, alignment: Alignment.bottomRight, child: child);
-                                                    },
-                                                    tween: Tween(begin: 0.0, end: 1.0),
-                                                    child: Container(
-                                                      width: widget.childSize!.width,
-                                                      height: widget.childSize!.height * 1 / 2,
-                                                      decoration: const BoxDecoration(
-                                                        color: Color(0xFF2F2F2F),
-                                                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                                                      ),
-                                                      child: ClipRRect(
-                                                        borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                                        child: Stack(
-                                                          fit: StackFit.expand,
-                                                          children: <Widget>[
-                                                            Padding(
-                                                              padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                                              child: Column(
-                                                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                                children: <Widget>[
-                                                                  Row(
-                                                                    children: [
-                                                                      Icon(
-                                                                        JamIcons.heart_f,
-                                                                        color: Theme.of(context).colorScheme.secondary,
-                                                                        size: 20,
-                                                                      ),
-                                                                      const SizedBox(width: 5),
-                                                                      Text(
-                                                                        "Likes: ${context.favouriteWallsAdapter(listen: false).liked![widget.index]["fav"]}",
-                                                                        style: Theme.of(context)
-                                                                            .textTheme
-                                                                            .titleLarge!
-                                                                            .copyWith(
-                                                                              color: Theme.of(context)
-                                                                                  .colorScheme
-                                                                                  .secondary,
-                                                                            ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                  Row(
-                                                                    children: [
-                                                                      Icon(
-                                                                        JamIcons.eye,
-                                                                        color: Theme.of(context).colorScheme.secondary,
-                                                                        size: 20,
-                                                                      ),
-                                                                      const SizedBox(width: 5),
-                                                                      Text(
-                                                                        "Views: ${context.favouriteWallsAdapter(listen: false).liked![widget.index]["views"]}",
-                                                                        style: Theme.of(context)
-                                                                            .textTheme
-                                                                            .titleLarge!
-                                                                            .copyWith(
-                                                                              color: Theme.of(context)
-                                                                                  .colorScheme
-                                                                                  .secondary,
-                                                                            ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                  Row(
-                                                                    children: [
-                                                                      Icon(
-                                                                        JamIcons.set_square,
-                                                                        color: Theme.of(context).colorScheme.secondary,
-                                                                        size: 20,
-                                                                      ),
-                                                                      const SizedBox(width: 5),
-                                                                      Text(
-                                                                        context
-                                                                            .favouriteWallsAdapter(listen: false)
-                                                                            .liked![widget.index]["resolution"]
-                                                                            .toString(),
-                                                                        style: Theme.of(context)
-                                                                            .textTheme
-                                                                            .titleLarge!
-                                                                            .copyWith(
-                                                                              color: Theme.of(context)
-                                                                                  .colorScheme
-                                                                                  .secondary,
-                                                                            ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                            Align(
-                                                              alignment: Alignment.bottomRight,
-                                                              child: GestureDetector(
-                                                                onTap: () async {
-                                                                  Navigator.pop(context);
-                                                                },
-                                                                child: Container(
-                                                                  decoration: const BoxDecoration(
-                                                                    color: Color(0xFF2F2F2F),
-                                                                    borderRadius: BorderRadius.only(
-                                                                      topLeft: Radius.circular(20),
-                                                                      bottomRight: Radius.circular(20),
-                                                                    ),
-                                                                  ),
-                                                                  padding: EdgeInsets.zero,
-                                                                  child: Padding(
-                                                                    padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                                                    child: Icon(
-                                                                      JamIcons.close,
-                                                                      color: Theme.of(context).colorScheme.secondary,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                )
-                                  : Positioned(
-                                      top: widget.childOffset.dy + widget.childSize!.height * 2 / 8,
-                                      left: widget.childOffset.dx,
-                                      child: TweenAnimationBuilder(
-                                        duration: const Duration(milliseconds: 200),
-                                        builder: (BuildContext context, double value, Widget? child) {
-                                          return Transform.scale(
-                                              scale: value, alignment: Alignment.bottomRight, child: child);
-                                        },
-                                        tween: Tween(begin: 0.0, end: 1.0),
-                                        child: Container(
-                                          width: widget.childSize!.width,
-                                          height: widget.childSize!.height * 6 / 8,
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context).hintColor,
-                                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                          ),
-                                          child: ClipRRect(
-                                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                            child: Stack(
-                                              fit: StackFit.expand,
-                                              children: <Widget>[
-                                                Padding(
-                                                  padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                                  child: Column(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: <Widget>[
-                                                      ActionChip(
-                                                        pressElevation: 5,
-                                                        padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                        backgroundColor: Colors.black,
-                                                        avatar:
-                                                            const Icon(JamIcons.camera, color: Colors.white, size: 20),
-                                                        label: Text(
-                                                          PData.wallsC[widget.index].photographer.toString(),
-                                                          style: Theme.of(
-                                                            context,
-                                                          ).textTheme.headlineMedium!.copyWith(color: Colors.white),
-                                                        ),
-                                                        onPressed: () {},
-                                                      ),
-                                                      Padding(
-                                                        padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                                        child: Text(
-                                                          PData.wallsC[widget.index].url
-                                                                      .toString()
-                                                                      .replaceAll("https://www.pexels.com/photo/", "")
-                                                                      .replaceAll("-", " ")
-                                                                      .replaceAll("/", "")
-                                                                      .length >
-                                                                  8
-                                                              ? PData.wallsC[widget.index].url
-                                                                      .toString()
-                                                                      .replaceAll("https://www.pexels.com/photo/", "")
-                                                                      .replaceAll("-", " ")
-                                                                      .replaceAll("/", "")[0]
-                                                                      .toUpperCase() +
-                                                                  PData.wallsC[widget.index].url
-                                                                      .toString()
-                                                                      .replaceAll("https://www.pexels.com/photo/", "")
-                                                                      .replaceAll("-", " ")
-                                                                      .replaceAll("/", "")
-                                                                      .substring(
-                                                                        1,
-                                                                        PData.wallsC[widget.index].url
-                                                                                .toString()
-                                                                                .replaceAll(
-                                                                                    "https://www.pexels.com/photo/", "")
-                                                                                .replaceAll("-", " ")
-                                                                                .replaceAll("/", "")
-                                                                                .length -
-                                                                            7,
-                                                                      )
-                                                              : PData.wallsC[widget.index].url
-                                                                      .toString()
-                                                                      .replaceAll("https://www.pexels.com/photo/", "")
-                                                                      .replaceAll("-", " ")
-                                                                      .replaceAll("/", "")[0]
-                                                                      .toUpperCase() +
-                                                                  PData.wallsC[widget.index].url
-                                                                      .toString()
-                                                                      .replaceAll("https://www.pexels.com/photo/", "")
-                                                                      .replaceAll("-", " ")
-                                                                      .replaceAll("/", "")
-                                                                      .substring(1),
-                                                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                                                                color: Theme.of(context).colorScheme.secondary,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      Row(
-                                                        children: [
-                                                          const Icon(JamIcons.set_square,
-                                                              color: Colors.white70, size: 20),
-                                                          const SizedBox(width: 5),
-                                                          Text(
-                                                            "${PData.wallsC[widget.index].width}x${PData.wallsC[widget.index].height}",
-                                                            style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                                                                  color: Theme.of(context).colorScheme.secondary,
-                                                                ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                Align(
-                                                  alignment: Alignment.bottomRight,
-                                                  child: GestureDetector(
-                                                    onTap: () async {
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: Container(
-                                                      decoration: const BoxDecoration(
-                                                        color: Color(0xFF2F2F2F),
-                                                        borderRadius: BorderRadius.only(
-                                                          topLeft: Radius.circular(20),
-                                                          bottomRight: Radius.circular(20),
-                                                        ),
-                                                      ),
-                                                      padding: EdgeInsets.zero,
-                                                      child: Padding(
-                                                        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                                        child: Icon(JamIcons.close,
-                                                            color: Theme.of(context).colorScheme.secondary),
-                                                      ),
-                                                    ),
+                                            Row(
+                                              children: [
+                                                const Icon(JamIcons.eye, size: 20, color: Colors.white70),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  "Views: ${context.favouriteWallsAdapter(listen: false).liked![widget.index]["views"]}",
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
                                                   ),
                                                 ),
                                               ],
                                             ),
+                                            Row(
+                                              children: [
+                                                const Icon(JamIcons.set_square, size: 20, color: Colors.white70),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  context
+                                                      .favouriteWallsAdapter(listen: false)
+                                                      .liked![widget.index]["resolution"]
+                                                      .toString(),
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Container(
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF2F2F2F),
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(20),
+                                                bottomRight: Radius.circular(20),
+                                              ),
+                                            ),
+                                            padding: EdgeInsets.zero,
+                                            child: Padding(
+                                              padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                              child: Icon(
+                                                JamIcons.close,
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : context.favouriteWallsAdapter(listen: false).liked![widget.index]["provider"] == "Prism"
+                        ? Positioned(
+                            top: widget.childOffset.dy + widget.childSize!.height * 2 / 8,
+                            left: widget.childOffset.dx,
+                            child: TweenAnimationBuilder(
+                              duration: const Duration(milliseconds: 200),
+                              builder: (BuildContext context, double value, Widget? child) {
+                                return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
+                              },
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              child: Container(
+                                width: widget.childSize!.width,
+                                height: widget.childSize!.height * 6 / 8,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).hintColor,
+                                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: <Widget>[
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            ActionChip(
+                                              pressElevation: 5,
+                                              padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                              avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                              backgroundColor: Colors.black,
+                                              label: Text(
+                                                context
+                                                        .favouriteWallsAdapter(listen: false)
+                                                        .liked![widget.index]["photographer"]
+                                                        .toString()[0]
+                                                        .toUpperCase() +
+                                                    context
+                                                        .favouriteWallsAdapter(listen: false)
+                                                        .liked![widget.index]["photographer"]
+                                                        .toString()
+                                                        .substring(1),
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                              ),
+                                              onPressed: () {},
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                              child: Text(
+                                                context
+                                                    .favouriteWallsAdapter(listen: false)
+                                                    .liked![widget.index]["id"]
+                                                    .toString()
+                                                    .toUpperCase(),
+                                                style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
+                                              ),
+                                            ),
+                                            Row(
+                                              children: [
+                                                const Icon(JamIcons.save, size: 20, color: Colors.white70),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  context
+                                                      .favouriteWallsAdapter(listen: false)
+                                                      .liked![widget.index]["size"]
+                                                      .toString(),
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                const Icon(JamIcons.set_square, size: 20, color: Colors.white70),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  context
+                                                      .favouriteWallsAdapter(listen: false)
+                                                      .liked![widget.index]["resolution"]
+                                                      .toString(),
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Container(
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF2F2F2F),
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(20),
+                                                bottomRight: Radius.circular(20),
+                                              ),
+                                            ),
+                                            padding: EdgeInsets.zero,
+                                            child: Padding(
+                                              padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                              child: Icon(
+                                                JamIcons.close,
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : context.favouriteWallsAdapter(listen: false).liked![widget.index]["provider"] == "Pexels"
+                        ? Positioned(
+                            top: widget.childOffset.dy + widget.childSize!.height * 1 / 2,
+                            left: widget.childOffset.dx,
+                            child: TweenAnimationBuilder(
+                              duration: const Duration(milliseconds: 200),
+                              builder: (BuildContext context, double value, Widget? child) {
+                                return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
+                              },
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              child: Container(
+                                width: widget.childSize!.width,
+                                height: widget.childSize!.height * 1 / 2,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF2F2F2F),
+                                  borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: <Widget>[
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            ActionChip(
+                                              pressElevation: 5,
+                                              padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                              backgroundColor: Colors.black,
+                                              avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                              label: Text(
+                                                context
+                                                    .favouriteWallsAdapter(listen: false)
+                                                    .liked![widget.index]["photographer"]
+                                                    .toString(),
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                              ),
+                                              onPressed: () {},
+                                            ),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  JamIcons.set_square,
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  context
+                                                      .favouriteWallsAdapter(listen: false)
+                                                      .liked![widget.index]["resolution"]
+                                                      .toString(),
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Container(
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF2F2F2F),
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(20),
+                                                bottomRight: Radius.circular(20),
+                                              ),
+                                            ),
+                                            padding: EdgeInsets.zero,
+                                            child: Padding(
+                                              padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                              child: Icon(
+                                                JamIcons.close,
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : Positioned(
+                            top: widget.childOffset.dy + widget.childSize!.height * 1 / 2,
+                            left: widget.childOffset.dx,
+                            child: TweenAnimationBuilder(
+                              duration: const Duration(milliseconds: 200),
+                              builder: (BuildContext context, double value, Widget? child) {
+                                return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
+                              },
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              child: Container(
+                                width: widget.childSize!.width,
+                                height: widget.childSize!.height * 1 / 2,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF2F2F2F),
+                                  borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: <Widget>[
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  JamIcons.heart_f,
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  "Likes: ${context.favouriteWallsAdapter(listen: false).liked![widget.index]["fav"]}",
+                                                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  JamIcons.eye,
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  "Views: ${context.favouriteWallsAdapter(listen: false).liked![widget.index]["views"]}",
+                                                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  JamIcons.set_square,
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  context
+                                                      .favouriteWallsAdapter(listen: false)
+                                                      .liked![widget.index]["resolution"]
+                                                      .toString(),
+                                                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Container(
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF2F2F2F),
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(20),
+                                                bottomRight: Radius.circular(20),
+                                              ),
+                                            ),
+                                            padding: EdgeInsets.zero,
+                                            child: Padding(
+                                              padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                              child: Icon(
+                                                JamIcons.close,
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                  : Positioned(
+                      top: widget.childOffset.dy + widget.childSize!.height * 2 / 8,
+                      left: widget.childOffset.dx,
+                      child: TweenAnimationBuilder(
+                        duration: const Duration(milliseconds: 200),
+                        builder: (BuildContext context, double value, Widget? child) {
+                          return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
+                        },
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        child: Container(
+                          width: widget.childSize!.width,
+                          height: widget.childSize!.height * 6 / 8,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).hintColor,
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: <Widget>[
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      ActionChip(
+                                        pressElevation: 5,
+                                        padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                        backgroundColor: Colors.black,
+                                        avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                        label: Text(
+                                          PData.wallsC[widget.index].photographer.toString(),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                        ),
+                                        onPressed: () {},
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                        child: Text(
+                                          PData.wallsC[widget.index].url
+                                                      .toString()
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .length >
+                                                  8
+                                              ? PData.wallsC[widget.index].url
+                                                        .toString()
+                                                        .replaceAll("https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")[0]
+                                                        .toUpperCase() +
+                                                    PData.wallsC[widget.index].url
+                                                        .toString()
+                                                        .replaceAll("https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")
+                                                        .substring(
+                                                          1,
+                                                          PData.wallsC[widget.index].url
+                                                                  .toString()
+                                                                  .replaceAll("https://www.pexels.com/photo/", "")
+                                                                  .replaceAll("-", " ")
+                                                                  .replaceAll("/", "")
+                                                                  .length -
+                                                              7,
+                                                        )
+                                              : PData.wallsC[widget.index].url
+                                                        .toString()
+                                                        .replaceAll("https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")[0]
+                                                        .toUpperCase() +
+                                                    PData.wallsC[widget.index].url
+                                                        .toString()
+                                                        .replaceAll("https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")
+                                                        .substring(1),
+                                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Icon(JamIcons.set_square, color: Colors.white70, size: 20),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            "${PData.wallsC[widget.index].width}x${PData.wallsC[widget.index].height}",
+                                            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      Navigator.pop(context);
+                                    },
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF2F2F2F),
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(20),
+                                          bottomRight: Radius.circular(20),
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                        child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
+                                      ),
                                     ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
             Positioned(
               top: topOffset,
               left: leftOffset,
@@ -1478,23 +1418,16 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 url: widget.provider == "WallHaven"
                     ? WData.walls[widget.index].path.toString()
                     : widget.provider == "Prism"
-                        ? Data.subPrismWalls![widget.index]["wallpaper_url"].toString()
-                        : widget.provider == "ProfileWall"
-                            ? context.profileWallsSnapshots(listen: false)![widget.index]["wallpaper_url"].toString()
-                            : widget.provider == "UserProfileWall"
-                                ? context
-                                    .publicProfileAdapter()
-                                    .userProfileWalls![widget.index]
-                                    .data()["wallpaper_url"]
-                                    .toString()
-                                : widget.provider == "Pexels"
-                                    ? PData.wallsP[widget.index].src!["original"].toString()
-                                    : widget.provider == "Liked"
-                                        ? context
-                                            .favouriteWallsAdapter(listen: false)
-                                            .liked![widget.index]["url"]
-                                            .toString()
-                                        : PData.wallsC[widget.index].src!["original"].toString(),
+                    ? Data.subPrismWalls![widget.index]["wallpaper_url"].toString()
+                    : widget.provider == "ProfileWall"
+                    ? context.profileWallsSnapshots(listen: false)![widget.index]["wallpaper_url"].toString()
+                    : widget.provider == "UserProfileWall"
+                    ? context.publicProfileAdapter().userProfileWalls![widget.index].data()["wallpaper_url"].toString()
+                    : widget.provider == "Pexels"
+                    ? PData.wallsP[widget.index].src!["original"].toString()
+                    : widget.provider == "Liked"
+                    ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["url"].toString()
+                    : PData.wallsC[widget.index].src!["original"].toString(),
               ),
             ),
             Positioned(
@@ -1508,51 +1441,48 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                       trash: false,
                     )
                   : widget.provider == "Prism"
-                      ? FavouriteWallpaperButton(
-                          id: Data.subPrismWalls![widget.index]["id"].toString(),
-                          provider: "Prism",
-                          prism: Data.subPrismWalls![widget.index] as Map,
-                          trash: false,
-                        )
-                      : widget.provider == "ProfileWall"
-                          ? FavouriteWallpaperButton(
-                              id: context.profileWallsSnapshots(listen: false)![widget.index]["id"].toString(),
-                              provider: "Prism",
-                              prism: context.profileWallsSnapshots(listen: false)![widget.index].data(),
-                              trash: false,
-                            )
-                          : widget.provider == "UserProfileWall"
-                              ? FavouriteWallpaperButton(
-                                  id: context.publicProfileAdapter().userProfileWalls![widget.index]["id"].toString(),
-                                  provider: "Prism",
-                                  prism: context.publicProfileAdapter().userProfileWalls![widget.index].data(),
-                                  trash: false,
-                                )
-                              : widget.provider == "Pexels"
-                                  ? FavouriteWallpaperButton(
-                                      id: PData.wallsP[widget.index].id.toString(),
-                                      provider: "Pexels",
-                                      pexels: PData.wallsP[widget.index],
-                                      trash: false,
-                                    )
-                                  : widget.provider == "Liked"
-                                      ? FavouriteWallpaperButton(
-                                          id: context
-                                              .favouriteWallsAdapter(listen: false)
-                                              .liked![widget.index]["id"]
-                                              .toString(),
-                                          provider: context
-                                              .favouriteWallsAdapter(listen: false)
-                                              .liked![widget.index]["provider"]
-                                              .toString(),
-                                          trash: true,
-                                        )
-                                      : FavouriteWallpaperButton(
-                                          id: PData.wallsC[widget.index].id.toString(),
-                                          provider: "Pexels",
-                                          pexels: PData.wallsC[widget.index],
-                                          trash: false,
-                                        ),
+                  ? FavouriteWallpaperButton(
+                      id: Data.subPrismWalls![widget.index]["id"].toString(),
+                      provider: "Prism",
+                      prism: Data.subPrismWalls![widget.index] as Map,
+                      trash: false,
+                    )
+                  : widget.provider == "ProfileWall"
+                  ? FavouriteWallpaperButton(
+                      id: context.profileWallsSnapshots(listen: false)![widget.index]["id"].toString(),
+                      provider: "Prism",
+                      prism: context.profileWallsSnapshots(listen: false)![widget.index].data(),
+                      trash: false,
+                    )
+                  : widget.provider == "UserProfileWall"
+                  ? FavouriteWallpaperButton(
+                      id: context.publicProfileAdapter().userProfileWalls![widget.index]["id"].toString(),
+                      provider: "Prism",
+                      prism: context.publicProfileAdapter().userProfileWalls![widget.index].data(),
+                      trash: false,
+                    )
+                  : widget.provider == "Pexels"
+                  ? FavouriteWallpaperButton(
+                      id: PData.wallsP[widget.index].id.toString(),
+                      provider: "Pexels",
+                      pexels: PData.wallsP[widget.index],
+                      trash: false,
+                    )
+                  : widget.provider == "Liked"
+                  ? FavouriteWallpaperButton(
+                      id: context.favouriteWallsAdapter(listen: false).liked![widget.index]["id"].toString(),
+                      provider: context
+                          .favouriteWallsAdapter(listen: false)
+                          .liked![widget.index]["provider"]
+                          .toString(),
+                      trash: true,
+                    )
+                  : FavouriteWallpaperButton(
+                      id: PData.wallsC[widget.index].id.toString(),
+                      provider: "Pexels",
+                      pexels: PData.wallsC[widget.index],
+                      trash: false,
+                    ),
             ),
             Positioned(
               top: topOffset! + fabWallTopOffset,
@@ -1562,58 +1492,48 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 link: widget.provider == "WallHaven"
                     ? WData.walls[widget.index].path.toString()
                     : widget.provider == "Prism"
-                        ? Data.subPrismWalls![widget.index]["wallpaper_url"].toString()
-                        : widget.provider == "ProfileWall"
-                            ? context.profileWallsSnapshots(listen: false)![widget.index]["wallpaper_url"].toString()
-                            : widget.provider == "UserProfileWall"
-                                ? context
-                                    .publicProfileAdapter()
-                                    .userProfileWalls![widget.index]
-                                    .data()["wallpaper_url"]
-                                    .toString()
-                                : widget.provider == "Pexels"
-                                    ? PData.wallsP[widget.index].src!["original"].toString()
-                                    : widget.provider == "Liked"
-                                        ? context
-                                            .favouriteWallsAdapter(listen: false)
-                                            .liked![widget.index]["url"]
-                                            .toString()
-                                        : PData.wallsC[widget.index].src!["original"].toString(),
+                    ? Data.subPrismWalls![widget.index]["wallpaper_url"].toString()
+                    : widget.provider == "ProfileWall"
+                    ? context.profileWallsSnapshots(listen: false)![widget.index]["wallpaper_url"].toString()
+                    : widget.provider == "UserProfileWall"
+                    ? context.publicProfileAdapter().userProfileWalls![widget.index].data()["wallpaper_url"].toString()
+                    : widget.provider == "Pexels"
+                    ? PData.wallsP[widget.index].src!["original"].toString()
+                    : widget.provider == "Liked"
+                    ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["url"].toString()
+                    : PData.wallsC[widget.index].src!["original"].toString(),
                 isPremiumContent: widget.provider == "Prism"
                     ? globals.isPremiumWall(
                         globals.premiumCollections,
                         Data.subPrismWalls![widget.index]["collections"] as List? ?? [],
                       )
                     : widget.provider == "ProfileWall"
-                        ? globals.isPremiumWall(
+                    ? globals.isPremiumWall(
+                        globals.premiumCollections,
+                        context.profileWallsSnapshots(listen: false)![widget.index].data()["collections"] as List? ??
+                            [],
+                      )
+                    : widget.provider == "UserProfileWall"
+                    ? globals.isPremiumWall(
+                        globals.premiumCollections,
+                        context.publicProfileAdapter().userProfileWalls![widget.index].data()["collections"] as List? ??
+                            [],
+                      )
+                    : widget.provider == "Liked" &&
+                          globals.isPremiumWall(
                             globals.premiumCollections,
-                            context.profileWallsSnapshots(listen: false)![widget.index].data()["collections"]
-                                    as List? ??
+                            context.favouriteWallsAdapter(listen: false).liked![widget.index]["collections"] as List? ??
                                 [],
-                          )
-                        : widget.provider == "UserProfileWall"
-                            ? globals.isPremiumWall(
-                                globals.premiumCollections,
-                                context.publicProfileAdapter().userProfileWalls![widget.index].data()["collections"]
-                                        as List? ??
-                                    [],
-                              )
-                            : widget.provider == "Liked" &&
-                                globals.isPremiumWall(
-                                  globals.premiumCollections,
-                                  context.favouriteWallsAdapter(listen: false).liked![widget.index]["collections"]
-                                          as List? ??
-                                      [],
-                                ),
+                          ),
                 contentId: widget.provider == "Prism"
                     ? Data.subPrismWalls![widget.index]["id"]?.toString()
                     : widget.provider == "ProfileWall"
-                        ? context.profileWallsSnapshots(listen: false)![widget.index].data()["id"]?.toString()
-                        : widget.provider == "UserProfileWall"
-                            ? context.publicProfileAdapter().userProfileWalls![widget.index].data()["id"]?.toString()
-                            : widget.provider == "Liked"
-                                ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["id"]?.toString()
-                                : null,
+                    ? context.profileWallsSnapshots(listen: false)![widget.index].data()["id"]?.toString()
+                    : widget.provider == "UserProfileWall"
+                    ? context.publicProfileAdapter().userProfileWalls![widget.index].data()["id"]?.toString()
+                    : widget.provider == "Liked"
+                    ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["id"]?.toString()
+                    : null,
                 sourceContext: 'focused_menu.${widget.provider ?? "unknown"}',
               ),
             ),

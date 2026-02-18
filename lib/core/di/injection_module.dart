@@ -18,9 +18,9 @@ abstract class AppModule {
 
   @lazySingleton
   FirestoreTelemetrySink get firestoreTelemetrySink => CompositeFirestoreTelemetrySink(<FirestoreTelemetrySink>[
-        const FirestoreConsoleTelemetrySink(),
-        FirestoreFileTelemetrySink(),
-      ]);
+    const FirestoreConsoleTelemetrySink(),
+    FirestoreFileTelemetrySink(),
+  ]);
 
   @lazySingleton
   FirestoreClient firestoreClient(FirebaseFirestore firestore, FirestoreTelemetrySink telemetrySink) =>

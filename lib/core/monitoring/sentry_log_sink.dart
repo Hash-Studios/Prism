@@ -5,7 +5,7 @@ import 'package:Prism/logger/log_sink.dart';
 
 class SentryLogSink implements LogSink {
   SentryLogSink({this.dedupeWindow = const Duration(milliseconds: 1500), DateTime Function()? clock})
-      : _clock = clock ?? DateTime.now;
+    : _clock = clock ?? DateTime.now;
 
   final Duration dedupeWindow;
   final DateTime Function() _clock;

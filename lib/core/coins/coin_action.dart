@@ -11,13 +11,7 @@ enum CoinEarnAction {
   refund,
 }
 
-enum CoinSpendAction {
-  wallpaperDownload,
-  premiumWallpaperDownload,
-  aiGeneration,
-  premiumFilter,
-  premiumPreview24h,
-}
+enum CoinSpendAction { wallpaperDownload, premiumWallpaperDownload, aiGeneration, premiumFilter, premiumPreview24h }
 
 extension CoinEarnActionX on CoinEarnAction {
   int defaultAmount() {

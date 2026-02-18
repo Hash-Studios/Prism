@@ -265,12 +265,12 @@ class _EditWallScreenState extends State<EditWallScreen> {
           label: cropRatio == 1 / 2
               ? "9:18"
               : cropRatio == 9 / 16
-                  ? "9:16"
-                  : cropRatio == 9 / 21
-                      ? "9:21"
-                      : cropRatio == 9 / 19.5
-                          ? "9:19.5"
-                          : "9:18",
+              ? "9:16"
+              : cropRatio == 9 / 21
+              ? "9:21"
+              : cropRatio == 9 / 19.5
+              ? "9:19.5"
+              : "9:18",
         ),
       ],
       onTap: (int index) {

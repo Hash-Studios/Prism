@@ -20,15 +20,17 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
 
   @override
   Future<Result<List<CategoryEntity>>> getCategories() async {
-    final categories = category_data.categories.map((rawItem) {
-      final item = Map<String, dynamic>.from(rawItem as Map);
-      return CategoryEntity(
-        name: (item['name'] ?? '').toString(),
-        provider: (item['provider'] ?? '').toString(),
-        type: (item['type'] ?? '').toString(),
-        image: (item['image'] ?? '').toString(),
-      );
-    }).toList(growable: false);
+    final categories = category_data.categories
+        .map((rawItem) {
+          final item = Map<String, dynamic>.from(rawItem as Map);
+          return CategoryEntity(
+            name: (item['name'] ?? '').toString(),
+            provider: (item['provider'] ?? '').toString(),
+            type: (item['type'] ?? '').toString(),
+            image: (item['image'] ?? '').toString(),
+          );
+        })
+        .toList(growable: false);
 
     return Result.success(categories);
   }
@@ -75,15 +77,17 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         }
       }
 
-      final items = rawItems.map((item) {
-        if (item is Map<String, dynamic>) {
-          return FeedItemEntity(id: (item['id'] ?? '').toString(), provider: category.provider, payload: item);
-        }
+      final items = rawItems
+          .map((item) {
+            if (item is Map<String, dynamic>) {
+              return FeedItemEntity(id: (item['id'] ?? '').toString(), provider: category.provider, payload: item);
+            }
 
-        final id = item.hashCode.toString();
-        final payload = <String, dynamic>{'raw': item, 'id': id};
-        return FeedItemEntity(id: id, provider: category.provider, payload: payload);
-      }).toList(growable: false);
+            final id = item.hashCode.toString();
+            final payload = <String, dynamic>{'raw': item, 'id': id};
+            return FeedItemEntity(id: id, provider: category.provider, payload: payload);
+          })
+          .toList(growable: false);
       logger.i(
         '[CategoryFeedRepository] fetchCategoryFeed success',
         fields: <String, Object?>{

@@ -97,20 +97,20 @@ class PrismList extends StatelessWidget {
                             index == 0
                                 ? JamIcons.picture
                                 : index == 1
-                                    ? JamIcons.camera
-                                    : index == 2
-                                        ? JamIcons.unsplash
-                                        : JamIcons.github,
+                                ? JamIcons.camera
+                                : index == 2
+                                ? JamIcons.unsplash
+                                : JamIcons.github,
                             color: Theme.of(context).colorScheme.secondary,
                           ),
                           title: Text(
                             index == 0
                                 ? "WallHaven API"
                                 : index == 1
-                                    ? "Pexels API"
-                                    : index == 2
-                                        ? "Unsplash API"
-                                        : "GitHub API",
+                                ? "Pexels API"
+                                : index == 2
+                                ? "Unsplash API"
+                                : "GitHub API",
                             style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           onTap: index == 0
@@ -120,22 +120,22 @@ class PrismList extends StatelessWidget {
                                   launchUrl(Uri.parse("https://wallhaven.cc/help/api"));
                                 }
                               : index == 1
-                                  ? () {
-                                      HapticFeedback.vibrate();
-                                      Navigator.of(context).pop();
-                                      launchUrl(Uri.parse("https://www.pexels.com/api/"));
-                                    }
-                                  : index == 2
-                                      ? () {
-                                          HapticFeedback.vibrate();
-                                          Navigator.of(context).pop();
-                                          launchUrl(Uri.parse("https://unsplash.com/developers"));
-                                        }
-                                      : () {
-                                          HapticFeedback.vibrate();
-                                          Navigator.of(context).pop();
-                                          launchUrl(Uri.parse("https://developer.github.com/v3/"));
-                                        },
+                              ? () {
+                                  HapticFeedback.vibrate();
+                                  Navigator.of(context).pop();
+                                  launchUrl(Uri.parse("https://www.pexels.com/api/"));
+                                }
+                              : index == 2
+                              ? () {
+                                  HapticFeedback.vibrate();
+                                  Navigator.of(context).pop();
+                                  launchUrl(Uri.parse("https://unsplash.com/developers"));
+                                }
+                              : () {
+                                  HapticFeedback.vibrate();
+                                  Navigator.of(context).pop();
+                                  launchUrl(Uri.parse("https://developer.github.com/v3/"));
+                                },
                         );
                       },
                     ),

@@ -5,29 +5,31 @@ import 'package:Prism/main.dart' as main;
 GoogleAuth gAuth = GoogleAuth();
 const String defaultProfilePhotoUrl =
     'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';
-PrismUsersV2 prismUser = main.prefs.get(
-  main.userHiveKey,
-  defaultValue: PrismUsersV2(
-    name: "",
-    bio: "",
-    createdAt: DateTime.now().toUtc().toIso8601String(),
-    email: "",
-    username: "",
-    followers: [],
-    following: [],
-    id: "",
-    lastLoginAt: DateTime.now().toUtc().toIso8601String(),
-    links: {},
-    premium: false,
-    loggedIn: false,
-    profilePhoto: defaultProfilePhotoUrl,
-    badges: [],
-    coins: 0,
-    subPrisms: [],
-    transactions: [],
-    coverPhoto: "",
-  ),
-) as PrismUsersV2;
+PrismUsersV2 prismUser =
+    main.prefs.get(
+          main.userHiveKey,
+          defaultValue: PrismUsersV2(
+            name: "",
+            bio: "",
+            createdAt: DateTime.now().toUtc().toIso8601String(),
+            email: "",
+            username: "",
+            followers: [],
+            following: [],
+            id: "",
+            lastLoginAt: DateTime.now().toUtc().toIso8601String(),
+            links: {},
+            premium: false,
+            loggedIn: false,
+            profilePhoto: defaultProfilePhotoUrl,
+            badges: [],
+            coins: 0,
+            subPrisms: [],
+            transactions: [],
+            coverPhoto: "",
+          ),
+        )
+        as PrismUsersV2;
 String currentAppVersion = '2.6.9';
 String obsoleteAppVersion = '2.6.0';
 String currentAppVersionCode = '75';

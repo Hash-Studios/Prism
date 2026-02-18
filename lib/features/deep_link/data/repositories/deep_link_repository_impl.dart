@@ -58,7 +58,8 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
       );
     }
     if (path == 'refer') {
-      final String? inviterId = uri.queryParameters['userID'] ??
+      final String? inviterId =
+          uri.queryParameters['userID'] ??
           uri.queryParameters['userId'] ??
           uri.queryParameters['userid'] ??
           uri.queryParameters['id'];

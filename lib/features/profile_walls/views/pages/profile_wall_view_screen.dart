@@ -144,29 +144,31 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
               screenshotController
                   .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                   .then((Uint8List? image) async {
-                setState(() {
-                  _imageFile = File.fromRawPath(image!);
-                  screenshotTaken = true;
-                  panelClosed = false;
-                });
-                logger.d('Screenshot Taken');
-              }).catchError((onError) {
-                logger.d(onError.toString());
-              });
+                    setState(() {
+                      _imageFile = File.fromRawPath(image!);
+                      screenshotTaken = true;
+                      panelClosed = false;
+                    });
+                    logger.d('Screenshot Taken');
+                  })
+                  .catchError((onError) {
+                    logger.d(onError.toString());
+                  });
             } else {
               main.prefs.get('optimisedWallpapers') as bool? ?? true
                   ? screenshotController
-                      .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
-                      .then((Uint8List? image) async {
-                      setState(() {
-                        _imageFile = File.fromRawPath(image!);
-                        screenshotTaken = true;
-                        panelClosed = false;
-                      });
-                      logger.d('Screenshot Taken');
-                    }).catchError((onError) {
-                      logger.d(onError.toString());
-                    })
+                        .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
+                        .then((Uint8List? image) async {
+                          setState(() {
+                            _imageFile = File.fromRawPath(image!);
+                            screenshotTaken = true;
+                            panelClosed = false;
+                          });
+                          logger.d('Screenshot Taken');
+                        })
+                        .catchError((onError) {
+                          logger.d(onError.toString());
+                        })
                   : logger.d("Wallpaper Optimisation is disabled!");
             }
           }
@@ -249,8 +251,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.symmetric(horizontal: 6.0),
@@ -268,26 +270,26 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                                 return Text(
                                                   "",
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                        color: Theme.of(context).colorScheme.secondary,
-                                                        fontSize: 16,
-                                                      ),
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                    fontSize: 16,
+                                                  ),
                                                 );
                                               case ConnectionState.none:
                                                 return Text(
                                                   "",
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                        color: Theme.of(context).colorScheme.secondary,
-                                                        fontSize: 16,
-                                                      ),
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                    fontSize: 16,
+                                                  ),
                                                 );
                                               default:
                                                 if (snapshot.hasError) {
                                                   return Text(
                                                     "",
                                                     style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                          color: Theme.of(context).colorScheme.secondary,
-                                                          fontSize: 16,
-                                                        ),
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                      fontSize: 16,
+                                                    ),
                                                   );
                                                 } else {
                                                   return Text(
@@ -295,9 +297,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                                     overflow: TextOverflow.fade,
                                                     softWrap: false,
                                                     style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                          color: Theme.of(context).colorScheme.secondary,
-                                                          fontSize: 16,
-                                                        ),
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                      fontSize: 16,
+                                                    ),
                                                   );
                                                 }
                                             }
@@ -418,9 +420,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                             link: screenshotTaken
                                 ? _imageFile.path
                                 : context
-                                    .profileWallsSnapshots(listen: false)![index]
-                                    .data()["wallpaper_url"]
-                                    .toString(),
+                                      .profileWallsSnapshots(listen: false)![index]
+                                      .data()["wallpaper_url"]
+                                      .toString(),
                             isPremiumContent: globals.isPremiumWall(
                               globals.premiumCollections,
                               context.profileWallsSnapshots(listen: false)![index].data()["collections"] as List? ?? [],
@@ -433,9 +435,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                             url: screenshotTaken
                                 ? _imageFile.path
                                 : context
-                                    .profileWallsSnapshots(listen: false)![index]
-                                    .data()["wallpaper_url"]
-                                    .toString(),
+                                      .profileWallsSnapshots(listen: false)![index]
+                                      .data()["wallpaper_url"]
+                                      .toString(),
                           ),
                           FavouriteWallpaperButton(
                             id: context.profileWallsSnapshots(listen: false)![index].data()["id"].toString(),
@@ -452,16 +454,20 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                 .profileWallsSnapshots(listen: false)![index]
                                 .data()["wallpaper_provider"]
                                 .toString(),
-                            url:
-                                context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_url"].toString(),
+                            url: context
+                                .profileWallsSnapshots(listen: false)![index]
+                                .data()["wallpaper_url"]
+                                .toString(),
                             thumbUrl: context
                                 .profileWallsSnapshots(listen: false)![index]
                                 .data()["wallpaper_thumb"]
                                 .toString(),
                           ),
                           EditButton(
-                            url:
-                                context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_url"].toString(),
+                            url: context
+                                .profileWallsSnapshots(listen: false)![index]
+                                .data()["wallpaper_url"]
+                                .toString(),
                           ),
                         ],
                       ),
@@ -534,8 +540,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
+                            ? Colors.black
+                            : Colors.white,
                       ),
                     ),
                   ),
@@ -553,8 +559,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                   color: isLoading
                       ? Theme.of(context).colorScheme.secondary
                       : accent!.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white,
+                      ? Colors.black
+                      : Colors.white,
                   icon: const Icon(JamIcons.chevron_left),
                 ),
               ),
@@ -589,8 +595,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                   color: isLoading
                       ? Theme.of(context).colorScheme.secondary
                       : accent!.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white,
+                      ? Colors.black
+                      : Colors.white,
                   icon: const Icon(JamIcons.clock),
                 ),
               ),

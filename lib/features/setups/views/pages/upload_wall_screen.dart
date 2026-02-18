@@ -288,8 +288,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor:
-              !isProcessing && !isUploading ? Theme.of(context).colorScheme.error : Theme.of(context).hintColor,
+          backgroundColor: !isProcessing && !isUploading
+              ? Theme.of(context).colorScheme.error
+              : Theme.of(context).hintColor,
           disabledElevation: 0,
           onPressed: !isProcessing && !isUploading
               ? () async {

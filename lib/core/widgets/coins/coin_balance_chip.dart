@@ -12,10 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CoinBalanceChip extends StatefulWidget {
-  const CoinBalanceChip({
-    super.key,
-    required this.sourceTag,
-  });
+  const CoinBalanceChip({super.key, required this.sourceTag});
 
   final String sourceTag;
 
@@ -43,8 +40,8 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
             final Color bgColor = isEarn
                 ? Colors.green.withValues(alpha: 0.2)
                 : isSpend
-                    ? Colors.red.withValues(alpha: 0.2)
-                    : Theme.of(context).hintColor;
+                ? Colors.red.withValues(alpha: 0.2)
+                : Theme.of(context).hintColor;
             return AnimatedScale(
               scale: delta == 0 ? 1 : 1.06,
               duration: const Duration(milliseconds: 220),
@@ -74,27 +71,23 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          JamIcons.coin,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
+                        Icon(JamIcons.coin, size: 16, color: Theme.of(context).colorScheme.secondary),
                         const SizedBox(width: 6),
                         Text(
                           '$balance',
                           style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Theme.of(context).colorScheme.secondary,
-                                fontWeight: FontWeight.w700,
-                              ),
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         if (delta != 0) ...[
                           const SizedBox(width: 6),
                           Text(
                             isEarn ? '+$delta' : '$delta',
                             style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                  color: isEarn ? Colors.green : Colors.red,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                              color: isEarn ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ],
                       ],
@@ -109,17 +102,11 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
     );
   }
 
-  void _showCoinActionsSheet(
-    BuildContext context, {
-    required bool isLow,
-    required int balance,
-  }) {
+  void _showCoinActionsSheet(BuildContext context, {required bool isLow, required int balance}) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Theme.of(context).primaryColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setState) => Padding(
@@ -136,10 +123,7 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'Prism Coins: $balance',
-                  style: Theme.of(context).textTheme.displaySmall,
-                ),
+                Text('Prism Coins: $balance', style: Theme.of(context).textTheme.displaySmall),
                 const SizedBox(height: 10),
                 Text(
                   isLow
@@ -162,11 +146,7 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                             }
                           },
                     child: _loadingReward
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Text('Watch Ad (+10)'),
                   ),
                 ),
@@ -199,9 +179,7 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
     }
     try {
       final AdsState state = await bloc.stream
-          .firstWhere(
-            (state) => state.ads.adLoaded || state.ads.adFailed,
-          )
+          .firstWhere((state) => state.ads.adLoaded || state.ads.adFailed)
           .timeout(const Duration(seconds: 30));
       return state.ads.adLoaded;
     } catch (_) {
@@ -227,10 +205,7 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
       watchRequested = true;
       final AdsState result = await completion;
       if (result.shouldUnlockDownload) {
-        await CoinsService.instance.award(
-          CoinEarnAction.rewardedAd,
-          sourceTag: 'coins.coin_chip.rewarded_ad',
-        );
+        await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: 'coins.coin_chip.rewarded_ad');
         toasts.codeSend('+${CoinPolicy.rewardedAd} coins');
         return;
       }

@@ -189,8 +189,9 @@ class _ProfileChildState extends State<ProfileChild> {
     final String safeUserPhoto = (widget.userPhoto ?? "").trim();
     final bool hasCoverPhoto = safeCoverPhoto.isNotEmpty;
     final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
-    final ScrollController? controller =
-        widget.ownProfile! ? InheritedDataProvider.of(context)!.scrollController : ScrollController();
+    final ScrollController? controller = widget.ownProfile!
+        ? InheritedDataProvider.of(context)!.scrollController
+        : ScrollController();
 
     return !widget.ownProfile! || globals.prismUser.loggedIn
         ? DefaultTabController(
@@ -262,13 +263,16 @@ class _ProfileChildState extends State<ProfileChild> {
                                             shape: BoxShape.circle,
                                             color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                           ),
-                                          child: Icon(JamIcons.user_remove,
-                                              color: Theme.of(context).colorScheme.secondary),
+                                          child: Icon(
+                                            JamIcons.user_remove,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                         ),
                                         onPressed: () {
                                           unfollow(widget.email!, widget.id!);
                                           toasts.error("Unfollowed ${widget.name}!");
-                                        })
+                                        },
+                                      )
                                     : IconButton(
                                         alignment: Alignment.centerRight,
                                         padding: const EdgeInsets.all(2),
@@ -278,60 +282,60 @@ class _ProfileChildState extends State<ProfileChild> {
                                             shape: BoxShape.circle,
                                             color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                           ),
-                                          child:
-                                              Icon(JamIcons.user_plus, color: Theme.of(context).colorScheme.secondary),
+                                          child: Icon(
+                                            JamIcons.user_plus,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                         ),
                                         onPressed: () {
                                           follow(widget.email!, widget.id!);
                                           http.post(
-                                            Uri.parse(
-                                              'https://fcm.googleapis.com/fcm/send',
-                                            ),
+                                            Uri.parse('https://fcm.googleapis.com/fcm/send'),
                                             headers: <String, String>{
                                               'Content-Type': 'application/json',
                                               'Authorization': 'key=${Env.fcmServerKey}',
                                             },
-                                            body: jsonEncode(
-                                              <String, dynamic>{
-                                                'notification': <String, dynamic>{
-                                                  'title': '🎉 New Follower!',
-                                                  'body': '${globals.prismUser.username} is now following you.',
-                                                  'color': "#e57697",
-                                                  'tag': '${globals.prismUser.username} Follow',
-                                                  'image': globals.prismUser.profilePhoto,
-                                                  'android_channel_id': "followers",
-                                                  'icon': '@drawable/ic_follow'
-                                                },
-                                                'priority': 'high',
-                                                'data': <String, dynamic>{
-                                                  'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-                                                  'id': '1',
-                                                  'status': 'done'
-                                                },
-                                                'to': "/topics/${widget.email!.split("@")[0]}"
+                                            body: jsonEncode(<String, dynamic>{
+                                              'notification': <String, dynamic>{
+                                                'title': '🎉 New Follower!',
+                                                'body': '${globals.prismUser.username} is now following you.',
+                                                'color': "#e57697",
+                                                'tag': '${globals.prismUser.username} Follow',
+                                                'image': globals.prismUser.profilePhoto,
+                                                'android_channel_id': "followers",
+                                                'icon': '@drawable/ic_follow',
                                               },
-                                            ),
+                                              'priority': 'high',
+                                              'data': <String, dynamic>{
+                                                'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+                                                'id': '1',
+                                                'status': 'done',
+                                              },
+                                              'to': "/topics/${widget.email!.split("@")[0]}",
+                                            }),
                                           );
                                           toasts.codeSend("Followed ${widget.name}!");
-                                        }),
+                                        },
+                                      ),
                               ),
                           if (widget.ownProfile! && globals.prismUser.loggedIn)
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: IconButton(
-                                  alignment: Alignment.centerRight,
-                                  padding: const EdgeInsets.all(2),
-                                  icon: Container(
-                                    padding: const EdgeInsets.all(6.0),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                    ),
-                                    child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.all(2),
+                                icon: Container(
+                                  padding: const EdgeInsets.all(6.0),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                   ),
-                                  onPressed: () {
-                                    widget.parentScaffoldKey?.currentState?.openEndDrawer();
-                                  }),
+                                  child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
+                                ),
+                                onPressed: () {
+                                  widget.parentScaffoldKey?.currentState?.openEndDrawer();
+                                },
+                              ),
                             ),
                         ],
                         backgroundColor: Theme.of(context).primaryColor,
@@ -497,8 +501,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 child: Row(
                                                   mainAxisAlignment: MainAxisAlignment.center,
                                                   children: [
-                                                    ...(widget.links ?? {})
-                                                        .keys
+                                                    ...(widget.links ?? {}).keys
                                                         .toList()
                                                         .map(
                                                           (e) => IconButton(
@@ -521,8 +524,9 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             ),
                                                             onPressed: () async {
                                                               final String link = widget.links![e].toString();
-                                                              final String targetLink =
-                                                                  link.contains("@gmail.com") ? "mailto:$link" : link;
+                                                              final String targetLink = link.contains("@gmail.com")
+                                                                  ? "mailto:$link"
+                                                                  : link;
                                                               await launchUrl(Uri.parse(targetLink));
                                                             },
                                                           ),

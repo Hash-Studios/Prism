@@ -23,10 +23,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final suffix = dayNo[dayNo.length - 1] == "1"
         ? "ˢᵗ"
         : dayNo[dayNo.length - 1] == "2"
-            ? "ⁿᵈ"
-            : dayNo[dayNo.length - 1] == "3"
-                ? "ʳᵈ"
-                : "ᵗʰ";
+        ? "ⁿᵈ"
+        : dayNo[dayNo.length - 1] == "3"
+        ? "ʳᵈ"
+        : "ᵗʰ";
     return Material(
       child: Stack(
         children: <Widget>[
@@ -68,8 +68,8 @@ class _ClockOverlayState extends State<ClockOverlay> {
                       color: widget.accent == null
                           ? Theme.of(context).colorScheme.secondary
                           : widget.accent!.computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
+                          ? Colors.black
+                          : Colors.white,
                       fontFamily: "Roboto",
                       fontSize: 25,
                       fontWeight: FontWeight.w300,
@@ -83,8 +83,8 @@ class _ClockOverlayState extends State<ClockOverlay> {
                       color: widget.accent == null
                           ? Theme.of(context).colorScheme.secondary
                           : widget.accent!.computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
+                          ? Colors.black
+                          : Colors.white,
                       fontFamily: "Roboto",
                       fontSize: 25,
                       fontWeight: FontWeight.w500,

@@ -81,8 +81,8 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                                   Text(
                                     choice.name.toString(),
                                     style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                          color: Theme.of(context).colorScheme.secondary,
-                                        ),
+                                      color: Theme.of(context).colorScheme.secondary,
+                                    ),
                                   ),
                                 ],
                               ),

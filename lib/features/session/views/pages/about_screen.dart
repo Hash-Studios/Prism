@@ -135,8 +135,8 @@ class AboutScreen extends StatelessWidget {
                           subtitle: Text(
                             c.contributions == 1 ? "${c.contributions} commit" : "${c.contributions} commits",
                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                                ),
+                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                            ),
                           ),
                           onTap: () {
                             launch(c.htmlUrl!);
@@ -223,8 +223,8 @@ class ActionButton extends StatelessWidget {
           icon,
           color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
               ? Theme.of(context).colorScheme.error == Colors.black
-                  ? Theme.of(context).colorScheme.secondary
-                  : Theme.of(context).colorScheme.error
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.error
               : Theme.of(context).colorScheme.error,
         ),
         label: Text(

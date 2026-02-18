@@ -148,28 +148,30 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                     screenshotController
                         .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                         .then((Uint8List? image) async {
-                      setState(() {
-                        _imageFile = File.fromRawPath(image!);
-                        screenshotTaken = true;
-                        panelClosed = false;
-                      });
-                      logger.d('Screenshot Taken');
-                    }).catchError((onError) {
-                      logger.d(onError.toString());
-                    });
+                          setState(() {
+                            _imageFile = File.fromRawPath(image!);
+                            screenshotTaken = true;
+                            panelClosed = false;
+                          });
+                          logger.d('Screenshot Taken');
+                        })
+                        .catchError((onError) {
+                          logger.d(onError.toString());
+                        });
                   } else {
                     main.prefs.get('optimisedWallpapers') as bool? ?? true
                         ? screenshotController
-                            .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
-                            .then((Uint8List? image) async {
-                            setState(() {
-                              _imageFile = File.fromRawPath(image!);
-                              screenshotTaken = true;
-                            });
-                            logger.d('Screenshot Taken');
-                          }).catchError((onError) {
-                            logger.d(onError.toString());
-                          })
+                              .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
+                              .then((Uint8List? image) async {
+                                setState(() {
+                                  _imageFile = File.fromRawPath(image!);
+                                  screenshotTaken = true;
+                                });
+                                logger.d('Screenshot Taken');
+                              })
+                              .catchError((onError) {
+                                logger.d(onError.toString());
+                              })
                         : logger.d("Wallpaper Optimisation is disabled!");
                   }
                 }
@@ -244,8 +246,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                         child: Text(
                                           wdata.wallsS[index].id.toString().toUpperCase(),
                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                         ),
                                       ),
                                       Row(
@@ -259,8 +261,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           Text(
                                             wdata.wallsS[index].views.toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -276,8 +278,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           Text(
                                             wdata.wallsS[index].favourites.toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -293,8 +295,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           Text(
                                             "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -312,8 +314,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               wdata.wallsS[index].category.toString()[0].toUpperCase() +
                                                   wdata.wallsS[index].category.toString().substring(1),
                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
-                                                  ),
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
@@ -330,8 +332,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           Text(
                                             wdata.wallsS[index].resolution.toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                           const SizedBox(width: 10),
                                           Icon(
@@ -347,8 +349,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           Text(
                                             query.toString()[0].toUpperCase() + query.toString().substring(1),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                           const SizedBox(width: 10),
                                           Icon(
@@ -461,8 +463,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                               color: isLoading
                                   ? Theme.of(context).colorScheme.secondary
                                   : accent!.computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
+                                  ? Colors.black
+                                  : Colors.white,
                             ),
                           ),
                         ),
@@ -480,8 +482,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
+                            ? Colors.black
+                            : Colors.white,
                         icon: const Icon(JamIcons.chevron_left),
                       ),
                     ),
@@ -516,8 +518,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
+                            ? Colors.black
+                            : Colors.white,
                         icon: const Icon(JamIcons.clock),
                       ),
                     ),
@@ -543,28 +545,30 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                     screenshotController
                         .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                         .then((Uint8List? image) async {
-                      setState(() {
-                        _imageFile = File.fromRawPath(image!);
-                        screenshotTaken = true;
-                        panelClosed = false;
-                      });
-                      logger.d('Screenshot Taken');
-                    }).catchError((onError) {
-                      logger.d(onError.toString());
-                    });
+                          setState(() {
+                            _imageFile = File.fromRawPath(image!);
+                            screenshotTaken = true;
+                            panelClosed = false;
+                          });
+                          logger.d('Screenshot Taken');
+                        })
+                        .catchError((onError) {
+                          logger.d(onError.toString());
+                        });
                   } else {
                     main.prefs.get('optimisedWallpapers') as bool? ?? true
                         ? screenshotController
-                            .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
-                            .then((Uint8List? image) async {
-                            setState(() {
-                              _imageFile = File.fromRawPath(image!);
-                              screenshotTaken = true;
-                            });
-                            logger.d('Screenshot Taken');
-                          }).catchError((onError) {
-                            logger.d(onError.toString());
-                          })
+                              .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
+                              .then((Uint8List? image) async {
+                                setState(() {
+                                  _imageFile = File.fromRawPath(image!);
+                                  screenshotTaken = true;
+                                });
+                                logger.d('Screenshot Taken');
+                              })
+                              .catchError((onError) {
+                                logger.d(onError.toString());
+                              })
                         : logger.d("Wallpaper Optimisation is disabled!");
                   }
                 }
@@ -643,38 +647,38 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                     .length >
                                                 8
                                             ? pdata.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll("https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")[0]
-                                                    .toUpperCase() +
-                                                pdata.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll("https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")
-                                                    .substring(
-                                                      1,
-                                                      pdata.wallsPS[index].url
-                                                              .toString()
-                                                              .replaceAll("https://www.pexels.com/photo/", "")
-                                                              .replaceAll("-", " ")
-                                                              .replaceAll("/", "")
-                                                              .length -
-                                                          7,
-                                                    )
+                                                      .toString()
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")[0]
+                                                      .toUpperCase() +
+                                                  pdata.wallsPS[index].url
+                                                      .toString()
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .substring(
+                                                        1,
+                                                        pdata.wallsPS[index].url
+                                                                .toString()
+                                                                .replaceAll("https://www.pexels.com/photo/", "")
+                                                                .replaceAll("-", " ")
+                                                                .replaceAll("/", "")
+                                                                .length -
+                                                            7,
+                                                      )
                                             : pdata.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll("https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")[0]
-                                                    .toUpperCase() +
-                                                pdata.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll("https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")
-                                                    .substring(1),
+                                                      .toString()
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")[0]
+                                                      .toUpperCase() +
+                                                  pdata.wallsPS[index].url
+                                                      .toString()
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .substring(1),
                                         style: Theme.of(
                                           context,
                                         ).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -702,8 +706,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               Text(
                                                 pdata.wallsPS[index].id.toString(),
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                      color: Theme.of(context).colorScheme.secondary,
-                                                    ),
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -719,8 +723,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               Text(
                                                 "${pdata.wallsPS[index].width}x${pdata.wallsPS[index].height}",
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                      color: Theme.of(context).colorScheme.secondary,
-                                                    ),
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -746,9 +750,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                 labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                 label: Text(
                                                   pdata.wallsPS[index].photographer.toString(),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium!
+                                                  style: Theme.of(context).textTheme.bodyMedium!
                                                       .copyWith(color: Theme.of(context).colorScheme.secondary)
                                                       .copyWith(fontSize: 16),
                                                   overflow: TextOverflow.fade,
@@ -761,8 +763,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               Text(
                                                 query.toString(),
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                      color: Theme.of(context).colorScheme.secondary,
-                                                    ),
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                               const SizedBox(width: 10),
                                               Icon(
@@ -881,8 +883,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                               color: isLoading
                                   ? Theme.of(context).colorScheme.secondary
                                   : accent!.computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
+                                  ? Colors.black
+                                  : Colors.white,
                             ),
                           ),
                         ),
@@ -900,8 +902,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
+                            ? Colors.black
+                            : Colors.white,
                         icon: const Icon(JamIcons.chevron_left),
                       ),
                     ),
@@ -936,8 +938,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
+                            ? Colors.black
+                            : Colors.white,
                         icon: const Icon(JamIcons.clock),
                       ),
                     ),

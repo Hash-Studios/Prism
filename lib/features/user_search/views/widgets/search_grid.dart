@@ -34,36 +34,37 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
     super.initState();
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
-        ? TweenSequence<Color?>([
-            TweenSequenceItem(
-              weight: 1.0,
-              tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
-            ),
-            TweenSequenceItem(
-              weight: 1.0,
-              tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
-            ),
-          ]).animate(_controller!)
-        : TweenSequence<Color?>([
-            TweenSequenceItem(
-              weight: 1.0,
-              tween: ColorTween(
-                begin: Colors.black.withValues(alpha: .1),
-                end: Colors.black.withValues(alpha: .14),
-              ),
-            ),
-            TweenSequenceItem(
-              weight: 1.0,
-              tween: ColorTween(
-                begin: Colors.black.withValues(alpha: .14),
-                end: Colors.black.withValues(alpha: .1),
-              ),
-            ),
-          ]).animate(_controller!)
-      ..addListener(() {
-        setState(() {});
-      });
+    animation =
+        context.prismModeStyleForWindow(listen: false) == "Dark"
+              ? TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
+                  ),
+                ]).animate(_controller!)
+              : TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .1),
+                      end: Colors.black.withValues(alpha: .14),
+                    ),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .14),
+                      end: Colors.black.withValues(alpha: .1),
+                    ),
+                  ),
+                ]).animate(_controller!)
+          ..addListener(() {
+            setState(() {});
+          });
     _controller!.repeat();
   }
 
@@ -126,11 +127,11 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
           padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
           itemCount: widget.selectedProvider == "WallHaven"
               ? wData.wallsS.isEmpty
-                  ? 24
-                  : wData.wallsS.length
+                    ? 24
+                    : wData.wallsS.length
               : pData.wallsPS.isEmpty
-                  ? 24
-                  : pData.wallsPS.length,
+              ? 24
+              : pData.wallsPS.length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
@@ -202,28 +203,27 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                         Container(
                           decoration: widget.selectedProvider == "WallHaven"
                               ? wData.wallsS.isEmpty
-                                  ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                                  : BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                        image: CachedNetworkImageProvider(
-                                          wData.wallsS[index].thumbs!["original"].toString(),
+                                    ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                                    : BoxDecoration(
+                                        color: animation.value,
+                                        borderRadius: BorderRadius.circular(20),
+                                        image: DecorationImage(
+                                          image: CachedNetworkImageProvider(
+                                            wData.wallsS[index].thumbs!["original"].toString(),
+                                          ),
+                                          fit: BoxFit.cover,
                                         ),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
+                                      )
                               : pData.wallsPS.isEmpty
-                                  ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                                  : BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                        image:
-                                            CachedNetworkImageProvider(pData.wallsPS[index].src!["medium"].toString()),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
+                              ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                              : BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                    image: CachedNetworkImageProvider(pData.wallsPS[index].src!["medium"].toString()),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                         ),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(20),

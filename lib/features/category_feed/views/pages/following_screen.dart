@@ -127,24 +127,28 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
     final List<List<String>> chunked = _chunks(currentFollowing, _followingChunkSize);
     final int perChunkLimit = _resolvePerChunkLimit(chunked.length);
-    final List<Stream<List<_FirestoreDoc>>> streams = chunked.asMap().entries.map((entry) {
-      final int index = entry.key;
-      final List<String> chunk = entry.value;
-      return firestoreClient.watchQuery<_FirestoreDoc>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.walls,
-          sourceTag: 'following.feed.chunk_${index + 1}',
-          filters: <FirestoreFilter>[
-            const FirestoreFilter(field: "review", op: FirestoreFilterOp.isEqualTo, value: true),
-            FirestoreFilter(field: "email", op: FirestoreFilterOp.whereIn, value: chunk),
-          ],
-          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-          limit: perChunkLimit,
-          isStream: true,
-        ),
-        (data, docId) => _FirestoreDoc(docId, data),
-      );
-    }).toList(growable: false);
+    final List<Stream<List<_FirestoreDoc>>> streams = chunked
+        .asMap()
+        .entries
+        .map((entry) {
+          final int index = entry.key;
+          final List<String> chunk = entry.value;
+          return firestoreClient.watchQuery<_FirestoreDoc>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.walls,
+              sourceTag: 'following.feed.chunk_${index + 1}',
+              filters: <FirestoreFilter>[
+                const FirestoreFilter(field: "review", op: FirestoreFilterOp.isEqualTo, value: true),
+                FirestoreFilter(field: "email", op: FirestoreFilterOp.whereIn, value: chunk),
+              ],
+              orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+              limit: perChunkLimit,
+              isStream: true,
+            ),
+            (data, docId) => _FirestoreDoc(docId, data),
+          );
+        })
+        .toList(growable: false);
 
     final Stream<List<_FirestoreDoc>> merged = streams.length == 1
         ? streams.first
@@ -244,12 +248,16 @@ class _FollowingTileState extends State<FollowingTile> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    context.router.push(ShareWallpaperViewRoute(arguments: [
-                      widget.finalDocs[widget.index]["id"],
-                      widget.finalDocs[widget.index]["wallpaper_provider"],
-                      widget.finalDocs[widget.index]["wallpaper_url"],
-                      widget.finalDocs[widget.index]["wallpaper_thumb"]
-                    ]));
+                    context.router.push(
+                      ShareWallpaperViewRoute(
+                        arguments: [
+                          widget.finalDocs[widget.index]["id"],
+                          widget.finalDocs[widget.index]["wallpaper_provider"],
+                          widget.finalDocs[widget.index]["wallpaper_url"],
+                          widget.finalDocs[widget.index]["wallpaper_thumb"],
+                        ],
+                      ),
+                    );
                   },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(25),
@@ -318,10 +326,10 @@ class _FollowingTileState extends State<FollowingTile> {
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                    color: Theme.of(context).colorScheme.secondary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
+                                color: Theme.of(context).colorScheme.secondary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                           SizedBox(
@@ -333,9 +341,9 @@ class _FollowingTileState extends State<FollowingTile> {
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
-                                    fontSize: 10,
-                                  ),
+                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
+                                fontSize: 10,
+                              ),
                             ),
                           ),
                         ],

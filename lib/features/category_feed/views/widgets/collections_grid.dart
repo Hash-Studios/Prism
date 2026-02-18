@@ -25,12 +25,7 @@ class CollectionsGrid extends StatefulWidget {
   _CollectionsGridState createState() => _CollectionsGridState();
 }
 
-enum _PremiumPreviewAction {
-  none,
-  unlockNow,
-  watchAndUnlock,
-  upgrade,
-}
+enum _PremiumPreviewAction { none, unlockNow, watchAndUnlock, upgrade }
 
 class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
   AnimationController? _controller;
@@ -42,36 +37,37 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   void initState() {
     super.initState();
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
-        ? TweenSequence<Color?>([
-            TweenSequenceItem(
-              weight: 1.0,
-              tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
-            ),
-            TweenSequenceItem(
-              weight: 1.0,
-              tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
-            ),
-          ]).animate(_controller!)
-        : TweenSequence<Color?>([
-            TweenSequenceItem(
-              weight: 1.0,
-              tween: ColorTween(
-                begin: Colors.black.withValues(alpha: .1),
-                end: Colors.black.withValues(alpha: .14),
-              ),
-            ),
-            TweenSequenceItem(
-              weight: 1.0,
-              tween: ColorTween(
-                begin: Colors.black.withValues(alpha: .14),
-                end: Colors.black.withValues(alpha: .1),
-              ),
-            ),
-          ]).animate(_controller!)
-      ..addListener(() {
-        setState(() {});
-      });
+    animation =
+        context.prismModeStyleForWindow(listen: false) == "Dark"
+              ? TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
+                  ),
+                ]).animate(_controller!)
+              : TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .1),
+                      end: Colors.black.withValues(alpha: .14),
+                    ),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .14),
+                      end: Colors.black.withValues(alpha: .1),
+                    ),
+                  ),
+                ]).animate(_controller!)
+          ..addListener(() {
+            setState(() {});
+          });
     _controller!.repeat();
   }
 
@@ -81,10 +77,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     super.dispose();
   }
 
-  Future<void> _handleCollectionTap({
-    required bool isPremium,
-    required String collectionName,
-  }) async {
+  Future<void> _handleCollectionTap({required bool isPremium, required String collectionName}) async {
     final String normalizedCollectionName = collectionName.trim().toLowerCase();
     if (!isPremium) {
       _openCollection(normalizedCollectionName);
@@ -96,19 +89,14 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     }
     if (!globals.prismUser.loggedIn) {
       googleSignInPopUp(context, () {
-        unawaited(_handleCollectionTap(
-          isPremium: isPremium,
-          collectionName: normalizedCollectionName,
-        ));
+        unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: normalizedCollectionName));
       });
       return;
     }
 
     bool hasPreviewAccess = false;
     try {
-      hasPreviewAccess = await CoinsService.instance.hasPremiumPreviewAccessForCollection(
-        normalizedCollectionName,
-      );
+      hasPreviewAccess = await CoinsService.instance.hasPremiumPreviewAccessForCollection(normalizedCollectionName);
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(
         sourceTag: 'coins.preview.check.collections_grid',
@@ -128,34 +116,23 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   void _openCollection(String collectionName) {
-    context.router.push(
-      CollectionViewRoute(
-        arguments: [collectionName.trim().toLowerCase()],
-      ),
-    );
+    context.router.push(CollectionViewRoute(arguments: [collectionName.trim().toLowerCase()]));
   }
 
-  Future<void> _showPremiumPreviewSheet({
-    required String collectionName,
-    required String sourceTag,
-  }) async {
+  Future<void> _showPremiumPreviewSheet({required String collectionName, required String sourceTag}) async {
     if (!mounted) {
       return;
     }
     final int balance = CoinsService.instance.balanceNotifier.value;
     if (balance < CoinPolicy.premiumPreview24h) {
-      CoinsService.instance.logLowBalanceNudge(
-        sourceTag: sourceTag,
-        requiredCoins: CoinPolicy.premiumPreview24h,
-      );
+      CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: CoinPolicy.premiumPreview24h);
     }
 
-    final _PremiumPreviewAction action = await showModalBottomSheet<_PremiumPreviewAction>(
+    final _PremiumPreviewAction action =
+        await showModalBottomSheet<_PremiumPreviewAction>(
           context: context,
           backgroundColor: Theme.of(context).primaryColor,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
           builder: (sheetContext) {
             final int currentBalance = CoinsService.instance.balanceNotifier.value;
             final int missing = (CoinPolicy.premiumPreview24h - currentBalance).clamp(0, CoinPolicy.premiumPreview24h);
@@ -173,10 +150,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Premium Collection',
-                    style: Theme.of(sheetContext).textTheme.displaySmall,
-                  ),
+                  Text('Premium Collection', style: Theme.of(sheetContext).textTheme.displaySmall),
                   const SizedBox(height: 10),
                   Text(
                     missing > 0
@@ -224,9 +198,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         );
         return;
       case _PremiumPreviewAction.watchAndUnlock:
-        await _watchAdAndUnlockPreview(
-          collectionName: collectionName,
-        );
+        await _watchAdAndUnlockPreview(collectionName: collectionName);
         return;
       case _PremiumPreviewAction.upgrade:
         if (mounted) {
@@ -238,16 +210,10 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     }
   }
 
-  Future<void> _attemptPreviewUnlockAndOpen({
-    required String collectionName,
-    required String sourceTag,
-  }) async {
+  Future<void> _attemptPreviewUnlockAndOpen({required String collectionName, required String sourceTag}) async {
     analytics.logEvent(
       name: 'coin_preview_unlock_attempt',
-      parameters: <String, Object>{
-        'collection': collectionName,
-        'sourceTag': sourceTag,
-      },
+      parameters: <String, Object>{'collection': collectionName, 'sourceTag': sourceTag},
     );
     CoinMutationResult result;
     try {
@@ -256,19 +222,17 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         sourceTag: sourceTag,
       );
     } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(
-        sourceTag: sourceTag,
-        error: error,
-        stackTrace: stackTrace,
-      );
+      CoinsService.instance.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
       toasts.error('Unable to unlock premium preview right now.');
       return;
     }
 
     if (!result.success) {
       if (result.insufficientBalance) {
-        final int missing = (CoinPolicy.premiumPreview24h - CoinsService.instance.balanceNotifier.value)
-            .clamp(1, CoinPolicy.premiumPreview24h);
+        final int missing = (CoinPolicy.premiumPreview24h - CoinsService.instance.balanceNotifier.value).clamp(
+          1,
+          CoinPolicy.premiumPreview24h,
+        );
         toasts.error('Need $missing more coins.');
         await _showPremiumPreviewSheet(
           collectionName: collectionName,
@@ -294,9 +258,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     _openCollection(collectionName);
   }
 
-  Future<void> _watchAdAndUnlockPreview({
-    required String collectionName,
-  }) async {
+  Future<void> _watchAdAndUnlockPreview({required String collectionName}) async {
     analytics.logEvent(
       name: 'coin_preview_watch_and_unlock_used',
       parameters: <String, Object>{
@@ -402,12 +364,8 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       return GestureDetector(
         onTap: loading
             ? null
-            : () => unawaited(
-                  _handleCollectionTap(
-                    isPremium: isPremium,
-                    collectionName: collection['name'].toString(),
-                  ),
-                ),
+            : () =>
+                  unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: collection['name'].toString())),
         child: PremiumBanner(
           comparator: !isPremium,
           child: Stack(
@@ -440,12 +398,12 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                          fontSize: 16,
-                          color: loading
-                              ? (context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white)
-                              : Theme.of(context).colorScheme.secondary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontSize: 16,
+                      color: loading
+                          ? (context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white)
+                          : Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

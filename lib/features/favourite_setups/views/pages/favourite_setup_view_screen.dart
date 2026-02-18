@@ -168,9 +168,9 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                       maxLines: 1,
                                       overflow: TextOverflow.fade,
                                       style: Theme.of(context).textTheme.displayLarge!.copyWith(
-                                            fontSize: 30,
-                                            color: Theme.of(context).colorScheme.secondary,
-                                          ),
+                                        fontSize: 30,
+                                        color: Theme.of(context).colorScheme.secondary,
+                                      ),
                                     ),
                                   ),
                           ),
@@ -227,9 +227,9 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                       .toUpperCase(),
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                        color: Theme.of(context).colorScheme.secondary,
-                                                        fontSize: 16,
-                                                      ),
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                    fontSize: 16,
+                                                  ),
                                                 ),
                                                 Padding(
                                                   padding: const EdgeInsets.symmetric(horizontal: 6.0),
@@ -247,26 +247,26 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                         return Text(
                                                           "",
                                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                color: Theme.of(context).colorScheme.secondary,
-                                                                fontSize: 16,
-                                                              ),
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                            fontSize: 16,
+                                                          ),
                                                         );
                                                       case ConnectionState.none:
                                                         return Text(
                                                           "",
                                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                color: Theme.of(context).colorScheme.secondary,
-                                                                fontSize: 16,
-                                                              ),
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                            fontSize: 16,
+                                                          ),
                                                         );
                                                       default:
                                                         if (snapshot.hasError) {
                                                           return Text(
                                                             "",
                                                             style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                  color: Theme.of(context).colorScheme.secondary,
-                                                                  fontSize: 16,
-                                                                ),
+                                                              color: Theme.of(context).colorScheme.secondary,
+                                                              fontSize: 16,
+                                                            ),
                                                           );
                                                         } else {
                                                           return Text(
@@ -274,9 +274,9 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                             overflow: TextOverflow.fade,
                                                             softWrap: false,
                                                             style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                  color: Theme.of(context).colorScheme.secondary,
-                                                                  fontSize: 16,
-                                                                ),
+                                                              color: Theme.of(context).colorScheme.secondary,
+                                                              fontSize: 16,
+                                                            ),
                                                           );
                                                         }
                                                     }
@@ -314,9 +314,9 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                 "Report",
                                                 overflow: TextOverflow.fade,
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                      decoration: TextDecoration.underline,
-                                                      color: Theme.of(context).colorScheme.secondary,
-                                                    ),
+                                                  decoration: TextDecoration.underline,
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -343,8 +343,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                           .toString(),
                                                       overflow: TextOverflow.fade,
                                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                            color: Theme.of(context).colorScheme.secondary,
-                                                          ),
+                                                        color: Theme.of(context).colorScheme.secondary,
+                                                      ),
                                                     ),
                                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                     avatar: CircleAvatar(
@@ -360,8 +360,9 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                       context.router.push(
                                                         ProfileRoute(
                                                           arguments: [
-                                                            context.favouriteSetupsAdapter(listen: false).liked![index!]
-                                                                ["email"],
+                                                            context
+                                                                .favouriteSetupsAdapter(listen: false)
+                                                                .liked![index!]["email"],
                                                           ],
                                                         ),
                                                       );
@@ -384,12 +385,10 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                           "E57697",
                                                           Theme.of(context).colorScheme.error == Colors.black
                                                               ? "E57697"
-                                                              : Theme.of(context)
-                                                                  .colorScheme
-                                                                  .error
-                                                                  .toString()
-                                                                  .replaceAll("Color(0xff", "")
-                                                                  .replaceAll(")", ""),
+                                                              : Theme.of(context).colorScheme.error
+                                                                    .toString()
+                                                                    .replaceAll("Color(0xff", "")
+                                                                    .replaceAll(")", ""),
                                                         ),
                                                       ),
                                                     ),
@@ -411,7 +410,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                       flex: 16,
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                        child: context.favouriteSetupsAdapter(listen: false).liked![index!]["widget"] == "" ||
+                        child:
+                            context.favouriteSetupsAdapter(listen: false).liked![index!]["widget"] == "" ||
                                 context.favouriteSetupsAdapter(listen: false).liked![index!]["widget"] == null
                             ? Column(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -469,25 +469,28 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                         );
                                       }
                                     },
-                                    tileText: context
+                                    tileText:
+                                        context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["wallpaper_url"]
                                                 .toString()[0] !=
                                             "["
                                         ? (context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
-                                                    null ||
-                                                context.favouriteSetupsAdapter(listen: false).liked![index!]
-                                                        ["wall_id"] ==
-                                                    "")
-                                            ? "Wall Link"
-                                            : "Prism (${context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"]})"
+                                                      null ||
+                                                  context
+                                                          .favouriteSetupsAdapter(listen: false)
+                                                          .liked![index!]["wall_id"] ==
+                                                      "")
+                                              ? "Wall Link"
+                                              : "Prism (${context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"]})"
                                         : "${context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][0]} - ${(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                     tileType: "Wallpaper",
                                     panelCollapsed: panelCollapsed,
                                     delay: const Duration(milliseconds: 150),
                                   ),
                                   SetupDetailsTile(
-                                    isInstalled: context
+                                    isInstalled:
+                                        context
                                             .favouriteSetupsAdapter(listen: false)
                                             .liked![index!]["icon_url"]
                                             .toString()
@@ -539,8 +542,10 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                         );
                                       }
                                     },
-                                    tileText:
-                                        context.favouriteSetupsAdapter(listen: false).liked![index!]["icon"].toString(),
+                                    tileText: context
+                                        .favouriteSetupsAdapter(listen: false)
+                                        .liked![index!]["icon"]
+                                        .toString(),
                                     tileType: "Icons",
                                     panelCollapsed: panelCollapsed,
                                     delay: const Duration(milliseconds: 200),
@@ -548,90 +553,114 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                 ],
                               )
                             : context.favouriteSetupsAdapter(listen: false).liked![index!]["widget2"] == "" ||
-                                    context.favouriteSetupsAdapter(listen: false).liked![index!]["widget2"] == null
-                                ? Column(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      SetupDetailsTile(
-                                        isInstalled: Future.value(false),
-                                        onTap: () async {
-                                          if (context
-                                                  .favouriteSetupsAdapter(listen: false)
-                                                  .liked![index!]["wallpaper_url"]
-                                                  .toString()[0] !=
-                                              "[") {
-                                            if (context.favouriteSetupsAdapter(listen: false).liked![index!]
-                                                        ["wall_id"] ==
-                                                    null ||
-                                                context.favouriteSetupsAdapter(listen: false).liked![index!]
-                                                        ["wall_id"] ==
-                                                    "") {
-                                              logger.d("Id Not Found!");
-                                              launch(
+                                  context.favouriteSetupsAdapter(listen: false).liked![index!]["widget2"] == null
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SetupDetailsTile(
+                                    isInstalled: Future.value(false),
+                                    onTap: () async {
+                                      if (context
+                                              .favouriteSetupsAdapter(listen: false)
+                                              .liked![index!]["wallpaper_url"]
+                                              .toString()[0] !=
+                                          "[") {
+                                        if (context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
+                                                null ||
+                                            context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
+                                                "") {
+                                          logger.d("Id Not Found!");
+                                          launch(
+                                            context
+                                                .favouriteSetupsAdapter(listen: false)
+                                                .liked![index!]["wallpaper_url"]
+                                                .toString(),
+                                          );
+                                        } else {
+                                          context.router.push(
+                                            ShareWallpaperViewRoute(
+                                              arguments: [
+                                                context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["wall_id"]
+                                                    .toString(),
+                                                context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["wallpaper_provider"]
+                                                    .toString(),
                                                 context
                                                     .favouriteSetupsAdapter(listen: false)
                                                     .liked![index!]["wallpaper_url"]
                                                     .toString(),
-                                              );
-                                            } else {
-                                              context.router.push(
-                                                ShareWallpaperViewRoute(
-                                                  arguments: [
-                                                    context
-                                                        .favouriteSetupsAdapter(listen: false)
-                                                        .liked![index!]["wall_id"]
-                                                        .toString(),
-                                                    context
-                                                        .favouriteSetupsAdapter(listen: false)
-                                                        .liked![index!]["wallpaper_provider"]
-                                                        .toString(),
-                                                    context
-                                                        .favouriteSetupsAdapter(listen: false)
-                                                        .liked![index!]["wallpaper_url"]
-                                                        .toString(),
-                                                    context
-                                                        .favouriteSetupsAdapter(listen: false)
-                                                        .liked![index!]["wallpaper_url"]
-                                                        .toString(),
-                                                  ],
-                                                ),
-                                              );
-                                            }
-                                          } else {
-                                            launch(
-                                              context
-                                                  .favouriteSetupsAdapter(listen: false)
-                                                  .liked![index!]["wallpaper_url"][1]
-                                                  .toString(),
-                                            );
-                                          }
-                                        },
-                                        tileText: context
+                                                context
                                                     .favouriteSetupsAdapter(listen: false)
                                                     .liked![index!]["wallpaper_url"]
-                                                    .toString()[0] !=
-                                                "["
-                                            ? (context.favouriteSetupsAdapter(listen: false).liked![index!]
-                                                            ["wall_id"] ==
-                                                        null ||
-                                                    context.favouriteSetupsAdapter(listen: false).liked![index!]
-                                                            ["wall_id"] ==
-                                                        "")
-                                                ? "Wall Link"
-                                                : "Prism (${context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"]})"
-                                            : "${context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][0]} - ${(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
-                                        tileType: "Wallpaper",
-                                        panelCollapsed: panelCollapsed,
-                                        delay: const Duration(milliseconds: 150),
-                                      ),
-                                      SetupDetailsTile(
-                                        isInstalled: context
+                                                    .toString(),
+                                              ],
+                                            ),
+                                          );
+                                        }
+                                      } else {
+                                        launch(
+                                          context
+                                              .favouriteSetupsAdapter(listen: false)
+                                              .liked![index!]["wallpaper_url"][1]
+                                              .toString(),
+                                        );
+                                      }
+                                    },
+                                    tileText:
+                                        context
+                                                .favouriteSetupsAdapter(listen: false)
+                                                .liked![index!]["wallpaper_url"]
+                                                .toString()[0] !=
+                                            "["
+                                        ? (context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
+                                                      null ||
+                                                  context
+                                                          .favouriteSetupsAdapter(listen: false)
+                                                          .liked![index!]["wall_id"] ==
+                                                      "")
+                                              ? "Wall Link"
+                                              : "Prism (${context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"]})"
+                                        : "${context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][0]} - ${(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
+                                    tileType: "Wallpaper",
+                                    panelCollapsed: panelCollapsed,
+                                    delay: const Duration(milliseconds: 150),
+                                  ),
+                                  SetupDetailsTile(
+                                    isInstalled:
+                                        context
+                                            .favouriteSetupsAdapter(listen: false)
+                                            .liked![index!]["icon_url"]
+                                            .toString()
+                                            .contains('play.google.com/store/apps/details?id=')
+                                        ? DeviceApps.isAppInstalled(
+                                            context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["icon_url"]
                                                 .toString()
-                                                .contains('play.google.com/store/apps/details?id=')
-                                            ? DeviceApps.isAppInstalled(
+                                                .split("details?id=")[1]
+                                                .split("&")[0],
+                                          )
+                                        : Future.value(false),
+                                    onTap: () async {
+                                      if (context
+                                          .favouriteSetupsAdapter(listen: false)
+                                          .liked![index!]["icon_url"]
+                                          .toString()
+                                          .contains('play.google.com/store/apps/details?id=')) {
+                                        final isInstalled = await DeviceApps.isAppInstalled(
+                                          context
+                                              .favouriteSetupsAdapter(listen: false)
+                                              .liked![index!]["icon_url"]
+                                              .toString()
+                                              .split("details?id=")[1]
+                                              .split("&")[0],
+                                        );
+                                        isInstalled
+                                            ? DeviceApps.openApp(
                                                 context
                                                     .favouriteSetupsAdapter(listen: false)
                                                     .liked![index!]["icon_url"]
@@ -639,60 +668,61 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                     .split("details?id=")[1]
                                                     .split("&")[0],
                                               )
-                                            : Future.value(false),
-                                        onTap: () async {
-                                          if (context
+                                            : launch(
+                                                context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["icon_url"]
+                                                    .toString(),
+                                              );
+                                      } else {
+                                        launch(
+                                          context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["icon_url"]
-                                              .toString()
-                                              .contains('play.google.com/store/apps/details?id=')) {
-                                            final isInstalled = await DeviceApps.isAppInstalled(
-                                              context
-                                                  .favouriteSetupsAdapter(listen: false)
-                                                  .liked![index!]["icon_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0],
-                                            );
-                                            isInstalled
-                                                ? DeviceApps.openApp(
-                                                    context
-                                                        .favouriteSetupsAdapter(listen: false)
-                                                        .liked![index!]["icon_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0],
-                                                  )
-                                                : launch(
-                                                    context
-                                                        .favouriteSetupsAdapter(listen: false)
-                                                        .liked![index!]["icon_url"]
-                                                        .toString(),
-                                                  );
-                                          } else {
-                                            launch(
-                                              context
-                                                  .favouriteSetupsAdapter(listen: false)
-                                                  .liked![index!]["icon_url"]
-                                                  .toString(),
-                                            );
-                                          }
-                                        },
-                                        tileText: context
+                                              .toString(),
+                                        );
+                                      }
+                                    },
+                                    tileText: context
+                                        .favouriteSetupsAdapter(listen: false)
+                                        .liked![index!]["icon"]
+                                        .toString(),
+                                    tileType: "Icons",
+                                    panelCollapsed: panelCollapsed,
+                                    delay: const Duration(milliseconds: 200),
+                                  ),
+                                  SetupDetailsTile(
+                                    isInstalled:
+                                        context
                                             .favouriteSetupsAdapter(listen: false)
-                                            .liked![index!]["icon"]
-                                            .toString(),
-                                        tileType: "Icons",
-                                        panelCollapsed: panelCollapsed,
-                                        delay: const Duration(milliseconds: 200),
-                                      ),
-                                      SetupDetailsTile(
-                                        isInstalled: context
+                                            .liked![index!]["widget_url"]
+                                            .toString()
+                                            .contains('play.google.com/store/apps/details?id=')
+                                        ? DeviceApps.isAppInstalled(
+                                            context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["widget_url"]
                                                 .toString()
-                                                .contains('play.google.com/store/apps/details?id=')
-                                            ? DeviceApps.isAppInstalled(
+                                                .split("details?id=")[1]
+                                                .split("&")[0],
+                                          )
+                                        : Future.value(false),
+                                    onTap: () async {
+                                      if (context
+                                          .favouriteSetupsAdapter(listen: false)
+                                          .liked![index!]["widget_url"]
+                                          .toString()
+                                          .contains('play.google.com/store/apps/details?id=')) {
+                                        final isInstalled = await DeviceApps.isAppInstalled(
+                                          context
+                                              .favouriteSetupsAdapter(listen: false)
+                                              .liked![index!]["widget_url"]
+                                              .toString()
+                                              .split("details?id=")[1]
+                                              .split("&")[0],
+                                        );
+                                        isInstalled
+                                            ? DeviceApps.openApp(
                                                 context
                                                     .favouriteSetupsAdapter(listen: false)
                                                     .liked![index!]["widget_url"]
@@ -700,139 +730,139 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                     .split("details?id=")[1]
                                                     .split("&")[0],
                                               )
-                                            : Future.value(false),
-                                        onTap: () async {
-                                          if (context
+                                            : launch(
+                                                context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["widget_url"]
+                                                    .toString(),
+                                              );
+                                      } else {
+                                        launch(
+                                          context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["widget_url"]
-                                              .toString()
-                                              .contains('play.google.com/store/apps/details?id=')) {
-                                            final isInstalled = await DeviceApps.isAppInstalled(
-                                              context
-                                                  .favouriteSetupsAdapter(listen: false)
-                                                  .liked![index!]["widget_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0],
-                                            );
-                                            isInstalled
-                                                ? DeviceApps.openApp(
-                                                    context
-                                                        .favouriteSetupsAdapter(listen: false)
-                                                        .liked![index!]["widget_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0],
-                                                  )
-                                                : launch(
-                                                    context
-                                                        .favouriteSetupsAdapter(listen: false)
-                                                        .liked![index!]["widget_url"]
-                                                        .toString(),
-                                                  );
-                                          } else {
+                                              .toString(),
+                                        );
+                                      }
+                                    },
+                                    tileText: context
+                                        .favouriteSetupsAdapter(listen: false)
+                                        .liked![index!]["widget"]
+                                        .toString(),
+                                    tileType: "Widget",
+                                    panelCollapsed: panelCollapsed,
+                                    delay: const Duration(milliseconds: 250),
+                                  ),
+                                ],
+                              )
+                            : Scrollbar(
+                                radius: const Radius.circular(500),
+                                thickness: 5,
+                                child: ListView(
+                                  children: [
+                                    SetupDetailsTile(
+                                      isInstalled: Future.value(false),
+                                      onTap: () async {
+                                        if (context
+                                                .favouriteSetupsAdapter(listen: false)
+                                                .liked![index!]["wallpaper_url"]
+                                                .toString()[0] !=
+                                            "[") {
+                                          if (context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
+                                                  null ||
+                                              context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
+                                                  "") {
+                                            logger.d("Id Not Found!");
                                             launch(
                                               context
                                                   .favouriteSetupsAdapter(listen: false)
-                                                  .liked![index!]["widget_url"]
+                                                  .liked![index!]["wallpaper_url"]
                                                   .toString(),
                                             );
-                                          }
-                                        },
-                                        tileText: context
-                                            .favouriteSetupsAdapter(listen: false)
-                                            .liked![index!]["widget"]
-                                            .toString(),
-                                        tileType: "Widget",
-                                        panelCollapsed: panelCollapsed,
-                                        delay: const Duration(milliseconds: 250),
-                                      ),
-                                    ],
-                                  )
-                                : Scrollbar(
-                                    radius: const Radius.circular(500),
-                                    thickness: 5,
-                                    child: ListView(
-                                      children: [
-                                        SetupDetailsTile(
-                                          isInstalled: Future.value(false),
-                                          onTap: () async {
-                                            if (context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_url"]
-                                                    .toString()[0] !=
-                                                "[") {
-                                              if (context.favouriteSetupsAdapter(listen: false).liked![index!]
-                                                          ["wall_id"] ==
-                                                      null ||
-                                                  context.favouriteSetupsAdapter(listen: false).liked![index!]
-                                                          ["wall_id"] ==
-                                                      "") {
-                                                logger.d("Id Not Found!");
-                                                launch(
+                                          } else {
+                                            context.router.push(
+                                              ShareWallpaperViewRoute(
+                                                arguments: [
+                                                  context
+                                                      .favouriteSetupsAdapter(listen: false)
+                                                      .liked![index!]["wall_id"]
+                                                      .toString(),
+                                                  context
+                                                      .favouriteSetupsAdapter(listen: false)
+                                                      .liked![index!]["wallpaper_provider"]
+                                                      .toString(),
                                                   context
                                                       .favouriteSetupsAdapter(listen: false)
                                                       .liked![index!]["wallpaper_url"]
                                                       .toString(),
-                                                );
-                                              } else {
-                                                context.router.push(
-                                                  ShareWallpaperViewRoute(
-                                                    arguments: [
-                                                      context
-                                                          .favouriteSetupsAdapter(listen: false)
-                                                          .liked![index!]["wall_id"]
-                                                          .toString(),
-                                                      context
-                                                          .favouriteSetupsAdapter(listen: false)
-                                                          .liked![index!]["wallpaper_provider"]
-                                                          .toString(),
-                                                      context
-                                                          .favouriteSetupsAdapter(listen: false)
-                                                          .liked![index!]["wallpaper_url"]
-                                                          .toString(),
-                                                      context
-                                                          .favouriteSetupsAdapter(listen: false)
-                                                          .liked![index!]["wallpaper_url"]
-                                                          .toString(),
-                                                    ],
-                                                  ),
-                                                );
-                                              }
-                                            } else {
-                                              launch(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_url"][1]
-                                                    .toString(),
-                                              );
-                                            }
-                                          },
-                                          tileText: context
+                                                  context
                                                       .favouriteSetupsAdapter(listen: false)
                                                       .liked![index!]["wallpaper_url"]
-                                                      .toString()[0] !=
-                                                  "["
-                                              ? (context.favouriteSetupsAdapter(listen: false).liked![index!]
-                                                              ["wall_id"] ==
-                                                          null ||
-                                                      context.favouriteSetupsAdapter(listen: false).liked![index!]
-                                                              ["wall_id"] ==
-                                                          "")
-                                                  ? "Wall Link"
-                                                  : "Prism (${context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"]})"
-                                              : "${context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][0]} - ${(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
-                                          tileType: "Wallpaper",
-                                          panelCollapsed: panelCollapsed,
-                                          delay: const Duration(milliseconds: 150),
-                                        ),
-                                        SetupDetailsTile(
-                                          isInstalled: context
+                                                      .toString(),
+                                                ],
+                                              ),
+                                            );
+                                          }
+                                        } else {
+                                          launch(
+                                            context
+                                                .favouriteSetupsAdapter(listen: false)
+                                                .liked![index!]["wallpaper_url"][1]
+                                                .toString(),
+                                          );
+                                        }
+                                      },
+                                      tileText:
+                                          context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_url"]
+                                                  .toString()[0] !=
+                                              "["
+                                          ? (context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
+                                                        null ||
+                                                    context
+                                                            .favouriteSetupsAdapter(listen: false)
+                                                            .liked![index!]["wall_id"] ==
+                                                        "")
+                                                ? "Wall Link"
+                                                : "Prism (${context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"]})"
+                                          : "${context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][0]} - ${(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
+                                      tileType: "Wallpaper",
+                                      panelCollapsed: panelCollapsed,
+                                      delay: const Duration(milliseconds: 150),
+                                    ),
+                                    SetupDetailsTile(
+                                      isInstalled:
+                                          context
+                                              .favouriteSetupsAdapter(listen: false)
+                                              .liked![index!]["icon_url"]
+                                              .toString()
+                                              .contains('play.google.com/store/apps/details?id=')
+                                          ? DeviceApps.isAppInstalled(
+                                              context
                                                   .favouriteSetupsAdapter(listen: false)
                                                   .liked![index!]["icon_url"]
                                                   .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')
-                                              ? DeviceApps.isAppInstalled(
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0],
+                                            )
+                                          : Future.value(false),
+                                      onTap: () async {
+                                        if (context
+                                            .favouriteSetupsAdapter(listen: false)
+                                            .liked![index!]["icon_url"]
+                                            .toString()
+                                            .contains('play.google.com/store/apps/details?id=')) {
+                                          final isInstalled = await DeviceApps.isAppInstalled(
+                                            context
+                                                .favouriteSetupsAdapter(listen: false)
+                                                .liked![index!]["icon_url"]
+                                                .toString()
+                                                .split("details?id=")[1]
+                                                .split("&")[0],
+                                          );
+                                          isInstalled
+                                              ? DeviceApps.openApp(
                                                   context
                                                       .favouriteSetupsAdapter(listen: false)
                                                       .liked![index!]["icon_url"]
@@ -840,60 +870,61 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                       .split("details?id=")[1]
                                                       .split("&")[0],
                                                 )
-                                              : Future.value(false),
-                                          onTap: () async {
-                                            if (context
+                                              : launch(
+                                                  context
+                                                      .favouriteSetupsAdapter(listen: false)
+                                                      .liked![index!]["icon_url"]
+                                                      .toString(),
+                                                );
+                                        } else {
+                                          launch(
+                                            context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["icon_url"]
-                                                .toString()
-                                                .contains('play.google.com/store/apps/details?id=')) {
-                                              final isInstalled = await DeviceApps.isAppInstalled(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["icon_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              );
-                                              isInstalled
-                                                  ? DeviceApps.openApp(
-                                                      context
-                                                          .favouriteSetupsAdapter(listen: false)
-                                                          .liked![index!]["icon_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    )
-                                                  : launch(
-                                                      context
-                                                          .favouriteSetupsAdapter(listen: false)
-                                                          .liked![index!]["icon_url"]
-                                                          .toString(),
-                                                    );
-                                            } else {
-                                              launch(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["icon_url"]
-                                                    .toString(),
-                                              );
-                                            }
-                                          },
-                                          tileText: context
+                                                .toString(),
+                                          );
+                                        }
+                                      },
+                                      tileText: context
+                                          .favouriteSetupsAdapter(listen: false)
+                                          .liked![index!]["icon"]
+                                          .toString(),
+                                      tileType: "Icons",
+                                      panelCollapsed: panelCollapsed,
+                                      delay: const Duration(milliseconds: 200),
+                                    ),
+                                    SetupDetailsTile(
+                                      isInstalled:
+                                          context
                                               .favouriteSetupsAdapter(listen: false)
-                                              .liked![index!]["icon"]
-                                              .toString(),
-                                          tileType: "Icons",
-                                          panelCollapsed: panelCollapsed,
-                                          delay: const Duration(milliseconds: 200),
-                                        ),
-                                        SetupDetailsTile(
-                                          isInstalled: context
+                                              .liked![index!]["widget_url"]
+                                              .toString()
+                                              .contains('play.google.com/store/apps/details?id=')
+                                          ? DeviceApps.isAppInstalled(
+                                              context
                                                   .favouriteSetupsAdapter(listen: false)
                                                   .liked![index!]["widget_url"]
                                                   .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')
-                                              ? DeviceApps.isAppInstalled(
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0],
+                                            )
+                                          : Future.value(false),
+                                      onTap: () async {
+                                        if (context
+                                            .favouriteSetupsAdapter(listen: false)
+                                            .liked![index!]["widget_url"]
+                                            .toString()
+                                            .contains('play.google.com/store/apps/details?id=')) {
+                                          final isInstalled = await DeviceApps.isAppInstalled(
+                                            context
+                                                .favouriteSetupsAdapter(listen: false)
+                                                .liked![index!]["widget_url"]
+                                                .toString()
+                                                .split("details?id=")[1]
+                                                .split("&")[0],
+                                          );
+                                          isInstalled
+                                              ? DeviceApps.openApp(
                                                   context
                                                       .favouriteSetupsAdapter(listen: false)
                                                       .liked![index!]["widget_url"]
@@ -901,60 +932,61 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                       .split("details?id=")[1]
                                                       .split("&")[0],
                                                 )
-                                              : Future.value(false),
-                                          onTap: () async {
-                                            if (context
+                                              : launch(
+                                                  context
+                                                      .favouriteSetupsAdapter(listen: false)
+                                                      .liked![index!]["widget_url"]
+                                                      .toString(),
+                                                );
+                                        } else {
+                                          launch(
+                                            context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["widget_url"]
-                                                .toString()
-                                                .contains('play.google.com/store/apps/details?id=')) {
-                                              final isInstalled = await DeviceApps.isAppInstalled(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["widget_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              );
-                                              isInstalled
-                                                  ? DeviceApps.openApp(
-                                                      context
-                                                          .favouriteSetupsAdapter(listen: false)
-                                                          .liked![index!]["widget_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    )
-                                                  : launch(
-                                                      context
-                                                          .favouriteSetupsAdapter(listen: false)
-                                                          .liked![index!]["widget_url"]
-                                                          .toString(),
-                                                    );
-                                            } else {
-                                              launch(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["widget_url"]
-                                                    .toString(),
-                                              );
-                                            }
-                                          },
-                                          tileText: context
+                                                .toString(),
+                                          );
+                                        }
+                                      },
+                                      tileText: context
+                                          .favouriteSetupsAdapter(listen: false)
+                                          .liked![index!]["widget"]
+                                          .toString(),
+                                      tileType: "Widget",
+                                      panelCollapsed: panelCollapsed,
+                                      delay: const Duration(milliseconds: 250),
+                                    ),
+                                    SetupDetailsTile(
+                                      isInstalled:
+                                          context
                                               .favouriteSetupsAdapter(listen: false)
-                                              .liked![index!]["widget"]
-                                              .toString(),
-                                          tileType: "Widget",
-                                          panelCollapsed: panelCollapsed,
-                                          delay: const Duration(milliseconds: 250),
-                                        ),
-                                        SetupDetailsTile(
-                                          isInstalled: context
+                                              .liked![index!]["widget_url2"]
+                                              .toString()
+                                              .contains('play.google.com/store/apps/details?id=')
+                                          ? DeviceApps.isAppInstalled(
+                                              context
                                                   .favouriteSetupsAdapter(listen: false)
                                                   .liked![index!]["widget_url2"]
                                                   .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')
-                                              ? DeviceApps.isAppInstalled(
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0],
+                                            )
+                                          : Future.value(false),
+                                      onTap: () async {
+                                        if (context
+                                            .favouriteSetupsAdapter(listen: false)
+                                            .liked![index!]["widget_url2"]
+                                            .toString()
+                                            .contains('play.google.com/store/apps/details?id=')) {
+                                          final isInstalled = await DeviceApps.isAppInstalled(
+                                            context
+                                                .favouriteSetupsAdapter(listen: false)
+                                                .liked![index!]["widget_url2"]
+                                                .toString()
+                                                .split("details?id=")[1]
+                                                .split("&")[0],
+                                          );
+                                          isInstalled
+                                              ? DeviceApps.openApp(
                                                   context
                                                       .favouriteSetupsAdapter(listen: false)
                                                       .liked![index!]["widget_url2"]
@@ -962,56 +994,32 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                       .split("details?id=")[1]
                                                       .split("&")[0],
                                                 )
-                                              : Future.value(false),
-                                          onTap: () async {
-                                            if (context
+                                              : launch(
+                                                  context
+                                                      .favouriteSetupsAdapter(listen: false)
+                                                      .liked![index!]["widget_url2"]
+                                                      .toString(),
+                                                );
+                                        } else {
+                                          launch(
+                                            context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["widget_url2"]
-                                                .toString()
-                                                .contains('play.google.com/store/apps/details?id=')) {
-                                              final isInstalled = await DeviceApps.isAppInstalled(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["widget_url2"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              );
-                                              isInstalled
-                                                  ? DeviceApps.openApp(
-                                                      context
-                                                          .favouriteSetupsAdapter(listen: false)
-                                                          .liked![index!]["widget_url2"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    )
-                                                  : launch(
-                                                      context
-                                                          .favouriteSetupsAdapter(listen: false)
-                                                          .liked![index!]["widget_url2"]
-                                                          .toString(),
-                                                    );
-                                            } else {
-                                              launch(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["widget_url2"]
-                                                    .toString(),
-                                              );
-                                            }
-                                          },
-                                          tileText: context
-                                              .favouriteSetupsAdapter(listen: false)
-                                              .liked![index!]["widget2"]
-                                              .toString(),
-                                          tileType: "Widget",
-                                          panelCollapsed: panelCollapsed,
-                                          delay: const Duration(milliseconds: 300),
-                                        ),
-                                      ],
+                                                .toString(),
+                                          );
+                                        }
+                                      },
+                                      tileText: context
+                                          .favouriteSetupsAdapter(listen: false)
+                                          .liked![index!]["widget2"]
+                                          .toString(),
+                                      tileType: "Widget",
+                                      panelCollapsed: panelCollapsed,
+                                      delay: const Duration(milliseconds: 300),
                                     ),
-                                  ),
+                                  ],
+                                ),
+                              ),
                       ),
                     ),
                     Expanded(
@@ -1060,10 +1068,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                               },
                               iconColor: Theme.of(context).colorScheme.secondary,
                               iconSize: 30,
-                              isFavorite: box.get(
-                                context.favouriteSetupsAdapter(listen: false).liked![index!]["id"].toString(),
-                                defaultValue: false,
-                              ) as bool,
+                              isFavorite:
+                                  box.get(
+                                        context.favouriteSetupsAdapter(listen: false).liked![index!]["id"].toString(),
+                                        defaultValue: false,
+                                      )
+                                      as bool,
                             ),
                           ),
                           GestureDetector(
@@ -1313,31 +1323,31 @@ class ModifiedDownloadButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString()[0] != "["
         ? context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] != null &&
-                context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] != ""
-            ? DownloadButton(
-                link: context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString(),
-                colorChanged: false,
-              )
-            : GestureDetector(
-                onTap: () async {
-                  launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString());
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: .25),
-                        blurRadius: 4,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                    borderRadius: BorderRadius.circular(500),
+                  context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] != ""
+              ? DownloadButton(
+                  link: context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString(),
+                  colorChanged: false,
+                )
+              : GestureDetector(
+                  onTap: () async {
+                    launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString());
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: .25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      borderRadius: BorderRadius.circular(500),
+                    ),
+                    padding: const EdgeInsets.all(17),
+                    child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
                   ),
-                  padding: const EdgeInsets.all(17),
-                  child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
-                ),
-              )
+                )
         : GestureDetector(
             onTap: () async {
               launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][1].toString());
@@ -1364,31 +1374,31 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString()[0] != "["
         ? context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] != null &&
-                context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] != ""
-            ? SetWallpaperButton(
-                url: context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString(),
-                colorChanged: false,
-              )
-            : GestureDetector(
-                onTap: () async {
-                  launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString());
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: .25),
-                        blurRadius: 4,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                    borderRadius: BorderRadius.circular(500),
+                  context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] != ""
+              ? SetWallpaperButton(
+                  url: context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString(),
+                  colorChanged: false,
+                )
+              : GestureDetector(
+                  onTap: () async {
+                    launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString());
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: .25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      borderRadius: BorderRadius.circular(500),
+                    ),
+                    padding: const EdgeInsets.all(17),
+                    child: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary, size: 20),
                   ),
-                  padding: const EdgeInsets.all(17),
-                  child: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary, size: 20),
-                ),
-              )
+                )
         : GestureDetector(
             onTap: () async {
               launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][1].toString());

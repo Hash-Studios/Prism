@@ -360,11 +360,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       await CoinsService.instance.maybeAwardProDailyBonus();
       await CoinsService.instance.processPendingReferralIfEligible();
     } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(
-        sourceTag: 'coins.main.$sourceTag',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      CoinsService.instance.logCoinError(sourceTag: 'coins.main.$sourceTag', error: error, stackTrace: stackTrace);
     } finally {
       _coinSyncInFlight = false;
     }
@@ -478,7 +474,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       );
     }
     if (segment == 'refer') {
-      final String? inviterId = uri.queryParameters['userID'] ??
+      final String? inviterId =
+          uri.queryParameters['userID'] ??
           uri.queryParameters['userId'] ??
           uri.queryParameters['userid'] ??
           uri.queryParameters['id'];
@@ -500,8 +497,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     final endpoint = Uri.parse('$_shortLinkResolveApiBase/$code');
     try {
-      final response = await http.get(endpoint,
-          headers: const <String, String>{'Accept': 'application/json'}).timeout(const Duration(seconds: 6));
+      final response = await http
+          .get(endpoint, headers: const <String, String>{'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 6));
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(response.body);

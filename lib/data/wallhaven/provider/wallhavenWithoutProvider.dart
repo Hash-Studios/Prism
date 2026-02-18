@@ -29,37 +29,37 @@ Future<List<WallPaper>> categoryDataFetcher(String categoryName, String mode, in
   }
   http
       .get(
-    Uri.parse(
-      "https://wallhaven.cc/api/v1/search?q=$categoryName&page=${pageNumbers[index][categoryName]}&categories=$categories&purity=$purity",
-    ),
-  )
-      .then((http.Response response) {
-    final resp = json.decode(response.body);
-    logger.d(resp.toString());
-    for (int i = 0; i < (resp["data"].length as int); i++) {
-      walls.add(
-        WallPaper(
-          id: resp["data"][i]["id"].toString(),
-          url: resp["data"][i]["url"].toString(),
-          short_url: resp["data"][i]["short_url"].toString(),
-          views: resp["data"][i]["views"].toString(),
-          favourites: resp["data"][i]["favorites"].toString(),
-          category: resp["data"][i]["category"].toString(),
-          dimension_x: resp["data"][i]["dimension_x"].toString(),
-          dimension_y: resp["data"][i]["dimension_y"].toString(),
-          resolution: resp["data"][i]["resolution"].toString(),
-          file_size: resp["data"][i]["file_size"].toString(),
-          colors: resp["data"][i]["colors"] as List?,
-          path: resp["data"][i]["path"].toString(),
-          thumbs: resp["data"][i]["thumbs"] as Map?,
-          current_page: resp["meta"]["current_page"] as int?,
+        Uri.parse(
+          "https://wallhaven.cc/api/v1/search?q=$categoryName&page=${pageNumbers[index][categoryName]}&categories=$categories&purity=$purity",
         ),
-      );
-    }
-    pageNumbers[index][categoryName] = (resp["meta"]["current_page"] as int) + 1;
-    logger.d("data done");
-    return walls;
-  });
+      )
+      .then((http.Response response) {
+        final resp = json.decode(response.body);
+        logger.d(resp.toString());
+        for (int i = 0; i < (resp["data"].length as int); i++) {
+          walls.add(
+            WallPaper(
+              id: resp["data"][i]["id"].toString(),
+              url: resp["data"][i]["url"].toString(),
+              short_url: resp["data"][i]["short_url"].toString(),
+              views: resp["data"][i]["views"].toString(),
+              favourites: resp["data"][i]["favorites"].toString(),
+              category: resp["data"][i]["category"].toString(),
+              dimension_x: resp["data"][i]["dimension_x"].toString(),
+              dimension_y: resp["data"][i]["dimension_y"].toString(),
+              resolution: resp["data"][i]["resolution"].toString(),
+              file_size: resp["data"][i]["file_size"].toString(),
+              colors: resp["data"][i]["colors"] as List?,
+              path: resp["data"][i]["path"].toString(),
+              thumbs: resp["data"][i]["thumbs"] as Map?,
+              current_page: resp["meta"]["current_page"] as int?,
+            ),
+          );
+        }
+        pageNumbers[index][categoryName] = (resp["meta"]["current_page"] as int) + 1;
+        logger.d("data done");
+        return walls;
+      });
   return walls;
 }
 
@@ -72,39 +72,40 @@ Future<List<WallPaper>> getData(String mode, int? categories, int? purity) async
   }
   http
       .get(
-    Uri.parse(
-      "https://wallhaven.cc/api/v1/search?page=$pageGetData&categories=$categories&purity=$purity&sorting=toplist&order=des",
-    ),
-  )
-      .then((http.Response response) {
-    final resp = json.decode(response.body);
-    for (int i = 0; i < (resp["data"].length as int); i++) {
-      walls.add(
-        WallPaper(
-          id: resp["data"][i]["id"].toString(),
-          url: resp["data"][i]["url"].toString(),
-          short_url: resp["data"][i]["short_url"].toString(),
-          views: resp["data"][i]["views"].toString(),
-          favourites: resp["data"][i]["favorites"].toString(),
-          category: resp["data"][i]["category"].toString(),
-          dimension_x: resp["data"][i]["dimension_x"].toString(),
-          dimension_y: resp["data"][i]["dimension_y"].toString(),
-          resolution: resp["data"][i]["resolution"].toString(),
-          file_size: resp["data"][i]["file_size"].toString(),
-          colors: resp["data"][i]["colors"] as List?,
-          path: resp["data"][i]["path"].toString(),
-          thumbs: resp["data"][i]["thumbs"] as Map?,
-          current_page: resp["meta"]["current_page"] as int?,
+        Uri.parse(
+          "https://wallhaven.cc/api/v1/search?page=$pageGetData&categories=$categories&purity=$purity&sorting=toplist&order=des",
         ),
-      );
-    }
-    pageGetData = (resp["meta"]["current_page"] as int) + 1;
-    logger.d("data done");
-    return walls;
-  }).catchError((e) {
-    logger.d("data done with error");
-    return walls;
-  });
+      )
+      .then((http.Response response) {
+        final resp = json.decode(response.body);
+        for (int i = 0; i < (resp["data"].length as int); i++) {
+          walls.add(
+            WallPaper(
+              id: resp["data"][i]["id"].toString(),
+              url: resp["data"][i]["url"].toString(),
+              short_url: resp["data"][i]["short_url"].toString(),
+              views: resp["data"][i]["views"].toString(),
+              favourites: resp["data"][i]["favorites"].toString(),
+              category: resp["data"][i]["category"].toString(),
+              dimension_x: resp["data"][i]["dimension_x"].toString(),
+              dimension_y: resp["data"][i]["dimension_y"].toString(),
+              resolution: resp["data"][i]["resolution"].toString(),
+              file_size: resp["data"][i]["file_size"].toString(),
+              colors: resp["data"][i]["colors"] as List?,
+              path: resp["data"][i]["path"].toString(),
+              thumbs: resp["data"][i]["thumbs"] as Map?,
+              current_page: resp["meta"]["current_page"] as int?,
+            ),
+          );
+        }
+        pageGetData = (resp["meta"]["current_page"] as int) + 1;
+        logger.d("data done");
+        return walls;
+      })
+      .catchError((e) {
+        logger.d("data done with error");
+        return walls;
+      });
   return walls;
 }
 
@@ -183,34 +184,34 @@ Future<List<WallPaper>> getWallsbyQueryPage(String query, int? categories, int? 
   logger.d("https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery&categories=$categories&purity=$purity");
   http
       .get(
-    Uri.parse(
-      "https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery&categories=$categories&purity=$purity",
-    ),
-  )
-      .then((http.Response response) {
-    final resp = json.decode(response.body);
-    for (int i = 0; i < (resp["data"].length as int); i++) {
-      wallsS.add(
-        WallPaper(
-          id: resp["data"][i]["id"].toString(),
-          url: resp["data"][i]["url"].toString(),
-          short_url: resp["data"][i]["short_url"].toString(),
-          views: resp["data"][i]["views"].toString(),
-          favourites: resp["data"][i]["favorites"].toString(),
-          category: resp["data"][i]["category"].toString(),
-          dimension_x: resp["data"][i]["dimension_x"].toString(),
-          dimension_y: resp["data"][i]["dimension_y"].toString(),
-          resolution: resp["data"][i]["resolution"].toString(),
-          file_size: resp["data"][i]["file_size"].toString(),
-          colors: resp["data"][i]["colors"] as List?,
-          path: resp["data"][i]["path"].toString(),
-          thumbs: resp["data"][i]["thumbs"] as Map?,
-          current_page: resp["meta"]["current_page"] as int?,
+        Uri.parse(
+          "https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery&categories=$categories&purity=$purity",
         ),
-      );
-    }
-    pageGetQuery = pageGetQuery + 1;
-    return wallsS;
-  });
+      )
+      .then((http.Response response) {
+        final resp = json.decode(response.body);
+        for (int i = 0; i < (resp["data"].length as int); i++) {
+          wallsS.add(
+            WallPaper(
+              id: resp["data"][i]["id"].toString(),
+              url: resp["data"][i]["url"].toString(),
+              short_url: resp["data"][i]["short_url"].toString(),
+              views: resp["data"][i]["views"].toString(),
+              favourites: resp["data"][i]["favorites"].toString(),
+              category: resp["data"][i]["category"].toString(),
+              dimension_x: resp["data"][i]["dimension_x"].toString(),
+              dimension_y: resp["data"][i]["dimension_y"].toString(),
+              resolution: resp["data"][i]["resolution"].toString(),
+              file_size: resp["data"][i]["file_size"].toString(),
+              colors: resp["data"][i]["colors"] as List?,
+              path: resp["data"][i]["path"].toString(),
+              thumbs: resp["data"][i]["thumbs"] as Map?,
+              current_page: resp["meta"]["current_page"] as int?,
+            ),
+          );
+        }
+        pageGetQuery = pageGetQuery + 1;
+        return wallsS;
+      });
   return wallsS;
 }

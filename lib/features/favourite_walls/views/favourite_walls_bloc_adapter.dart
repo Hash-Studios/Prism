@@ -19,7 +19,7 @@ class FavouriteWallSnapshot {
 
 class FavouriteWallsAdapter {
   FavouriteWallsAdapter(BuildContext context, {required bool listen})
-      : _bloc = listen ? context.watch<FavouriteWallsBloc>() : context.read<FavouriteWallsBloc>();
+    : _bloc = listen ? context.watch<FavouriteWallsBloc>() : context.read<FavouriteWallsBloc>();
 
   final FavouriteWallsBloc _bloc;
 

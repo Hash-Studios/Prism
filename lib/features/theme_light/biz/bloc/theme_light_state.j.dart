@@ -10,8 +10,8 @@ abstract class ThemeLightState with _$ThemeLightState {
   }) = _ThemeLightState;
 
   factory ThemeLightState.initial() => const ThemeLightState(
-        status: LoadStatus.initial,
-        actionStatus: ActionStatus.idle,
-        theme: ThemeLightEntity(themeId: 'kLFrost White', accentColorValue: 0xffe57697),
-      );
+    status: LoadStatus.initial,
+    actionStatus: ActionStatus.idle,
+    theme: ThemeLightEntity(themeId: 'kLFrost White', accentColorValue: 0xffe57697),
+  );
 }

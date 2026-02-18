@@ -201,31 +201,34 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
             context: navigator.context,
             builder: (BuildContext context) => loaderDialog,
           );
-          globals.gAuth.signInWithGoogle().then((value) {
-            if (!navigator.mounted) {
-              return;
-            }
-            closeLoaderIfVisible();
-            if (value == GoogleAuth.signInCancelledResult) {
-              globals.prismUser.loggedIn = false;
-              main.prefs.put(main.userHiveKey, globals.prismUser);
-              toasts.codeSend("Sign in cancelled.");
-              return;
-            }
-            toasts.codeSend("Login Successful!");
-            globals.prismUser.loggedIn = true;
-            main.prefs.put(main.userHiveKey, globals.prismUser);
-            func();
-          }).catchError((e) {
-            if (!navigator.mounted) {
-              return;
-            }
-            logger.d(e.toString());
-            closeLoaderIfVisible();
-            globals.prismUser.loggedIn = false;
-            main.prefs.put(main.userHiveKey, globals.prismUser);
-            toasts.error("Something went wrong, please try again!");
-          });
+          globals.gAuth
+              .signInWithGoogle()
+              .then((value) {
+                if (!navigator.mounted) {
+                  return;
+                }
+                closeLoaderIfVisible();
+                if (value == GoogleAuth.signInCancelledResult) {
+                  globals.prismUser.loggedIn = false;
+                  main.prefs.put(main.userHiveKey, globals.prismUser);
+                  toasts.codeSend("Sign in cancelled.");
+                  return;
+                }
+                toasts.codeSend("Login Successful!");
+                globals.prismUser.loggedIn = true;
+                main.prefs.put(main.userHiveKey, globals.prismUser);
+                func();
+              })
+              .catchError((e) {
+                if (!navigator.mounted) {
+                  return;
+                }
+                logger.d(e.toString());
+                closeLoaderIfVisible();
+                globals.prismUser.loggedIn = false;
+                main.prefs.put(main.userHiveKey, globals.prismUser);
+                toasts.error("Something went wrong, please try again!");
+              });
         },
         child: const Text('SIGN IN', style: TextStyle(fontSize: 16.0, color: Colors.white)),
       ),

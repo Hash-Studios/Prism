@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 
 class FavoriteIcon extends StatefulWidget {
   const FavoriteIcon({double? iconSize, Color? iconColor, bool? isFavorite, required Function valueChanged, super.key})
-      : _iconSize = iconSize ?? 60.0,
-        _iconColor = iconColor ?? Colors.red,
-        _isFavorite = isFavorite ?? false,
-        _valueChanged = valueChanged;
+    : _iconSize = iconSize ?? 60.0,
+      _iconColor = iconColor ?? Colors.red,
+      _isFavorite = isFavorite ?? false,
+      _valueChanged = valueChanged;
 
   final double _iconSize;
   final Color _iconColor;
@@ -40,8 +40,8 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
     _maxIconSize = (widget._iconSize < 20.0)
         ? 20.0
         : (widget._iconSize > 100.0)
-            ? 100.0
-            : widget._iconSize;
+        ? 100.0
+        : widget._iconSize;
     final double sizeDifference = _maxIconSize * 0.30;
     _minIconSize = _maxIconSize - sizeDifference;
 

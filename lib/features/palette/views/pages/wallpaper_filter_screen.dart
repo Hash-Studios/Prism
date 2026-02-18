@@ -41,11 +41,7 @@ class WallpaperFilterScreen extends StatefulWidget {
   State<StatefulWidget> createState() => _WallpaperFilterScreenState();
 }
 
-enum _PremiumFilterLowBalanceAction {
-  none,
-  watchAd,
-  upgrade,
-}
+enum _PremiumFilterLowBalanceAction { none, watchAd, upgrade }
 
 class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   String? filename;
@@ -198,10 +194,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   bool get _selectedFilterNeedsPremiumSpend => _filter != null && _filter is! NoFilter;
 
-  Future<void> _runWithPremiumFilterGate(
-    Future<void> Function() action, {
-    required String sourceTag,
-  }) async {
+  Future<void> _runWithPremiumFilterGate(Future<void> Function() action, {required String sourceTag}) async {
     if (!_selectedFilterNeedsPremiumSpend || globals.prismUser.premium || _premiumFilterUnlockedForSession) {
       await action();
       return;
@@ -210,20 +203,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     if (!globals.prismUser.loggedIn) {
       toasts.codeSend('Sign in to use premium filters with coins.');
       googleSignInPopUp(context, () {
-        unawaited(_runWithPremiumFilterGate(
-          action,
-          sourceTag: '$sourceTag.after_sign_in',
-        ));
+        unawaited(_runWithPremiumFilterGate(action, sourceTag: '$sourceTag.after_sign_in'));
       });
       return;
     }
 
     analytics.logEvent(
       name: 'coin_premium_filter_spend_attempt',
-      parameters: <String, Object>{
-        'sourceTag': sourceTag,
-        'filter': _filter?.name ?? '',
-      },
+      parameters: <String, Object>{'sourceTag': sourceTag, 'filter': _filter?.name ?? ''},
     );
 
     CoinMutationResult spendResult;
@@ -233,11 +220,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         reason: 'filter_${_filter?.name ?? ''}',
       );
     } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(
-        sourceTag: '$sourceTag.spend',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      CoinsService.instance.logCoinError(sourceTag: '$sourceTag.spend', error: error, stackTrace: stackTrace);
       toasts.error('Unable to process coins right now.');
       return;
     }
@@ -246,10 +229,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       if (spendResult.insufficientBalance) {
         await _showPremiumFilterLowBalanceNudge(
           sourceTag: '$sourceTag.low_balance_nudge',
-          onWatchAd: () => _watchAdAndRetryPremiumFilter(
-            action,
-            sourceTag: '$sourceTag.watch_and_retry',
-          ),
+          onWatchAd: () => _watchAdAndRetryPremiumFilter(action, sourceTag: '$sourceTag.watch_and_retry'),
         );
         return;
       }
@@ -279,16 +259,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     if (!mounted) {
       return;
     }
-    CoinsService.instance.logLowBalanceNudge(
-      sourceTag: sourceTag,
-      requiredCoins: CoinPolicy.premiumFilter,
-    );
-    final _PremiumFilterLowBalanceAction action = await showModalBottomSheet<_PremiumFilterLowBalanceAction>(
+    CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: CoinPolicy.premiumFilter);
+    final _PremiumFilterLowBalanceAction action =
+        await showModalBottomSheet<_PremiumFilterLowBalanceAction>(
           context: context,
           backgroundColor: Theme.of(context).primaryColor,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
           builder: (sheetContext) {
             final int balance = CoinsService.instance.balanceNotifier.value;
             final int missing = (CoinPolicy.premiumFilter - balance).clamp(0, CoinPolicy.premiumFilter);
@@ -306,10 +282,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Need Coins for Premium Filter',
-                    style: Theme.of(sheetContext).textTheme.displaySmall,
-                  ),
+                  Text('Need Coins for Premium Filter', style: Theme.of(sheetContext).textTheme.displaySmall),
                   const SizedBox(height: 10),
                   Text(
                     'Applying this filter costs -5 coins. Need $missing more coins.',
@@ -353,16 +326,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
   }
 
-  Future<void> _watchAdAndRetryPremiumFilter(
-    Future<void> Function() action, {
-    required String sourceTag,
-  }) async {
+  Future<void> _watchAdAndRetryPremiumFilter(Future<void> Function() action, {required String sourceTag}) async {
     analytics.logEvent(
       name: 'coin_filter_watch_and_retry_used',
-      parameters: <String, Object>{
-        'sourceTag': sourceTag,
-        'filter': _filter?.name ?? '',
-      },
+      parameters: <String, Object>{'sourceTag': sourceTag, 'filter': _filter?.name ?? ''},
     );
     final bool watched = await _watchRewardedAd();
     if (!watched) {
@@ -370,23 +337,13 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return;
     }
     try {
-      await CoinsService.instance.award(
-        CoinEarnAction.rewardedAd,
-        sourceTag: '$sourceTag.rewarded_ad',
-      );
+      await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: '$sourceTag.rewarded_ad');
     } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(
-        sourceTag: '$sourceTag.rewarded_ad',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      CoinsService.instance.logCoinError(sourceTag: '$sourceTag.rewarded_ad', error: error, stackTrace: stackTrace);
       toasts.error('Unable to credit coins right now.');
       return;
     }
-    await _runWithPremiumFilterGate(
-      action,
-      sourceTag: '$sourceTag.retry',
-    );
+    await _runWithPremiumFilterGate(action, sourceTag: '$sourceTag.retry');
   }
 
   Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
@@ -447,11 +404,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     setState(() {
       isLoading = true;
     });
-    final request = SaveMediaRequest(
-      link: imageFile.path,
-      isLocalFile: true,
-      kind: SaveMediaKind.wallpaper,
-    );
+    final request = SaveMediaRequest(link: imageFile.path, isLocalFile: true, kind: SaveMediaKind.wallpaper);
     try {
       final result = await PrismMediaHostApi().saveMedia(request);
       if (result.success) {
@@ -533,25 +486,16 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           else
             IconButton(
               icon: const Icon(JamIcons.download),
-              onPressed: () => unawaited(
-                _runWithPremiumFilterGate(
-                  _handleDownloadAction,
-                  sourceTag: 'coins.filter.download',
-                ),
-              ),
+              onPressed: () =>
+                  unawaited(_runWithPremiumFilterGate(_handleDownloadAction, sourceTag: 'coins.filter.download')),
             ),
           if (loading)
             Container()
           else
             IconButton(
               icon: const Icon(JamIcons.check),
-              onPressed: () => unawaited(
-                _runWithPremiumFilterGate(
-                  _handleSetAction,
-                  sourceTag: 'coins.filter.set',
-                ),
-              ),
-            )
+              onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
+            ),
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
@@ -724,8 +668,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                 valueColor: AlwaysStoppedAnimation(
                                   context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
                                       ? Theme.of(context).colorScheme.error == Colors.black
-                                          ? Theme.of(context).colorScheme.secondary
-                                          : Theme.of(context).colorScheme.error
+                                            ? Theme.of(context).colorScheme.secondary
+                                            : Theme.of(context).colorScheme.error
                                       : Theme.of(context).colorScheme.error,
                                 ),
                               ),
@@ -759,8 +703,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                 valueColor: AlwaysStoppedAnimation(
                                   context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
                                       ? Theme.of(context).colorScheme.error == Colors.black
-                                          ? Theme.of(context).colorScheme.secondary
-                                          : Theme.of(context).colorScheme.error
+                                            ? Theme.of(context).colorScheme.secondary
+                                            : Theme.of(context).colorScheme.error
                                       : Theme.of(context).colorScheme.error,
                                 ),
                               ),

@@ -14,7 +14,7 @@ part 'ads_bloc.j.freezed.dart';
 @injectable
 class AdsBloc extends Bloc<AdsEvent, AdsState> {
   AdsBloc(this._createRewardedAdUseCase, this._showRewardedAdUseCase, this._addRewardUseCase, this._resetAdsUseCase)
-      : super(AdsState.initial()) {
+    : super(AdsState.initial()) {
     on<_Started>(_onStarted);
     on<_WatchAdRequested>(_onWatchAdRequested);
     on<_RewardEarned>(_onRewardEarned);

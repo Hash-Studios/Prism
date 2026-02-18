@@ -120,8 +120,8 @@ class _ThemeViewState extends State<ThemeView> {
                   selectedValue: context.prismThemeMode(listen: false) == ThemeMode.light
                       ? 1
                       : context.prismThemeMode(listen: false) == ThemeMode.dark
-                          ? 2
-                          : 0,
+                      ? 2
+                      : 0,
                   func: (bool value) {
                     setState(() {
                       changingLight = value;
@@ -250,10 +250,10 @@ class _ThemeViewState extends State<ThemeView> {
                                     child: Text(
                                       prismLightThemes.keys.toList()[index].substring(2),
                                       style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                                            color: prismLightThemes[prismLightThemes.keys.toList()[index]]!
-                                                .colorScheme
-                                                .secondary,
-                                          ),
+                                        color: prismLightThemes[prismLightThemes.keys.toList()[index]]!
+                                            .colorScheme
+                                            .secondary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -337,10 +337,10 @@ class _ThemeViewState extends State<ThemeView> {
                                     child: Text(
                                       prismDarkThemes.keys.toList()[index].substring(2),
                                       style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                                            color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!
-                                                .colorScheme
-                                                .secondary,
-                                          ),
+                                        color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!
+                                            .colorScheme
+                                            .secondary,
+                                      ),
                                     ),
                                   ),
                                 ],

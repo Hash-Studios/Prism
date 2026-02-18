@@ -41,12 +41,7 @@ class DownloadButton extends StatefulWidget {
   State<DownloadButton> createState() => _DownloadButtonState();
 }
 
-enum _LowBalanceAction {
-  none,
-  downloadNow,
-  watchAndDownload,
-  upgrade,
-}
+enum _LowBalanceAction { none, downloadNow, watchAndDownload, upgrade }
 
 class _DownloadButtonState extends State<DownloadButton> {
   late bool isLoading;
@@ -159,8 +154,10 @@ class _DownloadButtonState extends State<DownloadButton> {
                       height: 150,
                       width: MediaQuery.of(context).size.width * .78,
                       decoration: BoxDecoration(
-                        borderRadius:
-                            const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
                         color: Theme.of(context).hintColor,
                       ),
                       child: const SafeRiveAsset(
@@ -173,10 +170,9 @@ class _DownloadButtonState extends State<DownloadButton> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Text(
                         'Watch a small video ad to download this wallpaper.',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge!
-                            .copyWith(color: Theme.of(context).colorScheme.secondary),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -200,10 +196,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                           },
                           child: Text(
                             'BUY PREMIUM',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                            style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                           ),
                         ),
                         MaterialButton(
@@ -227,17 +220,10 @@ class _DownloadButtonState extends State<DownloadButton> {
                                   await _performDownload();
                                 },
                           child: watchingAd
-                              ? const SizedBox(
-                                  height: 16,
-                                  width: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
+                              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
                               : Text(
                                   'WATCH AD',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Theme.of(context).colorScheme.secondary,
-                                  ),
+                                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                                 ),
                         ),
                       ],
@@ -262,17 +248,13 @@ class _DownloadButtonState extends State<DownloadButton> {
       return false;
     }
 
-    CoinsService.instance.logLowBalanceNudge(
-      sourceTag: sourceTag,
-      requiredCoins: requiredCoins,
-    );
+    CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: requiredCoins);
 
-    final _LowBalanceAction action = await showModalBottomSheet<_LowBalanceAction>(
+    final _LowBalanceAction action =
+        await showModalBottomSheet<_LowBalanceAction>(
           context: context,
           backgroundColor: Theme.of(context).primaryColor,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
           builder: (sheetContext) {
             final int balance = CoinsService.instance.balanceNotifier.value;
             final int missing = (requiredCoins - balance).clamp(0, requiredCoins);
@@ -290,10 +272,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Low coin balance',
-                    style: Theme.of(sheetContext).textTheme.displaySmall,
-                  ),
+                  Text('Low coin balance', style: Theme.of(sheetContext).textTheme.displaySmall),
                   const SizedBox(height: 10),
                   Text(
                     missing > 0
@@ -392,10 +371,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     );
   }
 
-  Future<bool> _attemptCoinSpendAndDownload({
-    required String sourceTag,
-    bool showNudgeOnInsufficient = true,
-  }) async {
+  Future<bool> _attemptCoinSpendAndDownload({required String sourceTag, bool showNudgeOnInsufficient = true}) async {
     CoinMutationResult spendResult;
     try {
       spendResult = await CoinsService.instance.spend(
@@ -404,11 +380,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         reason: widget.contentId?.trim().isNotEmpty == true ? 'content_${widget.contentId!.trim()}' : null,
       );
     } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(
-        sourceTag: sourceTag,
-        error: error,
-        stackTrace: stackTrace,
-      );
+      CoinsService.instance.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
       toasts.error('Unable to process coins right now.');
       return false;
     }
@@ -438,11 +410,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         );
         toasts.codeSend('Download failed. $_downloadCost coins refunded.');
       } catch (error, stackTrace) {
-        CoinsService.instance.logCoinError(
-          sourceTag: '$sourceTag.refund',
-          error: error,
-          stackTrace: stackTrace,
-        );
+        CoinsService.instance.logCoinError(sourceTag: '$sourceTag.refund', error: error, stackTrace: stackTrace);
       }
     }
     return downloaded;
@@ -521,11 +489,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     try {
       logger.d(link);
       if (link.contains('com.hash.prism')) {
-        final SaveMediaRequest request = SaveMediaRequest(
-          link: link,
-          isLocalFile: true,
-          kind: SaveMediaKind.wallpaper,
-        );
+        final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
         final OperationResult result = await PrismMediaHostApi().saveMedia(request);
         if (!result.success) {
           toasts.error("Couldn't download! Please retry.");

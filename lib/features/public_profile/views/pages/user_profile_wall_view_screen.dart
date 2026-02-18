@@ -150,29 +150,31 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
               screenshotController
                   .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                   .then((Uint8List? image) async {
-                setState(() {
-                  _imageFile = File.fromRawPath(image!);
-                  screenshotTaken = true;
-                  panelClosed = false;
-                });
-                logger.d('Screenshot Taken');
-              }).catchError((onError) {
-                logger.d(onError.toString());
-              });
+                    setState(() {
+                      _imageFile = File.fromRawPath(image!);
+                      screenshotTaken = true;
+                      panelClosed = false;
+                    });
+                    logger.d('Screenshot Taken');
+                  })
+                  .catchError((onError) {
+                    logger.d(onError.toString());
+                  });
             } else {
               main.prefs.get('optimisedWallpapers') as bool? ?? true
                   ? screenshotController
-                      .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
-                      .then((Uint8List? image) async {
-                      setState(() {
-                        _imageFile = File.fromRawPath(image!);
-                        screenshotTaken = true;
-                        panelClosed = false;
-                      });
-                      logger.d('Screenshot Taken');
-                    }).catchError((onError) {
-                      logger.d(onError.toString());
-                    })
+                        .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
+                        .then((Uint8List? image) async {
+                          setState(() {
+                            _imageFile = File.fromRawPath(image!);
+                            screenshotTaken = true;
+                            panelClosed = false;
+                          });
+                          logger.d('Screenshot Taken');
+                        })
+                        .catchError((onError) {
+                          logger.d(onError.toString());
+                        })
                   : logger.d("Wallpaper Optimisation is disabled!");
             }
           }
@@ -256,8 +258,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.symmetric(horizontal: 6.0),
@@ -275,26 +277,26 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                                 return Text(
                                                   "",
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                        color: Theme.of(context).colorScheme.secondary,
-                                                        fontSize: 16,
-                                                      ),
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                    fontSize: 16,
+                                                  ),
                                                 );
                                               case ConnectionState.none:
                                                 return Text(
                                                   "",
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                        color: Theme.of(context).colorScheme.secondary,
-                                                        fontSize: 16,
-                                                      ),
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                    fontSize: 16,
+                                                  ),
                                                 );
                                               default:
                                                 if (snapshot.hasError) {
                                                   return Text(
                                                     "",
                                                     style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                          color: Theme.of(context).colorScheme.secondary,
-                                                          fontSize: 16,
-                                                        ),
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                      fontSize: 16,
+                                                    ),
                                                   );
                                                 } else {
                                                   return Text(
@@ -302,9 +304,9 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                                     overflow: TextOverflow.fade,
                                                     softWrap: false,
                                                     style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                          color: Theme.of(context).colorScheme.secondary,
-                                                          fontSize: 16,
-                                                        ),
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                      fontSize: 16,
+                                                    ),
                                                   );
                                                 }
                                             }
@@ -427,10 +429,10 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                             link: screenshotTaken
                                 ? _imageFile.path
                                 : context
-                                    .publicProfileAdapter()
-                                    .userProfileWalls![index]
-                                    .data()["wallpaper_url"]
-                                    .toString(),
+                                      .publicProfileAdapter()
+                                      .userProfileWalls![index]
+                                      .data()["wallpaper_url"]
+                                      .toString(),
                             isPremiumContent: globals.isPremiumWall(
                               globals.premiumCollections,
                               context.publicProfileAdapter().userProfileWalls![index].data()["collections"] as List? ??
@@ -444,10 +446,10 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                             url: screenshotTaken
                                 ? _imageFile.path
                                 : context
-                                    .publicProfileAdapter()
-                                    .userProfileWalls![index]
-                                    .data()["wallpaper_url"]
-                                    .toString(),
+                                      .publicProfileAdapter()
+                                      .userProfileWalls![index]
+                                      .data()["wallpaper_url"]
+                                      .toString(),
                           ),
                           FavouriteWallpaperButton(
                             id: context.publicProfileAdapter().userProfileWalls![index].data()["id"].toString(),
@@ -520,8 +522,11 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                     shakeController.forward(from: 0.0);
                   },
                   child: CachedNetworkImage(
-                    imageUrl:
-                        context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_url"].toString(),
+                    imageUrl: context
+                        .publicProfileAdapter()
+                        .userProfileWalls![index]
+                        .data()["wallpaper_url"]
+                        .toString(),
                     imageBuilder: (context, imageProvider) => Screenshot(
                       controller: screenshotController,
                       child: Container(
@@ -556,8 +561,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
+                            ? Colors.black
+                            : Colors.white,
                       ),
                     ),
                   ),
@@ -575,8 +580,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                   color: isLoading
                       ? Theme.of(context).colorScheme.secondary
                       : accent!.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white,
+                      ? Colors.black
+                      : Colors.white,
                   icon: const Icon(JamIcons.chevron_left),
                 ),
               ),
@@ -587,8 +592,10 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                 padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
-                    final link =
-                        context.publicProfileAdapter(listen: false).userProfileWalls![index].data()["wallpaper_url"];
+                    final link = context
+                        .publicProfileAdapter(listen: false)
+                        .userProfileWalls![index]
+                        .data()["wallpaper_url"];
                     Navigator.push(
                       context,
                       PageRouteBuilder(
@@ -612,8 +619,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                   color: isLoading
                       ? Theme.of(context).colorScheme.secondary
                       : accent!.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white,
+                      ? Colors.black
+                      : Colors.white,
                   icon: const Icon(JamIcons.clock),
                 ),
               ),

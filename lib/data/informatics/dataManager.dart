@@ -90,8 +90,9 @@ Future<void> _incrementCounter(String section, String field, String id) async {
     }
 
     final dynamic sectionValue = snapshot.jsonMap[section];
-    final Map<String, dynamic> sectionMap =
-        sectionValue is Map ? sectionValue.cast<String, dynamic>() : <String, dynamic>{};
+    final Map<String, dynamic> sectionMap = sectionValue is Map
+        ? sectionValue.cast<String, dynamic>()
+        : <String, dynamic>{};
 
     final dynamic itemValue = sectionMap[id];
     final Map<String, dynamic> itemMap = itemValue is Map ? itemValue.cast<String, dynamic>() : <String, dynamic>{};

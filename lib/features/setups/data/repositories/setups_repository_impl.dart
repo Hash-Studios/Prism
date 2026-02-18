@@ -38,11 +38,13 @@ class SetupsRepositoryImpl implements SetupsRepository {
         _cursorDocId = rows.last['__docId']?.toString();
       }
 
-      final items = rows.map((data) {
-        final payload = <String, dynamic>{...data};
-        payload.remove('__docId');
-        return SetupEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
-      }).toList(growable: false);
+      final items = rows
+          .map((data) {
+            final payload = <String, dynamic>{...data};
+            payload.remove('__docId');
+            return SetupEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
+          })
+          .toList(growable: false);
 
       return Result.success(SetupsPage(items: items, hasMore: rows.length == 10, nextCursor: _cursorDocId));
     } catch (error) {

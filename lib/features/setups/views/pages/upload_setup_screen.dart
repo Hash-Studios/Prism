@@ -195,8 +195,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                       wallpaperUploaded == true
                           ? wallpaperUploadLink
                           : wallpaperAppName.text != "" && wallpaperAppLink.text != ""
-                              ? [wallpaperAppName.text, wallpaperAppLink.text, wallpaperAppWallName.text]
-                              : wallpaperUrl.text,
+                          ? [wallpaperAppName.text, wallpaperAppLink.text, wallpaperAppWallName.text]
+                          : wallpaperUrl.text,
                       iconName.text,
                       iconURL.text,
                       widgetName1.text,
@@ -214,8 +214,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               style: TextStyle(
                 color: !isProcessing && !isUploading
                     ? Theme.of(context).colorScheme.error == Colors.black
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.error
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.error
                     : Theme.of(context).hintColor,
                 fontWeight: FontWeight.normal,
               ),
@@ -243,8 +243,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                         wallpaperUploaded == true
                             ? wallpaperUploadLink
                             : wallpaperAppName.text != "" && wallpaperAppLink.text != ""
-                                ? [wallpaperAppName.text, wallpaperAppLink.text, wallpaperAppWallName.text]
-                                : wallpaperUrl.text,
+                            ? [wallpaperAppName.text, wallpaperAppLink.text, wallpaperAppWallName.text]
+                            : wallpaperUrl.text,
                         iconName.text,
                         iconURL.text,
                         widgetName1.text,
@@ -265,8 +265,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               style: TextStyle(
                 color: !isProcessing && !isUploading
                     ? Theme.of(context).colorScheme.error == Colors.black
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.error
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.error
                     : Theme.of(context).hintColor,
                 fontWeight: FontWeight.normal,
               ),
@@ -609,8 +609,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                 setState(() {
                                                   fetched = true;
                                                   icons = (box.get('icons', defaultValue: {}) as Map).values.toList();
-                                                  allIcons =
-                                                      (box.get('icons', defaultValue: {}) as Map).values.toList();
+                                                  allIcons = (box.get('icons', defaultValue: {}) as Map).values
+                                                      .toList();
                                                   if (icons.isNotEmpty) {
                                                     loading = false;
                                                   }
@@ -698,15 +698,15 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                               decoration: InputDecoration(
                                                                 prefixIcon: const Icon(Icons.search),
                                                                 hintText: "Search Icons",
-                                                                hintStyle:
-                                                                    Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                          fontSize: 16,
-                                                                          color: Theme.of(context)
-                                                                              .textTheme
-                                                                              .bodyLarge!
-                                                                              .color!
-                                                                              .withValues(alpha: 0.6),
-                                                                        ),
+                                                                hintStyle: Theme.of(context).textTheme.bodyLarge!
+                                                                    .copyWith(
+                                                                      fontSize: 16,
+                                                                      color: Theme.of(context)
+                                                                          .textTheme
+                                                                          .bodyLarge!
+                                                                          .color!
+                                                                          .withValues(alpha: 0.6),
+                                                                    ),
                                                               ),
                                                             ),
                                                           ),
@@ -733,8 +733,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                                       leading: ClipRRect(
                                                                         borderRadius: BorderRadius.circular(8),
                                                                         child: CachedNetworkImage(
-                                                                          imageUrl:
-                                                                              (icons[index] as Map)["icon"].toString(),
+                                                                          imageUrl: (icons[index] as Map)["icon"]
+                                                                              .toString(),
                                                                           width: 38,
                                                                           height: 38,
                                                                           fit: BoxFit.cover,
@@ -754,9 +754,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                                       subtitle: Text(
                                                                         (icons[index] as Map)["id"].toString().trim(),
                                                                         style: TextStyle(
-                                                                          color: Theme.of(context)
-                                                                              .colorScheme
-                                                                              .secondary
+                                                                          color: Theme.of(context).colorScheme.secondary
                                                                               .withValues(alpha: 0.5),
                                                                           fontSize: 12,
                                                                           fontFamily: "Proxima Nova",

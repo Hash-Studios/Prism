@@ -15,7 +15,7 @@ part 'deep_link_bloc.j.freezed.dart';
 @injectable
 class DeepLinkBloc extends Bloc<DeepLinkEvent, DeepLinkState> {
   DeepLinkBloc(this._getInitialDeepLinkActionUseCase, this._observeDeepLinkActionsUseCase)
-      : super(DeepLinkState.initial()) {
+    : super(DeepLinkState.initial()) {
     on<_Started>(_onStarted);
     on<_ActionReceived>(_onActionReceived);
     on<_HistoryCleared>(_onHistoryCleared);
