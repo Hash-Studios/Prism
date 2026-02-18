@@ -23,132 +23,98 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   Future<void> getLink() async {
     if (globals.prismUser.id == "") {
     } else {
-      await createSharingPrismLink(globals.prismUser.id).then((value) => setState(() {
-            link = value;
-          }));
+      await createSharingPrismLink(globals.prismUser.id).then(
+        (value) => setState(() {
+          link = value;
+        }),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Share",
-          style: Theme.of(context).textTheme.displaySmall,
-        ),
-      ),
+      appBar: AppBar(title: Text("Share", style: Theme.of(context).textTheme.displaySmall)),
       backgroundColor: Theme.of(context).primaryColor,
       body: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(
-                height: 20,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
-                child: Center(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width / 2,
-                    height: 70,
-                    child: Icon(
-                      JamIcons.share,
-                      size: 46,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
+              child: Center(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width / 2,
+                  height: 70,
+                  child: Icon(JamIcons.share, size: 46, color: Theme.of(context).colorScheme.secondary),
                 ),
               ),
-              //TODO Replace the animation with Share animation
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
-                child: Center(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width / 2,
-                    height: 70,
-                    child: Icon(
-                      JamIcons.link,
-                      size: 46,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
+            ),
+            //TODO Replace the animation with Share animation
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
+              child: Center(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width / 2,
+                  height: 70,
+                  child: Icon(JamIcons.link, size: 46, color: Theme.of(context).colorScheme.secondary),
                 ),
               ),
-              const SizedBox(
-                height: 10,
-              ),
-              Text(
-                "Share Prism with friends",
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Share Prism with friends",
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium!.copyWith(fontSize: 18, color: Theme.of(context).colorScheme.secondary),
+            ),
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.6,
+              child: Text(
+                "Get 50 coins when your friend launches the app from the link!",
                 textAlign: TextAlign.center,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium!
-                    .copyWith(fontSize: 18, color: Theme.of(context).colorScheme.secondary),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
               ),
-              SizedBox(
-                width: MediaQuery.of(context).size.width * 0.6,
-                child: Text(
-                  "Get 50 coins when your friend launches the app from the link!",
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium!
-                      .copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
-                ),
+            ),
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.6,
+              child: Text(
+                "They also get 50 coins, which you can spend on exclusives.",
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
               ),
-              SizedBox(
-                width: MediaQuery.of(context).size.width * 0.6,
-                child: Text(
-                  "They also get 50 coins, which you can spend on exclusives.",
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium!
-                      .copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              MaterialButton(
-                disabledColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                shape: const StadiumBorder(),
-                color: link == ""
-                    ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
-                    : Theme.of(context).colorScheme.error,
-                onPressed: link == ""
-                    ? () {
-                        toasts.error(
-                          "Sign in to generate unique referral link!",
-                        );
-                      }
-                    : () {
-                        SharePlus.instance.share(
-                          ShareParams(
-                            text: link,
-                            sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
-                          ),
-                        );
-                      },
-                child: const Text(
-                  'SHARE INVITE',
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              const SizedBox(
-                height: 15,
-              ),
-            ],
-          )),
+            ),
+            const SizedBox(height: 10),
+            MaterialButton(
+              disabledColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+              shape: const StadiumBorder(),
+              color: link == ""
+                  ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
+                  : Theme.of(context).colorScheme.error,
+              onPressed: link == ""
+                  ? () {
+                      toasts.error("Sign in to generate unique referral link!");
+                    }
+                  : () {
+                      SharePlus.instance.share(
+                        ShareParams(text: link, sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
+                      );
+                    },
+              child: const Text('SHARE INVITE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+            ),
+            const SizedBox(height: 10),
+            const SizedBox(height: 15),
+          ],
+        ),
+      ),
     );
   }
 }

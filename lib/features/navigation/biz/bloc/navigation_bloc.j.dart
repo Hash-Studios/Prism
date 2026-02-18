@@ -41,62 +41,44 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
     _emitResult(emit, result);
   }
 
-  Future<void> _onRoutePushed(
-    _RoutePushed event,
-    Emitter<NavigationState> emit,
-  ) async {
+  Future<void> _onRoutePushed(_RoutePushed event, Emitter<NavigationState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress));
     final result = await _pushRouteUseCase(PushRouteParams(routeName: event.routeName));
     _emitResult(emit, result);
   }
 
-  Future<void> _onRoutePopped(
-    _RoutePopped event,
-    Emitter<NavigationState> emit,
-  ) async {
+  Future<void> _onRoutePopped(_RoutePopped event, Emitter<NavigationState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress));
     final result = await _popRouteUseCase(const NoParams());
     _emitResult(emit, result);
   }
 
-  Future<void> _onResetRequested(
-    _ResetRequested event,
-    Emitter<NavigationState> emit,
-  ) async {
+  Future<void> _onResetRequested(_ResetRequested event, Emitter<NavigationState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress));
-    final result = await _resetNavigationUseCase(
-      ResetNavigationParams(initialRoute: event.initialRoute),
-    );
+    final result = await _resetNavigationUseCase(ResetNavigationParams(initialRoute: event.initialRoute));
     _emitResult(emit, result);
   }
 
-  Future<void> _onStackReplaced(
-    _StackReplaced event,
-    Emitter<NavigationState> emit,
-  ) async {
+  Future<void> _onStackReplaced(_StackReplaced event, Emitter<NavigationState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress));
     final result = await _replaceNavigationStackUseCase(ReplaceNavigationStackParams(stack: event.stack));
     _emitResult(emit, result);
   }
 
-  void _emitResult(
-    Emitter<NavigationState> emit,
-    Result<NavigationStackEntity> result,
-  ) {
+  void _emitResult(Emitter<NavigationState> emit, Result<NavigationStackEntity> result) {
     result.fold(
-      onSuccess: (NavigationStackEntity stack) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        stack: stack.stack,
-        currentRoute: stack.current,
-        canPop: stack.canPop,
-        failure: null,
-      )),
-      onFailure: (Failure failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (NavigationStackEntity stack) => emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          stack: stack.stack,
+          currentRoute: stack.current,
+          canPop: stack.canPop,
+          failure: null,
+        ),
+      ),
+      onFailure: (Failure failure) =>
+          emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 }

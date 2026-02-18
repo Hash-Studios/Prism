@@ -40,9 +40,7 @@ class FetchPublicProfileWallsUseCase
   final PublicProfileRepository _repository;
 
   @override
-  Future<Result<PublicProfilePage<PublicProfileWallEntity>>> call(
-    FetchPublicProfileWallsParams params,
-  ) {
+  Future<Result<PublicProfilePage<PublicProfileWallEntity>>> call(FetchPublicProfileWallsParams params) {
     return _repository.fetchWalls(email: params.email, refresh: params.refresh);
   }
 }
@@ -62,9 +60,7 @@ class FetchPublicProfileSetupsUseCase
   final PublicProfileRepository _repository;
 
   @override
-  Future<Result<PublicProfilePage<PublicProfileSetupEntity>>> call(
-    FetchPublicProfileSetupsParams params,
-  ) {
+  Future<Result<PublicProfilePage<PublicProfileSetupEntity>>> call(FetchPublicProfileSetupsParams params) {
     return _repository.fetchSetups(email: params.email, refresh: params.refresh);
   }
 }

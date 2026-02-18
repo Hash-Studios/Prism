@@ -10,10 +10,7 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: FavouriteWallsRepository)
 class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
-  FavouriteWallsRepositoryImpl(
-    this._firestoreClient,
-    @Named('localFavBox') this._localFavBox,
-  );
+  FavouriteWallsRepositoryImpl(this._firestoreClient, @Named('localFavBox') this._localFavBox);
 
   final FirestoreClient _firestoreClient;
   final Box<dynamic> _localFavBox;
@@ -86,11 +83,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   }) async {
     try {
       if (currentlyFavourited) {
-        await _firestoreClient.deleteDoc(
-          _collectionPath(userId),
-          wall.id,
-          sourceTag: 'favourite_walls.toggle.delete',
-        );
+        await _firestoreClient.deleteDoc(_collectionPath(userId), wall.id, sourceTag: 'favourite_walls.toggle.delete');
         await _localFavBox.delete(wall.id);
         return Result.success(false);
       } else {
@@ -113,16 +106,9 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   }
 
   @override
-  Future<Result<bool>> removeFavourite({
-    required String userId,
-    required String wallId,
-  }) async {
+  Future<Result<bool>> removeFavourite({required String userId, required String wallId}) async {
     try {
-      await _firestoreClient.deleteDoc(
-        _collectionPath(userId),
-        wallId,
-        sourceTag: 'favourite_walls.remove',
-      );
+      await _firestoreClient.deleteDoc(_collectionPath(userId), wallId, sourceTag: 'favourite_walls.remove');
       await _localFavBox.delete(wallId);
       return Result.success(true);
     } catch (error) {
@@ -131,19 +117,12 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   }
 
   @override
-  Future<Result<bool>> clearAll({
-    required String userId,
-    required List<String> wallIds,
-  }) async {
+  Future<Result<bool>> clearAll({required String userId, required List<String> wallIds}) async {
     try {
       for (final String rawId in wallIds) {
         final String id = rawId.trim();
         if (id.isEmpty) continue;
-        await _firestoreClient.deleteDoc(
-          _collectionPath(userId),
-          id,
-          sourceTag: 'favourite_walls.clear_all.delete',
-        );
+        await _firestoreClient.deleteDoc(_collectionPath(userId), id, sourceTag: 'favourite_walls.clear_all.delete');
         await _localFavBox.delete(id);
       }
       return Result.success(true);

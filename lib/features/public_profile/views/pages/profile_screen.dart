@@ -127,9 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                   return ColoredBox(
                     color: Theme.of(context).primaryColor,
-                    child: Center(
-                      child: Loader(),
-                    ),
+                    child: Center(child: Loader()),
                   );
                 },
               ),
@@ -190,8 +188,9 @@ class _ProfileChildState extends State<ProfileChild> {
     final String safeUserPhoto = (widget.userPhoto ?? "").trim();
     final bool hasCoverPhoto = safeCoverPhoto.isNotEmpty;
     final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
-    final ScrollController? controller =
-        widget.ownProfile! ? InheritedDataProvider.of(context)!.scrollController : ScrollController();
+    final ScrollController? controller = widget.ownProfile!
+        ? InheritedDataProvider.of(context)!.scrollController
+        : ScrollController();
 
     return !widget.ownProfile! || globals.prismUser.loggedIn
         ? DefaultTabController(
@@ -212,35 +211,36 @@ class _ProfileChildState extends State<ProfileChild> {
                             ? Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
-                                    padding: const EdgeInsets.all(2),
-                                    icon: Container(
-                                      padding: const EdgeInsets.all(6.0),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                      ),
-                                      child:
-                                          Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
+                                  padding: const EdgeInsets.all(2),
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(6.0),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                     ),
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    }),
+                                    child: Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
                               )
                             : Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
-                                    padding: const EdgeInsets.all(2),
-                                    icon: Container(
-                                      padding: const EdgeInsets.all(6.0),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                      ),
-                                      child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
+                                  padding: const EdgeInsets.all(2),
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(6.0),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                     ),
-                                    onPressed: () {
-                                      context.router.push(const EditProfilePanelRoute());
-                                    }),
+                                    child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
+                                  ),
+                                  onPressed: () {
+                                    context.router.push(const EditProfilePanelRoute());
+                                  },
+                                ),
                               ),
                         actions: !widget.ownProfile! || globals.prismUser.loggedIn == false
                             ? [
@@ -259,13 +259,16 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 shape: BoxShape.circle,
                                                 color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                               ),
-                                              child: Icon(JamIcons.user_remove,
-                                                  color: Theme.of(context).colorScheme.secondary),
+                                              child: Icon(
+                                                JamIcons.user_remove,
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
                                             ),
                                             onPressed: () {
                                               unfollow(widget.email!, widget.id!);
                                               toasts.error("Unfollowed ${widget.name}!");
-                                            })
+                                            },
+                                          )
                                         : IconButton(
                                             alignment: Alignment.centerRight,
                                             padding: const EdgeInsets.all(2),
@@ -275,62 +278,62 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 shape: BoxShape.circle,
                                                 color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                               ),
-                                              child: Icon(JamIcons.user_plus,
-                                                  color: Theme.of(context).colorScheme.secondary),
+                                              child: Icon(
+                                                JamIcons.user_plus,
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
                                             ),
                                             onPressed: () {
                                               follow(widget.email!, widget.id!);
                                               http.post(
-                                                Uri.parse(
-                                                  'https://fcm.googleapis.com/fcm/send',
-                                                ),
+                                                Uri.parse('https://fcm.googleapis.com/fcm/send'),
                                                 headers: <String, String>{
                                                   'Content-Type': 'application/json',
                                                   'Authorization': 'key=${Env.fcmServerKey}',
                                                 },
-                                                body: jsonEncode(
-                                                  <String, dynamic>{
-                                                    'notification': <String, dynamic>{
-                                                      'title': '🎉 New Follower!',
-                                                      'body': '${globals.prismUser.username} is now following you.',
-                                                      'color': "#e57697",
-                                                      'tag': '${globals.prismUser.username} Follow',
-                                                      'image': globals.prismUser.profilePhoto,
-                                                      'android_channel_id': "followers",
-                                                      'icon': '@drawable/ic_follow'
-                                                    },
-                                                    'priority': 'high',
-                                                    'data': <String, dynamic>{
-                                                      'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-                                                      'id': '1',
-                                                      'status': 'done'
-                                                    },
-                                                    'to': "/topics/${widget.email!.split("@")[0]}"
+                                                body: jsonEncode(<String, dynamic>{
+                                                  'notification': <String, dynamic>{
+                                                    'title': '🎉 New Follower!',
+                                                    'body': '${globals.prismUser.username} is now following you.',
+                                                    'color': "#e57697",
+                                                    'tag': '${globals.prismUser.username} Follow',
+                                                    'image': globals.prismUser.profilePhoto,
+                                                    'android_channel_id': "followers",
+                                                    'icon': '@drawable/ic_follow',
                                                   },
-                                                ),
+                                                  'priority': 'high',
+                                                  'data': <String, dynamic>{
+                                                    'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+                                                    'id': '1',
+                                                    'status': 'done',
+                                                  },
+                                                  'to': "/topics/${widget.email!.split("@")[0]}",
+                                                }),
                                               );
                                               toasts.codeSend("Followed ${widget.name}!");
-                                            }),
-                                  )
+                                            },
+                                          ),
+                                  ),
                               ]
                             : [
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: IconButton(
-                                      alignment: Alignment.centerRight,
-                                      padding: const EdgeInsets.all(2),
-                                      icon: Container(
-                                        padding: const EdgeInsets.all(6.0),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                        ),
-                                        child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.all(2),
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(6.0),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                       ),
-                                      onPressed: () {
-                                        widget.parentScaffoldKey?.currentState?.openEndDrawer();
-                                      }),
-                                )
+                                      child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
+                                    ),
+                                    onPressed: () {
+                                      widget.parentScaffoldKey?.currentState?.openEndDrawer();
+                                    },
+                                  ),
+                                ),
                               ],
                         backgroundColor: Theme.of(context).primaryColor,
                         automaticallyImplyLeading: false,
@@ -342,233 +345,227 @@ class _ProfileChildState extends State<ProfileChild> {
                             FlexibleSpaceBar(
                               background: Stack(
                                 children: [
-                                  Column(children: [
-                                    if (!hasCoverPhoto)
-                                      SvgPicture.string(
-                                        defaultHeader
-                                            .replaceAll(
-                                              "#181818",
-                                              "#${Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2)}",
-                                            )
-                                            .replaceAll(
-                                              "#E77597",
-                                              "#${Theme.of(context).colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
-                                            ),
-                                        fit: BoxFit.cover,
-                                        width: MediaQuery.of(context).size.width,
-                                        height: MediaQuery.of(context).size.height * 0.19,
-                                      )
-                                    else
-                                      CachedNetworkImage(
-                                        imageUrl: safeCoverPhoto,
-                                        fit: BoxFit.cover,
-                                        width: MediaQuery.of(context).size.width,
-                                        height: MediaQuery.of(context).size.height * 0.19,
-                                      ),
-                                    const SizedBox(
-                                      width: double.maxFinite,
-                                      height: 37,
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-                                      width: double.maxFinite,
-                                      height: (widget.links ?? {}).keys.toList().isEmpty
-                                          ? MediaQuery.of(context).size.height * 0.21 - 37
-                                          : MediaQuery.of(context).size.height * 0.27 - 37,
-                                      child: Column(
-                                        children: [
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.7,
-                                            child: Text(
-                                              widget.name!,
-                                              textAlign: TextAlign.center,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontFamily: "Proxima Nova",
-                                                color: Theme.of(context).colorScheme.secondary,
-                                                fontSize: 22,
-                                                fontWeight: FontWeight.w500,
+                                  Column(
+                                    children: [
+                                      if (!hasCoverPhoto)
+                                        SvgPicture.string(
+                                          defaultHeader
+                                              .replaceAll(
+                                                "#181818",
+                                                "#${Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2)}",
+                                              )
+                                              .replaceAll(
+                                                "#E77597",
+                                                "#${Theme.of(context).colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
                                               ),
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            height: 2,
-                                          ),
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.7,
-                                            child: Text(
-                                              "@${widget.username}",
-                                              textAlign: TextAlign.center,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontFamily: "Proxima Nova",
-                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.normal,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            height: 8,
-                                          ),
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.7,
-                                            child: Text(
-                                              widget.bio ?? "",
-                                              textAlign: TextAlign.center,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontFamily: "Proxima Nova",
-                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.normal,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            height: 8,
-                                          ),
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.7,
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                RichText(
-                                                  text: TextSpan(
-                                                    text: "${(widget.following ?? []).length}",
-                                                    style: TextStyle(
-                                                      fontFamily: "Proxima Nova",
-                                                      color:
-                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: 1),
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
-                                                    children: [
-                                                      TextSpan(
-                                                        text: " Following",
-                                                        style: TextStyle(
-                                                          color: Theme.of(context)
-                                                              .colorScheme
-                                                              .secondary
-                                                              .withValues(alpha: 0.6),
-                                                          fontWeight: FontWeight.normal,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                                const SizedBox(width: 24),
-                                                RichText(
-                                                  text: TextSpan(
-                                                    text: "${(widget.followers ?? []).length}",
-                                                    style: TextStyle(
-                                                      fontFamily: "Proxima Nova",
-                                                      color:
-                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: 1),
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
-                                                    children: [
-                                                      TextSpan(
-                                                        text: " Followers",
-                                                        style: TextStyle(
-                                                          color: Theme.of(context)
-                                                              .colorScheme
-                                                              .secondary
-                                                              .withValues(alpha: 0.6),
-                                                          fontWeight: FontWeight.normal,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          if ((widget.links ?? {}).keys.toList().isNotEmpty)
-                                            const SizedBox(
-                                              height: 8,
-                                            ),
-                                          if ((widget.links ?? {}).keys.toList().isNotEmpty)
+                                          fit: BoxFit.cover,
+                                          width: MediaQuery.of(context).size.width,
+                                          height: MediaQuery.of(context).size.height * 0.19,
+                                        )
+                                      else
+                                        CachedNetworkImage(
+                                          imageUrl: safeCoverPhoto,
+                                          fit: BoxFit.cover,
+                                          width: MediaQuery.of(context).size.width,
+                                          height: MediaQuery.of(context).size.height * 0.19,
+                                        ),
+                                      const SizedBox(width: double.maxFinite, height: 37),
+                                      Container(
+                                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                                        width: double.maxFinite,
+                                        height: (widget.links ?? {}).keys.toList().isEmpty
+                                            ? MediaQuery.of(context).size.height * 0.21 - 37
+                                            : MediaQuery.of(context).size.height * 0.27 - 37,
+                                        child: Column(
+                                          children: [
                                             SizedBox(
-                                              width: MediaQuery.of(context).size.width,
-                                              height: 48,
-                                              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                                ...(widget.links ?? {})
-                                                    .keys
-                                                    .toList()
-                                                    .map((e) => IconButton(
+                                              width: MediaQuery.of(context).size.width * 0.7,
+                                              child: Text(
+                                                widget.name!,
+                                                textAlign: TextAlign.center,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontFamily: "Proxima Nova",
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            SizedBox(
+                                              width: MediaQuery.of(context).size.width * 0.7,
+                                              child: Text(
+                                                "@${widget.username}",
+                                                textAlign: TextAlign.center,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontFamily: "Proxima Nova",
+                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.normal,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            SizedBox(
+                                              width: MediaQuery.of(context).size.width * 0.7,
+                                              child: Text(
+                                                widget.bio ?? "",
+                                                textAlign: TextAlign.center,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontFamily: "Proxima Nova",
+                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.normal,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            SizedBox(
+                                              width: MediaQuery.of(context).size.width * 0.7,
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  RichText(
+                                                    text: TextSpan(
+                                                      text: "${(widget.following ?? []).length}",
+                                                      style: TextStyle(
+                                                        fontFamily: "Proxima Nova",
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.secondary.withValues(alpha: 1),
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                      children: [
+                                                        TextSpan(
+                                                          text: " Following",
+                                                          style: TextStyle(
+                                                            color: Theme.of(
+                                                              context,
+                                                            ).colorScheme.secondary.withValues(alpha: 0.6),
+                                                            fontWeight: FontWeight.normal,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(width: 24),
+                                                  RichText(
+                                                    text: TextSpan(
+                                                      text: "${(widget.followers ?? []).length}",
+                                                      style: TextStyle(
+                                                        fontFamily: "Proxima Nova",
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.secondary.withValues(alpha: 1),
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                      children: [
+                                                        TextSpan(
+                                                          text: " Followers",
+                                                          style: TextStyle(
+                                                            color: Theme.of(
+                                                              context,
+                                                            ).colorScheme.secondary.withValues(alpha: 0.6),
+                                                            fontWeight: FontWeight.normal,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            if ((widget.links ?? {}).keys.toList().isNotEmpty)
+                                              const SizedBox(height: 8),
+                                            if ((widget.links ?? {}).keys.toList().isNotEmpty)
+                                              SizedBox(
+                                                width: MediaQuery.of(context).size.width,
+                                                height: 48,
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    ...(widget.links ?? {}).keys
+                                                        .toList()
+                                                        .map(
+                                                          (e) => IconButton(
+                                                            padding: const EdgeInsets.all(2),
+                                                            icon: Container(
+                                                              padding: const EdgeInsets.all(6.0),
+                                                              decoration: BoxDecoration(
+                                                                shape: BoxShape.circle,
+                                                                color: Theme.of(
+                                                                  context,
+                                                                ).colorScheme.secondary.withValues(alpha: 0.1),
+                                                              ),
+                                                              child: Icon(
+                                                                linksData[e]!["icon"] as IconData,
+                                                                size: 20,
+                                                                color: Theme.of(
+                                                                  context,
+                                                                ).colorScheme.secondary.withValues(alpha: 0.8),
+                                                              ),
+                                                            ),
+                                                            onPressed: () async {
+                                                              final String link = widget.links![e].toString();
+                                                              final String targetLink = link.contains("@gmail.com")
+                                                                  ? "mailto:$link"
+                                                                  : link;
+                                                              await launchUrl(Uri.parse(targetLink));
+                                                            },
+                                                          ),
+                                                        )
+                                                        .toList()
+                                                        .sublist(
+                                                          0,
+                                                          (widget.links ?? {}).keys.toList().length > 3
+                                                              ? 3
+                                                              : (widget.links ?? {}).keys.toList().length,
+                                                        ),
+                                                    if ((widget.links ?? {}).keys.toList().length > 3)
+                                                      IconButton(
                                                         padding: const EdgeInsets.all(2),
                                                         icon: Container(
                                                           padding: const EdgeInsets.all(6.0),
                                                           decoration: BoxDecoration(
                                                             shape: BoxShape.circle,
-                                                            color: Theme.of(context)
-                                                                .colorScheme
-                                                                .secondary
-                                                                .withValues(alpha: 0.1),
+                                                            color: Theme.of(
+                                                              context,
+                                                            ).colorScheme.secondary.withValues(alpha: 0.1),
                                                           ),
                                                           child: Icon(
-                                                            linksData[e]!["icon"] as IconData,
+                                                            JamIcons.more_horizontal,
                                                             size: 20,
-                                                            color: Theme.of(context)
-                                                                .colorScheme
-                                                                .secondary
-                                                                .withValues(alpha: 0.8),
+                                                            color: Theme.of(
+                                                              context,
+                                                            ).colorScheme.secondary.withValues(alpha: 0.8),
                                                           ),
                                                         ),
-                                                        onPressed: () async {
-                                                          final String link = widget.links![e].toString();
-                                                          final String targetLink =
-                                                              link.contains("@gmail.com") ? "mailto:$link" : link;
-                                                          await launchUrl(Uri.parse(targetLink));
-                                                        }))
-                                                    .toList()
-                                                    .sublist(
-                                                      0,
-                                                      (widget.links ?? {}).keys.toList().length > 3
-                                                          ? 3
-                                                          : (widget.links ?? {}).keys.toList().length,
-                                                    ),
-                                                if ((widget.links ?? {}).keys.toList().length > 3)
-                                                  IconButton(
-                                                      padding: const EdgeInsets.all(2),
-                                                      icon: Container(
-                                                        padding: const EdgeInsets.all(6.0),
-                                                        decoration: BoxDecoration(
-                                                          shape: BoxShape.circle,
-                                                          color: Theme.of(context)
-                                                              .colorScheme
-                                                              .secondary
-                                                              .withValues(alpha: 0.1),
-                                                        ),
-                                                        child: Icon(
-                                                          JamIcons.more_horizontal,
-                                                          size: 20,
-                                                          color: Theme.of(context)
-                                                              .colorScheme
-                                                              .secondary
-                                                              .withValues(alpha: 0.8),
-                                                        ),
+                                                        onPressed: () {
+                                                          showNoLoadLinksPopUp(context, widget.links ?? {});
+                                                        },
                                                       ),
-                                                      onPressed: () {
-                                                        showNoLoadLinksPopUp(context, widget.links ?? {});
-                                                      }),
-                                              ]),
-                                            )
-                                        ],
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ),
-                                    )
-                                  ]),
+                                    ],
+                                  ),
                                   Positioned(
                                     top: MediaQuery.of(context).size.height * 0.19 - 56,
                                     child: SizedBox(
@@ -577,10 +574,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                         child: Container(
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: Theme.of(context).colorScheme.error,
-                                              width: 4,
-                                            ),
+                                            border: Border.all(color: Theme.of(context).colorScheme.error, width: 4),
                                             color: Theme.of(context).colorScheme.secondary,
                                           ),
                                           child: ClipOval(
@@ -631,102 +625,93 @@ class _ProfileChildState extends State<ProfileChild> {
                             color: Theme.of(context).primaryColor,
                             child: SizedBox.expand(
                               child: TabBar(
-                                  indicatorColor: Theme.of(context).colorScheme.secondary,
-                                  indicatorSize: TabBarIndicatorSize.label,
-                                  unselectedLabelColor: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
-                                  labelColor: const Color(0xFFFFFFFF),
-                                  tabs: [
-                                    Text(
-                                      "Wallpapers",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                    Text(
-                                      "Setups",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                  ]),
+                                indicatorColor: Theme.of(context).colorScheme.secondary,
+                                indicatorSize: TabBarIndicatorSize.label,
+                                unselectedLabelColor: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
+                                labelColor: const Color(0xFFFFFFFF),
+                                tabs: [
+                                  Text(
+                                    "Wallpapers",
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                  ),
+                                  Text(
+                                    "Setups",
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ],
-                    body: TabBarView(children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 5),
-                        child: UserProfileLoader(
-                          email: widget.email,
+                    body: TabBarView(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5),
+                          child: UserProfileLoader(email: widget.email),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 5),
-                        child: UserProfileSetupLoader(
-                          email: widget.email,
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5),
+                          child: UserProfileSetupLoader(email: widget.email),
                         ),
-                      ),
-                    ]),
+                      ],
+                    ),
                   ),
                 ),
               ],
-            ))
+            ),
+          )
         : Scaffold(
             backgroundColor: Theme.of(context).primaryColor,
-            body: CustomScrollView(controller: controller, slivers: <Widget>[
-              SliverAppBar(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                automaticallyImplyLeading: false,
-                expandedHeight: 280.0,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Stack(
-                        children: <Widget>[
-                          Container(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
-                            child: Center(
-                              child: SizedBox(
-                                width: MediaQuery.of(context).size.width / 2,
-                                child: const SafeRiveAsset(
-                                  assetName: "assets/animations/Text.flr",
-                                  animations: <String>["Untitled"],
+            body: CustomScrollView(
+              controller: controller,
+              slivers: <Widget>[
+                SliverAppBar(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  automaticallyImplyLeading: false,
+                  expandedHeight: 280.0,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Stack(
+                          children: <Widget>[
+                            Container(color: Theme.of(context).colorScheme.error),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                              child: Center(
+                                child: SizedBox(
+                                  width: MediaQuery.of(context).size.width / 2,
+                                  child: const SafeRiveAsset(
+                                    assetName: "assets/animations/Text.flr",
+                                    animations: <String>["Untitled"],
+                                  ),
                                 ),
                               ),
                             ),
-                          )
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              SliverList(
+                SliverList(
                   delegate: SliverChildListDelegate([
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: PremiumList(),
+                    Padding(padding: const EdgeInsets.only(top: 10), child: PremiumList()),
+                    DownloadList(),
+                    const GeneralList(expanded: false),
+                    const UserList(expanded: false),
+                    AboutList(),
+                    const SizedBox(height: 300),
+                  ]),
                 ),
-                DownloadList(),
-                const GeneralList(
-                  expanded: false,
-                ),
-                const UserList(
-                  expanded: false,
-                ),
-                AboutList(),
-                const SizedBox(
-                  height: 300,
-                ),
-              ]))
-            ]),
+              ],
+            ),
           );
   }
 }
@@ -753,13 +738,7 @@ Map<String, Map<String, dynamic>> linksData = {
     'value': '',
     'validator': 'instagram',
   },
-  'email': {
-    'name': 'email',
-    'link': 'your@email.com',
-    'icon': JamIcons.inbox,
-    'value': '',
-    'validator': '@',
-  },
+  'email': {'name': 'email', 'link': 'your@email.com', 'icon': JamIcons.inbox, 'value': '', 'validator': '@'},
   'telegram': {
     'name': 'telegram',
     'link': 'https://t.me/username',
@@ -886,11 +865,5 @@ Map<String, Map<String, dynamic>> linksData = {
     'value': '',
     'validator': 'buymeacoff.ee',
   },
-  'custom link': {
-    'name': 'custom link',
-    'link': '',
-    'icon': JamIcons.link,
-    'value': '',
-    'validator': '',
-  },
+  'custom link': {'name': 'custom link', 'link': '', 'icon': JamIcons.link, 'value': '', 'validator': ''},
 };

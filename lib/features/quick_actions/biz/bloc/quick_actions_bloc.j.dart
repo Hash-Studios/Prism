@@ -35,31 +35,25 @@ class QuickActionsBloc extends Bloc<QuickActionsEvent, QuickActionsState> {
 
     final initResult = await _initializeQuickActionsUseCase(const NoParams());
     if (initResult.isFailure) {
-      emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: initResult.failure,
-      ));
+      emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: initResult.failure));
       return;
     }
 
     if (event.setupShortcuts) {
       final shortcutResult = await _setQuickActionShortcutsUseCase(const NoParams());
       if (shortcutResult.isFailure) {
-        emit(state.copyWith(
-          status: LoadStatus.failure,
-          actionStatus: ActionStatus.failure,
-          failure: shortcutResult.failure,
-        ));
+        emit(
+          state.copyWith(
+            status: LoadStatus.failure,
+            actionStatus: ActionStatus.failure,
+            failure: shortcutResult.failure,
+          ),
+        );
         return;
       }
     }
 
-    emit(state.copyWith(
-      status: LoadStatus.success,
-      actionStatus: ActionStatus.success,
-      failure: null,
-    ));
+    emit(state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, failure: null));
 
     await _subscription?.cancel();
     _subscription = _observeQuickActionsUseCase().listen((action) {
@@ -67,29 +61,25 @@ class QuickActionsBloc extends Bloc<QuickActionsEvent, QuickActionsState> {
     });
   }
 
-  Future<void> _onShortcutsSetupRequested(
-    _ShortcutsSetupRequested event,
-    Emitter<QuickActionsState> emit,
-  ) async {
+  Future<void> _onShortcutsSetupRequested(_ShortcutsSetupRequested event, Emitter<QuickActionsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
 
     final result = await _setQuickActionShortcutsUseCase(const NoParams());
     result.fold(
       onSuccess: (_) => emit(state.copyWith(actionStatus: ActionStatus.success)),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
   void _onActionReceived(_ActionReceived event, Emitter<QuickActionsState> emit) {
-    emit(state.copyWith(
-      actionStatus: ActionStatus.success,
-      latestAction: event.action,
-      history: <QuickActionEntity>[...state.history, event.action],
-      failure: null,
-    ));
+    emit(
+      state.copyWith(
+        actionStatus: ActionStatus.success,
+        latestAction: event.action,
+        history: <QuickActionEntity>[...state.history, event.action],
+        failure: null,
+      ),
+    );
   }
 
   void _onHistoryCleared(_HistoryCleared event, Emitter<QuickActionsState> emit) {

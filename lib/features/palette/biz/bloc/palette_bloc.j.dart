@@ -19,25 +19,13 @@ class PaletteBloc extends Bloc<PaletteEvent, PaletteState> {
 
   final GeneratePaletteUseCase _generatePaletteUseCase;
 
-  Future<void> _onPaletteRequested(
-    _PaletteRequested event,
-    Emitter<PaletteState> emit,
-  ) async {
+  Future<void> _onPaletteRequested(_PaletteRequested event, Emitter<PaletteState> emit) async {
     emit(state.copyWith(status: LoadStatus.loading, failure: null));
-    final result = await _generatePaletteUseCase(
-      GeneratePaletteParams(imageUrl: event.imageUrl),
-    );
+    final result = await _generatePaletteUseCase(GeneratePaletteParams(imageUrl: event.imageUrl));
 
     result.fold(
-      onSuccess: (palette) => emit(state.copyWith(
-        status: LoadStatus.success,
-        palette: palette,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (palette) => emit(state.copyWith(status: LoadStatus.success, palette: palette, failure: null)),
+      onFailure: (failure) => emit(state.copyWith(status: LoadStatus.failure, failure: failure)),
     );
   }
 

@@ -11,9 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class FavouriteGrid extends StatefulWidget {
-  const FavouriteGrid({
-    super.key,
-  });
+  const FavouriteGrid({super.key});
 
   @override
   _FavouriteGridState createState() => _FavouriteGridState();
@@ -27,50 +25,38 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
-        ? TweenSequence<Color?>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.white10,
-                  end: const Color(0x22FFFFFF),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: const Color(0x22FFFFFF),
-                  end: Colors.white10,
-                ),
-              ),
-            ],
-          ).animate(_controller!)
-        : TweenSequence<Color?>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withValues(alpha: .1),
-                  end: Colors.black.withValues(alpha: .14),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withValues(alpha: .14),
-                  end: Colors.black.withValues(alpha: .1),
-                ),
-              ),
-            ],
-          ).animate(_controller!)
-      ..addListener(() {
-        setState(() {});
-      });
+    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    animation =
+        context.prismModeStyleForWindow(listen: false) == "Dark"
+              ? TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
+                  ),
+                ]).animate(_controller!)
+              : TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .1),
+                      end: Colors.black.withValues(alpha: .14),
+                    ),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .14),
+                      end: Colors.black.withValues(alpha: .1),
+                    ),
+                  ),
+                ]).animate(_controller!)
+          ..addListener(() {
+            setState(() {});
+          });
     _controller!.repeat();
   }
 
@@ -89,11 +75,11 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     return RefreshIndicator(
-        backgroundColor: Theme.of(context).primaryColor,
-        key: refreshFavKey,
-        onRefresh: refreshList,
-        child: context.favouriteWallsAdapter(listen: false).liked != null
-            ? context.favouriteWallsAdapter(listen: false).liked!.isEmpty
+      backgroundColor: Theme.of(context).primaryColor,
+      key: refreshFavKey,
+      onRefresh: refreshList,
+      child: context.favouriteWallsAdapter(listen: false).liked != null
+          ? context.favouriteWallsAdapter(listen: false).liked!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -102,87 +88,67 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                         child: context.prismModeStyleForContext() == "Dark"
                             ? SvgPicture.string(
                                 favouritesDark
-                                    .replaceAll("181818",
-                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
                                     .replaceAll(
-                                        "E57697",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .error
-                                            .toString()
-                                            .replaceAll("Color(0xff", "")
-                                            .replaceAll(")", ""))
+                                      "181818",
+                                      Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
+                                    )
                                     .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
+                                      "E57697",
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
+                                    )
                                     .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
+                                      "F0F0F0",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                                    )
                                     .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll("2F2F2F",
-                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
+                                      "2F2E41",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                                    )
+                                    .replaceAll(
+                                      "3F3D56",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                                    )
+                                    .replaceAll(
+                                      "2F2F2F",
+                                      Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
+                                    ),
                               )
                             : SvgPicture.string(
                                 favouritesLight
-                                    .replaceAll("181818",
-                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
                                     .replaceAll(
-                                        "E57697",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .error
-                                            .toString()
-                                            .replaceAll("Color(0xff", "")
-                                            .replaceAll(")", ""))
+                                      "181818",
+                                      Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
+                                    )
                                     .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
+                                      "E57697",
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
+                                    )
                                     .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
+                                      "F0F0F0",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                                    )
                                     .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll("2F2F2F",
-                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
+                                      "2F2E41",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                                    )
+                                    .replaceAll(
+                                      "3F3D56",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                                    )
+                                    .replaceAll(
+                                      "2F2F2F",
+                                      Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
+                                    ),
                               ),
                       ),
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height * 0.1,
-                      )
+                      ),
                     ],
                   )
                 : GridView.builder(
@@ -192,10 +158,11 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                     controller: controller,
                     itemCount: context.favouriteWallsAdapter().liked!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                        childAspectRatio: 0.6625,
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8),
+                      maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+                      childAspectRatio: 0.6625,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                    ),
                     itemBuilder: (context, index) {
                       return FocusedMenuHolder(
                         provider: "Liked",
@@ -204,13 +171,15 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                      image: CachedNetworkImageProvider(
-                                        context.favouriteWallsAdapter().liked![index]["thumb"].toString(),
-                                      ),
-                                      fit: BoxFit.cover)),
+                                color: animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                  image: CachedNetworkImageProvider(
+                                    context.favouriteWallsAdapter().liked![index]["thumb"].toString(),
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(20),
@@ -222,10 +191,14 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                   onTap: () {
                                     if (context.favouriteWallsAdapter(listen: false).liked == []) {
                                     } else {
-                                      context.router.push(FavWallpaperViewRoute(arguments: [
-                                        index,
-                                        context.favouriteWallsAdapter(listen: false).liked![index]["thumb"],
-                                      ]));
+                                      context.router.push(
+                                        FavWallpaperViewRoute(
+                                          arguments: [
+                                            index,
+                                            context.favouriteWallsAdapter(listen: false).liked![index]["thumb"],
+                                          ],
+                                        ),
+                                      );
                                     }
                                   },
                                 ),
@@ -234,7 +207,9 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                           ],
                         ),
                       );
-                    })
-            : const LoadingCards());
+                    },
+                  )
+          : const LoadingCards(),
+    );
   }
 }

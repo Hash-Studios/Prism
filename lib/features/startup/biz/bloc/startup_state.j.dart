@@ -12,10 +12,10 @@ abstract class StartupState with _$StartupState {
   }) = _StartupState;
 
   factory StartupState.initial() => const StartupState(
-        status: LoadStatus.initial,
-        actionStatus: ActionStatus.idle,
-        config: null,
-        isObsoleteVersion: false,
-        notchHeight: 0,
-      );
+    status: LoadStatus.initial,
+    actionStatus: ActionStatus.idle,
+    config: null,
+    isObsoleteVersion: false,
+    notchHeight: 0,
+  );
 }

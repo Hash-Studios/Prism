@@ -70,15 +70,7 @@ class _FakeReporter extends ErrorReporter {
     String? tag,
     Map<String, Object?> extras = const <String, Object?>{},
   }) async {
-    calls.add(
-      _CaptureCall(
-        kind: 'message',
-        message: message,
-        severity: severity,
-        tag: tag,
-        extras: extras,
-      ),
-    );
+    calls.add(_CaptureCall(kind: 'message', message: message, severity: severity, tag: tag, extras: extras));
     return null;
   }
 

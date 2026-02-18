@@ -13,10 +13,7 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: StartupRepository)
 class StartupRepositoryImpl implements StartupRepository {
-  StartupRepositoryImpl(
-    this._remoteConfig,
-    @Named('prefsBox') this._prefsBox,
-  );
+  StartupRepositoryImpl(this._remoteConfig, @Named('prefsBox') this._prefsBox);
 
   final FirebaseRemoteConfig _remoteConfig;
   final Box<dynamic> _prefsBox;
@@ -64,10 +61,7 @@ class StartupRepositoryImpl implements StartupRepository {
   Future<Result<StartupConfigEntity>> bootstrap() async {
     try {
       await _remoteConfig.setConfigSettings(
-        RemoteConfigSettings(
-          fetchTimeout: const Duration(seconds: 30),
-          minimumFetchInterval: const Duration(hours: 6),
-        ),
+        RemoteConfigSettings(fetchTimeout: const Duration(seconds: 30), minimumFetchInterval: const Duration(hours: 6)),
       );
       await _remoteConfig.setDefaults(<String, dynamic>{
         'topImageLink': globals.topImageLink,

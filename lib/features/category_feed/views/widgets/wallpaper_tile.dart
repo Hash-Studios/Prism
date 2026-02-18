@@ -12,11 +12,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class WallpaperTile extends StatelessWidget {
-  const WallpaperTile({
-    super.key,
-    required this.widget,
-    required this.index,
-  });
+  const WallpaperTile({super.key, required this.widget, required this.index});
 
   final WallpaperGrid widget;
   final int index;
@@ -60,11 +56,10 @@ class WallpaperTile extends StatelessWidget {
                       : Colors.black.withValues(alpha: .1),
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
-                    image: CachedNetworkImageProvider(
-                      wallData["wallpaper_thumb"].toString(),
-                    ),
+                    image: CachedNetworkImageProvider(wallData["wallpaper_thumb"].toString()),
                     fit: BoxFit.cover,
-                  )),
+                  ),
+                ),
         ),
         ClipRRect(
           borderRadius: BorderRadius.circular(20),
@@ -85,11 +80,9 @@ class WallpaperTile extends StatelessWidget {
                     ? showGooglePopUp(context, () {
                         context.router.push(const UpgradeRoute());
                       })
-                    : context.router.push(WallpaperRoute(arguments: [
-                        widget.provider,
-                        index,
-                        wallData["wallpaper_thumb"],
-                      ]));
+                    : context.router.push(
+                        WallpaperRoute(arguments: [widget.provider, index, wallData["wallpaper_thumb"]]),
+                      );
               },
             ),
           ),

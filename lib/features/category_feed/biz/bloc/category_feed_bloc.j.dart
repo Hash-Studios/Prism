@@ -14,10 +14,7 @@ part 'category_feed_bloc.j.freezed.dart';
 
 @injectable
 class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
-  CategoryFeedBloc(
-    this._loadCategoriesUseCase,
-    this._fetchCategoryFeedUseCase,
-  ) : super(CategoryFeedState.initial()) {
+  CategoryFeedBloc(this._loadCategoriesUseCase, this._fetchCategoryFeedUseCase) : super(CategoryFeedState.initial()) {
     on<_Started>(_onStarted);
     on<_CategorySelected>(_onCategorySelected);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
@@ -34,14 +31,16 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     categoriesResult.fold(
       onSuccess: (categories) {
         if (categories.isEmpty) {
-          emit(state.copyWith(
-            status: LoadStatus.success,
-            categories: categories,
-            items: const <FeedItemEntity>[],
-            selectedCategory: null,
-            hasMore: false,
-            nextCursor: null,
-          ));
+          emit(
+            state.copyWith(
+              status: LoadStatus.success,
+              categories: categories,
+              items: const <FeedItemEntity>[],
+              selectedCategory: null,
+              hasMore: false,
+              nextCursor: null,
+            ),
+          );
           return;
         }
 
@@ -55,44 +54,44 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     );
   }
 
-  Future<void> _onCategorySelected(
-    _CategorySelected event,
-    Emitter<CategoryFeedState> emit,
-  ) async {
-    emit(state.copyWith(
-      status: LoadStatus.loading,
-      actionStatus: ActionStatus.inProgress,
-      selectedCategory: event.category,
-      failure: null,
-    ));
+  Future<void> _onCategorySelected(_CategorySelected event, Emitter<CategoryFeedState> emit) async {
+    emit(
+      state.copyWith(
+        status: LoadStatus.loading,
+        actionStatus: ActionStatus.inProgress,
+        selectedCategory: event.category,
+        failure: null,
+      ),
+    );
 
     final result = await _fetchCategoryFeedUseCase(
       FetchCategoryFeedParams(category: event.category, refresh: event.refresh),
     );
 
     result.fold(
-      onSuccess: (page) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        items: page.items,
-        hasMore: page.hasMore,
-        nextCursor: page.nextCursor,
-        isFetchingMore: false,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        isFetchingMore: false,
-        failure: failure,
-      )),
+      onSuccess: (page) => emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          items: page.items,
+          hasMore: page.hasMore,
+          nextCursor: page.nextCursor,
+          isFetchingMore: false,
+          failure: null,
+        ),
+      ),
+      onFailure: (failure) => emit(
+        state.copyWith(
+          status: LoadStatus.failure,
+          actionStatus: ActionStatus.failure,
+          isFetchingMore: false,
+          failure: failure,
+        ),
+      ),
     );
   }
 
-  Future<void> _onFetchMoreRequested(
-    _FetchMoreRequested event,
-    Emitter<CategoryFeedState> emit,
-  ) async {
+  Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<CategoryFeedState> emit) async {
     if (state.isFetchingMore || !state.hasMore || state.selectedCategory == null) {
       return;
     }
@@ -110,28 +109,24 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);
 
-        emit(state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: uniqueById,
-          hasMore: page.hasMore,
-          nextCursor: page.nextCursor,
-          isFetchingMore: false,
-          failure: null,
-        ));
+        emit(
+          state.copyWith(
+            status: LoadStatus.success,
+            actionStatus: ActionStatus.success,
+            items: uniqueById,
+            hasMore: page.hasMore,
+            nextCursor: page.nextCursor,
+            isFetchingMore: false,
+            failure: null,
+          ),
+        );
       },
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        isFetchingMore: false,
-        failure: failure,
-      )),
+      onFailure: (failure) =>
+          emit(state.copyWith(actionStatus: ActionStatus.failure, isFetchingMore: false, failure: failure)),
     );
   }
 
-  void _onRefreshRequested(
-    _RefreshRequested event,
-    Emitter<CategoryFeedState> emit,
-  ) {
+  void _onRefreshRequested(_RefreshRequested event, Emitter<CategoryFeedState> emit) {
     final selected = state.selectedCategory;
     if (selected == null) {
       return;

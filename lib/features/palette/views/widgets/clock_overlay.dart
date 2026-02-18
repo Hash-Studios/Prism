@@ -9,12 +9,7 @@ class ClockOverlay extends StatefulWidget {
   final bool file;
   final Color? accent;
   final bool colorChanged;
-  const ClockOverlay({
-    required this.link,
-    required this.file,
-    required this.accent,
-    required this.colorChanged,
-  });
+  const ClockOverlay({required this.link, required this.file, required this.accent, required this.colorChanged});
   @override
   _ClockOverlayState createState() => _ClockOverlayState();
 }
@@ -28,10 +23,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final suffix = dayNo[dayNo.length - 1] == "1"
         ? "ˢᵗ"
         : dayNo[dayNo.length - 1] == "2"
-            ? "ⁿᵈ"
-            : dayNo[dayNo.length - 1] == "3"
-                ? "ʳᵈ"
-                : "ᵗʰ";
+        ? "ⁿᵈ"
+        : dayNo[dayNo.length - 1] == "3"
+        ? "ʳᵈ"
+        : "ᵗʰ";
     return Material(
       child: Stack(
         children: <Widget>[
@@ -73,16 +68,14 @@ class _ClockOverlayState extends State<ClockOverlay> {
                       color: widget.accent == null
                           ? Theme.of(context).colorScheme.secondary
                           : widget.accent!.computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
+                          ? Colors.black
+                          : Colors.white,
                       fontFamily: "Roboto",
                       fontSize: 25,
                       fontWeight: FontWeight.w300,
                     ),
                   ),
-                  const SizedBox(
-                    height: 5,
-                  ),
+                  const SizedBox(height: 5),
                   Text(
                     "$month $dayNo$suffix | 27°C",
                     textAlign: TextAlign.center,
@@ -90,8 +83,8 @@ class _ClockOverlayState extends State<ClockOverlay> {
                       color: widget.accent == null
                           ? Theme.of(context).colorScheme.secondary
                           : widget.accent!.computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
+                          ? Colors.black
+                          : Colors.white,
                       fontFamily: "Roboto",
                       fontSize: 25,
                       fontWeight: FontWeight.w500,
@@ -108,26 +101,11 @@ class _ClockOverlayState extends State<ClockOverlay> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
-                  Image.asset(
-                    "assets/images/dialer.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
-                  Image.asset(
-                    "assets/images/messages.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
-                  Image.asset(
-                    "assets/images/prism.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
-                  Image.asset(
-                    "assets/images/playstore.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
-                  Image.asset(
-                    "assets/images/chrome.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
+                  Image.asset("assets/images/dialer.png", width: MediaQuery.of(context).size.width * 0.14),
+                  Image.asset("assets/images/messages.png", width: MediaQuery.of(context).size.width * 0.14),
+                  Image.asset("assets/images/prism.png", width: MediaQuery.of(context).size.width * 0.14),
+                  Image.asset("assets/images/playstore.png", width: MediaQuery.of(context).size.width * 0.14),
+                  Image.asset("assets/images/chrome.png", width: MediaQuery.of(context).size.width * 0.14),
                 ],
               ),
             ),
@@ -139,7 +117,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
               width: MediaQuery.of(context).size.width,
               child: const Text(""),
             ),
-          )
+          ),
         ],
       ),
     );

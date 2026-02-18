@@ -21,11 +21,10 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
           Container(
             height: 75,
             decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-                color: Theme.of(context).primaryColor),
-            child: Center(
-              child: Text("Categories", style: Theme.of(context).textTheme.displayMedium),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+              color: Theme.of(context).primaryColor,
             ),
+            child: Center(child: Text("Categories", style: Theme.of(context).textTheme.displayMedium)),
           ),
           SizedBox(
             height: 400,
@@ -47,10 +46,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.error,
                         borderRadius: BorderRadius.circular(10),
-                        image: DecorationImage(
-                          image: CachedNetworkImageProvider(choice.image!),
-                          fit: BoxFit.cover,
-                        ),
+                        image: DecorationImage(image: CachedNetworkImageProvider(choice.image!), fit: BoxFit.cover),
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
@@ -59,8 +55,11 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                           onPressed: () {
                             Navigator.pop(context);
                             context.categoryChangeWallpaperFuture(choice, "r");
-                            HTP.tabController!
-                                .animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeInCubic);
+                            HTP.tabController!.animateTo(
+                              0,
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeInCubic,
+                            );
                           },
                           child: Container(
                             height: 100,
@@ -81,10 +80,9 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                                     Container(),
                                   Text(
                                     choice.name.toString(),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineMedium!
-                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                                      color: Theme.of(context).colorScheme.secondary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -109,21 +107,12 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
           Navigator.of(context).pop();
           logger.d('You have not chossed anything');
         },
-        child: const Text(
-          'OK',
-          style: TextStyle(
-            fontSize: 16.0,
-            color: Colors.white,
-          ),
-        ),
+        child: const Text('OK', style: TextStyle(fontSize: 16.0, color: Colors.white)),
       ),
     ],
     contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
     backgroundColor: Theme.of(context).primaryColor,
     actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
   );
-  showModal(
-    context: context,
-    builder: (BuildContext context) => categoryPopUp,
-  );
+  showModal(context: context, builder: (BuildContext context) => categoryPopUp);
 }

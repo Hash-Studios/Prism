@@ -25,13 +25,14 @@ class _GeneralListState extends State<GeneralList> {
   Widget build(BuildContext context) {
     return ExpansionTile(
       initiallyExpanded: widget.expanded,
-      leading: const Icon(
-        JamIcons.wrench,
-      ),
+      leading: const Icon(JamIcons.wrench),
       title: Text(
         "General",
         style: TextStyle(
-            color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+          color: Theme.of(context).colorScheme.secondary,
+          fontWeight: FontWeight.w500,
+          fontFamily: "Proxima Nova",
+        ),
       ),
       subtitle: Text(
         "Change app look & settings",
@@ -46,139 +47,116 @@ class _GeneralListState extends State<GeneralList> {
           title: Text(
             "Themes",
             style: TextStyle(
-                color: Theme.of(context).colorScheme.secondary,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Proxima Nova"),
+              color: Theme.of(context).colorScheme.secondary,
+              fontWeight: FontWeight.w500,
+              fontFamily: "Proxima Nova",
+            ),
           ),
-          subtitle: const Text(
-            "Toggle app theme",
-            style: TextStyle(fontSize: 12),
-          ),
+          subtitle: const Text("Toggle app theme", style: TextStyle(fontSize: 12)),
         ),
         ListTile(
-            leading: const Icon(
-              JamIcons.pie_chart_alt,
+          leading: const Icon(JamIcons.pie_chart_alt),
+          title: Text(
+            "Clear Cache",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.secondary,
+              fontWeight: FontWeight.w500,
+              fontFamily: "Proxima Nova",
             ),
-            title: Text(
-              "Clear Cache",
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: const Text(
-              "Clear locally cached images",
-              style: TextStyle(fontSize: 12),
-            ),
-            onTap: () async {
-              DefaultCacheManager().emptyCache();
-              PaintingBinding.instance.imageCache.clear();
-              await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
-              await Hive.openBox<InAppNotif>('inAppNotifs');
-              main.prefs.delete('lastFetchTime');
-              await Hive.box('setups').deleteFromDisk();
-              await Hive.openBox('setups');
-              toasts.codeSend("Cleared cache!");
-            }),
+          ),
+          subtitle: const Text("Clear locally cached images", style: TextStyle(fontSize: 12)),
+          onTap: () async {
+            DefaultCacheManager().emptyCache();
+            PaintingBinding.instance.imageCache.clear();
+            await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
+            await Hive.openBox<InAppNotif>('inAppNotifs');
+            main.prefs.delete('lastFetchTime');
+            await Hive.box('setups').deleteFromDisk();
+            await Hive.openBox('setups');
+            toasts.codeSend("Cleared cache!");
+          },
+        ),
         SwitchListTile(
-            activeThumbColor: Theme.of(context).colorScheme.error,
-            secondary: const Icon(
-              JamIcons.user_plus,
+          activeThumbColor: Theme.of(context).colorScheme.error,
+          secondary: const Icon(JamIcons.user_plus),
+          value: followers,
+          title: Text(
+            "Show Following Feed",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.secondary,
+              fontWeight: FontWeight.w500,
+              fontFamily: "Proxima Nova",
             ),
-            value: followers,
-            title: Text(
-              "Show Following Feed",
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+          ),
+          subtitle: followers
+              ? const Text("Disable this to hide the followers feed from home page.", style: TextStyle(fontSize: 12))
+              : const Text("Enable this to show the followers feed on home page.", style: TextStyle(fontSize: 12)),
+          onChanged: (bool value) {
+            setState(() {
+              followers = value;
+            });
+            toasts.codeSend("This will take effect on restarting app.");
+            main.prefs.put('followersTab', value);
+          },
+        ),
+        SwitchListTile(
+          activeThumbColor: Theme.of(context).colorScheme.error,
+          secondary: const Icon(JamIcons.picture),
+          value: categories == 111,
+          title: Text(
+            "Show Anime Wallpapers",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.secondary,
+              fontWeight: FontWeight.w500,
+              fontFamily: "Proxima Nova",
             ),
-            subtitle: followers
-                ? const Text(
-                    "Disable this to hide the followers feed from home page.",
-                    style: TextStyle(fontSize: 12),
-                  )
-                : const Text(
-                    "Enable this to show the followers feed on home page.",
-                    style: TextStyle(fontSize: 12),
-                  ),
-            onChanged: (bool value) {
+          ),
+          subtitle: categories == 111
+              ? const Text("Disable this to hide anime wallpapers", style: TextStyle(fontSize: 12))
+              : const Text("Enable this to show anime wallpapers", style: TextStyle(fontSize: 12)),
+          onChanged: (bool value) {
+            if (value == true) {
               setState(() {
-                followers = value;
+                categories = 111;
               });
-              toasts.codeSend("This will take effect on restarting app.");
-              main.prefs.put('followersTab', value);
-            }),
+              main.prefs.put('WHcategories', 111);
+            } else {
+              setState(() {
+                categories = 100;
+              });
+              main.prefs.put('WHcategories', 100);
+            }
+          },
+        ),
         SwitchListTile(
-            activeThumbColor: Theme.of(context).colorScheme.error,
-            secondary: const Icon(
-              JamIcons.picture,
+          activeThumbColor: Theme.of(context).colorScheme.error,
+          secondary: const Icon(JamIcons.stop_sign),
+          value: purity == 110,
+          title: Text(
+            "Show Sketchy Wallpapers",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.secondary,
+              fontWeight: FontWeight.w500,
+              fontFamily: "Proxima Nova",
             ),
-            value: categories == 111,
-            title: Text(
-              "Show Anime Wallpapers",
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: categories == 111
-                ? const Text(
-                    "Disable this to hide anime wallpapers",
-                    style: TextStyle(fontSize: 12),
-                  )
-                : const Text(
-                    "Enable this to show anime wallpapers",
-                    style: TextStyle(fontSize: 12),
-                  ),
-            onChanged: (bool value) {
-              if (value == true) {
-                setState(() {
-                  categories = 111;
-                });
-                main.prefs.put('WHcategories', 111);
-              } else {
-                setState(() {
-                  categories = 100;
-                });
-                main.prefs.put('WHcategories', 100);
-              }
-            }),
-        SwitchListTile(
-            activeThumbColor: Theme.of(context).colorScheme.error,
-            secondary: const Icon(
-              JamIcons.stop_sign,
-            ),
-            value: purity == 110,
-            title: Text(
-              "Show Sketchy Wallpapers",
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: purity == 110
-                ? const Text(
-                    "Disable this to hide sketchy wallpapers",
-                    style: TextStyle(fontSize: 12),
-                  )
-                : const Text(
-                    "Enable this to show sketchy wallpapers",
-                    style: TextStyle(fontSize: 12),
-                  ),
-            onChanged: (bool value) {
-              if (value == true) {
-                setState(() {
-                  purity = 110;
-                });
-                main.prefs.put('WHpurity', 110);
-              } else {
-                setState(() {
-                  purity = 100;
-                });
-                main.prefs.put('WHpurity', 100);
-              }
-            }),
+          ),
+          subtitle: purity == 110
+              ? const Text("Disable this to hide sketchy wallpapers", style: TextStyle(fontSize: 12))
+              : const Text("Enable this to show sketchy wallpapers", style: TextStyle(fontSize: 12)),
+          onChanged: (bool value) {
+            if (value == true) {
+              setState(() {
+                purity = 110;
+              });
+              main.prefs.put('WHpurity', 110);
+            } else {
+              setState(() {
+                purity = 100;
+              });
+              main.prefs.put('WHpurity', 100);
+            }
+          },
+        ),
         ListTile(
           onTap: () {
             main.RestartWidget.restartApp(context);
@@ -187,14 +165,12 @@ class _GeneralListState extends State<GeneralList> {
           title: Text(
             "Restart App",
             style: TextStyle(
-                color: Theme.of(context).colorScheme.secondary,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Proxima Nova"),
+              color: Theme.of(context).colorScheme.secondary,
+              fontWeight: FontWeight.w500,
+              fontFamily: "Proxima Nova",
+            ),
           ),
-          subtitle: const Text(
-            "Force the application to restart",
-            style: TextStyle(fontSize: 12),
-          ),
+          subtitle: const Text("Force the application to restart", style: TextStyle(fontSize: 12)),
         ),
       ],
     );

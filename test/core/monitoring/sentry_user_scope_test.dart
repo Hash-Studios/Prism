@@ -74,12 +74,7 @@ void main() {
     });
 
     test('sets user scope when logged in with id and email', () async {
-      await syncSentryUserScope(
-        loggedIn: true,
-        id: 'user-1',
-        email: 'user@example.com',
-        username: 'tester',
-      );
+      await syncSentryUserScope(loggedIn: true, id: 'user-1', email: 'user@example.com', username: 'tester');
 
       expect(reporter.cleared, isFalse);
       expect(reporter.id, 'user-1');
@@ -88,11 +83,7 @@ void main() {
     });
 
     test('clears user scope when logged out', () async {
-      await syncSentryUserScope(
-        loggedIn: false,
-        id: 'user-1',
-        email: 'user@example.com',
-      );
+      await syncSentryUserScope(loggedIn: false, id: 'user-1', email: 'user@example.com');
 
       expect(reporter.cleared, isTrue);
       expect(reporter.id, isNull);
@@ -100,11 +91,7 @@ void main() {
     });
 
     test('clears user scope when mandatory fields are missing', () async {
-      await syncSentryUserScope(
-        loggedIn: true,
-        id: '',
-        email: 'user@example.com',
-      );
+      await syncSentryUserScope(loggedIn: true, id: '', email: 'user@example.com');
 
       expect(reporter.cleared, isTrue);
       expect(reporter.id, isNull);

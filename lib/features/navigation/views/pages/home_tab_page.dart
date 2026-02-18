@@ -119,49 +119,22 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          flexibleSpace: const PreferredSize(
-            preferredSize: Size(double.infinity, 55),
-            child: CategoriesBar(),
-          ),
+          flexibleSpace: const PreferredSize(preferredSize: Size(double.infinity, 55), child: CategoriesBar()),
           bottom: TabBar(
-              controller: tabController,
-              indicatorColor: Theme.of(context).colorScheme.secondary,
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: globals.followersTab
-                  ? [
-                      Tab(
-                        icon: Icon(
-                          JamIcons.picture,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      Tab(
-                        icon: Icon(
-                          JamIcons.user_square,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      Tab(
-                        icon: Icon(
-                          JamIcons.pictures,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      )
-                    ]
-                  : [
-                      Tab(
-                        icon: Icon(
-                          JamIcons.picture,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      Tab(
-                        icon: Icon(
-                          JamIcons.pictures,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      )
-                    ]),
+            controller: tabController,
+            indicatorColor: Theme.of(context).colorScheme.secondary,
+            indicatorSize: TabBarIndicatorSize.label,
+            tabs: globals.followersTab
+                ? [
+                    Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
+                    Tab(icon: Icon(JamIcons.user_square, color: Theme.of(context).colorScheme.secondary)),
+                    Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
+                  ]
+                : [
+                    Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
+                    Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
+                  ],
+          ),
         ),
         body: Stack(
           children: <Widget>[
@@ -186,9 +159,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
                                 ),
                               ),
                             ),
-                            const SizedBox(
-                              height: 16,
-                            ),
+                            const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: () {
                                 googleSignInPopUp(context, () {
@@ -217,10 +188,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
                         ),
                       const CollectionScreen(),
                     ]
-                  : [
-                      const HomeScreen(),
-                      const CollectionScreen(),
-                    ],
+                  : [const HomeScreen(), const CollectionScreen()],
             ),
             if (!result) ConnectivityWidget() else Container(),
           ],

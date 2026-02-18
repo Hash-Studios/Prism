@@ -5,11 +5,7 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 class CollapsedPanel extends StatelessWidget {
   final bool? panelCollapsed;
   final PanelController panelController;
-  const CollapsedPanel({
-    super.key,
-    this.panelCollapsed,
-    required this.panelController,
-  });
+  const CollapsedPanel({super.key, this.panelCollapsed, required this.panelController});
 
   @override
   Widget build(BuildContext context) {
@@ -17,10 +13,7 @@ class CollapsedPanel extends StatelessWidget {
       duration: const Duration(milliseconds: 750),
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
         color: panelCollapsed!
             ? Theme.of(context).primaryColor.withValues(alpha: 1)
             : Theme.of(context).primaryColor.withValues(alpha: 0),
@@ -29,19 +22,17 @@ class CollapsedPanel extends StatelessWidget {
         width: MediaQuery.of(context).size.width,
         height: MediaQuery.of(context).size.height / 30,
         child: Center(
-            child: AnimatedOpacity(
-          duration: Duration.zero,
-          opacity: panelCollapsed! ? 1.0 : 0.0,
-          child: IconButton(
-            icon: Icon(
-              JamIcons.chevron_up,
-              color: Theme.of(context).colorScheme.secondary,
+          child: AnimatedOpacity(
+            duration: Duration.zero,
+            opacity: panelCollapsed! ? 1.0 : 0.0,
+            child: IconButton(
+              icon: Icon(JamIcons.chevron_up, color: Theme.of(context).colorScheme.secondary),
+              onPressed: () {
+                panelController.open();
+              },
             ),
-            onPressed: () {
-              panelController.open();
-            },
           ),
-        )),
+        ),
       ),
     );
   }

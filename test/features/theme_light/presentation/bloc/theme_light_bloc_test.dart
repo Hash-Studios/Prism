@@ -17,9 +17,7 @@ class _MockUpdateThemeLightAccentUseCase extends Mock implements UpdateThemeLigh
 void main() {
   setUpAll(() {
     registerFallbackValue(const UpdateThemeLightParams(themeId: 'kLFrost White'));
-    registerFallbackValue(
-      const UpdateThemeLightAccentParams(accentColorValue: 0xff000000),
-    );
+    registerFallbackValue(const UpdateThemeLightAccentParams(accentColorValue: 0xff000000));
   });
 
   late _MockLoadThemeLightUseCase loadUseCase;
@@ -32,38 +30,19 @@ void main() {
     updateAccentUseCase = _MockUpdateThemeLightAccentUseCase();
 
     when(() => loadUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(
-        const ThemeLightEntity(
-          themeId: 'kLFrost White',
-          accentColorValue: 0xffe57697,
-        ),
-      ),
+      (_) async => Result.success(const ThemeLightEntity(themeId: 'kLFrost White', accentColorValue: 0xffe57697)),
     );
 
     when(() => updateThemeUseCase(any())).thenAnswer(
-      (_) async => Result.success(
-        const ThemeLightEntity(
-          themeId: 'kLCoffee',
-          accentColorValue: 0xffe57697,
-        ),
-      ),
+      (_) async => Result.success(const ThemeLightEntity(themeId: 'kLCoffee', accentColorValue: 0xffe57697)),
     );
 
     when(() => updateAccentUseCase(any())).thenAnswer(
-      (_) async => Result.success(
-        const ThemeLightEntity(
-          themeId: 'kLCoffee',
-          accentColorValue: 0xff123456,
-        ),
-      ),
+      (_) async => Result.success(const ThemeLightEntity(themeId: 'kLCoffee', accentColorValue: 0xff123456)),
     );
   });
 
-  ThemeLightBloc buildBloc() => ThemeLightBloc(
-        loadUseCase,
-        updateThemeUseCase,
-        updateAccentUseCase,
-      );
+  ThemeLightBloc buildBloc() => ThemeLightBloc(loadUseCase, updateThemeUseCase, updateAccentUseCase);
 
   blocTest<ThemeLightBloc, ThemeLightState>(
     'started loads saved light theme',
@@ -73,10 +52,7 @@ void main() {
       ThemeLightState.initial().copyWith(status: LoadStatus.loading),
       ThemeLightState.initial().copyWith(
         status: LoadStatus.success,
-        theme: const ThemeLightEntity(
-          themeId: 'kLFrost White',
-          accentColorValue: 0xffe57697,
-        ),
+        theme: const ThemeLightEntity(themeId: 'kLFrost White', accentColorValue: 0xffe57697),
       ),
     ],
   );
@@ -87,17 +63,11 @@ void main() {
     seed: () => ThemeLightState.initial().copyWith(status: LoadStatus.success),
     act: (bloc) => bloc.add(const ThemeLightEvent.themeChanged(themeId: 'kLCoffee')),
     expect: () => <ThemeLightState>[
-      ThemeLightState.initial().copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.inProgress,
-      ),
+      ThemeLightState.initial().copyWith(status: LoadStatus.success, actionStatus: ActionStatus.inProgress),
       ThemeLightState.initial().copyWith(
         status: LoadStatus.success,
         actionStatus: ActionStatus.success,
-        theme: const ThemeLightEntity(
-          themeId: 'kLCoffee',
-          accentColorValue: 0xffe57697,
-        ),
+        theme: const ThemeLightEntity(themeId: 'kLCoffee', accentColorValue: 0xffe57697),
       ),
     ],
   );

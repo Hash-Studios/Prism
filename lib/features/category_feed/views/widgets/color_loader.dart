@@ -31,9 +31,7 @@ class _ColorLoaderState extends State<ColorLoader> {
           logger.d("snapshot none, waiting");
           return const LoadingCards();
         } else {
-          return ColorGrid(
-            provider: widget.provider,
-          );
+          return ColorGrid(provider: widget.provider);
         }
       },
     );

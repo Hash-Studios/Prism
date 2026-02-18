@@ -29,9 +29,7 @@ class _UploadedSetupsLoaderState extends State<UploadedSetupsLoader> {
           if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
             logger.d("snapshot none, waiting");
             logger.d(snapshot.data.toString());
-            return Center(
-              child: Loader(),
-            );
+            return Center(child: Loader());
           } else {
             return const UploadedSetupsGrid();
           }

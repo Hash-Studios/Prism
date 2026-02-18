@@ -11,13 +11,7 @@ class ShareButton extends StatefulWidget {
   final String? provider;
   final String? url;
   final String thumbUrl;
-  const ShareButton({
-    required this.id,
-    required this.provider,
-    required this.url,
-    required this.thumbUrl,
-    super.key,
-  });
+  const ShareButton({required this.id, required this.provider, required this.url, required this.thumbUrl, super.key});
 
   @override
   _ShareButtonState createState() => _ShareButtonState();
@@ -44,23 +38,20 @@ class _ShareButtonState extends State<ShareButton> {
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
+                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
               ],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
-            child: Icon(
-              JamIcons.share_alt,
-              color: Theme.of(context).colorScheme.secondary,
-              size: 20,
-            ),
+            child: Icon(JamIcons.share_alt, color: Theme.of(context).colorScheme.secondary, size: 20),
           ),
           Positioned(
-              top: 0,
-              left: 0,
-              height: 53,
-              width: 53,
-              child: isLoading ? const CircularProgressIndicator() : Container())
+            top: 0,
+            left: 0,
+            height: 53,
+            width: 53,
+            child: isLoading ? const CircularProgressIndicator() : Container(),
+          ),
         ],
       ),
     );
@@ -72,18 +63,10 @@ class _ShareButtonState extends State<ShareButton> {
     });
 
     try {
-      final String link = await createDynamicLink(
-        widget.id!,
-        widget.provider!,
-        widget.url,
-        widget.thumbUrl,
-      );
+      final String link = await createDynamicLink(widget.id!, widget.provider!, widget.url, widget.thumbUrl);
       await Clipboard.setData(ClipboardData(text: link));
       SharePlus.instance.share(
-        ShareParams(
-          text: '🔥Check this out ➜ $link',
-          sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
-        ),
+        ShareParams(text: '🔥Check this out ➜ $link', sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
       );
       analytics.logShare(contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
     } catch (error, stackTrace) {

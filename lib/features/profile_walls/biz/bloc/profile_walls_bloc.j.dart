@@ -25,17 +25,11 @@ class ProfileWallsBloc extends Bloc<ProfileWallsEvent, ProfileWallsState> {
     await _load(refresh: true, emit: emit);
   }
 
-  Future<void> _onRefreshRequested(
-    _RefreshRequested event,
-    Emitter<ProfileWallsState> emit,
-  ) {
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<ProfileWallsState> emit) {
     return _load(refresh: true, emit: emit);
   }
 
-  Future<void> _onFetchMoreRequested(
-    _FetchMoreRequested event,
-    Emitter<ProfileWallsState> emit,
-  ) async {
+  Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<ProfileWallsState> emit) async {
     if (state.isFetchingMore || !state.hasMore) {
       return;
     }
@@ -45,11 +39,13 @@ class ProfileWallsBloc extends Bloc<ProfileWallsEvent, ProfileWallsState> {
 
   Future<void> _load({required bool refresh, required Emitter<ProfileWallsState> emit}) async {
     if (state.email.isEmpty) {
-      emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: const ValidationFailure('email is required'),
-      ));
+      emit(
+        state.copyWith(
+          status: LoadStatus.failure,
+          actionStatus: ActionStatus.failure,
+          failure: const ValidationFailure('email is required'),
+        ),
+      );
       return;
     }
 
@@ -57,9 +53,7 @@ class ProfileWallsBloc extends Bloc<ProfileWallsEvent, ProfileWallsState> {
       emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
     }
 
-    final result = await _fetchProfileWallsUseCase(
-      FetchProfileWallsParams(email: state.email, refresh: refresh),
-    );
+    final result = await _fetchProfileWallsUseCase(FetchProfileWallsParams(email: state.email, refresh: refresh));
 
     result.fold(
       onSuccess: (page) {
@@ -68,22 +62,26 @@ class ProfileWallsBloc extends Bloc<ProfileWallsEvent, ProfileWallsState> {
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);
 
-        emit(state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: deduped,
-          hasMore: page.hasMore,
-          nextCursor: page.nextCursor,
-          isFetchingMore: false,
-          failure: null,
-        ));
+        emit(
+          state.copyWith(
+            status: LoadStatus.success,
+            actionStatus: ActionStatus.success,
+            items: deduped,
+            hasMore: page.hasMore,
+            nextCursor: page.nextCursor,
+            isFetchingMore: false,
+            failure: null,
+          ),
+        );
       },
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        isFetchingMore: false,
-        failure: failure,
-      )),
+      onFailure: (failure) => emit(
+        state.copyWith(
+          status: LoadStatus.failure,
+          actionStatus: ActionStatus.failure,
+          isFetchingMore: false,
+          failure: failure,
+        ),
+      ),
     );
   }
 }
