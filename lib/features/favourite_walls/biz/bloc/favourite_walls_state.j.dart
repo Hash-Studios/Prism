@@ -11,9 +11,9 @@ abstract class FavouriteWallsState with _$FavouriteWallsState {
   }) = _FavouriteWallsState;
 
   factory FavouriteWallsState.initial() => const FavouriteWallsState(
-        status: LoadStatus.initial,
-        actionStatus: ActionStatus.idle,
-        userId: '',
-        items: <FavouriteWallEntity>[],
-      );
+    status: LoadStatus.initial,
+    actionStatus: ActionStatus.idle,
+    userId: '',
+    items: <FavouriteWallEntity>[],
+  );
 }

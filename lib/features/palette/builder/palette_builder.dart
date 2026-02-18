@@ -7,9 +7,6 @@ class PaletteBuilder {
   const PaletteBuilder._();
 
   static Widget withBloc({required Widget child, PaletteBloc? bloc}) {
-    return BlocProvider<PaletteBloc>(
-      create: (_) => bloc ?? getIt<PaletteBloc>(),
-      child: child,
-    );
+    return BlocProvider<PaletteBloc>(create: (_) => bloc ?? getIt<PaletteBloc>(), child: child);
   }
 }

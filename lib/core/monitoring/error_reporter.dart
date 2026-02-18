@@ -1,12 +1,6 @@
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-enum ErrorSeverity {
-  debug,
-  info,
-  warning,
-  error,
-  fatal,
-}
+enum ErrorSeverity { debug, info, warning, error, fatal }
 
 abstract class ErrorReporter {
   const ErrorReporter();
@@ -36,11 +30,7 @@ abstract class ErrorReporter {
     Map<String, Object?> data = const <String, Object?>{},
   });
 
-  Future<void> setUser({
-    required String id,
-    required String email,
-    String? username,
-  });
+  Future<void> setUser({required String id, required String email, String? username});
 
   Future<void> clearUser();
 }
@@ -85,11 +75,7 @@ class NoopErrorReporter extends ErrorReporter {
   Future<void> clearUser() async {}
 
   @override
-  Future<void> setUser({
-    required String id,
-    required String email,
-    String? username,
-  }) async {}
+  Future<void> setUser({required String id, required String email, String? username}) async {}
 }
 
 class SentryErrorReporter extends ErrorReporter {
@@ -106,12 +92,7 @@ class SentryErrorReporter extends ErrorReporter {
     Map<String, Object?> data = const <String, Object?>{},
   }) {
     return Sentry.addBreadcrumb(
-      Breadcrumb(
-        message: message,
-        category: category,
-        level: _toSentryLevel(severity),
-        data: _normalizeMap(data),
-      ),
+      Breadcrumb(message: message, category: category, level: _toSentryLevel(severity), data: _normalizeMap(data)),
     );
   }
 
@@ -161,19 +142,9 @@ class SentryErrorReporter extends ErrorReporter {
   }
 
   @override
-  Future<void> setUser({
-    required String id,
-    required String email,
-    String? username,
-  }) async {
+  Future<void> setUser({required String id, required String email, String? username}) async {
     await Sentry.configureScope((scope) {
-      scope.setUser(
-        SentryUser(
-          id: id,
-          email: email,
-          username: username,
-        ),
-      );
+      scope.setUser(SentryUser(id: id, email: email, username: username));
     });
   }
 

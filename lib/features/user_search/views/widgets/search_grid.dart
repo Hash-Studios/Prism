@@ -33,50 +33,38 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
-        ? TweenSequence<Color?>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.white10,
-                  end: const Color(0x22FFFFFF),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: const Color(0x22FFFFFF),
-                  end: Colors.white10,
-                ),
-              ),
-            ],
-          ).animate(_controller!)
-        : TweenSequence<Color?>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withValues(alpha: .1),
-                  end: Colors.black.withValues(alpha: .14),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withValues(alpha: .14),
-                  end: Colors.black.withValues(alpha: .1),
-                ),
-              ),
-            ],
-          ).animate(_controller!)
-      ..addListener(() {
-        setState(() {});
-      });
+    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    animation =
+        context.prismModeStyleForWindow(listen: false) == "Dark"
+              ? TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
+                  ),
+                ]).animate(_controller!)
+              : TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .1),
+                      end: Colors.black.withValues(alpha: .14),
+                    ),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .14),
+                      end: Colors.black.withValues(alpha: .1),
+                    ),
+                  ),
+                ]).animate(_controller!)
+          ..addListener(() {
+            setState(() {});
+          });
     _controller!.repeat();
   }
 
@@ -118,7 +106,10 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
             if (!seeMoreLoader) {
               if (widget.selectedProvider == "WallHaven") {
                 wData.getWallsbyQueryPage(
-                    widget.query, main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
+                  widget.query,
+                  main.prefs.get('WHcategories') as int?,
+                  main.prefs.get('WHpurity') as int?,
+                );
               } else if (widget.selectedProvider == "Pexels") {
                 pData.getWallsPbyQueryPage(widget.query);
               }
@@ -136,164 +127,175 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
           padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
           itemCount: widget.selectedProvider == "WallHaven"
               ? wData.wallsS.isEmpty
-                  ? 24
-                  : wData.wallsS.length
+                    ? 24
+                    : wData.wallsS.length
               : pData.wallsPS.isEmpty
-                  ? 24
-                  : pData.wallsPS.length,
+              ? 24
+              : pData.wallsPS.length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-              childAspectRatio: 0.6625,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8),
+            maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+            childAspectRatio: 0.6625,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+          ),
           itemBuilder: (context, index) {
             if (widget.selectedProvider == "WallHaven") {
               if (index == wData.wallsS.length - 1 && index >= 23) {
                 return MaterialButton(
-                    color: context.prismModeStyleForContext() == "Dark"
-                        ? Colors.white10
-                        : Colors.black.withValues(alpha: .1),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    onPressed: () {
-                      if (!seeMoreLoader) {
-                        wData.getWallsbyQueryPage(
-                            widget.query, main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
-                        setState(() {
-                          seeMoreLoader = true;
-                          Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
-                        });
-                      }
-                    },
-                    child: !seeMoreLoader ? const Text("See more") : Loader());
+                  color: context.prismModeStyleForContext() == "Dark"
+                      ? Colors.white10
+                      : Colors.black.withValues(alpha: .1),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  onPressed: () {
+                    if (!seeMoreLoader) {
+                      wData.getWallsbyQueryPage(
+                        widget.query,
+                        main.prefs.get('WHcategories') as int?,
+                        main.prefs.get('WHpurity') as int?,
+                      );
+                      setState(() {
+                        seeMoreLoader = true;
+                        Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
+                      });
+                    }
+                  },
+                  child: !seeMoreLoader ? const Text("See more") : Loader(),
+                );
               }
             } else if (widget.selectedProvider == "Pexels") {
               if (index == pData.wallsPS.length - 1 && index >= 23) {
                 return MaterialButton(
-                    color: context.prismModeStyleForContext() == "Dark"
-                        ? Colors.white10
-                        : Colors.black.withValues(alpha: .1),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    onPressed: () {
-                      if (!seeMoreLoader) {
-                        pData.getWallsPbyQueryPage(widget.query);
-                        setState(() {
-                          seeMoreLoader = true;
-                          Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
-                        });
-                      }
-                    },
-                    child: !seeMoreLoader ? const Text("See more") : Loader());
+                  color: context.prismModeStyleForContext() == "Dark"
+                      ? Colors.white10
+                      : Colors.black.withValues(alpha: .1),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  onPressed: () {
+                    if (!seeMoreLoader) {
+                      pData.getWallsPbyQueryPage(widget.query);
+                      setState(() {
+                        seeMoreLoader = true;
+                        Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
+                      });
+                    }
+                  },
+                  child: !seeMoreLoader ? const Text("See more") : Loader(),
+                );
               }
             }
 
             return SearchFocusedMenuHolder(
-                selectedProvider: widget.selectedProvider,
-                query: widget.query,
-                index: index,
-                child: AnimatedBuilder(
-                    animation: offsetAnimation,
-                    builder: (buildContext, child) {
-                      if (offsetAnimation.value < 0.0) {
-                        logger.d('${offsetAnimation.value + 8.0}');
-                      }
-                      return Padding(
-                        padding: index == longTapIndex
-                            ? EdgeInsets.symmetric(
-                                vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
-                            : EdgeInsets.zero,
-                        child: Stack(
-                          children: [
-                            Container(
-                              decoration: widget.selectedProvider == "WallHaven"
-                                  ? wData.wallsS.isEmpty
-                                      ? BoxDecoration(
-                                          color: animation.value,
-                                          borderRadius: BorderRadius.circular(20),
-                                        )
-                                      : BoxDecoration(
-                                          color: animation.value,
-                                          borderRadius: BorderRadius.circular(20),
-                                          image: DecorationImage(
-                                              image: CachedNetworkImageProvider(
-                                                  wData.wallsS[index].thumbs!["original"].toString()),
-                                              fit: BoxFit.cover))
-                                  : pData.wallsPS.isEmpty
-                                      ? BoxDecoration(
-                                          color: animation.value,
-                                          borderRadius: BorderRadius.circular(20),
-                                        )
-                                      : BoxDecoration(
-                                          color: animation.value,
-                                          borderRadius: BorderRadius.circular(20),
-                                          image: DecorationImage(
-                                              image: CachedNetworkImageProvider(
-                                                  pData.wallsPS[index].src!["medium"].toString()),
-                                              fit: BoxFit.cover)),
-                            ),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                  highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                                  onTap: () {
-                                    if (widget.selectedProvider == "WallHaven") {
-                                      if (wData.wallsS == []) {
-                                      } else {
-                                        context.router.push(WallpaperRoute(arguments: [
-                                          widget.query,
-                                          index,
-                                          wData.wallsS[index].thumbs!["small"],
-                                        ]));
-                                      }
-                                    } else if (widget.selectedProvider == "Pexels") {
-                                      if (pData.wallsPS == []) {
-                                      } else {
-                                        context.router.push(SearchWallpaperRoute(arguments: [
+              selectedProvider: widget.selectedProvider,
+              query: widget.query,
+              index: index,
+              child: AnimatedBuilder(
+                animation: offsetAnimation,
+                builder: (buildContext, child) {
+                  if (offsetAnimation.value < 0.0) {
+                    logger.d('${offsetAnimation.value + 8.0}');
+                  }
+                  return Padding(
+                    padding: index == longTapIndex
+                        ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
+                        : EdgeInsets.zero,
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: widget.selectedProvider == "WallHaven"
+                              ? wData.wallsS.isEmpty
+                                    ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                                    : BoxDecoration(
+                                        color: animation.value,
+                                        borderRadius: BorderRadius.circular(20),
+                                        image: DecorationImage(
+                                          image: CachedNetworkImageProvider(
+                                            wData.wallsS[index].thumbs!["original"].toString(),
+                                          ),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                              : pData.wallsPS.isEmpty
+                              ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                              : BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                    image: CachedNetworkImageProvider(pData.wallsPS[index].src!["medium"].toString()),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                        ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                              onTap: () {
+                                if (widget.selectedProvider == "WallHaven") {
+                                  if (wData.wallsS == []) {
+                                  } else {
+                                    context.router.push(
+                                      WallpaperRoute(
+                                        arguments: [widget.query, index, wData.wallsS[index].thumbs!["small"]],
+                                      ),
+                                    );
+                                  }
+                                } else if (widget.selectedProvider == "Pexels") {
+                                  if (pData.wallsPS == []) {
+                                  } else {
+                                    context.router.push(
+                                      SearchWallpaperRoute(
+                                        arguments: [
                                           widget.selectedProvider,
                                           widget.query,
                                           index,
                                           pData.wallsPS[index].src!["medium"],
-                                        ]));
-                                      }
-                                    }
-                                  },
-                                  onLongPress: () {
-                                    setState(() {
-                                      longTapIndex = index;
-                                    });
-                                    shakeController.forward(from: 0.0);
-                                    if (widget.selectedProvider == "WallHaven") {
-                                      if (wData.wallsS == []) {
-                                      } else {
-                                        HapticFeedback.vibrate();
-                                        createDynamicLink(
-                                            wData.wallsS[index].id!,
-                                            "WallHaven",
-                                            wData.wallsS[index].path,
-                                            wData.wallsS[index].thumbs!["original"].toString());
-                                      }
-                                    } else if (widget.selectedProvider == "Pexels") {
-                                      if (wData.wallsS == []) {
-                                      } else {
-                                        HapticFeedback.vibrate();
-                                        createDynamicLink(
-                                            pData.wallsPS[index].id!,
-                                            "Pexels",
-                                            pData.wallsPS[index].src!["original"].toString(),
-                                            pData.wallsPS[index].src!["medium"].toString());
-                                      }
-                                    }
-                                  },
-                                ),
-                              ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              onLongPress: () {
+                                setState(() {
+                                  longTapIndex = index;
+                                });
+                                shakeController.forward(from: 0.0);
+                                if (widget.selectedProvider == "WallHaven") {
+                                  if (wData.wallsS == []) {
+                                  } else {
+                                    HapticFeedback.vibrate();
+                                    createDynamicLink(
+                                      wData.wallsS[index].id!,
+                                      "WallHaven",
+                                      wData.wallsS[index].path,
+                                      wData.wallsS[index].thumbs!["original"].toString(),
+                                    );
+                                  }
+                                } else if (widget.selectedProvider == "Pexels") {
+                                  if (wData.wallsS == []) {
+                                  } else {
+                                    HapticFeedback.vibrate();
+                                    createDynamicLink(
+                                      pData.wallsPS[index].id!,
+                                      "Pexels",
+                                      pData.wallsPS[index].src!["original"].toString(),
+                                      pData.wallsPS[index].src!["medium"].toString(),
+                                    );
+                                  }
+                                }
+                              },
                             ),
-                          ],
+                          ),
                         ),
-                      );
-                    }));
+                      ],
+                    ),
+                  );
+                },
+              ),
+            );
           },
         ),
       ),

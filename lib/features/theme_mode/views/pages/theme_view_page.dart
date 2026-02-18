@@ -66,26 +66,25 @@ class _ThemeViewState extends State<ThemeView> {
         automaticallyImplyLeading: false,
         actions: <Widget>[
           IconButton(
-              icon: Icon(
-                JamIcons.check,
-                size: 30,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-              onPressed: () {
-                final accentColor = int.parse(selectedAccentColor
+            icon: Icon(JamIcons.check, size: 30, color: Theme.of(context).colorScheme.secondary),
+            onPressed: () {
+              final accentColor = int.parse(
+                selectedAccentColor
                     .toString()
                     .replaceAll("MaterialColor(primary value: Color(0xff", "")
                     .replaceAll("Color(", "")
-                    .replaceAll(")", ""));
-                final hexString = selectedAccentColor
-                    .toString()
-                    .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                    .replaceAll("Color(0xff", "")
-                    .replaceAll(")", "");
-                main.prefs.put("systemOverlayColor", accentColor);
-                analytics.logEvent(name: "accent_changed", parameters: {'color': hexString});
-                Navigator.pop(context);
-              })
+                    .replaceAll(")", ""),
+              );
+              final hexString = selectedAccentColor
+                  .toString()
+                  .replaceAll("MaterialColor(primary value: Color(0xff", "")
+                  .replaceAll("Color(0xff", "")
+                  .replaceAll(")", "");
+              main.prefs.put("systemOverlayColor", accentColor);
+              analytics.logEvent(name: "accent_changed", parameters: {'color': hexString});
+              Navigator.pop(context);
+            },
+          ),
         ],
         elevation: 0,
         title: Row(
@@ -96,17 +95,13 @@ class _ThemeViewState extends State<ThemeView> {
             ),
             Container(
               margin: const EdgeInsets.only(left: 3, bottom: 5),
-              decoration:
-                  BoxDecoration(color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(500)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error,
+                borderRadius: BorderRadius.circular(500),
+              ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
-                child: Text(
-                  "BETA",
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                ),
+                child: Text("BETA", style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.secondary)),
               ),
             ),
           ],
@@ -125,8 +120,8 @@ class _ThemeViewState extends State<ThemeView> {
                   selectedValue: context.prismThemeMode(listen: false) == ThemeMode.light
                       ? 1
                       : context.prismThemeMode(listen: false) == ThemeMode.dark
-                          ? 2
-                          : 0,
+                      ? 2
+                      : 0,
                   func: (bool value) {
                     setState(() {
                       changingLight = value;
@@ -139,14 +134,12 @@ class _ThemeViewState extends State<ThemeView> {
             title: Text(
               "Theme Preference",
               style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.w500,
+                fontFamily: "Proxima Nova",
+              ),
             ),
-            subtitle: Text(
-              context.prismModeAbs(),
-              style: const TextStyle(fontSize: 12),
-            ),
+            subtitle: Text(context.prismModeAbs(), style: const TextStyle(fontSize: 12)),
           ),
           Center(
             child: Container(
@@ -154,16 +147,8 @@ class _ThemeViewState extends State<ThemeView> {
                 color: Theme.of(context).primaryColor,
                 borderRadius: BorderRadius.circular(17),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: .15),
-                    blurRadius: 38,
-                    offset: const Offset(0, 19),
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: .10),
-                    blurRadius: 12,
-                    offset: const Offset(0, 15),
-                  )
+                  BoxShadow(color: Colors.black.withValues(alpha: .15), blurRadius: 38, offset: const Offset(0, 19)),
+                  BoxShadow(color: Colors.black.withValues(alpha: .10), blurRadius: 12, offset: const Offset(0, 15)),
                 ],
               ),
               width: context.prismThemeMode() == ThemeMode.system
@@ -177,38 +162,36 @@ class _ThemeViewState extends State<ThemeView> {
                 child: changingLight
                     ? SvgPicture.string(
                         themePicture
-                            .replaceAll("181818",
-                                context.prismLightTheme().primaryColor.toARGB32().toRadixString(16).substring(2))
+                            .replaceAll(
+                              "181818",
+                              context.prismLightTheme().primaryColor.toARGB32().toRadixString(16).substring(2),
+                            )
                             .replaceAll("E57697", selectedAccentColor!.toARGB32().toRadixString(16).substring(2))
                             .replaceAll(
-                                "F0F0F0",
-                                context
-                                    .prismLightTheme()
-                                    .colorScheme
-                                    .secondary
-                                    .toARGB32()
-                                    .toRadixString(16)
-                                    .substring(2))
-                            .replaceAll("2F2F2F",
-                                context.prismLightTheme().hintColor.toARGB32().toRadixString(16).substring(2)),
+                              "F0F0F0",
+                              context.prismLightTheme().colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                            )
+                            .replaceAll(
+                              "2F2F2F",
+                              context.prismLightTheme().hintColor.toARGB32().toRadixString(16).substring(2),
+                            ),
                         fit: BoxFit.cover,
                       )
                     : SvgPicture.string(
                         themePicture
-                            .replaceAll("181818",
-                                context.prismDarkTheme().primaryColor.toARGB32().toRadixString(16).substring(2))
+                            .replaceAll(
+                              "181818",
+                              context.prismDarkTheme().primaryColor.toARGB32().toRadixString(16).substring(2),
+                            )
                             .replaceAll("E57697", selectedDarkAccentColor!.toARGB32().toRadixString(16).substring(2))
                             .replaceAll(
-                                "F0F0F0",
-                                context
-                                    .prismDarkTheme()
-                                    .colorScheme
-                                    .secondary
-                                    .toARGB32()
-                                    .toRadixString(16)
-                                    .substring(2))
+                              "F0F0F0",
+                              context.prismDarkTheme().colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                            )
                             .replaceAll(
-                                "2F2F2F", context.prismDarkTheme().hintColor.toARGB32().toRadixString(16).substring(2)),
+                              "2F2F2F",
+                              context.prismDarkTheme().hintColor.toARGB32().toRadixString(16).substring(2),
+                            ),
                         fit: BoxFit.cover,
                       ),
               ),
@@ -219,10 +202,7 @@ class _ThemeViewState extends State<ThemeView> {
             Container(
               width: MediaQuery.of(context).size.width,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "Light Themes",
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
+              child: Text("Light Themes", style: Theme.of(context).textTheme.headlineMedium),
             )
           else
             Container(),
@@ -270,10 +250,10 @@ class _ThemeViewState extends State<ThemeView> {
                                     child: Text(
                                       prismLightThemes.keys.toList()[index].substring(2),
                                       style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                                            color: prismLightThemes[prismLightThemes.keys.toList()[index]]!
-                                                .colorScheme
-                                                .secondary,
-                                          ),
+                                        color: prismLightThemes[prismLightThemes.keys.toList()[index]]!
+                                            .colorScheme
+                                            .secondary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -284,17 +264,13 @@ class _ThemeViewState extends State<ThemeView> {
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 height: MediaQuery.of(context).size.height * 0.06,
                                 decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                                    border: Border.all(color: Colors.black45),
-                                    borderRadius: BorderRadius.circular(10)),
+                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                                  border: Border.all(color: Colors.black45),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      JamIcons.check,
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                                  ],
+                                  children: [Icon(JamIcons.check, color: Theme.of(context).primaryColor)],
                                 ),
                               )
                             else
@@ -313,10 +289,7 @@ class _ThemeViewState extends State<ThemeView> {
             Container(
               width: MediaQuery.of(context).size.width,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "Dark Themes",
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
+              child: Text("Dark Themes", style: Theme.of(context).textTheme.headlineMedium),
             )
           else
             Container(),
@@ -364,10 +337,10 @@ class _ThemeViewState extends State<ThemeView> {
                                     child: Text(
                                       prismDarkThemes.keys.toList()[index].substring(2),
                                       style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                                            color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!
-                                                .colorScheme
-                                                .secondary,
-                                          ),
+                                        color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!
+                                            .colorScheme
+                                            .secondary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -378,17 +351,13 @@ class _ThemeViewState extends State<ThemeView> {
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 height: MediaQuery.of(context).size.height * 0.06,
                                 decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                                    border: Border.all(color: Colors.black45),
-                                    borderRadius: BorderRadius.circular(10)),
+                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                                  border: Border.all(color: Colors.black45),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      JamIcons.check,
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                                  ],
+                                  children: [Icon(JamIcons.check, color: Theme.of(context).primaryColor)],
                                 ),
                               )
                             else
@@ -408,10 +377,7 @@ class _ThemeViewState extends State<ThemeView> {
             Container(
               width: MediaQuery.of(context).size.width,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "Light Accent Color",
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
+              child: Text("Light Accent Color", style: Theme.of(context).textTheme.headlineMedium),
             )
           else
             Container(),
@@ -443,10 +409,7 @@ class _ThemeViewState extends State<ThemeView> {
                             color: accentColors[index],
                             shape: BoxShape.circle,
                           ),
-                          child: const SizedBox(
-                            width: 41,
-                            height: 41,
-                          ),
+                          child: const SizedBox(width: 41, height: 41),
                         ),
                         if (selectedAccentColor == accentColors[index])
                           Container(
@@ -458,10 +421,7 @@ class _ThemeViewState extends State<ThemeView> {
                             child: SizedBox(
                               width: 41,
                               height: 41,
-                              child: Icon(
-                                JamIcons.check,
-                                color: Theme.of(context).primaryColor,
-                              ),
+                              child: Icon(JamIcons.check, color: Theme.of(context).primaryColor),
                             ),
                           )
                         else
@@ -478,10 +438,7 @@ class _ThemeViewState extends State<ThemeView> {
             Container(
               width: MediaQuery.of(context).size.width,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "Dark Accent Color",
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
+              child: Text("Dark Accent Color", style: Theme.of(context).textTheme.headlineMedium),
             )
           else
             Container(),
@@ -513,10 +470,7 @@ class _ThemeViewState extends State<ThemeView> {
                             color: accentColors[index],
                             shape: BoxShape.circle,
                           ),
-                          child: const SizedBox(
-                            width: 41,
-                            height: 41,
-                          ),
+                          child: const SizedBox(width: 41, height: 41),
                         ),
                         if (selectedDarkAccentColor == accentColors[index])
                           Container(
@@ -528,10 +482,7 @@ class _ThemeViewState extends State<ThemeView> {
                             child: SizedBox(
                               width: 41,
                               height: 41,
-                              child: Icon(
-                                JamIcons.check,
-                                color: Theme.of(context).primaryColor,
-                              ),
+                              child: Icon(JamIcons.check, color: Theme.of(context).primaryColor),
                             ),
                           )
                         else
@@ -553,11 +504,7 @@ class _ThemeViewState extends State<ThemeView> {
 class PreferencePanel extends StatefulWidget {
   final int? selectedValue;
   final Function(bool value)? func;
-  const PreferencePanel({
-    super.key,
-    this.selectedValue,
-    this.func,
-  });
+  const PreferencePanel({super.key, this.selectedValue, this.func});
 
   @override
   _PreferencePanelState createState() => _PreferencePanelState();
@@ -579,10 +526,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
       height: MediaQuery.of(context).size.height / 2 > 400 ? MediaQuery.of(context).size.height / 2 : 400,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
       ),
       child: Column(
         children: <Widget>[
@@ -595,17 +539,16 @@ class _PreferencePanelState extends State<PreferencePanel> {
                 child: Container(
                   height: 5,
                   width: 30,
-                  decoration:
-                      BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(500)),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).hintColor,
+                    borderRadius: BorderRadius.circular(500),
+                  ),
                 ),
-              )
+              ),
             ],
           ),
           const Spacer(),
-          Text(
-            "Theme Preference",
-            style: Theme.of(context).textTheme.displayMedium,
-          ),
+          Text("Theme Preference", style: Theme.of(context).textTheme.displayMedium),
           const Spacer(flex: 2),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -632,19 +575,21 @@ class _PreferencePanelState extends State<PreferencePanel> {
                             ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
                             : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                         border: Border.all(
-                            color: _selectedValue != 0
-                                ? Theme.of(context).colorScheme.secondary
-                                : Theme.of(context).colorScheme.error,
-                            width: 3),
+                          color: _selectedValue != 0
+                              ? Theme.of(context).colorScheme.secondary
+                              : Theme.of(context).colorScheme.error,
+                          width: 3,
+                        ),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
                         child: Text(
                           "System",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontWeight: FontWeight.bold),
+                            fontSize: 16,
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -673,19 +618,21 @@ class _PreferencePanelState extends State<PreferencePanel> {
                             ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
                             : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                         border: Border.all(
-                            color: _selectedValue != 1
-                                ? Theme.of(context).colorScheme.secondary
-                                : Theme.of(context).colorScheme.error,
-                            width: 3),
+                          color: _selectedValue != 1
+                              ? Theme.of(context).colorScheme.secondary
+                              : Theme.of(context).colorScheme.error,
+                          width: 3,
+                        ),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
                         child: Text(
                           "Light",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontWeight: FontWeight.bold),
+                            fontSize: 16,
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -714,19 +661,21 @@ class _PreferencePanelState extends State<PreferencePanel> {
                             ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
                             : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                         border: Border.all(
-                            color: _selectedValue != 2
-                                ? Theme.of(context).colorScheme.secondary
-                                : Theme.of(context).colorScheme.error,
-                            width: 3),
+                          color: _selectedValue != 2
+                              ? Theme.of(context).colorScheme.secondary
+                              : Theme.of(context).colorScheme.error,
+                          width: 3,
+                        ),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
                         child: Text(
                           "Dark",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontWeight: FontWeight.bold),
+                            fontSize: 16,
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -743,10 +692,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
               child: Text(
                 "Select your preferred theme mode. System mode automatically switches between light and dark depending on your device mode.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
+                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.secondary),
               ),
             ),
           ),

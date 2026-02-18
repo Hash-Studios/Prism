@@ -14,17 +14,25 @@ ThemeData kLightTheme = ThemeData(
       fontWeight: FontWeight.w800,
       color: Color(0xFFFFFFFF),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: Colors.white.withValues(alpha: 1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: Colors.white.withValues(alpha: 1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: config.Colors().accentColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.black,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.black,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentColor(1),
@@ -37,11 +45,7 @@ ThemeData kLightTheme = ThemeData(
       color: config.Colors().secondColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 13.0,
-      color: Colors.white.withValues(alpha: .85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 13.0, color: Colors.white.withValues(alpha: .85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -61,9 +65,9 @@ ThemeData kLightTheme = ThemeData(
       color: config.Colors().accentColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.light(primary: Color(0xFFE57697))
-      .copyWith(secondary: config.Colors().accentColor(1))
-      .copyWith(error: const Color(0xFFE57697)),
+  colorScheme: const ColorScheme.light(
+    primary: Color(0xFFE57697),
+  ).copyWith(secondary: config.Colors().accentColor(1)).copyWith(error: const Color(0xFFE57697)),
 );
 
 ThemeData kDarkTheme = ThemeData(
@@ -79,20 +83,25 @@ ThemeData kDarkTheme = ThemeData(
       fontWeight: FontWeight.w800,
       color: config.Colors().mainDarkColor(1),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: config.Colors().accentDarkColor(1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: config.Colors().accentDarkColor(1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentDarkColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentDarkColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -105,11 +114,7 @@ ThemeData kDarkTheme = ThemeData(
       color: config.Colors().secondDarkColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 14.0,
-      color: config.Colors().accentDarkColor(.85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 14.0, color: config.Colors().accentDarkColor(.85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -129,9 +134,9 @@ ThemeData kDarkTheme = ThemeData(
       color: config.Colors().accentDarkColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.dark(primary: Color(0xFFE57697))
-      .copyWith(secondary: config.Colors().accentDarkColor(1))
-      .copyWith(error: const Color(0xFFE57697)),
+  colorScheme: const ColorScheme.dark(
+    primary: Color(0xFFE57697),
+  ).copyWith(secondary: config.Colors().accentDarkColor(1)).copyWith(error: const Color(0xFFE57697)),
 );
 
 ThemeData kLightTheme2 = ThemeData(
@@ -147,17 +152,25 @@ ThemeData kLightTheme2 = ThemeData(
       fontWeight: FontWeight.w800,
       color: Color(0xFFFFFFFF),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: Colors.white.withValues(alpha: 1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: Colors.white.withValues(alpha: 1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: config.Colors().accentColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.black,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.black,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentColor(1),
@@ -170,11 +183,7 @@ ThemeData kLightTheme2 = ThemeData(
       color: config.Colors().secondColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 13.0,
-      color: Colors.white.withValues(alpha: .85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 13.0, color: Colors.white.withValues(alpha: .85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -194,9 +203,9 @@ ThemeData kLightTheme2 = ThemeData(
       color: config.Colors().accentColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.light(primary: Color(0xFFC19439))
-      .copyWith(secondary: const Color(0xFF96732C))
-      .copyWith(error: const Color(0xFFC19439)),
+  colorScheme: const ColorScheme.light(
+    primary: Color(0xFFC19439),
+  ).copyWith(secondary: const Color(0xFF96732C)).copyWith(error: const Color(0xFFC19439)),
 );
 
 ThemeData kDarkTheme2 = ThemeData(
@@ -212,34 +221,33 @@ ThemeData kDarkTheme2 = ThemeData(
       fontWeight: FontWeight.w800,
       color: Colors.black,
     ),
-    headlineSmall: const TextStyle(
-      fontSize: 16.0,
-      color: Colors.white,
+    headlineSmall: const TextStyle(fontSize: 16.0, color: Colors.white, fontFamily: "Proxima Nova"),
+    headlineMedium: const TextStyle(
+      fontSize: 16,
       fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
     ),
-    headlineMedium:
-        const TextStyle(fontSize: 16, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
     displayLarge: const TextStyle(
       fontFamily: 'Proxima Nova',
       color: Colors.white,
       fontSize: 50,
       fontWeight: FontWeight.w600,
     ),
-    titleMedium: const TextStyle(
-      fontSize: 20,
-      fontWeight: FontWeight.w900,
-      color: Colors.black,
-      fontFamily: "Roboto",
-    ),
-    titleLarge: TextStyle(
-      fontSize: 14.0,
-      color: Colors.white.withValues(alpha: 0.85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleMedium: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.black, fontFamily: "Roboto"),
+    titleLarge: TextStyle(fontSize: 14.0, color: Colors.white.withValues(alpha: 0.85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -252,16 +260,11 @@ ThemeData kDarkTheme2 = ThemeData(
       fontWeight: FontWeight.w500,
       color: Colors.white,
     ),
-    bodySmall: const TextStyle(
-      fontFamily: 'Roboto',
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      color: Colors.white,
-    ),
+    bodySmall: const TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w400, color: Colors.white),
   ),
-  colorScheme: const ColorScheme.dark(primary: Color(0xFFFFFFFF))
-      .copyWith(secondary: Colors.white)
-      .copyWith(error: Colors.black),
+  colorScheme: const ColorScheme.dark(
+    primary: Color(0xFFFFFFFF),
+  ).copyWith(secondary: Colors.white).copyWith(error: Colors.black),
 );
 
 ThemeData kLightTheme3 = ThemeData(
@@ -277,17 +280,25 @@ ThemeData kLightTheme3 = ThemeData(
       fontWeight: FontWeight.w800,
       color: Color(0xFFFFFFFF),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: Colors.white.withValues(alpha: 1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: Colors.white.withValues(alpha: 1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: config.Colors().accentColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.black,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.black,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentColor(1),
@@ -300,11 +311,7 @@ ThemeData kLightTheme3 = ThemeData(
       color: config.Colors().secondColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 13.0,
-      color: Colors.white.withValues(alpha: .85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 13.0, color: Colors.white.withValues(alpha: .85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -324,9 +331,9 @@ ThemeData kLightTheme3 = ThemeData(
       color: config.Colors().accentColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.light(primary: Color(0xFFA7796D))
-      .copyWith(secondary: const Color(0xFF7D564B))
-      .copyWith(error: const Color(0xFFA7796D)),
+  colorScheme: const ColorScheme.light(
+    primary: Color(0xFFA7796D),
+  ).copyWith(secondary: const Color(0xFF7D564B)).copyWith(error: const Color(0xFFA7796D)),
 );
 
 ThemeData kLightTheme4 = ThemeData(
@@ -342,17 +349,25 @@ ThemeData kLightTheme4 = ThemeData(
       fontWeight: FontWeight.w800,
       color: Color(0xFFFFFFFF),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: Colors.white.withValues(alpha: 1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: Colors.white.withValues(alpha: 1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: config.Colors().accentColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.black),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.black,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.black,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentColor(1),
@@ -365,11 +380,7 @@ ThemeData kLightTheme4 = ThemeData(
       color: config.Colors().secondColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 13.0,
-      color: Colors.white.withValues(alpha: .85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 13.0, color: Colors.white.withValues(alpha: .85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -389,9 +400,9 @@ ThemeData kLightTheme4 = ThemeData(
       color: config.Colors().accentColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.light(primary: Color(0xFF596F95))
-      .copyWith(secondary: const Color(0xFF36435A))
-      .copyWith(error: const Color(0xFF596F95)),
+  colorScheme: const ColorScheme.light(
+    primary: Color(0xFF596F95),
+  ).copyWith(secondary: const Color(0xFF36435A)).copyWith(error: const Color(0xFF596F95)),
 );
 
 ThemeData kDarkTheme3 = ThemeData(
@@ -407,20 +418,25 @@ ThemeData kDarkTheme3 = ThemeData(
       fontWeight: FontWeight.w800,
       color: config.Colors().mainDarkColor(1),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: config.Colors().accentDarkColor(1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: config.Colors().accentDarkColor(1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentDarkColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentDarkColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -433,11 +449,7 @@ ThemeData kDarkTheme3 = ThemeData(
       color: config.Colors().secondDarkColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 14.0,
-      color: config.Colors().accentDarkColor(.85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 14.0, color: config.Colors().accentDarkColor(.85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -457,9 +469,9 @@ ThemeData kDarkTheme3 = ThemeData(
       color: config.Colors().accentDarkColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF767B45))
-      .copyWith(secondary: const Color(0xFFE3E4D0))
-      .copyWith(error: const Color(0xFF767B45)),
+  colorScheme: const ColorScheme.dark(
+    primary: Color(0xFF767B45),
+  ).copyWith(secondary: const Color(0xFFE3E4D0)).copyWith(error: const Color(0xFF767B45)),
 );
 
 ThemeData kDarkTheme4 = ThemeData(
@@ -475,20 +487,25 @@ ThemeData kDarkTheme4 = ThemeData(
       fontWeight: FontWeight.w800,
       color: config.Colors().mainDarkColor(1),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: config.Colors().accentDarkColor(1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: config.Colors().accentDarkColor(1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentDarkColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentDarkColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -501,11 +518,7 @@ ThemeData kDarkTheme4 = ThemeData(
       color: config.Colors().secondDarkColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 14.0,
-      color: config.Colors().accentDarkColor(.85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 14.0, color: config.Colors().accentDarkColor(.85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -525,9 +538,9 @@ ThemeData kDarkTheme4 = ThemeData(
       color: config.Colors().accentDarkColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF427DA8))
-      .copyWith(secondary: const Color(0xFFB0CCE0))
-      .copyWith(error: const Color(0xFF427DA8)),
+  colorScheme: const ColorScheme.dark(
+    primary: Color(0xFF427DA8),
+  ).copyWith(secondary: const Color(0xFFB0CCE0)).copyWith(error: const Color(0xFF427DA8)),
 );
 
 ThemeData kDarkTheme5 = ThemeData(
@@ -543,20 +556,25 @@ ThemeData kDarkTheme5 = ThemeData(
       fontWeight: FontWeight.w800,
       color: config.Colors().mainDarkColor(1),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: config.Colors().accentDarkColor(1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: config.Colors().accentDarkColor(1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentDarkColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentDarkColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -569,11 +587,7 @@ ThemeData kDarkTheme5 = ThemeData(
       color: config.Colors().secondDarkColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 14.0,
-      color: config.Colors().accentDarkColor(.85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 14.0, color: config.Colors().accentDarkColor(.85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -593,9 +607,9 @@ ThemeData kDarkTheme5 = ThemeData(
       color: config.Colors().accentDarkColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF4C7044))
-      .copyWith(secondary: const Color(0xFFD9E6D6))
-      .copyWith(error: const Color(0xFF4C7044)),
+  colorScheme: const ColorScheme.dark(
+    primary: Color(0xFF4C7044),
+  ).copyWith(secondary: const Color(0xFFD9E6D6)).copyWith(error: const Color(0xFF4C7044)),
 );
 
 ThemeData kDarkTheme6 = ThemeData(
@@ -611,20 +625,25 @@ ThemeData kDarkTheme6 = ThemeData(
       fontWeight: FontWeight.w800,
       color: config.Colors().mainDarkColor(1),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: config.Colors().accentDarkColor(1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: config.Colors().accentDarkColor(1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentDarkColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentDarkColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -637,11 +656,7 @@ ThemeData kDarkTheme6 = ThemeData(
       color: config.Colors().secondDarkColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 14.0,
-      color: config.Colors().accentDarkColor(.85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 14.0, color: config.Colors().accentDarkColor(.85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -661,9 +676,9 @@ ThemeData kDarkTheme6 = ThemeData(
       color: config.Colors().accentDarkColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF703826))
-      .copyWith(secondary: const Color(0xFFDFB0A0))
-      .copyWith(error: const Color(0xFF703826)),
+  colorScheme: const ColorScheme.dark(
+    primary: Color(0xFF703826),
+  ).copyWith(secondary: const Color(0xFFDFB0A0)).copyWith(error: const Color(0xFF703826)),
 );
 
 ThemeData kDarkTheme7 = ThemeData(
@@ -679,20 +694,25 @@ ThemeData kDarkTheme7 = ThemeData(
       fontWeight: FontWeight.w800,
       color: config.Colors().mainDarkColor(1),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: config.Colors().accentDarkColor(1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: config.Colors().accentDarkColor(1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentDarkColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentDarkColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -705,11 +725,7 @@ ThemeData kDarkTheme7 = ThemeData(
       color: config.Colors().secondDarkColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 14.0,
-      color: config.Colors().accentDarkColor(.85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 14.0, color: config.Colors().accentDarkColor(.85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -729,9 +745,9 @@ ThemeData kDarkTheme7 = ThemeData(
       color: config.Colors().accentDarkColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF2D6079))
-      .copyWith(secondary: const Color(0xFFA9CDDF))
-      .copyWith(error: const Color(0xFF2D6079)),
+  colorScheme: const ColorScheme.dark(
+    primary: Color(0xFF2D6079),
+  ).copyWith(secondary: const Color(0xFFA9CDDF)).copyWith(error: const Color(0xFF2D6079)),
 );
 
 ThemeData kDarkTheme8 = ThemeData(
@@ -747,20 +763,25 @@ ThemeData kDarkTheme8 = ThemeData(
       fontWeight: FontWeight.w800,
       color: config.Colors().mainDarkColor(1),
     ),
-    headlineSmall: TextStyle(
-      fontSize: 16.0,
-      color: config.Colors().accentDarkColor(1),
-      fontFamily: "Proxima Nova",
-    ),
+    headlineSmall: TextStyle(fontSize: 16.0, color: config.Colors().accentDarkColor(1), fontFamily: "Proxima Nova"),
     headlineMedium: TextStyle(
-        fontSize: 16,
-        fontFamily: "Proxima Nova",
-        fontWeight: FontWeight.w500,
-        color: config.Colors().accentDarkColor(1)),
-    displaySmall:
-        const TextStyle(fontSize: 20, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
-    displayMedium:
-        const TextStyle(fontSize: 24, fontFamily: "Proxima Nova", fontWeight: FontWeight.w500, color: Colors.white),
+      fontSize: 16,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: config.Colors().accentDarkColor(1),
+    ),
+    displaySmall: const TextStyle(
+      fontSize: 20,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
+    displayMedium: const TextStyle(
+      fontSize: 24,
+      fontFamily: "Proxima Nova",
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    ),
     displayLarge: TextStyle(
       fontFamily: 'Proxima Nova',
       color: config.Colors().accentDarkColor(1),
@@ -773,11 +794,7 @@ ThemeData kDarkTheme8 = ThemeData(
       color: config.Colors().secondDarkColor(1),
       fontFamily: "Roboto",
     ),
-    titleLarge: TextStyle(
-      fontSize: 14.0,
-      color: config.Colors().accentDarkColor(.85),
-      fontFamily: "Proxima Nova",
-    ),
+    titleLarge: TextStyle(fontSize: 14.0, color: config.Colors().accentDarkColor(.85), fontFamily: "Proxima Nova"),
     bodyMedium: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 14,
@@ -797,7 +814,7 @@ ThemeData kDarkTheme8 = ThemeData(
       color: config.Colors().accentDarkColor(1),
     ),
   ),
-  colorScheme: const ColorScheme.dark(primary: Color(0xFF686E80))
-      .copyWith(secondary: const Color(0xFFEEEFF2))
-      .copyWith(error: const Color(0xFF686E80)),
+  colorScheme: const ColorScheme.dark(
+    primary: Color(0xFF686E80),
+  ).copyWith(secondary: const Color(0xFFEEEFF2)).copyWith(error: const Color(0xFF686E80)),
 );

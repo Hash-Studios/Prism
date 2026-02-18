@@ -7,9 +7,6 @@ class AdsBuilder {
   const AdsBuilder._();
 
   static Widget withBloc({required Widget child, AdsBloc? bloc}) {
-    return BlocProvider<AdsBloc>(
-      create: (_) => bloc ?? getIt<AdsBloc>(),
-      child: child,
-    );
+    return BlocProvider<AdsBloc>(create: (_) => bloc ?? getIt<AdsBloc>(), child: child);
   }
 }

@@ -16,11 +16,7 @@ void showNoLoadLinksPopUp(BuildContext context, Map link) {
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     title: Text(
       'More links',
-      style: TextStyle(
-        fontWeight: FontWeight.w700,
-        fontSize: 16,
-        color: Theme.of(context).colorScheme.secondary,
-      ),
+      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
     ),
     actions: [
       MaterialButton(
@@ -29,13 +25,7 @@ void showNoLoadLinksPopUp(BuildContext context, Map link) {
         onPressed: () {
           Navigator.of(context).pop();
         },
-        child: const Text(
-          'CLOSE',
-          style: TextStyle(
-            fontSize: 16.0,
-            color: Colors.white,
-          ),
-        ),
+        child: const Text('CLOSE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
       ),
     ],
     content: Container(
@@ -89,13 +79,7 @@ Map<String, Map<String, dynamic>> linksData = {
     'value': '',
     'validator': 'instagram',
   },
-  'email': {
-    'name': 'email',
-    'link': 'your@email.com',
-    'icon': JamIcons.inbox,
-    'value': '',
-    'validator': '@',
-  },
+  'email': {'name': 'email', 'link': 'your@email.com', 'icon': JamIcons.inbox, 'value': '', 'validator': '@'},
   'telegram': {
     'name': 'telegram',
     'link': 'https://t.me/username',
@@ -222,11 +206,5 @@ Map<String, Map<String, dynamic>> linksData = {
     'value': '',
     'validator': 'buymeacoff.ee',
   },
-  'custom link': {
-    'name': 'custom link',
-    'link': '',
-    'icon': JamIcons.link,
-    'value': '',
-    'validator': '',
-  },
+  'custom link': {'name': 'custom link', 'link': '', 'icon': JamIcons.link, 'value': '', 'validator': ''},
 };

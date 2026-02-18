@@ -15,13 +15,13 @@ abstract class CategoryFeedState with _$CategoryFeedState {
   }) = _CategoryFeedState;
 
   factory CategoryFeedState.initial() => const CategoryFeedState(
-        status: LoadStatus.initial,
-        actionStatus: ActionStatus.idle,
-        categories: <CategoryEntity>[],
-        selectedCategory: null,
-        items: <FeedItemEntity>[],
-        hasMore: true,
-        nextCursor: null,
-        isFetchingMore: false,
-      );
+    status: LoadStatus.initial,
+    actionStatus: ActionStatus.idle,
+    categories: <CategoryEntity>[],
+    selectedCategory: null,
+    items: <FeedItemEntity>[],
+    hasMore: true,
+    nextCursor: null,
+    isFetchingMore: false,
+  );
 }

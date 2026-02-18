@@ -16,9 +16,7 @@ late FirebaseRemoteConfig remoteConfig;
 
 @RoutePage(name: 'SplashWidgetRoute')
 class SplashWidget extends StatefulWidget {
-  const SplashWidget({
-    super.key,
-  });
+  const SplashWidget({super.key});
 
   @override
   _SplashWidgetState createState() => _SplashWidgetState();
@@ -39,10 +37,7 @@ class _SplashWidgetState extends State<SplashWidget> {
     try {
       remoteConfig = FirebaseRemoteConfig.instance;
       await remoteConfig.setConfigSettings(
-        RemoteConfigSettings(
-          fetchTimeout: const Duration(seconds: 30),
-          minimumFetchInterval: const Duration(hours: 6),
-        ),
+        RemoteConfigSettings(fetchTimeout: const Duration(seconds: 30), minimumFetchInterval: const Duration(hours: 6)),
       );
       await remoteConfig.setDefaults(<String, dynamic>{
         'topImageLink':
@@ -57,7 +52,7 @@ class _SplashWidgetState extends State<SplashWidget> {
             "Prism Premium is here, for the personalisaton lords!^*^Setups are here! Change the way of personalisation.^*^Favourites moved to profile.",
         'topTitleText': '["TOP-RATED","BEST OF COMMUNITY","FAN-FAVOURITE","TRENDING",]',
         'premiumCollections': '["space","landscapes","mesh gradients",]',
-        'verifiedUsers': '["akshaymaurya3006@gmail.com","maurya.abhay30@gmail.com",]'
+        'verifiedUsers': '["akshaymaurya3006@gmail.com","maurya.abhay30@gmail.com",]',
       });
       logger.d("Started Fetching Values from rc");
       await remoteConfig.fetch();
@@ -151,9 +146,7 @@ class _SplashWidgetState extends State<SplashWidget> {
 }
 
 class SecondarySplash extends StatelessWidget {
-  const SecondarySplash({
-    super.key,
-  });
+  const SecondarySplash({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +161,8 @@ class SecondarySplash extends StatelessWidget {
           width: MediaQuery.of(context).size.width * 0.29074074074,
           height: MediaQuery.of(context).size.width * 0.29074074074,
           decoration: const BoxDecoration(
-              image: DecorationImage(image: AssetImage("assets/images/ic_launcher.png"), fit: BoxFit.cover)),
+            image: DecorationImage(image: AssetImage("assets/images/ic_launcher.png"), fit: BoxFit.cover),
+          ),
         ),
       ),
     );

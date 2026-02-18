@@ -104,12 +104,7 @@ Future<void> main() async {
       await _initializeMonitoring(sentryConfig);
 
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
-        logger.e(
-          'Uncaught platform error',
-          tag: 'PlatformError',
-          error: error,
-          stackTrace: stackTrace,
-        );
+        logger.e('Uncaught platform error', tag: 'PlatformError', error: error, stackTrace: stackTrace);
         return true;
       };
 
@@ -133,9 +128,7 @@ Future<void> main() async {
       const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
       if (!skipFirebaseInit) {
         try {
-          await Firebase.initializeApp(
-            options: DefaultFirebaseOptions.currentPlatform,
-          );
+          await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
           FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
         } catch (error, stackTrace) {
           logger.w(
@@ -161,10 +154,7 @@ Future<void> main() async {
       await Hive.openBox('appsCache');
       prefs = await Hive.openBox('prefs');
       logger.d("Box Opened");
-      final systemOverlayColorValue = _colorValueFromPrefs(
-        prefs.get("systemOverlayColor"),
-        fallback: 0xFFE57697,
-      );
+      final systemOverlayColorValue = _colorValueFromPrefs(prefs.get("systemOverlayColor"), fallback: 0xFFE57697);
       prefs.put("systemOverlayColor", systemOverlayColorValue);
       currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
       prefs.put("lightThemeID", currentThemeID);
@@ -172,17 +162,11 @@ Future<void> main() async {
       prefs.put("darkThemeID", currentDarkThemeID);
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);
-      final lightAccentValue = _colorValueFromPrefs(
-        prefs.get('lightAccent'),
-        fallback: 0xFFE57697,
-      );
+      final lightAccentValue = _colorValueFromPrefs(prefs.get('lightAccent'), fallback: 0xFFE57697);
       lightAccent = Color(lightAccentValue);
       prefs.put("lightAccent", lightAccentValue);
 
-      final darkAccentValue = _colorValueFromPrefs(
-        prefs.get('darkAccent'),
-        fallback: 0xFFE57697,
-      );
+      final darkAccentValue = _colorValueFromPrefs(prefs.get('darkAccent'), fallback: 0xFFE57697);
       darkAccent = Color(darkAccentValue);
       prefs.put("darkAccent", darkAccentValue);
       optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
@@ -201,9 +185,9 @@ Future<void> main() async {
       }
 
       configureDependencies();
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        systemNavigationBarColor: Color(systemOverlayColorValue),
-      ));
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(systemNavigationBarColor: Color(systemOverlayColorValue)),
+      );
       SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
       await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
@@ -211,45 +195,23 @@ Future<void> main() async {
         RestartWidget(
           child: MultiBlocProvider(
             providers: [
-              BlocProvider<AdsBloc>(
-                create: (_) => getIt<AdsBloc>(),
-              ),
-              BlocProvider<PaletteBloc>(
-                create: (_) => getIt<PaletteBloc>(),
-              ),
-              BlocProvider<UserSearchBloc>(
-                create: (_) => getIt<UserSearchBloc>(),
-              ),
+              BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
+              BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
+              BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
               BlocProvider<CategoryFeedBloc>(
                 create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
               ),
-              BlocProvider<ProfileWallsBloc>(
-                create: (_) => getIt<ProfileWallsBloc>(),
-              ),
-              BlocProvider<FavouriteWallsBloc>(
-                create: (_) => getIt<FavouriteWallsBloc>(),
-              ),
-              BlocProvider<FavouriteSetupsBloc>(
-                create: (_) => getIt<FavouriteSetupsBloc>(),
-              ),
-              BlocProvider<ProfileSetupsBloc>(
-                create: (_) => getIt<ProfileSetupsBloc>(),
-              ),
-              BlocProvider<SetupsBloc>(
-                create: (_) => getIt<SetupsBloc>(),
-              ),
-              BlocProvider<PublicProfileBloc>(
-                create: (_) => getIt<PublicProfileBloc>(),
-              ),
+              BlocProvider<ProfileWallsBloc>(create: (_) => getIt<ProfileWallsBloc>()),
+              BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
+              BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
+              BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
+              BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
+              BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
               BlocProvider<ThemeLightBloc>(
                 create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
               ),
-              BlocProvider<ThemeDarkBloc>(
-                create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
-              ),
-              BlocProvider<ThemeModeBloc>(
-                create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
-              ),
+              BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
+              BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
             ],
             child: MyApp(),
           ),
@@ -257,12 +219,7 @@ Future<void> main() async {
       );
     },
     (obj, stacktrace) {
-      logger.e(
-        'Uncaught zone error',
-        tag: 'ZoneError',
-        error: obj,
-        stackTrace: stacktrace,
-      );
+      logger.e('Uncaught zone error', tag: 'ZoneError', error: obj, stackTrace: stacktrace);
     },
   );
 }
@@ -385,17 +342,9 @@ class _MyAppState extends State<MyApp> {
     try {
       await FlutterDisplayMode.setHighRefreshRate();
     } on MissingPluginException catch (e, st) {
-      logger.w(
-        'Display mode plugin unavailable on this platform/build.',
-        error: e,
-        stackTrace: st,
-      );
+      logger.w('Display mode plugin unavailable on this platform/build.', error: e, stackTrace: st);
     } catch (e, st) {
-      logger.w(
-        'Failed to set high refresh rate.',
-        error: e,
-        stackTrace: st,
-      );
+      logger.w('Failed to set high refresh rate.', error: e, stackTrace: st);
     }
   }
 
@@ -426,11 +375,7 @@ class _MyAppState extends State<MyApp> {
         false,
       );
     } catch (e, st) {
-      logger.w(
-        'Failed to configure local notification channels.',
-        error: e,
-        stackTrace: st,
-      );
+      logger.w('Failed to configure local notification channels.', error: e, stackTrace: st);
     }
   }
 
@@ -451,10 +396,7 @@ class _MyAppState extends State<MyApp> {
         navigatorObservers: () => [
           FirebaseAnalyticsObserver(analytics: analytics),
           if (MonitoringRuntime.reporter.isEnabled)
-            SentryNavigatorObserver(
-              enableAutoTransactions: false,
-              ignoreRoutes: <String>['/'],
-            ),
+            SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
         ],
       ),
       theme: context.prismLightTheme(),
@@ -469,14 +411,11 @@ class RestartWidget extends StatefulWidget {
   final Widget? child;
   // ignore: unreachable_from_main
   static void restartApp(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: Color(
-        _colorValueFromPrefs(
-          prefs.get('systemOverlayColor'),
-          fallback: 0xFFE57697,
-        ),
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        systemNavigationBarColor: Color(_colorValueFromPrefs(prefs.get('systemOverlayColor'), fallback: 0xFFE57697)),
       ),
-    ));
+    );
     observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
   }
@@ -499,17 +438,11 @@ class _RestartWidgetState extends State<RestartWidget> {
       prefs.put("darkThemeID", currentDarkThemeID);
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);
-      final lightAccentValue = _colorValueFromPrefs(
-        prefs.get('lightAccent'),
-        fallback: 0xFFE57697,
-      );
+      final lightAccentValue = _colorValueFromPrefs(prefs.get('lightAccent'), fallback: 0xFFE57697);
       lightAccent = Color(lightAccentValue);
       prefs.put("lightAccent", lightAccentValue);
 
-      final darkAccentValue = _colorValueFromPrefs(
-        prefs.get('darkAccent'),
-        fallback: 0xFFE57697,
-      );
+      final darkAccentValue = _colorValueFromPrefs(prefs.get('darkAccent'), fallback: 0xFFE57697);
       darkAccent = Color(darkAccentValue);
       prefs.put("darkAccent", darkAccentValue);
     });
@@ -517,9 +450,6 @@ class _RestartWidgetState extends State<RestartWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return KeyedSubtree(
-      key: key,
-      child: widget.child!,
-    );
+    return KeyedSubtree(key: key, child: widget.child!);
   }
 }

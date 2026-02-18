@@ -14,10 +14,8 @@ part 'deep_link_bloc.j.freezed.dart';
 
 @injectable
 class DeepLinkBloc extends Bloc<DeepLinkEvent, DeepLinkState> {
-  DeepLinkBloc(
-    this._getInitialDeepLinkActionUseCase,
-    this._observeDeepLinkActionsUseCase,
-  ) : super(DeepLinkState.initial()) {
+  DeepLinkBloc(this._getInitialDeepLinkActionUseCase, this._observeDeepLinkActionsUseCase)
+    : super(DeepLinkState.initial()) {
     on<_Started>(_onStarted);
     on<_ActionReceived>(_onActionReceived);
     on<_HistoryCleared>(_onHistoryCleared);
@@ -33,21 +31,19 @@ class DeepLinkBloc extends Bloc<DeepLinkEvent, DeepLinkState> {
     final result = await _getInitialDeepLinkActionUseCase(const NoParams());
     result.fold(
       onSuccess: (action) {
-        emit(state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          initialAction: action,
-          latestAction: action,
-          history: action == null ? const <DeepLinkActionEntity>[] : <DeepLinkActionEntity>[action],
-          failure: null,
-        ));
+        emit(
+          state.copyWith(
+            status: LoadStatus.success,
+            actionStatus: ActionStatus.success,
+            initialAction: action,
+            latestAction: action,
+            history: action == null ? const <DeepLinkActionEntity>[] : <DeepLinkActionEntity>[action],
+            failure: null,
+          ),
+        );
       },
       onFailure: (failure) {
-        emit(state.copyWith(
-          status: LoadStatus.failure,
-          actionStatus: ActionStatus.failure,
-          failure: failure,
-        ));
+        emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure));
       },
     );
 
@@ -58,13 +54,15 @@ class DeepLinkBloc extends Bloc<DeepLinkEvent, DeepLinkState> {
   }
 
   void _onActionReceived(_ActionReceived event, Emitter<DeepLinkState> emit) {
-    emit(state.copyWith(
-      status: LoadStatus.success,
-      actionStatus: ActionStatus.success,
-      latestAction: event.action,
-      history: <DeepLinkActionEntity>[...state.history, event.action],
-      failure: null,
-    ));
+    emit(
+      state.copyWith(
+        status: LoadStatus.success,
+        actionStatus: ActionStatus.success,
+        latestAction: event.action,
+        history: <DeepLinkActionEntity>[...state.history, event.action],
+        failure: null,
+      ),
+    );
   }
 
   void _onHistoryCleared(_HistoryCleared event, Emitter<DeepLinkState> emit) {

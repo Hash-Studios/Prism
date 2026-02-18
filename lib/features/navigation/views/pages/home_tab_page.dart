@@ -120,21 +120,22 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       }
       final routeSegment = deepLink.pathSegments[0];
       if (routeSegment == "share") {
-        context.router.push(ShareWallpaperViewRoute(arguments: [
-          deepLink.queryParameters["id"],
-          deepLink.queryParameters["provider"],
-          deepLink.queryParameters["url"],
-          deepLink.queryParameters["thumb"],
-        ]));
+        context.router.push(
+          ShareWallpaperViewRoute(
+            arguments: [
+              deepLink.queryParameters["id"],
+              deepLink.queryParameters["provider"],
+              deepLink.queryParameters["url"],
+              deepLink.queryParameters["thumb"],
+            ],
+          ),
+        );
       } else if (routeSegment == "user") {
-        context.router.push(ProfileRoute(arguments: [
-          deepLink.queryParameters["email"],
-        ]));
+        context.router.push(ProfileRoute(arguments: [deepLink.queryParameters["email"]]));
       } else if (routeSegment == "setup") {
-        context.router.push(ShareSetupViewRoute(arguments: [
-          deepLink.queryParameters["name"],
-          deepLink.queryParameters["thumbUrl"],
-        ]));
+        context.router.push(
+          ShareSetupViewRoute(arguments: [deepLink.queryParameters["name"], deepLink.queryParameters["thumbUrl"]]),
+        );
       } else if (routeSegment == "refer") {
         // TODO: add referral handling.
       }
@@ -154,15 +155,17 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       logger.d("opened while closed altogether via deep link2345");
     }
 
-    FirebaseDynamicLinks.instance.onLink.listen((PendingDynamicLinkData dynamicLink) {
-      final Uri deepLink = dynamicLink.link;
-      logger.d("opened while bg via deep link1");
-      handleDeepLink(deepLink);
-      logger.d("opened while bg via deep link2345");
-    }).onError((Object error) {
-      logger.d('onLinkError');
-      logger.d(error.toString());
-    });
+    FirebaseDynamicLinks.instance.onLink
+        .listen((PendingDynamicLinkData dynamicLink) {
+          final Uri deepLink = dynamicLink.link;
+          logger.d("opened while bg via deep link1");
+          handleDeepLink(deepLink);
+          logger.d("opened while bg via deep link2345");
+        })
+        .onError((Object error) {
+          logger.d('onLinkError');
+          logger.d(error.toString());
+        });
   }
 
   @override
@@ -187,49 +190,22 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          flexibleSpace: const PreferredSize(
-            preferredSize: Size(double.infinity, 55),
-            child: CategoriesBar(),
-          ),
+          flexibleSpace: const PreferredSize(preferredSize: Size(double.infinity, 55), child: CategoriesBar()),
           bottom: TabBar(
-              controller: tabController,
-              indicatorColor: Theme.of(context).colorScheme.secondary,
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: globals.followersTab
-                  ? [
-                      Tab(
-                        icon: Icon(
-                          JamIcons.picture,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      Tab(
-                        icon: Icon(
-                          JamIcons.user_square,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      Tab(
-                        icon: Icon(
-                          JamIcons.pictures,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      )
-                    ]
-                  : [
-                      Tab(
-                        icon: Icon(
-                          JamIcons.picture,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      Tab(
-                        icon: Icon(
-                          JamIcons.pictures,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      )
-                    ]),
+            controller: tabController,
+            indicatorColor: Theme.of(context).colorScheme.secondary,
+            indicatorSize: TabBarIndicatorSize.label,
+            tabs: globals.followersTab
+                ? [
+                    Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
+                    Tab(icon: Icon(JamIcons.user_square, color: Theme.of(context).colorScheme.secondary)),
+                    Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
+                  ]
+                : [
+                    Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
+                    Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
+                  ],
+          ),
         ),
         body: Stack(
           children: <Widget>[
@@ -254,9 +230,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
                                 ),
                               ),
                             ),
-                            const SizedBox(
-                              height: 16,
-                            ),
+                            const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: () {
                                 googleSignInPopUp(context, () {
@@ -285,10 +259,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
                         ),
                       const CollectionScreen(),
                     ]
-                  : [
-                      const HomeScreen(),
-                      const CollectionScreen(),
-                    ],
+                  : [const HomeScreen(), const CollectionScreen()],
             ),
             if (!result) ConnectivityWidget() else Container(),
           ],

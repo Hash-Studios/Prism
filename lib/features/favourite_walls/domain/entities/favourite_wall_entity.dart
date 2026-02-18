@@ -1,9 +1,5 @@
 class FavouriteWallEntity {
-  const FavouriteWallEntity({
-    required this.id,
-    required this.provider,
-    required this.payload,
-  });
+  const FavouriteWallEntity({required this.id, required this.provider, required this.payload});
 
   final String id;
   final String provider;

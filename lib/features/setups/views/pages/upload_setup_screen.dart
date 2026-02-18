@@ -67,10 +67,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(JamIcons.link),
-          Text("Link"),
-        ],
+        children: [Icon(JamIcons.link), Text("Link")],
       ),
     ),
     1: const Padding(
@@ -78,10 +75,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(JamIcons.upload),
-          Text("Upload"),
-        ],
+        children: [Icon(JamIcons.upload), Text("Upload")],
       ),
     ),
     2: const Padding(
@@ -89,12 +83,9 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(JamIcons.android),
-          Text("App"),
-        ],
+        children: [Icon(JamIcons.android), Text("App")],
       ),
-    )
+    ),
   };
   final Map<int, Widget> widgetsIcons = <int, Widget>{
     0: const Padding(
@@ -102,10 +93,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(JamIcons.google_play),
-          Text("Widgets"),
-        ],
+        children: [Icon(JamIcons.google_play), Text("Widgets")],
       ),
     ),
     1: const Padding(
@@ -113,12 +101,9 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(JamIcons.google_play_circle),
-          Text("* Icons"),
-        ],
+        children: [Icon(JamIcons.google_play_circle), Text("* Icons")],
       ),
-    )
+    ),
   };
 
   @override
@@ -169,11 +154,15 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       final String base64Image = base64Encode(imageBytes);
       final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
       await github.repositories
-          .createFile(RepositorySlug(Env.ghUserName, Env.ghRepoSetups),
-              CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)))
-          .then((value) => setState(() {
-                imageURL = value.content!.downloadUrl;
-              }));
+          .createFile(
+            RepositorySlug(Env.ghUserName, Env.ghRepoSetups),
+            CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)),
+          )
+          .then(
+            (value) => setState(() {
+              imageURL = value.content!.downloadUrl;
+            }),
+          );
       logger.d('File Uploaded');
       setState(() {
         isUploading = false;
@@ -190,10 +179,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
-        title: Text(
-          "Upload Setup",
-          style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-        ),
+        title: Text("Upload Setup", style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
         actions: [
           TextButton(
             onPressed: !isProcessing && !isUploading
@@ -209,8 +195,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                       wallpaperUploaded == true
                           ? wallpaperUploadLink
                           : wallpaperAppName.text != "" && wallpaperAppLink.text != ""
-                              ? [wallpaperAppName.text, wallpaperAppLink.text, wallpaperAppWallName.text]
-                              : wallpaperUrl.text,
+                          ? [wallpaperAppName.text, wallpaperAppLink.text, wallpaperAppWallName.text]
+                          : wallpaperUrl.text,
                       iconName.text,
                       iconURL.text,
                       widgetName1.text,
@@ -228,8 +214,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               style: TextStyle(
                 color: !isProcessing && !isUploading
                     ? Theme.of(context).colorScheme.error == Colors.black
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.error
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.error
                     : Theme.of(context).hintColor,
                 fontWeight: FontWeight.normal,
               ),
@@ -257,8 +243,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                         wallpaperUploaded == true
                             ? wallpaperUploadLink
                             : wallpaperAppName.text != "" && wallpaperAppLink.text != ""
-                                ? [wallpaperAppName.text, wallpaperAppLink.text, wallpaperAppWallName.text]
-                                : wallpaperUrl.text,
+                            ? [wallpaperAppName.text, wallpaperAppLink.text, wallpaperAppWallName.text]
+                            : wallpaperUrl.text,
                         iconName.text,
                         iconURL.text,
                         widgetName1.text,
@@ -279,8 +265,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               style: TextStyle(
                 color: !isProcessing && !isUploading
                     ? Theme.of(context).colorScheme.error == Colors.black
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.error
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.error
                     : Theme.of(context).hintColor,
                 fontWeight: FontWeight.normal,
               ),
@@ -288,133 +274,134 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           ),
         ],
       ),
-      body: ListView(children: [
-        Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                radius: 20,
-                child: ClipOval(child: Image.network(globals.prismUser.profilePhoto)),
+      body: ListView(
+        children: [
+          Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: CircleAvatar(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  radius: 20,
+                  child: ClipOval(child: Image.network(globals.prismUser.profilePhoto)),
+                ),
               ),
-            ),
-            const Spacer(),
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 0.4,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: setupName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.normal,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: "* Write setup Name...",
-                      hintText: "* Write setup Name...",
-                      hintStyle: TextStyle(
+              const Spacer(),
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: setupName,
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.normal,
                         color: Theme.of(context).colorScheme.secondary,
                       ),
-                      labelStyle: TextStyle(
+                      decoration: InputDecoration(
+                        labelText: "* Write setup Name...",
+                        hintText: "* Write setup Name...",
+                        hintStyle: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        labelStyle: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        floatingLabelBehavior: FloatingLabelBehavior.never,
+                        border: InputBorder.none,
+                      ),
+                    ),
+                    TextField(
+                      maxLines: 2,
+                      controller: setupDesc,
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.normal,
                         color: Theme.of(context).colorScheme.secondary,
                       ),
-                      floatingLabelBehavior: FloatingLabelBehavior.never,
-                      border: InputBorder.none,
-                    ),
-                  ),
-                  TextField(
-                    maxLines: 2,
-                    controller: setupDesc,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.normal,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: "* Write a description... (50 chars only)",
-                      hintText: "* Write a description... (50 chars only)",
-                      hintStyle: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.normal,
-                        color: Theme.of(context).colorScheme.secondary,
+                      decoration: InputDecoration(
+                        labelText: "* Write a description... (50 chars only)",
+                        hintText: "* Write a description... (50 chars only)",
+                        hintStyle: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        labelStyle: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        floatingLabelBehavior: FloatingLabelBehavior.never,
+                        border: InputBorder.none,
                       ),
-                      labelStyle: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.normal,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                      floatingLabelBehavior: FloatingLabelBehavior.never,
-                      border: InputBorder.none,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Spacer(flex: 10),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
+              const Spacer(flex: 10),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
                     context,
                     CupertinoPageRoute(
-                        builder: (context) => PhotoView(
-                              onTapUp: (context, details, controller) {
-                                Navigator.pop(context);
-                              },
-                              imageProvider: FileImage(image),
-                            ),
-                        fullscreenDialog: true));
-              },
-              child: Stack(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(20.0),
-                    height: 200,
-                    width: 120,
-                    child: Image.file(image, fit: BoxFit.contain),
-                  ),
-                  if (isUploading || isProcessing)
+                      builder: (context) => PhotoView(
+                        onTapUp: (context, details, controller) {
+                          Navigator.pop(context);
+                        },
+                        imageProvider: FileImage(image),
+                      ),
+                      fullscreenDialog: true,
+                    ),
+                  );
+                },
+                child: Stack(
+                  children: [
                     Container(
                       padding: const EdgeInsets.all(20.0),
                       height: 200,
                       width: 120,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
+                      child: Image.file(image, fit: BoxFit.contain),
+                    ),
+                    if (isUploading || isProcessing)
+                      Container(
+                        padding: const EdgeInsets.all(20.0),
+                        height: 200,
+                        width: 120,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
+                          ),
                         ),
-                      ),
-                    )
-                  else
-                    Container(),
-                ],
+                      )
+                    else
+                      Container(),
+                  ],
+                ),
               ),
-            )
-          ],
-        ),
-        const Divider(
-          height: 1,
-        ),
-        ExpansionTile(
-          title: Text(
-            "Add widgets, icon packs",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.normal,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            ],
           ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CupertinoSegmentedControl(
+          const Divider(height: 1),
+          ExpansionTile(
+            title: Text(
+              "Add widgets, icon packs",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.normal,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CupertinoSegmentedControl(
                   children: widgetsIcons,
                   groupValue: groupWidgetValue,
                   borderColor: Theme.of(context).colorScheme.secondary,
@@ -426,88 +413,25 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                     setState(() {
                       groupWidgetValue = val;
                     });
-                  }),
-            ),
-            if (groupWidgetValue == 0)
-              Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    child: Container(
-                      decoration:
-                          BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                      child: TextField(
-                        cursorColor: Theme.of(context).colorScheme.error,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall!
-                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                        controller: widgetName1,
-                        focusNode: textFocusNode,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                          border: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          hintText: "Write widget app name...",
-                          hintStyle: Theme.of(context)
-                              .textTheme
-                              .headlineSmall!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
-                          suffixIcon: Icon(
-                            JamIcons.android,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    child: Container(
-                      decoration:
-                          BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                      child: TextField(
-                        cursorColor: Theme.of(context).colorScheme.error,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall!
-                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                        controller: widgetURL1,
-                        focusNode: textFocusNode,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                          border: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          hintText: "Write widget app link...",
-                          hintStyle: Theme.of(context)
-                              .textTheme
-                              .headlineSmall!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
-                          suffixIcon: Icon(
-                            JamIcons.google_play,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (secondWidgetAdded == true)
+                  },
+                ),
+              ),
+              if (groupWidgetValue == 0)
+                Column(
+                  children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                       child: Container(
-                        decoration:
-                            BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(500),
+                          color: Theme.of(context).hintColor,
+                        ),
                         child: TextField(
                           cursorColor: Theme.of(context).colorScheme.error,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
-                          controller: widgetName2,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                          controller: widgetName1,
                           focusNode: textFocusNode,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -515,40 +439,133 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             disabledBorder: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
-                            hintText: "Write 2nd widget app name...",
-                            hintStyle: Theme.of(context)
-                                .textTheme
-                                .headlineSmall!
-                                .copyWith(color: Theme.of(context).colorScheme.secondary),
-                            suffixIcon: Icon(
-                              JamIcons.android,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                            hintText: "Write widget app name...",
+                            hintStyle: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            suffixIcon: Icon(JamIcons.android, color: Theme.of(context).colorScheme.secondary),
                           ),
                         ),
                       ),
-                    )
-                  else
-                    TextButton(
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(500),
+                          color: Theme.of(context).hintColor,
+                        ),
+                        child: TextField(
+                          cursorColor: Theme.of(context).colorScheme.error,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                          controller: widgetURL1,
+                          focusNode: textFocusNode,
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Write widget app link...",
+                            hintStyle: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            suffixIcon: Icon(JamIcons.google_play, color: Theme.of(context).colorScheme.secondary),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (secondWidgetAdded == true)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(500),
+                            color: Theme.of(context).hintColor,
+                          ),
+                          child: TextField(
+                            cursorColor: Theme.of(context).colorScheme.error,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            controller: widgetName2,
+                            focusNode: textFocusNode,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                              border: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              hintText: "Write 2nd widget app name...",
+                              hintStyle: Theme.of(
+                                context,
+                              ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                              suffixIcon: Icon(JamIcons.android, color: Theme.of(context).colorScheme.secondary),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      TextButton(
                         onPressed: () {
                           setState(() {
                             secondWidgetAdded = true;
                           });
                         },
-                        child: Text("Add more widget", style: Theme.of(context).textTheme.bodyMedium)),
-                  if (secondWidgetAdded == true)
+                        child: Text("Add more widget", style: Theme.of(context).textTheme.bodyMedium),
+                      ),
+                    if (secondWidgetAdded == true)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(500),
+                            color: Theme.of(context).hintColor,
+                          ),
+                          child: TextField(
+                            cursorColor: Theme.of(context).colorScheme.error,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            controller: widgetURL2,
+                            focusNode: textFocusNode,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                              border: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              hintText: "Write 2nd widget app link...",
+                              hintStyle: Theme.of(
+                                context,
+                              ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                              suffixIcon: Icon(JamIcons.google_play, color: Theme.of(context).colorScheme.secondary),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(),
+                  ],
+                )
+              else
+                Column(
+                  children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                       child: Container(
-                        decoration:
-                            BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(500),
+                          color: Theme.of(context).hintColor,
+                        ),
                         child: TextField(
                           cursorColor: Theme.of(context).colorScheme.error,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
-                          controller: widgetURL2,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                          controller: iconName,
                           focusNode: textFocusNode,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -556,320 +573,266 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             disabledBorder: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
-                            hintText: "Write 2nd widget app link...",
-                            hintStyle: Theme.of(context)
-                                .textTheme
-                                .headlineSmall!
-                                .copyWith(color: Theme.of(context).colorScheme.secondary),
-                            suffixIcon: Icon(
-                              JamIcons.google_play,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    Container()
-                ],
-              )
-            else
-              Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    child: Container(
-                      decoration:
-                          BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                      child: TextField(
-                        cursorColor: Theme.of(context).colorScheme.error,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall!
-                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                        controller: iconName,
-                        focusNode: textFocusNode,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                          border: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          hintText: "Write icon pack name...",
-                          hintStyle: Theme.of(context)
-                              .textTheme
-                              .headlineSmall!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              bool fetched = false;
-                              bool loading = true;
-                              List icons = [];
-                              List allIcons = [];
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(24),
-                                    topRight: Radius.circular(24),
+                            hintText: "Write icon pack name...",
+                            hintStyle: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                bool fetched = false;
+                                bool loading = true;
+                                List icons = [];
+                                List allIcons = [];
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(24),
+                                      topRight: Radius.circular(24),
+                                    ),
                                   ),
-                                ),
-                                builder: (context) => GestureDetector(
-                                  onTap: () => Navigator.of(context).pop(),
-                                  child: ColoredBox(
+                                  builder: (context) => GestureDetector(
+                                    onTap: () => Navigator.of(context).pop(),
+                                    child: ColoredBox(
                                       color: const Color.fromRGBO(0, 0, 0, 0.001),
                                       child: GestureDetector(
-                                          onTap: () {},
-                                          child: DraggableScrollableSheet(
-                                            initialChildSize: 0.8,
-                                            minChildSize: 0.4,
-                                            builder: (context, controller) => StatefulBuilder(
-                                              builder: (BuildContext context, StateSetter setState) {
-                                                if (!fetched) {
-                                                  final Box box = Hive.box('appsCache');
-                                                  setState(() {
-                                                    fetched = true;
-                                                    icons = (box.get('icons', defaultValue: {}) as Map).values.toList();
-                                                    allIcons =
-                                                        (box.get('icons', defaultValue: {}) as Map).values.toList();
-                                                    if (icons.isNotEmpty) {
-                                                      loading = false;
-                                                    }
-                                                  });
-                                                  getIcons().then((value) => setState(() {
-                                                        icons = value;
-                                                        allIcons = value;
-                                                        loading = false;
-                                                      }));
-                                                }
-                                                return Container(
-                                                  decoration: BoxDecoration(
-                                                    color: Theme.of(context).primaryColor,
-                                                    borderRadius: const BorderRadius.only(
-                                                      topLeft: Radius.circular(24),
-                                                      topRight: Radius.circular(24),
-                                                    ),
-                                                  ),
-                                                  child: Column(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Center(
-                                                          child: Container(
-                                                            margin: const EdgeInsets.all(16.0),
-                                                            width: 32,
-                                                            height: 6,
-                                                            decoration: BoxDecoration(
-                                                              color: Theme.of(context)
-                                                                  .textTheme
-                                                                  .bodyLarge!
-                                                                  .color!
-                                                                  .withValues(alpha: 0.1),
-                                                              borderRadius: BorderRadius.circular(5000),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        if (loading)
-                                                          const Padding(
-                                                            padding: EdgeInsets.all(16.0),
-                                                            child: Center(
-                                                              child: CircularProgressIndicator(),
-                                                            ),
-                                                          )
-                                                        else
-                                                          Column(
-                                                            mainAxisSize: MainAxisSize.min,
-                                                            children: [
-                                                              Padding(
-                                                                padding: const EdgeInsets.all(16.0),
-                                                                child: TextField(
-                                                                  onSubmitted: (query) {
-                                                                    query = query.toLowerCase();
-                                                                    icons = allIcons;
-                                                                    if (query != '') {
-                                                                      icons = icons
-                                                                          .where((e) => (e as Map)["name"]
-                                                                              .toString()
-                                                                              .trim()
-                                                                              .toLowerCase()
-                                                                              .contains(query))
-                                                                          .toList();
-                                                                    }
-                                                                    setState(() => {});
-                                                                  },
-                                                                  onChanged: (query) {
-                                                                    query = query.toLowerCase();
-                                                                    icons = allIcons;
-                                                                    if (query != '') {
-                                                                      icons = icons
-                                                                          .where((e) => (e as Map)["name"]
-                                                                              .toString()
-                                                                              .trim()
-                                                                              .toLowerCase()
-                                                                              .contains(query))
-                                                                          .toList();
-                                                                    }
-                                                                    setState(() => {});
-                                                                  },
-                                                                  style: Theme.of(context)
-                                                                      .textTheme
-                                                                      .bodyLarge!
-                                                                      .copyWith(fontSize: 16),
-                                                                  decoration: InputDecoration(
-                                                                    prefixIcon: const Icon(Icons.search),
-                                                                    hintText: "Search Icons",
-                                                                    hintStyle:
-                                                                        Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                              fontSize: 16,
-                                                                              color: Theme.of(context)
-                                                                                  .textTheme
-                                                                                  .bodyLarge!
-                                                                                  .color!
-                                                                                  .withValues(alpha: 0.6),
-                                                                            ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              SizedBox(
-                                                                height: MediaQuery.of(context).size.height * 1 - 119,
-                                                                child: ListView.separated(
-                                                                  separatorBuilder: (context, index) => const Divider(
-                                                                    height: 2,
-                                                                  ),
-                                                                  shrinkWrap: true,
-                                                                  controller: controller,
-                                                                  itemCount: icons.length + 1,
-                                                                  itemBuilder: (context, index) => (index ==
-                                                                          icons.length)
-                                                                      ? const ListTile(
-                                                                          title: SizedBox(
-                                                                            height: 60,
-                                                                          ),
-                                                                        )
-                                                                      : ListTile(
-                                                                          onTap: () {
-                                                                            iconName.text =
-                                                                                (icons[index] as Map)["name"]
-                                                                                    .toString()
-                                                                                    .trim();
-                                                                            iconURL.text = (icons[index] as Map)["link"]
-                                                                                .toString()
-                                                                                .trim();
-                                                                            Navigator.pop(context);
-                                                                          },
-                                                                          leading: ClipRRect(
-                                                                            borderRadius: BorderRadius.circular(8),
-                                                                            child: CachedNetworkImage(
-                                                                              imageUrl: (icons[index] as Map)["icon"]
-                                                                                  .toString(),
-                                                                              width: 38,
-                                                                              height: 38,
-                                                                              fit: BoxFit.cover,
-                                                                            ),
-                                                                          ),
-                                                                          title: Text(
-                                                                            (icons[index] as Map)["name"]
-                                                                                .toString()
-                                                                                .trim(),
-                                                                            style: TextStyle(
-                                                                              color: Theme.of(context)
-                                                                                  .colorScheme
-                                                                                  .secondary,
-                                                                              fontSize: 16,
-                                                                              fontFamily: "Proxima Nova",
-                                                                              fontWeight: FontWeight.normal,
-                                                                            ),
-                                                                          ),
-                                                                          subtitle: Text(
-                                                                            (icons[index] as Map)["id"]
-                                                                                .toString()
-                                                                                .trim(),
-                                                                            style: TextStyle(
-                                                                              color: Theme.of(context)
-                                                                                  .colorScheme
-                                                                                  .secondary
-                                                                                  .withValues(alpha: 0.5),
-                                                                              fontSize: 12,
-                                                                              fontFamily: "Proxima Nova",
-                                                                              fontWeight: FontWeight.normal,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                ),
-                                                              )
-                                                            ],
-                                                          ),
-                                                      ]),
+                                        onTap: () {},
+                                        child: DraggableScrollableSheet(
+                                          initialChildSize: 0.8,
+                                          minChildSize: 0.4,
+                                          builder: (context, controller) => StatefulBuilder(
+                                            builder: (BuildContext context, StateSetter setState) {
+                                              if (!fetched) {
+                                                final Box box = Hive.box('appsCache');
+                                                setState(() {
+                                                  fetched = true;
+                                                  icons = (box.get('icons', defaultValue: {}) as Map).values.toList();
+                                                  allIcons = (box.get('icons', defaultValue: {}) as Map).values
+                                                      .toList();
+                                                  if (icons.isNotEmpty) {
+                                                    loading = false;
+                                                  }
+                                                });
+                                                getIcons().then(
+                                                  (value) => setState(() {
+                                                    icons = value;
+                                                    allIcons = value;
+                                                    loading = false;
+                                                  }),
                                                 );
-                                              },
-                                            ),
-                                          ))),
-                                ),
-                              );
-                            },
-                            icon: Icon(
-                              JamIcons.search,
+                                              }
+                                              return Container(
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context).primaryColor,
+                                                  borderRadius: const BorderRadius.only(
+                                                    topLeft: Radius.circular(24),
+                                                    topRight: Radius.circular(24),
+                                                  ),
+                                                ),
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Center(
+                                                      child: Container(
+                                                        margin: const EdgeInsets.all(16.0),
+                                                        width: 32,
+                                                        height: 6,
+                                                        decoration: BoxDecoration(
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).textTheme.bodyLarge!.color!.withValues(alpha: 0.1),
+                                                          borderRadius: BorderRadius.circular(5000),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    if (loading)
+                                                      const Padding(
+                                                        padding: EdgeInsets.all(16.0),
+                                                        child: Center(child: CircularProgressIndicator()),
+                                                      )
+                                                    else
+                                                      Column(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          Padding(
+                                                            padding: const EdgeInsets.all(16.0),
+                                                            child: TextField(
+                                                              onSubmitted: (query) {
+                                                                query = query.toLowerCase();
+                                                                icons = allIcons;
+                                                                if (query != '') {
+                                                                  icons = icons
+                                                                      .where(
+                                                                        (e) => (e as Map)["name"]
+                                                                            .toString()
+                                                                            .trim()
+                                                                            .toLowerCase()
+                                                                            .contains(query),
+                                                                      )
+                                                                      .toList();
+                                                                }
+                                                                setState(() => {});
+                                                              },
+                                                              onChanged: (query) {
+                                                                query = query.toLowerCase();
+                                                                icons = allIcons;
+                                                                if (query != '') {
+                                                                  icons = icons
+                                                                      .where(
+                                                                        (e) => (e as Map)["name"]
+                                                                            .toString()
+                                                                            .trim()
+                                                                            .toLowerCase()
+                                                                            .contains(query),
+                                                                      )
+                                                                      .toList();
+                                                                }
+                                                                setState(() => {});
+                                                              },
+                                                              style: Theme.of(
+                                                                context,
+                                                              ).textTheme.bodyLarge!.copyWith(fontSize: 16),
+                                                              decoration: InputDecoration(
+                                                                prefixIcon: const Icon(Icons.search),
+                                                                hintText: "Search Icons",
+                                                                hintStyle: Theme.of(context).textTheme.bodyLarge!
+                                                                    .copyWith(
+                                                                      fontSize: 16,
+                                                                      color: Theme.of(context)
+                                                                          .textTheme
+                                                                          .bodyLarge!
+                                                                          .color!
+                                                                          .withValues(alpha: 0.6),
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          SizedBox(
+                                                            height: MediaQuery.of(context).size.height * 1 - 119,
+                                                            child: ListView.separated(
+                                                              separatorBuilder: (context, index) =>
+                                                                  const Divider(height: 2),
+                                                              shrinkWrap: true,
+                                                              controller: controller,
+                                                              itemCount: icons.length + 1,
+                                                              itemBuilder: (context, index) => (index == icons.length)
+                                                                  ? const ListTile(title: SizedBox(height: 60))
+                                                                  : ListTile(
+                                                                      onTap: () {
+                                                                        iconName.text = (icons[index] as Map)["name"]
+                                                                            .toString()
+                                                                            .trim();
+                                                                        iconURL.text = (icons[index] as Map)["link"]
+                                                                            .toString()
+                                                                            .trim();
+                                                                        Navigator.pop(context);
+                                                                      },
+                                                                      leading: ClipRRect(
+                                                                        borderRadius: BorderRadius.circular(8),
+                                                                        child: CachedNetworkImage(
+                                                                          imageUrl: (icons[index] as Map)["icon"]
+                                                                              .toString(),
+                                                                          width: 38,
+                                                                          height: 38,
+                                                                          fit: BoxFit.cover,
+                                                                        ),
+                                                                      ),
+                                                                      title: Text(
+                                                                        (icons[index] as Map)["name"].toString().trim(),
+                                                                        style: TextStyle(
+                                                                          color: Theme.of(
+                                                                            context,
+                                                                          ).colorScheme.secondary,
+                                                                          fontSize: 16,
+                                                                          fontFamily: "Proxima Nova",
+                                                                          fontWeight: FontWeight.normal,
+                                                                        ),
+                                                                      ),
+                                                                      subtitle: Text(
+                                                                        (icons[index] as Map)["id"].toString().trim(),
+                                                                        style: TextStyle(
+                                                                          color: Theme.of(context).colorScheme.secondary
+                                                                              .withValues(alpha: 0.5),
+                                                                          fontSize: 12,
+                                                                          fontFamily: "Proxima Nova",
+                                                                          fontWeight: FontWeight.normal,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(500),
+                          color: Theme.of(context).hintColor,
+                        ),
+                        child: TextField(
+                          cursorColor: Theme.of(context).colorScheme.error,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                          controller: iconURL,
+                          focusNode: textFocusNode,
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Write icon app link...",
+                            hintStyle: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            suffixIcon: Icon(
+                              JamIcons.google_play_circle,
                               color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    child: Container(
-                      decoration:
-                          BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                      child: TextField(
-                        cursorColor: Theme.of(context).colorScheme.error,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall!
-                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                        controller: iconURL,
-                        focusNode: textFocusNode,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                          border: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          hintText: "Write icon app link...",
-                          hintStyle: Theme.of(context)
-                              .textTheme
-                              .headlineSmall!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
-                          suffixIcon: Icon(
-                            JamIcons.google_play_circle,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-        const Divider(
-          height: 1,
-        ),
-        ExpansionTile(
-          title: Text(
-            "* Add wallpaper",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.normal,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+                  ],
+                ),
+            ],
           ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CupertinoSegmentedControl(
+          const Divider(height: 1),
+          ExpansionTile(
+            title: Text(
+              "* Add wallpaper",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.normal,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CupertinoSegmentedControl(
                   children: logoWidgets,
                   groupValue: groupValue,
                   borderColor: Theme.of(context).colorScheme.secondary,
@@ -881,225 +844,212 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                     setState(() {
                       groupValue = val;
                     });
-                  }),
-            ),
-            if (groupValue == 0)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                child: Container(
-                  decoration:
-                      BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                  child: TextField(
-                    cursorColor: Theme.of(context).colorScheme.error,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall!
-                        .copyWith(color: Theme.of(context).colorScheme.secondary),
-                    controller: wallpaperUrl,
-                    focusNode: textFocusNode,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                      border: InputBorder.none,
-                      disabledBorder: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      hintText: "Write wallpaper link...",
-                      hintStyle: Theme.of(context)
-                          .textTheme
-                          .headlineSmall!
-                          .copyWith(color: Theme.of(context).colorScheme.secondary),
-                      suffixIcon: Icon(
-                        JamIcons.picture,
-                        color: Theme.of(context).colorScheme.secondary,
+                  },
+                ),
+              ),
+              if (groupValue == 0)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(500),
+                      color: Theme.of(context).hintColor,
+                    ),
+                    child: TextField(
+                      cursorColor: Theme.of(context).colorScheme.error,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                      controller: wallpaperUrl,
+                      focusNode: textFocusNode,
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                        border: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        hintText: "Write wallpaper link...",
+                        hintStyle: Theme.of(
+                          context,
+                        ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                        suffixIcon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary),
                       ),
                     ),
                   ),
-                ),
-              )
-            else
-              groupValue == 1
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                      child: FloatingActionButton.extended(
-                        backgroundColor: wallpaperUploaded == true
-                            ? Theme.of(context).hintColor
-                            : Theme.of(context).colorScheme.error,
-                        onPressed: wallpaperUploaded == true
-                            ? null
-                            : () async {
-                                final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-                                if (pickedFile != null) {
-                                  Future.delayed(Duration.zero).then((value) async {
-                                    final argumentsFromWall = await context.router
-                                        .push(UploadWallRoute(arguments: [File(pickedFile.path), true]));
-                                    if (argumentsFromWall != null) {
-                                      final List argsC = argumentsFromWall as List;
-                                      if (argsC.length == 2) {
-                                        setState(() {
-                                          wallpaperUploadLink = argsC[0].toString();
-                                          wallpaperId = argsC[1].toString();
-                                          wallpaperUploaded = true;
-                                        });
+                )
+              else
+                groupValue == 1
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        child: FloatingActionButton.extended(
+                          backgroundColor: wallpaperUploaded == true
+                              ? Theme.of(context).hintColor
+                              : Theme.of(context).colorScheme.error,
+                          onPressed: wallpaperUploaded == true
+                              ? null
+                              : () async {
+                                  final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+                                  if (pickedFile != null) {
+                                    Future.delayed(Duration.zero).then((value) async {
+                                      final argumentsFromWall = await context.router.push(
+                                        UploadWallRoute(arguments: [File(pickedFile.path), true]),
+                                      );
+                                      if (argumentsFromWall != null) {
+                                        final List argsC = argumentsFromWall as List;
+                                        if (argsC.length == 2) {
+                                          setState(() {
+                                            wallpaperUploadLink = argsC[0].toString();
+                                            wallpaperId = argsC[1].toString();
+                                            wallpaperUploaded = true;
+                                          });
+                                        }
                                       }
-                                    }
-                                  });
-                                }
-                              },
-                        label: Text(
-                          wallpaperUploaded == true ? "Uploaded" : "Upload",
-                          style:
-                              TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.normal),
+                                    });
+                                  }
+                                },
+                          label: Text(
+                            wallpaperUploaded == true ? "Uploaded" : "Upload",
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                          icon: Icon(JamIcons.upload, color: Theme.of(context).colorScheme.secondary),
                         ),
-                        icon: Icon(
-                          JamIcons.upload,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
+                      )
+                    : Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(500),
+                                color: Theme.of(context).hintColor,
+                              ),
+                              child: TextField(
+                                cursorColor: Theme.of(context).colorScheme.error,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                controller: wallpaperAppName,
+                                focusNode: textFocusNode,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                                  border: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  hintText: "Write wallpaper app name...",
+                                  hintStyle: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                  suffixIcon: Icon(JamIcons.android, color: Theme.of(context).colorScheme.secondary),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(500),
+                                color: Theme.of(context).hintColor,
+                              ),
+                              child: TextField(
+                                cursorColor: Theme.of(context).colorScheme.error,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                controller: wallpaperAppLink,
+                                focusNode: textFocusNode,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                                  border: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  hintText: "Write app link...",
+                                  hintStyle: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                  suffixIcon: Icon(
+                                    JamIcons.google_play,
+                                    color: Theme.of(context).colorScheme.secondary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(500),
+                                color: Theme.of(context).hintColor,
+                              ),
+                              child: TextField(
+                                cursorColor: Theme.of(context).colorScheme.error,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                controller: wallpaperAppWallName,
+                                focusNode: textFocusNode,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                                  border: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  hintText: "Write wallpaper name",
+                                  hintStyle: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                  suffixIcon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    )
-                  : Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                            child: TextField(
-                              cursorColor: Theme.of(context).colorScheme.error,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall!
-                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
-                              controller: wallpaperAppName,
-                              focusNode: textFocusNode,
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                                border: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                hintText: "Write wallpaper app name...",
-                                hintStyle: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall!
-                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                suffixIcon: Icon(
-                                  JamIcons.android,
-                                  color: Theme.of(context).colorScheme.secondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                            child: TextField(
-                              cursorColor: Theme.of(context).colorScheme.error,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall!
-                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
-                              controller: wallpaperAppLink,
-                              focusNode: textFocusNode,
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                                border: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                hintText: "Write app link...",
-                                hintStyle: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall!
-                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                suffixIcon: Icon(
-                                  JamIcons.google_play,
-                                  color: Theme.of(context).colorScheme.secondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                            child: TextField(
-                              cursorColor: Theme.of(context).colorScheme.error,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall!
-                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
-                              controller: wallpaperAppWallName,
-                              focusNode: textFocusNode,
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                                border: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                hintText: "Write wallpaper name",
-                                hintStyle: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall!
-                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                suffixIcon: Icon(
-                                  JamIcons.picture,
-                                  color: Theme.of(context).colorScheme.secondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-          ],
-        ),
-        const Divider(
-          height: 1,
-        ),
-        ListTile(
-          title: Text(
-            "Fields marked with * are required.",
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w100,
-              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+            ],
+          ),
+          const Divider(height: 1),
+          ListTile(
+            title: Text(
+              "Fields marked with * are required.",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w100,
+                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+              ),
             ),
           ),
-        ),
-        const Divider(
-          height: 1,
-        ),
-        ListTile(
-          title: Text(
-            "If you are using a wallpaper from Prism, just click link and paste the share link of wallpaper there.",
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w100,
-              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+          const Divider(height: 1),
+          ListTile(
+            title: Text(
+              "If you are using a wallpaper from Prism, just click link and paste the share link of wallpaper there.",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w100,
+                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+              ),
             ),
           ),
-        ),
-        const Divider(
-          height: 1,
-        ),
-        ListTile(
-          title: Text(
-            globals.prismUser.premium == true
-                ? "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. Your setup will be visible in the setups section."
-                : "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your setup will be visible in the setups section.",
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w100,
-              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+          const Divider(height: 1),
+          ListTile(
+            title: Text(
+              globals.prismUser.premium == true
+                  ? "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. Your setup will be visible in the setups section."
+                  : "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your setup will be visible in the setups section.",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w100,
+                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+              ),
             ),
           ),
-        )
-      ]),
+        ],
+      ),
     );
   }
 }

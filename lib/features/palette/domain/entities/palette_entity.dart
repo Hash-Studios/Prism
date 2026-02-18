@@ -1,9 +1,5 @@
 class PaletteEntity {
-  const PaletteEntity({
-    required this.imageUrl,
-    required this.dominantColorValue,
-    required this.paletteColorValues,
-  });
+  const PaletteEntity({required this.imageUrl, required this.dominantColorValue, required this.paletteColorValues});
 
   final String imageUrl;
   final int dominantColorValue;

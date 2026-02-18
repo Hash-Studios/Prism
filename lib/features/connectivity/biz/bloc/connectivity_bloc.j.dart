@@ -14,10 +14,7 @@ part 'connectivity_bloc.j.freezed.dart';
 
 @injectable
 class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
-  ConnectivityBloc(
-    this._checkConnectionUseCase,
-    this._watchConnectionUseCase,
-  ) : super(ConnectivityState.initial()) {
+  ConnectivityBloc(this._checkConnectionUseCase, this._watchConnectionUseCase) : super(ConnectivityState.initial()) {
     on<_Started>(_onStarted);
     on<_StatusChanged>(_onStatusChanged);
     on<_RecheckRequested>(_onRecheckRequested);
@@ -33,19 +30,17 @@ class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
     final result = await _checkConnectionUseCase(const NoParams());
     result.fold(
       onSuccess: (connectivity) {
-        emit(state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          connectivity: connectivity,
-          failure: null,
-        ));
+        emit(
+          state.copyWith(
+            status: LoadStatus.success,
+            actionStatus: ActionStatus.success,
+            connectivity: connectivity,
+            failure: null,
+          ),
+        );
       },
       onFailure: (failure) {
-        emit(state.copyWith(
-          status: LoadStatus.failure,
-          actionStatus: ActionStatus.failure,
-          failure: failure,
-        ));
+        emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure));
       },
     );
 
@@ -56,18 +51,17 @@ class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
   }
 
   void _onStatusChanged(_StatusChanged event, Emitter<ConnectivityState> emit) {
-    emit(state.copyWith(
-      status: LoadStatus.success,
-      actionStatus: ActionStatus.success,
-      connectivity: event.connectivity,
-      failure: null,
-    ));
+    emit(
+      state.copyWith(
+        status: LoadStatus.success,
+        actionStatus: ActionStatus.success,
+        connectivity: event.connectivity,
+        failure: null,
+      ),
+    );
   }
 
-  Future<void> _onRecheckRequested(
-    _RecheckRequested event,
-    Emitter<ConnectivityState> emit,
-  ) {
+  Future<void> _onRecheckRequested(_RecheckRequested event, Emitter<ConnectivityState> emit) {
     add(const ConnectivityEvent.started());
     return Future<void>.value();
   }

@@ -38,9 +38,7 @@ void main() {
     observeUseCase = _MockObserveDeepLinkActionsUseCase();
     controller = StreamController<DeepLinkActionEntity>.broadcast();
 
-    when(() => getInitialUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(initialAction),
-    );
+    when(() => getInitialUseCase(const NoParams())).thenAnswer((_) async => Result.success(initialAction));
 
     when(() => observeUseCase()).thenAnswer((_) => controller.stream);
   });

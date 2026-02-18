@@ -27,9 +27,7 @@ class SafeRiveAsset extends StatelessWidget {
             tag: 'Rive',
             error: snapshot.error,
             stackTrace: snapshot.stackTrace,
-            fields: <String, Object?>{
-              'asset': assetName,
-            },
+            fields: <String, Object?>{'asset': assetName},
           );
           return fallback ?? const SizedBox.shrink();
         }
@@ -37,11 +35,7 @@ class SafeRiveAsset extends StatelessWidget {
         if (file == null) {
           return fallback ?? const SizedBox.shrink();
         }
-        return RiveAnimation.direct(
-          file,
-          fit: fit,
-          animations: animations,
-        );
+        return RiveAnimation.direct(file, fit: fit, animations: animations);
       },
     );
   }

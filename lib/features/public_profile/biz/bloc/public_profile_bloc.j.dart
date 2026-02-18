@@ -43,31 +43,23 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     await _loadAll(emit: emit, refresh: true);
   }
 
-  Future<void> _onRefreshRequested(
-    _RefreshRequested event,
-    Emitter<PublicProfileState> emit,
-  ) {
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<PublicProfileState> emit) {
     return _loadAll(emit: emit, refresh: true);
   }
 
-  Future<void> _loadAll({
-    required Emitter<PublicProfileState> emit,
-    required bool refresh,
-  }) async {
+  Future<void> _loadAll({required Emitter<PublicProfileState> emit, required bool refresh}) async {
     if (state.email.isEmpty) {
-      emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: const ValidationFailure('email is required'),
-      ));
+      emit(
+        state.copyWith(
+          status: LoadStatus.failure,
+          actionStatus: ActionStatus.failure,
+          failure: const ValidationFailure('email is required'),
+        ),
+      );
       return;
     }
 
-    emit(state.copyWith(
-      status: LoadStatus.loading,
-      actionStatus: ActionStatus.inProgress,
-      failure: null,
-    ));
+    emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress, failure: null));
 
     final profileResult = await _fetchPublicProfileUseCase(FetchPublicProfileParams(email: state.email));
     final wallsResult = await _fetchPublicProfileWallsUseCase(
@@ -78,11 +70,9 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     );
 
     if (profileResult.isFailure) {
-      emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: profileResult.failure,
-      ));
+      emit(
+        state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: profileResult.failure),
+      );
       return;
     }
 
@@ -91,26 +81,25 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     final walls = wallsResult.data?.items ?? state.walls;
     final setups = setupsResult.data?.items ?? state.setups;
 
-    emit(state.copyWith(
-      status: LoadStatus.success,
-      actionStatus: ActionStatus.success,
-      profile: profile,
-      walls: walls,
-      setups: setups,
-      hasMoreWalls: wallsResult.data?.hasMore ?? state.hasMoreWalls,
-      hasMoreSetups: setupsResult.data?.hasMore ?? state.hasMoreSetups,
-      wallsCursor: wallsResult.data?.nextCursor,
-      setupsCursor: setupsResult.data?.nextCursor,
-      isFetchingMoreWalls: false,
-      isFetchingMoreSetups: false,
-      failure: wallsResult.failure ?? setupsResult.failure,
-    ));
+    emit(
+      state.copyWith(
+        status: LoadStatus.success,
+        actionStatus: ActionStatus.success,
+        profile: profile,
+        walls: walls,
+        setups: setups,
+        hasMoreWalls: wallsResult.data?.hasMore ?? state.hasMoreWalls,
+        hasMoreSetups: setupsResult.data?.hasMore ?? state.hasMoreSetups,
+        wallsCursor: wallsResult.data?.nextCursor,
+        setupsCursor: setupsResult.data?.nextCursor,
+        isFetchingMoreWalls: false,
+        isFetchingMoreSetups: false,
+        failure: wallsResult.failure ?? setupsResult.failure,
+      ),
+    );
   }
 
-  Future<void> _onFetchMoreWallsRequested(
-    _FetchMoreWallsRequested event,
-    Emitter<PublicProfileState> emit,
-  ) async {
+  Future<void> _onFetchMoreWallsRequested(_FetchMoreWallsRequested event, Emitter<PublicProfileState> emit) async {
     if (state.isFetchingMoreWalls || !state.hasMoreWalls) {
       return;
     }
@@ -127,27 +116,23 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);
 
-        emit(state.copyWith(
-          actionStatus: ActionStatus.success,
-          walls: deduped,
-          hasMoreWalls: page.hasMore,
-          wallsCursor: page.nextCursor,
-          isFetchingMoreWalls: false,
-          failure: null,
-        ));
+        emit(
+          state.copyWith(
+            actionStatus: ActionStatus.success,
+            walls: deduped,
+            hasMoreWalls: page.hasMore,
+            wallsCursor: page.nextCursor,
+            isFetchingMoreWalls: false,
+            failure: null,
+          ),
+        );
       },
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        isFetchingMoreWalls: false,
-        failure: failure,
-      )),
+      onFailure: (failure) =>
+          emit(state.copyWith(actionStatus: ActionStatus.failure, isFetchingMoreWalls: false, failure: failure)),
     );
   }
 
-  Future<void> _onFetchMoreSetupsRequested(
-    _FetchMoreSetupsRequested event,
-    Emitter<PublicProfileState> emit,
-  ) async {
+  Future<void> _onFetchMoreSetupsRequested(_FetchMoreSetupsRequested event, Emitter<PublicProfileState> emit) async {
     if (state.isFetchingMoreSetups || !state.hasMoreSetups) {
       return;
     }
@@ -164,32 +149,30 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);
 
-        emit(state.copyWith(
-          actionStatus: ActionStatus.success,
-          setups: deduped,
-          hasMoreSetups: page.hasMore,
-          setupsCursor: page.nextCursor,
-          isFetchingMoreSetups: false,
-          failure: null,
-        ));
+        emit(
+          state.copyWith(
+            actionStatus: ActionStatus.success,
+            setups: deduped,
+            hasMoreSetups: page.hasMore,
+            setupsCursor: page.nextCursor,
+            isFetchingMoreSetups: false,
+            failure: null,
+          ),
+        );
       },
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        isFetchingMoreSetups: false,
-        failure: failure,
-      )),
+      onFailure: (failure) =>
+          emit(state.copyWith(actionStatus: ActionStatus.failure, isFetchingMoreSetups: false, failure: failure)),
     );
   }
 
-  Future<void> _onFollowRequested(
-    _FollowRequested event,
-    Emitter<PublicProfileState> emit,
-  ) async {
+  Future<void> _onFollowRequested(_FollowRequested event, Emitter<PublicProfileState> emit) async {
     if (state.profile.id.isEmpty || state.profile.email.isEmpty) {
-      emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: const ValidationFailure('No target profile loaded'),
-      ));
+      emit(
+        state.copyWith(
+          actionStatus: ActionStatus.failure,
+          failure: const ValidationFailure('No target profile loaded'),
+        ),
+      );
       return;
     }
 
@@ -205,27 +188,19 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     );
 
     result.fold(
-      onSuccess: (profile) => emit(state.copyWith(
-        actionStatus: ActionStatus.success,
-        profile: profile,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (profile) => emit(state.copyWith(actionStatus: ActionStatus.success, profile: profile, failure: null)),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onUnfollowRequested(
-    _UnfollowRequested event,
-    Emitter<PublicProfileState> emit,
-  ) async {
+  Future<void> _onUnfollowRequested(_UnfollowRequested event, Emitter<PublicProfileState> emit) async {
     if (state.profile.id.isEmpty || state.profile.email.isEmpty) {
-      emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: const ValidationFailure('No target profile loaded'),
-      ));
+      emit(
+        state.copyWith(
+          actionStatus: ActionStatus.failure,
+          failure: const ValidationFailure('No target profile loaded'),
+        ),
+      );
       return;
     }
 
@@ -241,22 +216,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     );
 
     result.fold(
-      onSuccess: (profile) => emit(state.copyWith(
-        actionStatus: ActionStatus.success,
-        profile: profile,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (profile) => emit(state.copyWith(actionStatus: ActionStatus.success, profile: profile, failure: null)),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onLinksUpdated(
-    _LinksUpdated event,
-    Emitter<PublicProfileState> emit,
-  ) async {
+  Future<void> _onLinksUpdated(_LinksUpdated event, Emitter<PublicProfileState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
 
     final result = await _updatePublicProfileLinksUseCase(
@@ -264,15 +229,8 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     );
 
     result.fold(
-      onSuccess: (profile) => emit(state.copyWith(
-        actionStatus: ActionStatus.success,
-        profile: profile,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (profile) => emit(state.copyWith(actionStatus: ActionStatus.success, profile: profile, failure: null)),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 }

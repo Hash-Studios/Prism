@@ -16,10 +16,7 @@ void main() {
   group('AppLogger', () {
     test('filters events below minimum level', () {
       final _CollectingSink sink = _CollectingSink();
-      final AppLogger testLogger = AppLogger(
-        sink: sink,
-        minimumLevel: AppLogLevel.warn,
-      );
+      final AppLogger testLogger = AppLogger(sink: sink, minimumLevel: AppLogLevel.warn);
 
       testLogger.d('debug');
       testLogger.i('info');
@@ -33,22 +30,14 @@ void main() {
 
     test('keeps method compatibility with named metadata arguments', () {
       final _CollectingSink sink = _CollectingSink();
-      final AppLogger testLogger = AppLogger(
-        sink: sink,
-        minimumLevel: AppLogLevel.trace,
-      );
+      final AppLogger testLogger = AppLogger(sink: sink, minimumLevel: AppLogLevel.trace);
       final StackTrace stackTrace = StackTrace.current;
 
       testLogger.t('trace', tag: 'Boot');
       testLogger.d('debug', fields: const <String, Object?>{'phase': 1});
       testLogger.i('info', spanId: 'span-1');
       testLogger.w('warn', error: 'warning');
-      testLogger.e(
-        'error',
-        tag: 'Auth',
-        error: StateError('boom'),
-        stackTrace: stackTrace,
-      );
+      testLogger.e('error', tag: 'Auth', error: StateError('boom'), stackTrace: stackTrace);
       testLogger.f('fatal');
 
       expect(sink.records.length, 6);
@@ -69,10 +58,7 @@ void main() {
         level: AppLogLevel.info,
         message: 'Signed in',
         tag: 'Onboarding',
-        fields: const <String, Object?>{
-          'provider': 'google',
-          'attempt': 2,
-        },
+        fields: const <String, Object?>{'provider': 'google', 'attempt': 2},
       );
 
       final List<String> lines = formatter.format(record);

@@ -51,10 +51,7 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
       return DeepLinkActionEntity(
         type: DeepLinkActionType.setup,
         route: '/share-setup',
-        arguments: <dynamic>[
-          uri.queryParameters['name'],
-          uri.queryParameters['thumbUrl'],
-        ],
+        arguments: <dynamic>[uri.queryParameters['name'], uri.queryParameters['thumbUrl']],
         rawUri: uri.toString(),
       );
     }

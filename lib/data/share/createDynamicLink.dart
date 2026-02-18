@@ -10,21 +10,16 @@ import 'package:share_plus/share_plus.dart';
 
 Future<String> createDynamicLink(String id, String provider, String? url, String thumbUrl) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
-      socialMetaTagParameters: SocialMetaTagParameters(
-          title: "$id - Prism",
-          imageUrl: Uri.parse(thumbUrl),
-          description: "Check out this amazing wallpaper I got from Prism."),
-      uriPrefix: 'https://prismwallpapers.page.link',
-      link: Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider&url=$url&thumb=$thumbUrl'),
-      androidParameters: const AndroidParameters(
-        packageName: 'com.hash.prism',
-        minimumVersion: 1,
-      ),
-      iosParameters: const IOSParameters(
-        bundleId: 'com.hash.prism',
-        minimumVersion: '1.0.1',
-        appStoreId: '1405860595',
-      ));
+    socialMetaTagParameters: SocialMetaTagParameters(
+      title: "$id - Prism",
+      imageUrl: Uri.parse(thumbUrl),
+      description: "Check out this amazing wallpaper I got from Prism.",
+    ),
+    uriPrefix: 'https://prismwallpapers.page.link',
+    link: Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider&url=$url&thumb=$thumbUrl'),
+    androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
+    iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
+  );
   final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: "Hey check this out ➜ $shortUrl"));
@@ -36,21 +31,16 @@ Future<String> createDynamicLink(String id, String provider, String? url, String
 
 Future<void> createUserDynamicLink(String name, String username, String email, String bio, String userPhoto) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
-      socialMetaTagParameters: SocialMetaTagParameters(
-          title: "$name (@$username)",
-          imageUrl: Uri.parse(userPhoto),
-          description: bio != "" ? bio : "Check out my walls & setups on Prism."),
-      uriPrefix: 'https://prismwallpapers.page.link',
-      link: Uri.parse('http://prism.hash.com/user?email=$email'),
-      androidParameters: const AndroidParameters(
-        packageName: 'com.hash.prism',
-        minimumVersion: 1,
-      ),
-      iosParameters: const IOSParameters(
-        bundleId: 'com.hash.prism',
-        minimumVersion: '1.0.1',
-        appStoreId: '1405860595',
-      ));
+    socialMetaTagParameters: SocialMetaTagParameters(
+      title: "$name (@$username)",
+      imageUrl: Uri.parse(userPhoto),
+      description: bio != "" ? bio : "Check out my walls & setups on Prism.",
+    ),
+    uriPrefix: 'https://prismwallpapers.page.link',
+    link: Uri.parse('http://prism.hash.com/user?email=$email'),
+    androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
+    iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
+  );
   // final Uri shortUrl = await parameters.buildUrl();
   final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
   final Uri shortUrl = shortDynamicLink.shortUrl;
@@ -67,29 +57,21 @@ Future<void> createUserDynamicLink(String name, String username, String email, S
 
 Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
-      socialMetaTagParameters: SocialMetaTagParameters(
-          title: "$name - Prism",
-          imageUrl: Uri.parse(thumbUrl),
-          description: "Check out this amazing setup I got from Prism."),
-      uriPrefix: 'https://prismwallpapers.page.link',
-      link: Uri.parse('http://prism.hash.com/setup?index=$index&name=$name&thumbUrl=$thumbUrl'),
-      androidParameters: const AndroidParameters(
-        packageName: 'com.hash.prism',
-        minimumVersion: 1,
-      ),
-      iosParameters: const IOSParameters(
-        bundleId: 'com.hash.prism',
-        minimumVersion: '1.0.1',
-        appStoreId: '1405860595',
-      ));
+    socialMetaTagParameters: SocialMetaTagParameters(
+      title: "$name - Prism",
+      imageUrl: Uri.parse(thumbUrl),
+      description: "Check out this amazing setup I got from Prism.",
+    ),
+    uriPrefix: 'https://prismwallpapers.page.link',
+    link: Uri.parse('http://prism.hash.com/setup?index=$index&name=$name&thumbUrl=$thumbUrl'),
+    androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
+    iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
+  );
   final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
   SharePlus.instance.share(
-    ShareParams(
-      text: "Hey check this out ➜ $shortUrl",
-      sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
-    ),
+    ShareParams(text: "Hey check this out ➜ $shortUrl", sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
   );
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
   logger.d(shortUrl.toString());
@@ -97,21 +79,16 @@ Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) 
 
 Future<String> createSharingPrismLink(String userID) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
-      socialMetaTagParameters: SocialMetaTagParameters(
-          title: "Prism",
-          imageUrl: Uri.parse("https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"),
-          description: "Download Prism from my link to get 50 coins instantly!"),
-      uriPrefix: 'https://prismwallpapers.page.link',
-      link: Uri.parse('http://prism.hash.com/refer?userID=$userID'),
-      androidParameters: const AndroidParameters(
-        packageName: 'com.hash.prism',
-        minimumVersion: 1,
-      ),
-      iosParameters: const IOSParameters(
-        bundleId: 'com.hash.prism',
-        minimumVersion: '1.0.1',
-        appStoreId: '1405860595',
-      ));
+    socialMetaTagParameters: SocialMetaTagParameters(
+      title: "Prism",
+      imageUrl: Uri.parse("https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"),
+      description: "Download Prism from my link to get 50 coins instantly!",
+    ),
+    uriPrefix: 'https://prismwallpapers.page.link',
+    link: Uri.parse('http://prism.hash.com/refer?userID=$userID'),
+    androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
+    iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
+  );
   final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
   final Uri shortUrl = shortDynamicLink.shortUrl;
   analytics.logShare(contentType: 'prismShare', itemId: userID, method: 'link');
@@ -119,57 +96,53 @@ Future<String> createSharingPrismLink(String userID) async {
   return shortUrl.toString();
 }
 
-Future<String> createCopyrightLink(bool setup, BuildContext context,
-    {String? id, String? provider, String? url, String? thumbUrl, String? name, String? index}) async {
+Future<String> createCopyrightLink(
+  bool setup,
+  BuildContext context, {
+  String? id,
+  String? provider,
+  String? url,
+  String? thumbUrl,
+  String? name,
+  String? index,
+}) async {
   Uri shortUrl;
   if (setup == true) {
     final DynamicLinkParameters parameters = DynamicLinkParameters(
-        socialMetaTagParameters: SocialMetaTagParameters(
-            title: "$name - Prism",
-            imageUrl: Uri.parse(thumbUrl!),
-            description: "Check out this amazing setup I got from Prism."),
-        uriPrefix: 'https://prismwallpapers.page.link',
-        link: Uri.parse('http://prism.hash.com/setup?index=$index&name=$name&thumbUrl=$thumbUrl'),
-        androidParameters: const AndroidParameters(
-          packageName: 'com.hash.prism',
-          minimumVersion: 1,
-        ),
-        iosParameters: const IOSParameters(
-          bundleId: 'com.hash.prism',
-          minimumVersion: '1.0.1',
-          appStoreId: '1405860595',
-        ));
+      socialMetaTagParameters: SocialMetaTagParameters(
+        title: "$name - Prism",
+        imageUrl: Uri.parse(thumbUrl!),
+        description: "Check out this amazing setup I got from Prism.",
+      ),
+      uriPrefix: 'https://prismwallpapers.page.link',
+      link: Uri.parse('http://prism.hash.com/setup?index=$index&name=$name&thumbUrl=$thumbUrl'),
+      androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
+      iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
+    );
     final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
     shortUrl = shortDynamicLink.shortUrl;
     analytics.logEvent(name: 'reportSetup');
     logger.d(shortUrl.toString());
   } else {
     final DynamicLinkParameters parameters = DynamicLinkParameters(
-        socialMetaTagParameters: SocialMetaTagParameters(
-            title: "$id - Prism",
-            imageUrl: Uri.parse(thumbUrl!),
-            description: "Check out this amazing wallpaper I got from Prism."),
-        uriPrefix: 'https://prismwallpapers.page.link',
-        link: Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider&url=$url&thumb=$thumbUrl'),
-        androidParameters: const AndroidParameters(
-          packageName: 'com.hash.prism',
-          minimumVersion: 1,
-        ),
-        iosParameters: const IOSParameters(
-          bundleId: 'com.hash.prism',
-          minimumVersion: '1.0.1',
-          appStoreId: '1405860595',
-        ));
+      socialMetaTagParameters: SocialMetaTagParameters(
+        title: "$id - Prism",
+        imageUrl: Uri.parse(thumbUrl!),
+        description: "Check out this amazing wallpaper I got from Prism.",
+      ),
+      uriPrefix: 'https://prismwallpapers.page.link',
+      link: Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider&url=$url&thumb=$thumbUrl'),
+      androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
+      iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
+    );
     final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
     shortUrl = shortDynamicLink.shortUrl;
     analytics.logEvent(name: 'reportWall');
     logger.d(shortUrl.toString());
   }
   showModal(
-      context: context,
-      builder: (BuildContext context) => CopyrightPopUp(
-            setup: setup,
-            shortlink: shortUrl.toString(),
-          ));
+    context: context,
+    builder: (BuildContext context) => CopyrightPopUp(setup: setup, shortlink: shortUrl.toString()),
+  );
   return "";
 }

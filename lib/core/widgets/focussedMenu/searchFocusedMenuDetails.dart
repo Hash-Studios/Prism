@@ -36,48 +36,48 @@ class SearchFocusedMenuDetails extends StatelessWidget {
     final menuHeight = size.height * 0.14;
     final leftOffset = (childOffset.dx + maxMenuWidth) < size.width
         ? MediaQuery.of(context).orientation == Orientation.portrait
-            ? childOffset.dx + childSize!.width + size.width * 0.015
-            : childOffset.dx + childSize!.width + size.width * 0.01
+              ? childOffset.dx + childSize!.width + size.width * 0.015
+              : childOffset.dx + childSize!.width + size.width * 0.01
         : MediaQuery.of(context).orientation == Orientation.portrait
-            ? (childOffset.dx - maxMenuWidth + childSize!.width)
-            : (childOffset.dx - maxMenuWidth + childSize!.width + size.width * 0.3);
+        ? (childOffset.dx - maxMenuWidth + childSize!.width)
+        : (childOffset.dx - maxMenuWidth + childSize!.width + size.width * 0.3);
     final topOffset = (childOffset.dy + menuHeight + childSize!.height) < size.height
         ? MediaQuery.of(context).orientation == Orientation.portrait
-            ? childOffset.dy + childSize!.height + size.width * 0.015
-            : childOffset.dy + childSize!.height + size.width * 0.015
+              ? childOffset.dy + childSize!.height + size.width * 0.015
+              : childOffset.dy + childSize!.height + size.width * 0.015
         : MediaQuery.of(context).orientation == Orientation.portrait
-            ? childOffset.dy - menuHeight + size.width * 0.125
-            : childOffset.dy - menuHeight;
+        ? childOffset.dy - menuHeight + size.width * 0.125
+        : childOffset.dy - menuHeight;
 
     final fabHeartTopOffset = (childOffset.dy + menuHeight + childSize!.height) < size.height
         ? MediaQuery.of(context).orientation == Orientation.portrait
-            ? size.width * 0.175
-            : size.width * 0.1
+              ? size.width * 0.175
+              : size.width * 0.1
         : MediaQuery.of(context).orientation == Orientation.portrait
-            ? -size.width * 0.175
-            : -size.width * 0.1;
+        ? -size.width * 0.175
+        : -size.width * 0.1;
     final fabWallLeftOffset = (childOffset.dx + maxMenuWidth) < size.width
         ? MediaQuery.of(context).orientation == Orientation.portrait
-            ? -size.width * 0.175
-            : -size.width * 0.1
+              ? -size.width * 0.175
+              : -size.width * 0.1
         : MediaQuery.of(context).orientation == Orientation.portrait
-            ? size.width * 0.175
-            : size.width * 0.1;
+        ? size.width * 0.175
+        : size.width * 0.1;
 
     final fabWallTopOffset = (childOffset.dy + menuHeight + childSize!.height) < size.height
         ? MediaQuery.of(context).orientation == Orientation.portrait
-            ? size.width * 0.05
-            : size.width * 0.02
+              ? size.width * 0.05
+              : size.width * 0.02
         : MediaQuery.of(context).orientation == Orientation.portrait
-            ? -size.width * 0.05
-            : -size.width * 0.02;
+        ? -size.width * 0.05
+        : -size.width * 0.02;
     final fabHeartLeftOffset = (childOffset.dx + maxMenuWidth) < size.width
         ? MediaQuery.of(context).orientation == Orientation.portrait
-            ? -size.width * 0.05
-            : -size.width * 0.02
+              ? -size.width * 0.05
+              : -size.width * 0.02
         : MediaQuery.of(context).orientation == Orientation.portrait
-            ? size.width * 0.05
-            : size.width * 0.02;
+        ? size.width * 0.05
+        : size.width * 0.02;
     try {
       return Scaffold(
         backgroundColor: Colors.transparent,
@@ -85,24 +85,27 @@ class SearchFocusedMenuDetails extends StatelessWidget {
           fit: StackFit.expand,
           children: <Widget>[
             GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: Container(
+                color: context.prismModeStyleForContext() == "Dark"
+                    ? Colors.black.withValues(alpha: 0.75)
+                    : Colors.white.withValues(alpha: 0.75),
+              ),
+            ),
+            Positioned(
+              top: childOffset.dy,
+              left: childOffset.dx,
+              child: GestureDetector(
                 onTap: () {
                   Navigator.pop(context);
                 },
-                child: Container(
-                  color: context.prismModeStyleForContext() == "Dark"
-                      ? Colors.black.withValues(alpha: 0.75)
-                      : Colors.white.withValues(alpha: 0.75),
-                )),
-            Positioned(
-                top: childOffset.dy,
-                left: childOffset.dx,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child:
-                      AbsorbPointer(child: SizedBox(width: childSize!.width, height: childSize!.height, child: child)),
-                )),
+                child: AbsorbPointer(
+                  child: SizedBox(width: childSize!.width, height: childSize!.height, child: child),
+                ),
+              ),
+            ),
             if (selectedProvider == "WallHaven")
               Positioned(
                 top: childOffset.dy + childSize!.height * 2 / 8,
@@ -110,11 +113,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                 child: TweenAnimationBuilder(
                   duration: const Duration(milliseconds: 200),
                   builder: (BuildContext context, double value, Widget? child) {
-                    return Transform.scale(
-                      scale: value,
-                      alignment: Alignment.bottomRight,
-                      child: child,
-                    );
+                    return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
                   },
                   tween: Tween(begin: 0.0, end: 1.0),
                   child: Container(
@@ -136,74 +135,69 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 ActionChip(
-                                    pressElevation: 5,
-                                    padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                    avatar: Icon(JamIcons.ordered_list,
-                                        color: HexColor(wdata
-                                                        .wallsS[index].colors![wdata.wallsS[index].colors!.length - 1]
-                                                        .toString())
-                                                    .computeLuminance() >
-                                                0.5
-                                            ? Colors.black
-                                            : Colors.white,
-                                        size: 20),
-                                    backgroundColor: HexColor(
-                                        wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1].toString()),
-                                    label: Text(
-                                      wdata.wallsS[index].category.toString()[0].toUpperCase() +
-                                          wdata.wallsS[index].category.toString().substring(1),
-                                      style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                            color: HexColor(wdata.wallsS[index]
-                                                            .colors![wdata.wallsS[index].colors!.length - 1]
-                                                            .toString())
-                                                        .computeLuminance() >
-                                                    0.5
-                                                ? Colors.black
-                                                : Colors.white,
-                                          ),
+                                  pressElevation: 5,
+                                  padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                  avatar: Icon(
+                                    JamIcons.ordered_list,
+                                    color:
+                                        HexColor(
+                                              wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1]
+                                                  .toString(),
+                                            ).computeLuminance() >
+                                            0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                    size: 20,
+                                  ),
+                                  backgroundColor: HexColor(
+                                    wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1].toString(),
+                                  ),
+                                  label: Text(
+                                    wdata.wallsS[index].category.toString()[0].toUpperCase() +
+                                        wdata.wallsS[index].category.toString().substring(1),
+                                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                                      color:
+                                          HexColor(
+                                                wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1]
+                                                    .toString(),
+                                              ).computeLuminance() >
+                                              0.5
+                                          ? Colors.black
+                                          : Colors.white,
                                     ),
-                                    onPressed: () {}),
+                                  ),
+                                  onPressed: () {},
+                                ),
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                   child: Text(
                                     wdata.wallsS[index].id.toString().toUpperCase(),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall!
-                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                   ),
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      JamIcons.eye,
-                                      size: 20,
-                                      color: Theme.of(context).colorScheme.secondary,
-                                    ),
+                                    Icon(JamIcons.eye, size: 20, color: Theme.of(context).colorScheme.secondary),
                                     const SizedBox(width: 10),
                                     Text(
                                       "Views: ${wdata.wallsS[index].views}",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ],
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      JamIcons.set_square,
-                                      size: 20,
-                                      color: Theme.of(context).colorScheme.secondary,
-                                    ),
+                                    Icon(JamIcons.set_square, size: 20, color: Theme.of(context).colorScheme.secondary),
                                     const SizedBox(width: 10),
                                     Text(
                                       wdata.wallsS[index].resolution!,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ],
                                 ),
@@ -218,20 +212,20 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Theme.of(context).hintColor,
-                                    borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
+                                  color: Theme.of(context).hintColor,
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(20),
+                                    bottomRight: Radius.circular(20),
+                                  ),
+                                ),
                                 padding: EdgeInsets.zero,
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                  child: Icon(
-                                    JamIcons.close,
-                                    color: Theme.of(context).colorScheme.secondary,
-                                  ),
+                                  child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ),
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -245,11 +239,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                 child: TweenAnimationBuilder(
                   duration: const Duration(milliseconds: 200),
                   builder: (BuildContext context, double value, Widget? child) {
-                    return Transform.scale(
-                      scale: value,
-                      alignment: Alignment.bottomRight,
-                      child: child,
-                    );
+                    return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
                   },
                   tween: Tween(begin: 0.0, end: 1.0),
                   child: Container(
@@ -271,19 +261,18 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 ActionChip(
-                                    pressElevation: 5,
-                                    padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                    backgroundColor: Colors.black,
-                                    avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
-                                    label: Text(
-                                      pdata.wallsPS[index].photographer.toString(),
-                                      style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                            color: Colors.white,
-                                          ),
-                                    ),
-                                    onPressed: () {
-                                      launch(pdata.wallsPS[index].url!);
-                                    }),
+                                  pressElevation: 5,
+                                  padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                  backgroundColor: Colors.black,
+                                  avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                  label: Text(
+                                    pdata.wallsPS[index].photographer.toString(),
+                                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                  ),
+                                  onPressed: () {
+                                    launch(pdata.wallsPS[index].url!);
+                                  },
+                                ),
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                   child: Text(
@@ -295,17 +284,17 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                                 .length >
                                             8
                                         ? pdata.wallsPS[index].url
-                                                .toString()
-                                                .replaceAll("https://www.pexels.com/photo/", "")
-                                                .replaceAll("-", " ")
-                                                .replaceAll("/", "")[0]
-                                                .toUpperCase() +
-                                            pdata.wallsPS[index].url
-                                                .toString()
-                                                .replaceAll("https://www.pexels.com/photo/", "")
-                                                .replaceAll("-", " ")
-                                                .replaceAll("/", "")
-                                                .substring(
+                                                  .toString()
+                                                  .replaceAll("https://www.pexels.com/photo/", "")
+                                                  .replaceAll("-", " ")
+                                                  .replaceAll("/", "")[0]
+                                                  .toUpperCase() +
+                                              pdata.wallsPS[index].url
+                                                  .toString()
+                                                  .replaceAll("https://www.pexels.com/photo/", "")
+                                                  .replaceAll("-", " ")
+                                                  .replaceAll("/", "")
+                                                  .substring(
                                                     1,
                                                     pdata.wallsPS[index].url
                                                             .toString()
@@ -313,39 +302,34 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                                             .replaceAll("-", " ")
                                                             .replaceAll("/", "")
                                                             .length -
-                                                        7)
+                                                        7,
+                                                  )
                                         : pdata.wallsPS[index].url
-                                                .toString()
-                                                .replaceAll("https://www.pexels.com/photo/", "")
-                                                .replaceAll("-", " ")
-                                                .replaceAll("/", "")[0]
-                                                .toUpperCase() +
-                                            pdata.wallsPS[index].url
-                                                .toString()
-                                                .replaceAll("https://www.pexels.com/photo/", "")
-                                                .replaceAll("-", " ")
-                                                .replaceAll("/", "")
-                                                .substring(1),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall!
-                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                  .toString()
+                                                  .replaceAll("https://www.pexels.com/photo/", "")
+                                                  .replaceAll("-", " ")
+                                                  .replaceAll("/", "")[0]
+                                                  .toUpperCase() +
+                                              pdata.wallsPS[index].url
+                                                  .toString()
+                                                  .replaceAll("https://www.pexels.com/photo/", "")
+                                                  .replaceAll("-", " ")
+                                                  .replaceAll("/", "")
+                                                  .substring(1),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                   ),
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      JamIcons.set_square,
-                                      color: Theme.of(context).colorScheme.secondary,
-                                      size: 20,
-                                    ),
+                                    Icon(JamIcons.set_square, color: Theme.of(context).colorScheme.secondary, size: 20),
                                     const SizedBox(width: 5),
                                     Text(
                                       "${pdata.wallsPS[index].width}x${pdata.wallsPS[index].height}",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ],
                                 ),
@@ -360,20 +344,20 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Theme.of(context).hintColor,
-                                    borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
+                                  color: Theme.of(context).hintColor,
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(20),
+                                    bottomRight: Radius.circular(20),
+                                  ),
+                                ),
                                 padding: EdgeInsets.zero,
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                  child: Icon(
-                                    JamIcons.close,
-                                    color: Theme.of(context).colorScheme.secondary,
-                                  ),
+                                  child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ),
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),

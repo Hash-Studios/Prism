@@ -18,9 +18,7 @@ Map<String, dynamic> _mapData(Object? data) {
 }
 
 @HiveType(typeId: 15)
-@JsonSerializable(
-  explicitToJson: true,
-)
+@JsonSerializable(explicitToJson: true)
 class PrismUsersV2 {
   @HiveField(0)
   String username;
@@ -86,57 +84,59 @@ class PrismUsersV2 {
   factory PrismUsersV2.fromMapWithUser(Map<String, dynamic> raw, User user) {
     final data = _mapData(raw);
     return PrismUsersV2(
-        name: (data["name"] ?? user.displayName).toString(),
-        username: (data["username"] ?? user.displayName).toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
-        email: (data["email"] ?? user.email).toString(),
-        id: data["id"].toString(),
-        createdAt: data["createdAt"].toString(),
-        premium: data["premium"] as bool? ?? false,
-        lastLoginAt: data["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
-        links: data["links"] as Map<String, dynamic>? ?? <String, dynamic>{},
-        followers: data["followers"] as List? ?? <dynamic>[],
-        following: data["following"] as List? ?? <dynamic>[],
-        profilePhoto: (data["profilePhoto"] ?? user.photoURL).toString(),
-        bio: (data["bio"] ?? "").toString(),
-        loggedIn: true,
-        badges: (data['badges'] as List<dynamic>? ?? <dynamic>[])
-            .map((e) => Badge.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        subPrisms: data['subPrisms'] as List<dynamic>? ?? <dynamic>[],
-        coins: data['coins'] as int? ?? 0,
-        transactions: (data['transactions'] as List<dynamic>? ?? <dynamic>[])
-            .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        coverPhoto: data["coverPhoto"]?.toString());
+      name: (data["name"] ?? user.displayName).toString(),
+      username: (data["username"] ?? user.displayName).toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
+      email: (data["email"] ?? user.email).toString(),
+      id: data["id"].toString(),
+      createdAt: data["createdAt"].toString(),
+      premium: data["premium"] as bool? ?? false,
+      lastLoginAt: data["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
+      links: data["links"] as Map<String, dynamic>? ?? <String, dynamic>{},
+      followers: data["followers"] as List? ?? <dynamic>[],
+      following: data["following"] as List? ?? <dynamic>[],
+      profilePhoto: (data["profilePhoto"] ?? user.photoURL).toString(),
+      bio: (data["bio"] ?? "").toString(),
+      loggedIn: true,
+      badges: (data['badges'] as List<dynamic>? ?? <dynamic>[])
+          .map((e) => Badge.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      subPrisms: data['subPrisms'] as List<dynamic>? ?? <dynamic>[],
+      coins: data['coins'] as int? ?? 0,
+      transactions: (data['transactions'] as List<dynamic>? ?? <dynamic>[])
+          .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      coverPhoto: data["coverPhoto"]?.toString(),
+    );
   }
 
   factory PrismUsersV2.fromMapWithoutUser(Map<String, dynamic> raw) {
     final data = _mapData(raw);
     return PrismUsersV2(
-        name: (data["name"] ?? "").toString(),
-        username: (data["username"] ?? "").toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
-        email: (data["email"] ?? "").toString(),
-        id: data["id"].toString(),
-        createdAt: DateTime.parse((data["createdAt"] ?? DateTime.now().toUtc().toIso8601String()).toString())
-            .toUtc()
-            .toIso8601String(),
-        premium: data["premium"] as bool? ?? false,
-        lastLoginAt: data["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
-        links: data["links"] as Map<String, dynamic>? ?? <String, dynamic>{},
-        followers: data["followers"] as List? ?? <dynamic>[],
-        following: data["following"] as List? ?? <dynamic>[],
-        profilePhoto: (data["profilePhoto"] ?? "").toString(),
-        bio: (data["bio"] ?? "").toString(),
-        loggedIn: true,
-        badges: (data['badges'] as List<dynamic>? ?? <dynamic>[])
-            .map((e) => Badge.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        subPrisms: data['subPrisms'] as List<dynamic>? ?? <dynamic>[],
-        coins: data['coins'] as int? ?? 0,
-        transactions: (data['transactions'] as List<dynamic>? ?? <dynamic>[])
-            .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        coverPhoto: data["coverPhoto"]?.toString());
+      name: (data["name"] ?? "").toString(),
+      username: (data["username"] ?? "").toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
+      email: (data["email"] ?? "").toString(),
+      id: data["id"].toString(),
+      createdAt: DateTime.parse(
+        (data["createdAt"] ?? DateTime.now().toUtc().toIso8601String()).toString(),
+      ).toUtc().toIso8601String(),
+      premium: data["premium"] as bool? ?? false,
+      lastLoginAt: data["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
+      links: data["links"] as Map<String, dynamic>? ?? <String, dynamic>{},
+      followers: data["followers"] as List? ?? <dynamic>[],
+      following: data["following"] as List? ?? <dynamic>[],
+      profilePhoto: (data["profilePhoto"] ?? "").toString(),
+      bio: (data["bio"] ?? "").toString(),
+      loggedIn: true,
+      badges: (data['badges'] as List<dynamic>? ?? <dynamic>[])
+          .map((e) => Badge.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      subPrisms: data['subPrisms'] as List<dynamic>? ?? <dynamic>[],
+      coins: data['coins'] as int? ?? 0,
+      transactions: (data['transactions'] as List<dynamic>? ?? <dynamic>[])
+          .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      coverPhoto: data["coverPhoto"]?.toString(),
+    );
   }
   Map<String, dynamic> toJson() => _$PrismUsersV2ToJson(this);
 }

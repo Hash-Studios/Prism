@@ -28,12 +28,8 @@ void main() {
     observeUseCase = _MockObserveQuickActionsUseCase();
     controller = StreamController<QuickActionEntity>.broadcast();
 
-    when(() => initUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(null),
-    );
-    when(() => setUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(null),
-    );
+    when(() => initUseCase(const NoParams())).thenAnswer((_) async => Result.success(null));
+    when(() => setUseCase(const NoParams())).thenAnswer((_) async => Result.success(null));
     when(() => observeUseCase()).thenAnswer((_) => controller.stream);
   });
 
@@ -47,12 +43,7 @@ void main() {
     act: (bloc) async {
       bloc.add(const QuickActionsEvent.started());
       await Future<void>.delayed(const Duration(milliseconds: 10));
-      controller.add(
-        const QuickActionEntity(
-          type: QuickActionType.collections,
-          rawValue: 'Collections',
-        ),
-      );
+      controller.add(const QuickActionEntity(type: QuickActionType.collections, rawValue: 'Collections'));
     },
     wait: const Duration(milliseconds: 20),
     verify: (bloc) {
