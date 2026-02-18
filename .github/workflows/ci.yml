@@ -49,6 +49,9 @@ jobs:
             ! -name 'firebase_options.dart' \
             -print0 | xargs -0 dart format --line-length 120 --set-exit-if-changed -o none
 
+      - name: Env define guard
+        run: ./tool/env_define_guard.sh
+
       - name: Analyze
         run: flutter analyze --no-pub --no-fatal-infos
 

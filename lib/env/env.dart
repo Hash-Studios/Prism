@@ -10,12 +10,18 @@ class Env {
 
   // RevenueCat
   static const String rcApiKey = String.fromEnvironment('RC_API_KEY');
+  static const String rcAndroidApiKey = String.fromEnvironment('RC_ANDROID_API_KEY');
+  static const String rcIosApiKey = String.fromEnvironment('RC_IOS_API_KEY');
 
   // Pexels
   static const String pexelsApiKey = String.fromEnvironment('PEXELS_API_KEY');
 
   // Sentry
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
+  static const String sentryEnvironment = String.fromEnvironment('SENTRY_ENV');
+  static const String sentryRelease = String.fromEnvironment('SENTRY_RELEASE');
+  static const String sentryDist = String.fromEnvironment('SENTRY_DIST');
+  static const String sentryEnabled = String.fromEnvironment('SENTRY_ENABLED', defaultValue: 'auto');
 
   // FCM
   static const String fcmServerKey = String.fromEnvironment('FCM_SERVER_KEY');

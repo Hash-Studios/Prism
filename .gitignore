@@ -60,3 +60,5 @@ android/android_keys.zip
 lib/firebase_options.dart
 firebase.json
 ios/Runner/GoogleService-Info.plist
+docs/**
+sentry.properties
