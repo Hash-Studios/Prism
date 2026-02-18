@@ -28,7 +28,7 @@ jobs:
           pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
 
       - name: Install dependencies
-        run: flutter pub get
+        run: make get CI=true
 
       - name: Generate Firebase options stub for CI
         run: |
@@ -40,25 +40,13 @@ jobs:
           DART
 
       - name: Check formatting
-        run: |
-          find lib test -name '*.dart' \
-            ! -name '*.g.dart' \
-            ! -name '*.freezed.dart' \
-            ! -name '*.gr.dart' \
-            ! -name '*.config.dart' \
-            ! -name 'firebase_options.dart' \
-            -print0 | xargs -0 dart format --line-length 120 --set-exit-if-changed -o none
+        run: make format-check CI=true
 
       - name: Env define guard
-        run: ./tool/env_define_guard.sh
+        run: make env-guard
 
       - name: Analyze
-        run: flutter analyze --no-pub --no-fatal-infos
+        run: make analyze CI=true
 
       - name: Run tests
-        run: |
-          if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then
-            flutter test
-          else
-            echo "No test files found, skipping."
-          fi
+        run: make test CI=true
