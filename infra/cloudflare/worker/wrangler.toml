@@ -17,5 +17,5 @@ APP_STORE_URL = "https://apps.apple.com/app/id1405860595"
 
 [[kv_namespaces]]
 binding = "LINKS_KV"
-id = "REPLACE_WITH_PROD_KV_NAMESPACE_ID"
-preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
+id = "c05f625aeba84fa7a6299894c3004775"
+preview_id = "7937369ebc9d450f863783300c08a0ab"
