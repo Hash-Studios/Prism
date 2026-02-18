@@ -129,6 +129,7 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
     return _controller.stream;
   }
 
+  @override
   @disposeMethod
   Future<void> dispose() async {
     await _appLinksSubscription?.cancel();

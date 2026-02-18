@@ -169,8 +169,7 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
     );
   }
 
-  Future<bool> _ensureRewardedAdReady() async {
-    final AdsBloc bloc = context.read<AdsBloc>();
+  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
     if (bloc.state.ads.adLoaded) {
       return true;
     }
@@ -188,12 +187,11 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
   }
 
   Future<void> _watchRewardedAdAndCreditCoins() async {
-    if (!await _ensureRewardedAdReady()) {
+    final AdsBloc bloc = context.read<AdsBloc>();
+    if (!await _ensureRewardedAdReady(bloc)) {
       toasts.error('Ads unavailable right now. Try again later.');
       return;
     }
-
-    final AdsBloc bloc = context.read<AdsBloc>();
     bool watchRequested = false;
     try {
       final Future<AdsState> completion = bloc.stream

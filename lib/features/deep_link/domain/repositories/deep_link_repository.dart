@@ -5,4 +5,6 @@ abstract class DeepLinkRepository {
   Future<Result<DeepLinkActionEntity?>> getInitialAction();
 
   Stream<DeepLinkActionEntity> watchActions();
+
+  Future<void> dispose();
 }

@@ -852,7 +852,9 @@ class CoinsService {
     if (previous == null || current == null) {
       return false;
     }
-    return current.difference(previous).inDays == 1;
+    final DateTime previousUtcDate = DateTime.utc(previous.year, previous.month, previous.day);
+    final DateTime currentUtcDate = DateTime.utc(current.year, current.month, current.day);
+    return currentUtcDate.difference(previousUtcDate).inDays == 1;
   }
 
   String _localDayKey(DateTime date) {

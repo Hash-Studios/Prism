@@ -416,8 +416,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     return downloaded;
   }
 
-  Future<bool> _ensureRewardedAdReady() async {
-    final AdsBloc bloc = context.read<AdsBloc>();
+  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
     if (bloc.state.ads.adLoaded) {
       return true;
     }
@@ -435,11 +434,10 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<bool> _watchRewardedAd() async {
-    if (!await _ensureRewardedAdReady()) {
+    final AdsBloc bloc = context.read<AdsBloc>();
+    if (!await _ensureRewardedAdReady(bloc)) {
       return false;
     }
-
-    final AdsBloc bloc = context.read<AdsBloc>();
     bool watchRequested = false;
     try {
       final Future<AdsState> completion = bloc.stream
