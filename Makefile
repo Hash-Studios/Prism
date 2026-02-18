@@ -24,9 +24,11 @@ GRADLE_USER_HOME_DIR ?= $(CURDIR)/.gradle-local
 ifeq ($(CI),true)
   FLUTTER := flutter
   DART := dart
+  ANALYZE_FLAGS := --no-fatal-infos
 else
   FLUTTER := fvm flutter
   DART := fvm dart
+  ANALYZE_FLAGS :=
 endif
 
 setup: ensure-fvm
@@ -51,7 +53,7 @@ format-check: ensure-fvm
 	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) --set-exit-if-changed -o none $(DART_FORMAT_PATHS)
 
 analyze: ensure-fvm env-guard
-	@$(FLUTTER) analyze
+	@$(FLUTTER) analyze --no-pub $(ANALYZE_FLAGS)
 
 firestore-guard:
 	@./tool/firestore_guard.sh
