@@ -55,6 +55,7 @@ class CoinsService {
   static const String _coinStateField = 'coinState';
   static const String _pendingReferralInviterPrefKey = 'pendingReferralInviterId';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
+  static const Duration _premiumPreviewAccessDuration = Duration(hours: 24);
 
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(globals.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
@@ -327,6 +328,162 @@ class CoinsService {
       sourceTag: sourceTag,
       reason: reason ?? 'premium_preview_24h',
     );
+  }
+
+  Future<bool> hasPremiumPreviewAccessForCollection(String collectionKey) async {
+    final String normalizedKey = _normalizeCollectionKey(collectionKey);
+    if (normalizedKey.isEmpty) {
+      return false;
+    }
+    if (globals.prismUser.premium) {
+      return true;
+    }
+    if (!_canMutateCoins()) {
+      return false;
+    }
+    final String userId = globals.prismUser.id;
+    final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
+      FirebaseCollections.usersV2,
+      userId,
+      (data, _) => data,
+      sourceTag: 'coins.preview.check',
+    );
+    if (userData == null) {
+      return false;
+    }
+    final bool isPremium = _asBool(userData['premium']) || globals.prismUser.premium;
+    if (isPremium) {
+      return true;
+    }
+    final Map<String, dynamic> coinState = _coinStateFromRaw(userData[_coinStateField]);
+    _ensureCoinStateDefaults(coinState);
+    final Map<String, int> previewUnlocks = _previewUnlocksFromState(coinState);
+    return (previewUnlocks[normalizedKey] ?? 0) > DateTime.now().millisecondsSinceEpoch;
+  }
+
+  Future<CoinMutationResult> unlockPremiumPreview24hForCollection({
+    required String collectionKey,
+    String sourceTag = 'coins.preview.unlock',
+  }) async {
+    if (!_canMutateCoins()) {
+      return CoinMutationResult.noChange(
+        balance: globals.prismUser.coins,
+        success: false,
+        reason: 'not_logged_in',
+      );
+    }
+    final String normalizedKey = _normalizeCollectionKey(collectionKey);
+    if (normalizedKey.isEmpty) {
+      return CoinMutationResult.noChange(
+        balance: globals.prismUser.coins,
+        success: false,
+        reason: 'invalid_collection_key',
+      );
+    }
+    final String userId = globals.prismUser.id;
+    final int nowMillis = DateTime.now().millisecondsSinceEpoch;
+    final int expiryMillis = nowMillis + _premiumPreviewAccessDuration.inMilliseconds;
+    const int previewCost = CoinPolicy.premiumPreview24h;
+    final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
+      (tx) async {
+        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
+        if (data == null) {
+          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+        }
+        final bool isPremium = _asBool(data['premium']) || globals.prismUser.premium;
+        final int previous = _asInt(data['coins']);
+        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
+        _ensureCoinStateDefaults(coinState);
+        final Map<String, int> previewUnlocks = _previewUnlocksFromState(coinState);
+        final bool pruned = _pruneExpiredPreviewUnlocks(previewUnlocks, nowMillis: nowMillis);
+        final int existingExpiry = previewUnlocks[normalizedKey] ?? 0;
+
+        void persistPreviewStateOnly() {
+          coinState['premiumPreviewUnlocks'] = previewUnlocks;
+          tx.updateDoc(
+            FirebaseCollections.usersV2,
+            userId,
+            <String, dynamic>{
+              'coins': previous,
+              _coinStateField: coinState,
+            },
+          );
+        }
+
+        if (isPremium) {
+          if (pruned) {
+            persistPreviewStateOnly();
+          }
+          return CoinMutationResult(
+            success: true,
+            changed: false,
+            previousBalance: previous,
+            currentBalance: previous,
+            delta: 0,
+            bypassed: true,
+            reason: 'premium_bypass',
+          );
+        }
+
+        if (existingExpiry > nowMillis) {
+          if (pruned) {
+            persistPreviewStateOnly();
+          }
+          return CoinMutationResult.noChange(
+            balance: previous,
+            reason: 'premium_preview_already_unlocked',
+          );
+        }
+
+        if (previous < previewCost) {
+          if (pruned) {
+            persistPreviewStateOnly();
+          }
+          return CoinMutationResult(
+            success: false,
+            changed: false,
+            previousBalance: previous,
+            currentBalance: previous,
+            delta: 0,
+            insufficientBalance: true,
+            reason: 'premium_preview_insufficient_balance',
+          );
+        }
+
+        previewUnlocks[normalizedKey] = expiryMillis;
+        final int current = previous - previewCost;
+        coinState['premiumPreviewUnlocks'] = previewUnlocks;
+        tx.updateDoc(
+          FirebaseCollections.usersV2,
+          userId,
+          <String, dynamic>{
+            'coins': current,
+            _coinStateField: coinState,
+          },
+        );
+        return CoinMutationResult(
+          success: true,
+          changed: true,
+          previousBalance: previous,
+          currentBalance: current,
+          delta: -previewCost,
+          reason: 'premium_preview_unlock_24h',
+        );
+      },
+      sourceTag: sourceTag,
+      collection: FirebaseCollections.usersV2,
+      docId: userId,
+    );
+    _applyLocalBalance(result.currentBalance, delta: result.delta);
+    if (result.changed) {
+      _logSpend(
+        action: CoinSpendAction.premiumPreview24h,
+        amount: previewCost,
+        sourceTag: sourceTag,
+        reason: 'collection_$normalizedKey',
+      );
+    }
+    return result;
   }
 
   Future<CoinMutationResult> claimDailyLoginAndStreakIfEligible() async {
@@ -739,6 +896,12 @@ class CoinsService {
     changed |= _putDefaultIfMissing(coinState, 'proDailyBonusDate', '');
     changed |= _putDefaultIfMissing(coinState, 'referredByUserId', '');
     changed |= _putDefaultIfMissing(coinState, 'referralRewarded', false);
+    changed |= _putDefaultIfMissing(coinState, 'premiumPreviewUnlocks', <String, int>{});
+    final Map<String, int> normalizedPreviewUnlocks = _previewUnlocksFromState(coinState);
+    if (!_previewUnlockStateEquals(coinState['premiumPreviewUnlocks'], normalizedPreviewUnlocks)) {
+      coinState['premiumPreviewUnlocks'] = normalizedPreviewUnlocks;
+      changed = true;
+    }
     return changed;
   }
 
@@ -748,6 +911,63 @@ class CoinsService {
       return true;
     }
     return false;
+  }
+
+  Map<String, int> _previewUnlocksFromState(Map<String, dynamic> coinState) {
+    return _previewUnlocksFromRaw(coinState['premiumPreviewUnlocks']);
+  }
+
+  Map<String, int> _previewUnlocksFromRaw(Object? raw) {
+    if (raw is! Map) {
+      return <String, int>{};
+    }
+    final Map<String, int> normalized = <String, int>{};
+    raw.forEach((key, value) {
+      final String normalizedKey = _normalizeCollectionKey(key.toString());
+      if (normalizedKey.isEmpty) {
+        return;
+      }
+      final int expiryMillis = _asInt(value);
+      if (expiryMillis > 0) {
+        normalized[normalizedKey] = expiryMillis;
+      }
+    });
+    return normalized;
+  }
+
+  bool _previewUnlockStateEquals(Object? raw, Map<String, int> normalized) {
+    if (raw is! Map) {
+      return normalized.isEmpty;
+    }
+    if (raw.length != normalized.length) {
+      return false;
+    }
+    for (final entry in normalized.entries) {
+      final Object? rawValue = raw[entry.key];
+      if (_asInt(rawValue) != entry.value) {
+        return false;
+      }
+    }
+    for (final rawKey in raw.keys) {
+      final String normalizedRawKey = _normalizeCollectionKey(rawKey.toString());
+      if (!normalized.containsKey(normalizedRawKey)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _pruneExpiredPreviewUnlocks(
+    Map<String, int> unlocks, {
+    required int nowMillis,
+  }) {
+    final int before = unlocks.length;
+    unlocks.removeWhere((_, expiryMillis) => expiryMillis <= nowMillis);
+    return unlocks.length != before;
+  }
+
+  String _normalizeCollectionKey(String rawKey) {
+    return rawKey.trim().toLowerCase();
   }
 
   bool _isPreviousDay(String previousDay, String currentDay) {
