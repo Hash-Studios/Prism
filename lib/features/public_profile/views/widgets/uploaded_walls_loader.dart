@@ -28,9 +28,7 @@ class _ProfileLoaderState extends State<ProfileLoader> {
         builder: (ctx, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
             logger.d("snapshot none, waiting");
-            return Center(
-              child: Loader(),
-            );
+            return Center(child: Loader());
           } else {
             return const ProfileGrid();
           }

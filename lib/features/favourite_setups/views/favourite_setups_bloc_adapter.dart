@@ -17,7 +17,7 @@ class FavouriteSetupSnapshot {
 
 class FavouriteSetupsAdapter {
   FavouriteSetupsAdapter(BuildContext context, {required bool listen})
-      : _bloc = listen ? context.watch<FavouriteSetupsBloc>() : context.read<FavouriteSetupsBloc>();
+    : _bloc = listen ? context.watch<FavouriteSetupsBloc>() : context.read<FavouriteSetupsBloc>();
 
   final FavouriteSetupsBloc _bloc;
 

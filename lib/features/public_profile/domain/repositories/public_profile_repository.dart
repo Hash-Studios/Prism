@@ -8,10 +8,7 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_wal
 abstract class PublicProfileRepository {
   Future<Result<PublicProfileEntity>> fetchProfile({required String email});
 
-  Future<Result<PublicProfilePage<PublicProfileWallEntity>>> fetchWalls({
-    required String email,
-    required bool refresh,
-  });
+  Future<Result<PublicProfilePage<PublicProfileWallEntity>>> fetchWalls({required String email, required bool refresh});
 
   Future<Result<PublicProfilePage<PublicProfileSetupEntity>>> fetchSetups({
     required String email,
@@ -32,8 +29,5 @@ abstract class PublicProfileRepository {
     required String targetUserEmail,
   });
 
-  Future<Result<PublicProfileEntity>> updateLinks({
-    required String userId,
-    required Map<String, String> links,
-  });
+  Future<Result<PublicProfileEntity>> updateLinks({required String userId, required Map<String, String> links});
 }

@@ -24,17 +24,11 @@ class SetupsBloc extends Bloc<SetupsEvent, SetupsState> {
     return _load(refresh: true, emit: emit);
   }
 
-  Future<void> _onRefreshRequested(
-    _RefreshRequested event,
-    Emitter<SetupsState> emit,
-  ) {
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<SetupsState> emit) {
     return _load(refresh: true, emit: emit);
   }
 
-  Future<void> _onFetchMoreRequested(
-    _FetchMoreRequested event,
-    Emitter<SetupsState> emit,
-  ) async {
+  Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<SetupsState> emit) async {
     if (state.isFetchingMore || !state.hasMore) {
       return;
     }
@@ -44,11 +38,7 @@ class SetupsBloc extends Bloc<SetupsEvent, SetupsState> {
 
   Future<void> _load({required bool refresh, required Emitter<SetupsState> emit}) async {
     if (refresh) {
-      emit(state.copyWith(
-        status: LoadStatus.loading,
-        actionStatus: ActionStatus.inProgress,
-        failure: null,
-      ));
+      emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress, failure: null));
     }
 
     final result = await _fetchSetupsUseCase(FetchSetupsParams(refresh: refresh));
@@ -60,22 +50,26 @@ class SetupsBloc extends Bloc<SetupsEvent, SetupsState> {
           for (final item in merged) item.id: item,
         }.values.toList(growable: false);
 
-        emit(state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: uniqueById,
-          hasMore: page.hasMore,
-          nextCursor: page.nextCursor,
-          isFetchingMore: false,
-          failure: null,
-        ));
+        emit(
+          state.copyWith(
+            status: LoadStatus.success,
+            actionStatus: ActionStatus.success,
+            items: uniqueById,
+            hasMore: page.hasMore,
+            nextCursor: page.nextCursor,
+            isFetchingMore: false,
+            failure: null,
+          ),
+        );
       },
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        isFetchingMore: false,
-        failure: failure,
-      )),
+      onFailure: (failure) => emit(
+        state.copyWith(
+          status: LoadStatus.failure,
+          actionStatus: ActionStatus.failure,
+          isFetchingMore: false,
+          failure: failure,
+        ),
+      ),
     );
   }
 }

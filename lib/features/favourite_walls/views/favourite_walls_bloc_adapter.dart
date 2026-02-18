@@ -19,7 +19,7 @@ class FavouriteWallSnapshot {
 
 class FavouriteWallsAdapter {
   FavouriteWallsAdapter(BuildContext context, {required bool listen})
-      : _bloc = listen ? context.watch<FavouriteWallsBloc>() : context.read<FavouriteWallsBloc>();
+    : _bloc = listen ? context.watch<FavouriteWallsBloc>() : context.read<FavouriteWallsBloc>();
 
   final FavouriteWallsBloc _bloc;
 
@@ -36,13 +36,7 @@ class FavouriteWallsAdapter {
     return liked;
   }
 
-  Future<void> favCheck(
-    String? id,
-    String provider,
-    WallPaper? wallhaven,
-    WallPaperP? pexels,
-    Map? prism,
-  ) async {
+  Future<void> favCheck(String? id, String provider, WallPaper? wallhaven, WallPaperP? pexels, Map? prism) async {
     final resolvedId = id?.toString() ?? '';
     if (resolvedId.isEmpty) {
       return;
@@ -164,11 +158,7 @@ class FavouriteWallsAdapter {
       return existing;
     }
 
-    return <String, dynamic>{
-      'id': id,
-      'provider': provider,
-      'createdAt': DateTime.now().toUtc(),
-    };
+    return <String, dynamic>{'id': id, 'provider': provider, 'createdAt': DateTime.now().toUtc()};
   }
 
   Map<String, dynamic>? _existingPayload(String id) {

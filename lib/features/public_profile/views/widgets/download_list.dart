@@ -13,142 +13,126 @@ class DownloadList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
-        leading: const Icon(
-          JamIcons.download,
+      leading: const Icon(JamIcons.download),
+      title: Text(
+        "Downloads",
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.secondary,
+          fontWeight: FontWeight.w500,
+          fontFamily: "Proxima Nova",
         ),
-        title: Text(
-          "Downloads",
-          style: TextStyle(
-              color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
-        ),
-        subtitle: Text(
-          "View or clear downloads",
-          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
-        ),
-        children: [
-          ListTile(
-            onTap: () {
-              context.router.push(const DownloadRoute());
-            },
-            leading: const Icon(JamIcons.download),
-            title: Text(
-              "My Downloads",
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+      ),
+      subtitle: Text(
+        "View or clear downloads",
+        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
+      ),
+      children: [
+        ListTile(
+          onTap: () {
+            context.router.push(const DownloadRoute());
+          },
+          leading: const Icon(JamIcons.download),
+          title: Text(
+            "My Downloads",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.secondary,
+              fontWeight: FontWeight.w500,
+              fontFamily: "Proxima Nova",
             ),
-            subtitle: const Text(
-              "See all your downloaded wallpapers",
-              style: TextStyle(fontSize: 12),
-            ),
-            trailing: const Icon(JamIcons.chevron_right),
           ),
-          ListTile(
-              leading: const Icon(
-                JamIcons.database,
-              ),
-              title: Text(
-                "Clear Downloads",
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.secondary,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
-              ),
-              subtitle: const Text(
-                "Clear downloaded wallpapers",
-                style: TextStyle(fontSize: 12),
-              ),
-              onTap: () async {
-                showModal(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      ),
+          subtitle: const Text("See all your downloaded wallpapers", style: TextStyle(fontSize: 12)),
+          trailing: const Icon(JamIcons.chevron_right),
+        ),
+        ListTile(
+          leading: const Icon(JamIcons.database),
+          title: Text(
+            "Clear Downloads",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.secondary,
+              fontWeight: FontWeight.w500,
+              fontFamily: "Proxima Nova",
+            ),
+          ),
+          subtitle: const Text("Clear downloaded wallpapers", style: TextStyle(fontSize: 12)),
+          onTap: () async {
+            showModal(
+              context: context,
+              builder: (context) => AlertDialog(
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                content: SizedBox(
+                  height: 50,
+                  width: 250,
+                  child: Center(
+                    child: Text(
+                      "Do you want remove all your downloads?",
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
-                    content: SizedBox(
-                      height: 50,
-                      width: 250,
-                      child: Center(
-                        child: Text(
-                          "Do you want remove all your downloads?",
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                      ),
-                    ),
-                    actions: <Widget>[
-                      MaterialButton(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          final dir = Directory("storage/emulated/0/Prism/");
-                          final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
-                          final status = await Permission.storage.status;
-                          if (!status.isGranted) {
-                            await Permission.storage.request();
-                          }
-                          bool deletedDir = false;
-                          bool deletedDir2 = false;
-                          try {
-                            dir.deleteSync(recursive: true);
-                            deletedDir = true;
-                          } catch (e) {
-                            logger.d(e.toString());
-                          }
-                          try {
-                            dir2.deleteSync(recursive: true);
-                            deletedDir2 = true;
-                          } catch (e) {
-                            logger.d(e.toString());
-                          }
-                          if (deletedDir || deletedDir2) {
-                            Fluttertoast.showToast(
-                              msg: "Deleted all downloads!",
-                              toastLength: Toast.LENGTH_LONG,
-                              textColor: Colors.white,
-                              backgroundColor: Colors.green[400],
-                            );
-                          } else {
-                            Fluttertoast.showToast(
-                              msg: "No downloads!",
-                              toastLength: Toast.LENGTH_LONG,
-                              textColor: Colors.white,
-                              backgroundColor: Colors.red[400],
-                            );
-                          }
-                        },
-                        child: Text(
-                          'YES',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: MaterialButton(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                          color: Theme.of(context).colorScheme.error,
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text(
-                            'NO',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                    backgroundColor: Theme.of(context).primaryColor,
                   ),
-                );
-              }),
-        ]);
+                ),
+                actions: <Widget>[
+                  MaterialButton(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      final dir = Directory("storage/emulated/0/Prism/");
+                      final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
+                      final status = await Permission.storage.status;
+                      if (!status.isGranted) {
+                        await Permission.storage.request();
+                      }
+                      bool deletedDir = false;
+                      bool deletedDir2 = false;
+                      try {
+                        dir.deleteSync(recursive: true);
+                        deletedDir = true;
+                      } catch (e) {
+                        logger.d(e.toString());
+                      }
+                      try {
+                        dir2.deleteSync(recursive: true);
+                        deletedDir2 = true;
+                      } catch (e) {
+                        logger.d(e.toString());
+                      }
+                      if (deletedDir || deletedDir2) {
+                        Fluttertoast.showToast(
+                          msg: "Deleted all downloads!",
+                          toastLength: Toast.LENGTH_LONG,
+                          textColor: Colors.white,
+                          backgroundColor: Colors.green[400],
+                        );
+                      } else {
+                        Fluttertoast.showToast(
+                          msg: "No downloads!",
+                          toastLength: Toast.LENGTH_LONG,
+                          textColor: Colors.white,
+                          backgroundColor: Colors.red[400],
+                        );
+                      }
+                    },
+                    child: Text(
+                      'YES',
+                      style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: MaterialButton(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                      color: Theme.of(context).colorScheme.error,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('NO', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+                    ),
+                  ),
+                ],
+                backgroundColor: Theme.of(context).primaryColor,
+              ),
+            );
+          },
+        ),
+      ],
+    );
   }
 }

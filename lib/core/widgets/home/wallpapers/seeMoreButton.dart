@@ -3,11 +3,7 @@ import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:flutter/material.dart';
 
 class SeeMoreButton extends StatelessWidget {
-  const SeeMoreButton({
-    super.key,
-    required this.seeMoreLoader,
-    required this.func,
-  });
+  const SeeMoreButton({super.key, required this.seeMoreLoader, required this.func});
 
   final bool seeMoreLoader;
   final Function func;

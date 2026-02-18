@@ -8,8 +8,9 @@ class LocalNotification {
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   LocalNotification() {
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@drawable/ic_notification');
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(
+      '@drawable/ic_notification',
+    );
     const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings();
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -19,8 +20,8 @@ class LocalNotification {
   }
 
   Future<void> fetchNotificationData(BuildContext context) async {
-    final NotificationAppLaunchDetails? notificationAppLaunchDetails =
-        await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+    final NotificationAppLaunchDetails? notificationAppLaunchDetails = await flutterLocalNotificationsPlugin
+        .getNotificationAppLaunchDetails();
     if (!context.mounted) {
       return;
     }
@@ -34,15 +35,18 @@ class LocalNotification {
       return;
     }
 
-    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation = flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidImplementation == null) {
       return;
     }
 
     const String channelGroupId = 'notifications';
-    const AndroidNotificationChannelGroup androidNotificationChannelGroup =
-        AndroidNotificationChannelGroup(channelGroupId, 'Notifications', description: 'All Prism Notifications');
+    const AndroidNotificationChannelGroup androidNotificationChannelGroup = AndroidNotificationChannelGroup(
+      channelGroupId,
+      'Notifications',
+      description: 'All Prism Notifications',
+    );
     await androidImplementation.createNotificationChannelGroup(androidNotificationChannelGroup);
 
     final androidNotificationChannel = AndroidNotificationChannel(
@@ -89,7 +93,8 @@ class LocalNotification {
       playSound: false,
     );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
-    final List<ActiveNotification> activeNotifications = await flutterLocalNotificationsPlugin
+    final List<ActiveNotification> activeNotifications =
+        await flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
             ?.getActiveNotifications() ??
         [];

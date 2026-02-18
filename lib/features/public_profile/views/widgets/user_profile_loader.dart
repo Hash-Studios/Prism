@@ -32,9 +32,7 @@ class _UserProfileLoaderState extends State<UserProfileLoader> with AutomaticKee
             logger.d("snapshot none, waiting");
             return const LoadingCards();
           } else {
-            return UserProfileGrid(
-              email: widget.email,
-            );
+            return UserProfileGrid(email: widget.email);
           }
         },
       ),

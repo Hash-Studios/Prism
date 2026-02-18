@@ -4,11 +4,5 @@ class Tag {
   final String? alias;
   final String? categoryId;
   final String? category;
-  Tag({
-    this.id,
-    this.name,
-    this.alias,
-    this.categoryId,
-    this.category,
-  });
+  Tag({this.id, this.name, this.alias, this.categoryId, this.category});
 }

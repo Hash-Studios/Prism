@@ -4,11 +4,7 @@ import 'dart:io';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-Future<void> subscribeToTopicSafely(
-  FirebaseMessaging messaging,
-  String topic, {
-  required String sourceTag,
-}) async {
+Future<void> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) async {
   final String normalizedTopic = topic.trim();
   if (normalizedTopic.isEmpty) {
     return;
@@ -20,10 +16,7 @@ Future<void> subscribeToTopicSafely(
       logger.w(
         'Skipping topic subscription until APNS token is available.',
         tag: 'Push',
-        fields: <String, Object?>{
-          'topic': normalizedTopic,
-          'sourceTag': sourceTag,
-        },
+        fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
       );
       return;
     }
@@ -35,10 +28,7 @@ Future<void> subscribeToTopicSafely(
         tag: 'Push',
         error: error,
         stackTrace: stackTrace,
-        fields: <String, Object?>{
-          'topic': normalizedTopic,
-          'sourceTag': sourceTag,
-        },
+        fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
       );
       return;
     }
@@ -47,19 +37,12 @@ Future<void> subscribeToTopicSafely(
       tag: 'Push',
       error: error,
       stackTrace: stackTrace,
-      fields: <String, Object?>{
-        'topic': normalizedTopic,
-        'sourceTag': sourceTag,
-      },
+      fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
     );
   }
 }
 
-Future<void> unsubscribeFromTopicSafely(
-  FirebaseMessaging messaging,
-  String topic, {
-  required String sourceTag,
-}) async {
+Future<void> unsubscribeFromTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) async {
   final String normalizedTopic = topic.trim();
   if (normalizedTopic.isEmpty) {
     return;
@@ -70,10 +53,7 @@ Future<void> unsubscribeFromTopicSafely(
       logger.w(
         'Skipping topic unsubscription until APNS token is available.',
         tag: 'Push',
-        fields: <String, Object?>{
-          'topic': normalizedTopic,
-          'sourceTag': sourceTag,
-        },
+        fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
       );
       return;
     }
@@ -85,10 +65,7 @@ Future<void> unsubscribeFromTopicSafely(
         tag: 'Push',
         error: error,
         stackTrace: stackTrace,
-        fields: <String, Object?>{
-          'topic': normalizedTopic,
-          'sourceTag': sourceTag,
-        },
+        fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
       );
       return;
     }
@@ -97,10 +74,7 @@ Future<void> unsubscribeFromTopicSafely(
       tag: 'Push',
       error: error,
       stackTrace: stackTrace,
-      fields: <String, Object?>{
-        'topic': normalizedTopic,
-        'sourceTag': sourceTag,
-      },
+      fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
     );
   }
 }

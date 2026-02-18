@@ -7,9 +7,6 @@ class ThemeLightBuilder {
   const ThemeLightBuilder._();
 
   static Widget withBloc({required Widget child, ThemeLightBloc? bloc}) {
-    return BlocProvider<ThemeLightBloc>(
-      create: (_) => bloc ?? getIt<ThemeLightBloc>(),
-      child: child,
-    );
+    return BlocProvider<ThemeLightBloc>(create: (_) => bloc ?? getIt<ThemeLightBloc>(), child: child);
   }
 }

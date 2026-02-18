@@ -7,9 +7,6 @@ class ProfileSetupsBuilder {
   const ProfileSetupsBuilder._();
 
   static Widget withBloc({required Widget child, ProfileSetupsBloc? bloc}) {
-    return BlocProvider<ProfileSetupsBloc>(
-      create: (_) => bloc ?? getIt<ProfileSetupsBloc>(),
-      child: child,
-    );
+    return BlocProvider<ProfileSetupsBloc>(create: (_) => bloc ?? getIt<ProfileSetupsBloc>(), child: child);
   }
 }

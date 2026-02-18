@@ -5,9 +5,7 @@ import 'package:Prism/features/category_feed/views/widgets/collections_grid.dart
 import 'package:flutter/material.dart';
 
 class CollectionScreen extends StatefulWidget {
-  const CollectionScreen({
-    super.key,
-  });
+  const CollectionScreen({super.key});
 
   @override
   _CollectionScreenState createState() => _CollectionScreenState();
@@ -18,9 +16,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   @override
   void initState() {
-    analytics.logEvent(
-      name: 'collections_checked',
-    );
+    analytics.logEvent(name: 'collections_checked');
     _collectionsFuture = getCollections();
     super.initState();
   }
@@ -38,20 +34,21 @@ class _CollectionScreenState extends State<CollectionScreen> {
           default:
             if (snapshot.hasError) {
               return RefreshIndicator(
-                  onRefresh: () async {
-                    setState(() {
-                      _collectionsFuture = getCollections();
-                    });
-                    await _collectionsFuture;
-                  },
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Spacer(),
-                      Center(child: Text("Can't connect to the Servers!")),
-                      Spacer(),
-                    ],
-                  ));
+                onRefresh: () async {
+                  setState(() {
+                    _collectionsFuture = getCollections();
+                  });
+                  await _collectionsFuture;
+                },
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Spacer(),
+                    Center(child: Text("Can't connect to the Servers!")),
+                    Spacer(),
+                  ],
+                ),
+              );
             } else {
               return CollectionsGrid();
             }

@@ -36,8 +36,8 @@ class AdsRepositoryImpl implements AdsRepository {
         adUnitId: kReleaseMode
             ? "ca-app-pub-4649644680694757/3358009164"
             : (Platform.isAndroid
-                ? 'ca-app-pub-3940256099942544/5224354917'
-                : 'ca-app-pub-3940256099942544/1712485313'),
+                  ? 'ca-app-pub-3940256099942544/5224354917'
+                  : 'ca-app-pub-3940256099942544/1712485313'),
         request: _request,
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (RewardedAd ad) {
@@ -113,18 +113,17 @@ class AdsRepositoryImpl implements AdsRepository {
     );
 
     _rewardedAd = null;
-    ad.show(onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-      logger.d('$ad with reward RewardItem(${reward.amount}, ${reward.type})');
-      _state = _state.copyWith(downloadCoins: _state.downloadCoins + reward.amount);
-      if (!completer.isCompleted) {
-        completer.complete(Result.success(_state));
-      }
-    });
-
-    return completer.future.timeout(
-      const Duration(seconds: 45),
-      onTimeout: () => Result.success(_state),
+    ad.show(
+      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+        logger.d('$ad with reward RewardItem(${reward.amount}, ${reward.type})');
+        _state = _state.copyWith(downloadCoins: _state.downloadCoins + reward.amount);
+        if (!completer.isCompleted) {
+          completer.complete(Result.success(_state));
+        }
+      },
     );
+
+    return completer.future.timeout(const Duration(seconds: 45), onTimeout: () => Result.success(_state));
   }
 
   @override

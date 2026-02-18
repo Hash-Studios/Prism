@@ -23,11 +23,7 @@ class FetchFavouriteWallsUseCase implements UseCase<List<FavouriteWallEntity>, F
 }
 
 class ToggleFavouriteWallParams {
-  const ToggleFavouriteWallParams({
-    required this.userId,
-    required this.wall,
-    required this.currentlyFavourited,
-  });
+  const ToggleFavouriteWallParams({required this.userId, required this.wall, required this.currentlyFavourited});
 
   final String userId;
   final FavouriteWallEntity wall;
@@ -70,10 +66,7 @@ class RemoveFavouriteWallUseCase implements UseCase<bool, RemoveFavouriteWallPar
 }
 
 class ClearFavouriteWallsParams {
-  const ClearFavouriteWallsParams({
-    required this.userId,
-    required this.wallIds,
-  });
+  const ClearFavouriteWallsParams({required this.userId, required this.wallIds});
 
   final String userId;
   final List<String> wallIds;

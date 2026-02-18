@@ -77,10 +77,7 @@ String _notifKey(InAppNotif notif) {
   return '$title|$body|$pageName|$url|$createdAt';
 }
 
-Future<void> _addUniqueNotifications(
-  Box<InAppNotif> box,
-  List<Map<String, dynamic>> docs,
-) async {
+Future<void> _addUniqueNotifications(Box<InAppNotif> box, List<Map<String, dynamic>> docs) async {
   final Set<String> seen = box.values.map(_notifKey).toSet();
   for (final Map<String, dynamic> raw in docs) {
     try {

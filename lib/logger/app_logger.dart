@@ -50,11 +50,9 @@ class AppLogRecord {
 }
 
 class AppLogger {
-  AppLogger({
-    required LogSink sink,
-    AppLogLevel? minimumLevel,
-  })  : _sink = sink,
-        _minimumLevel = minimumLevel ?? _defaultMinimumLevel();
+  AppLogger({required LogSink sink, AppLogLevel? minimumLevel})
+    : _sink = sink,
+      _minimumLevel = minimumLevel ?? _defaultMinimumLevel();
 
   static int _sequenceCounter = 0;
 

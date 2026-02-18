@@ -32,13 +32,13 @@ class InAppNotif {
   });
 
   factory InAppNotif.fromSnapshot(Map<String, dynamic> data) => InAppNotif(
-        pageName: data['data']['pageName'].toString(),
-        title: data['notification']['title'].toString(),
-        body: data['notification']['body'].toString(),
-        imageUrl: (data['data']['imageUrl'] ?? "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg").toString(),
-        arguments: data['data']['arguments'] as List,
-        url: data['data']['url'].toString(),
-        createdAt: data['createdAt'].toDate() as DateTime,
-        read: false,
-      );
+    pageName: data['data']['pageName'].toString(),
+    title: data['notification']['title'].toString(),
+    body: data['notification']['body'].toString(),
+    imageUrl: (data['data']['imageUrl'] ?? "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg").toString(),
+    arguments: data['data']['arguments'] as List,
+    url: data['data']['url'].toString(),
+    createdAt: data['createdAt'].toDate() as DateTime,
+    read: false,
+  );
 }

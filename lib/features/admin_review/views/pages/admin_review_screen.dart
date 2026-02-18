@@ -51,13 +51,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _controller,
-        children: <Widget>[
-          _buildWallTab(),
-          _buildSetupTab(),
-        ],
-      ),
+      body: TabBarView(controller: _controller, children: <Widget>[_buildWallTab(), _buildSetupTab()]),
     );
   }
 
@@ -125,10 +119,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     );
   }
 
-  Future<void> _confirmReject(
-    BuildContext context, {
-    required Future<void> Function(String reason) onSubmit,
-  }) async {
+  Future<void> _confirmReject(BuildContext context, {required Future<void> Function(String reason) onSubmit}) async {
     final TextEditingController controller = TextEditingController(
       text: "Sorry! This item doesn't meet our expectations and failed the review.",
     );
@@ -144,10 +135,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             decoration: const InputDecoration(labelText: 'Reason'),
           ),
           actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
             FilledButton(
               onPressed: () async {
                 final String reason = controller.text.trim();
@@ -173,11 +161,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 }
 
 class _WallCard extends StatelessWidget {
-  const _WallCard({
-    required this.wall,
-    required this.onApprove,
-    required this.onReject,
-  });
+  const _WallCard({required this.wall, required this.onApprove, required this.onReject});
 
   final FirestoreDocument wall;
   final Future<void> Function() onApprove;
@@ -187,8 +171,9 @@ class _WallCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final Map<String, dynamic> data = wall.data();
     final String previewUrl = data['wallpaper_thumb']?.toString() ?? '';
-    final String fullUrl =
-        (data['wallpaper_url']?.toString() ?? '').isNotEmpty ? data['wallpaper_url'].toString() : previewUrl;
+    final String fullUrl = (data['wallpaper_url']?.toString() ?? '').isNotEmpty
+        ? data['wallpaper_url'].toString()
+        : previewUrl;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(
@@ -201,11 +186,9 @@ class _WallCard extends StatelessWidget {
               onTap: fullUrl.isEmpty
                   ? null
                   : () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => _FullScreenImageView(imageUrl: fullUrl),
-                        ),
-                      );
+                      Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute<void>(builder: (_) => _FullScreenImageView(imageUrl: fullUrl)));
                     },
             ),
             const SizedBox(height: 8),
@@ -220,11 +203,9 @@ class _WallCard extends StatelessWidget {
                     onPressed: fullUrl.isEmpty
                         ? null
                         : () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => _FullScreenImageView(imageUrl: fullUrl),
-                              ),
-                            );
+                            Navigator.of(
+                              context,
+                            ).push(MaterialPageRoute<void>(builder: (_) => _FullScreenImageView(imageUrl: fullUrl)));
                           },
                     icon: const Icon(Icons.open_in_full),
                     label: const Text('View Full'),
@@ -232,17 +213,11 @@ class _WallCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: FilledButton(
-                    onPressed: onApprove,
-                    child: const Text('Approve'),
-                  ),
+                  child: FilledButton(onPressed: onApprove, child: const Text('Approve')),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: onReject,
-                    child: const Text('Reject'),
-                  ),
+                  child: OutlinedButton(onPressed: onReject, child: const Text('Reject')),
                 ),
               ],
             ),
@@ -254,11 +229,7 @@ class _WallCard extends StatelessWidget {
 }
 
 class _SetupCard extends StatelessWidget {
-  const _SetupCard({
-    required this.setup,
-    required this.onApprove,
-    required this.onReject,
-  });
+  const _SetupCard({required this.setup, required this.onApprove, required this.onReject});
 
   final FirestoreDocument setup;
   final Future<void> Function() onApprove;
@@ -280,11 +251,9 @@ class _SetupCard extends StatelessWidget {
               onTap: fullUrl.isEmpty
                   ? null
                   : () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => _FullScreenImageView(imageUrl: fullUrl),
-                        ),
-                      );
+                      Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute<void>(builder: (_) => _FullScreenImageView(imageUrl: fullUrl)));
                     },
             ),
             const SizedBox(height: 8),
@@ -300,11 +269,9 @@ class _SetupCard extends StatelessWidget {
                     onPressed: fullUrl.isEmpty
                         ? null
                         : () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => _FullScreenImageView(imageUrl: fullUrl),
-                              ),
-                            );
+                            Navigator.of(
+                              context,
+                            ).push(MaterialPageRoute<void>(builder: (_) => _FullScreenImageView(imageUrl: fullUrl)));
                           },
                     icon: const Icon(Icons.open_in_full),
                     label: const Text('View Full'),
@@ -312,17 +279,11 @@ class _SetupCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: FilledButton(
-                    onPressed: onApprove,
-                    child: const Text('Approve'),
-                  ),
+                  child: FilledButton(onPressed: onApprove, child: const Text('Approve')),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: onReject,
-                    child: const Text('Reject'),
-                  ),
+                  child: OutlinedButton(onPressed: onReject, child: const Text('Reject')),
                 ),
               ],
             ),
@@ -334,10 +295,7 @@ class _SetupCard extends StatelessWidget {
 }
 
 class _PortraitPreview extends StatelessWidget {
-  const _PortraitPreview({
-    required this.imageUrl,
-    required this.onTap,
-  });
+  const _PortraitPreview({required this.imageUrl, required this.onTap});
 
   final String imageUrl;
   final VoidCallback? onTap;
@@ -392,12 +350,9 @@ class _FullScreenImageView extends StatelessWidget {
           child: CachedNetworkImage(
             imageUrl: imageUrl,
             fit: BoxFit.contain,
-            placeholder: (BuildContext context, String _) => const Center(
-              child: CircularProgressIndicator(),
-            ),
-            errorWidget: (BuildContext context, String _, Object __) => const Center(
-              child: Icon(Icons.broken_image, color: Colors.white),
-            ),
+            placeholder: (BuildContext context, String _) => const Center(child: CircularProgressIndicator()),
+            errorWidget: (BuildContext context, String _, Object __) =>
+                const Center(child: Icon(Icons.broken_image, color: Colors.white)),
           ),
         ),
       ),

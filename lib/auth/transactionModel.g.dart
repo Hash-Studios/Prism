@@ -13,9 +13,7 @@ class PrismTransactionAdapter extends TypeAdapter<PrismTransaction> {
   @override
   PrismTransaction read(BinaryReader reader) {
     final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
+    final fields = <int, dynamic>{for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read()};
     return PrismTransaction(
       name: fields[0] as String,
       description: fields[6] as String,
@@ -61,21 +59,21 @@ class PrismTransactionAdapter extends TypeAdapter<PrismTransaction> {
 // **************************************************************************
 
 PrismTransaction _$PrismTransactionFromJson(Map<String, dynamic> json) => PrismTransaction(
-      name: json['name'] as String,
-      description: json['description'] as String,
-      id: json['id'] as String,
-      amount: json['amount'] as String,
-      credit: json['credit'] as bool,
-      by: json['by'] as String,
-      processedAt: json['processedAt'] as String,
-    );
+  name: json['name'] as String,
+  description: json['description'] as String,
+  id: json['id'] as String,
+  amount: json['amount'] as String,
+  credit: json['credit'] as bool,
+  by: json['by'] as String,
+  processedAt: json['processedAt'] as String,
+);
 
 Map<String, dynamic> _$PrismTransactionToJson(PrismTransaction instance) => <String, dynamic>{
-      'name': instance.name,
-      'by': instance.by,
-      'id': instance.id,
-      'processedAt': instance.processedAt,
-      'credit': instance.credit,
-      'amount': instance.amount,
-      'description': instance.description,
-    };
+  'name': instance.name,
+  'by': instance.by,
+  'id': instance.id,
+  'processedAt': instance.processedAt,
+  'credit': instance.credit,
+  'amount': instance.amount,
+  'description': instance.description,
+};

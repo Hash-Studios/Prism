@@ -11,13 +11,7 @@ abstract class FavouriteWallsRepository {
     required bool currentlyFavourited,
   });
 
-  Future<Result<bool>> removeFavourite({
-    required String userId,
-    required String wallId,
-  });
+  Future<Result<bool>> removeFavourite({required String userId, required String wallId});
 
-  Future<Result<bool>> clearAll({
-    required String userId,
-    required List<String> wallIds,
-  });
+  Future<Result<bool>> clearAll({required String userId, required List<String> wallIds});
 }

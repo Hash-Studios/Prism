@@ -7,9 +7,6 @@ class InAppNotificationsBuilder {
   const InAppNotificationsBuilder._();
 
   static Widget withBloc({required Widget child, InAppNotificationsBloc? bloc}) {
-    return BlocProvider<InAppNotificationsBloc>(
-      create: (_) => bloc ?? getIt<InAppNotificationsBloc>(),
-      child: child,
-    );
+    return BlocProvider<InAppNotificationsBloc>(create: (_) => bloc ?? getIt<InAppNotificationsBloc>(), child: child);
   }
 }

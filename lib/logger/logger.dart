@@ -5,21 +5,13 @@ import 'package:flutter/foundation.dart';
 
 final AppLogger logger = AppLogger(
   minimumLevel: kReleaseMode ? AppLogLevel.warn : AppLogLevel.trace,
-  sink: CompositeLogSink(
-    <LogSink>[
-      PrintLogSink(),
-      SentryLogSink(),
-    ],
-  ),
+  sink: CompositeLogSink(<LogSink>[PrintLogSink(), SentryLogSink()]),
 );
 
 const String logExportDisabledMarker = 'DISABLED::::';
 
 Future<String> zipLogs() async {
-  logger.w(
-    'Log export is temporarily disabled during the phase-1 logger migration.',
-    tag: 'Logger',
-  );
+  logger.w('Log export is temporarily disabled during the phase-1 logger migration.', tag: 'Logger');
   return logExportDisabledMarker;
 }
 
@@ -27,9 +19,7 @@ Future<String> encryptLogsZip(String zipPath) async {
   logger.w(
     'encryptLogsZip is temporarily disabled during the phase-1 logger migration.',
     tag: 'Logger',
-    fields: <String, Object?>{
-      'zipPath': zipPath,
-    },
+    fields: <String, Object?>{'zipPath': zipPath},
   );
   return logExportDisabledMarker;
 }

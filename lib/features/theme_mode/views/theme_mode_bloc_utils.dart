@@ -33,31 +33,19 @@ final class PrismThemeMapper {
   static const String _fallbackLightThemeId = 'kLFrost White';
   static const String _fallbackDarkThemeId = 'kDMaterial Dark';
 
-  static ThemeData resolveLightTheme({
-    required String themeId,
-    required int accentColorValue,
-  }) {
+  static ThemeData resolveLightTheme({required String themeId, required int accentColorValue}) {
     final ThemeData baseTheme = prismLightThemes[themeId] ?? prismLightThemes[_fallbackLightThemeId]!;
     final Color accentColor = Color(accentColorValue);
     return baseTheme.copyWith(
-      colorScheme: baseTheme.colorScheme.copyWith(
-        primary: accentColor,
-        error: accentColor,
-      ),
+      colorScheme: baseTheme.colorScheme.copyWith(primary: accentColor, error: accentColor),
     );
   }
 
-  static ThemeData resolveDarkTheme({
-    required String themeId,
-    required int accentColorValue,
-  }) {
+  static ThemeData resolveDarkTheme({required String themeId, required int accentColorValue}) {
     final ThemeData baseTheme = prismDarkThemes[themeId] ?? prismDarkThemes[_fallbackDarkThemeId]!;
     final Color accentColor = Color(accentColorValue);
     return baseTheme.copyWith(
-      colorScheme: baseTheme.colorScheme.copyWith(
-        primary: accentColor,
-        error: accentColor,
-      ),
+      colorScheme: baseTheme.colorScheme.copyWith(primary: accentColor, error: accentColor),
     );
   }
 
@@ -74,10 +62,7 @@ final class PrismThemeMapper {
     }
   }
 
-  static String modeStyle({
-    required String mode,
-    required Brightness brightness,
-  }) {
+  static String modeStyle({required String mode, required Brightness brightness}) {
     if (mode == 'Light') {
       return 'Light';
     }
@@ -148,14 +133,8 @@ extension PrismThemeContextX on BuildContext {
   ThemeMode prismThemeMode({bool listen = true}) =>
       PrismThemeMapper.resolveMode(_themeModeBloc(listen).state.mode.mode);
 
-  String prismModeStyle(
-    Brightness brightness, {
-    bool listen = true,
-  }) =>
-      PrismThemeMapper.modeStyle(
-        mode: _themeModeBloc(listen).state.mode.mode,
-        brightness: brightness,
-      );
+  String prismModeStyle(Brightness brightness, {bool listen = true}) =>
+      PrismThemeMapper.modeStyle(mode: _themeModeBloc(listen).state.mode.mode, brightness: brightness);
 
   String prismModeStyleForContext({bool listen = true}) =>
       prismModeStyle(MediaQuery.of(this).platformBrightness, listen: listen);

@@ -4,15 +4,7 @@ import 'dart:io';
 import 'package:Prism/logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
-enum FirestoreOperation {
-  queryGet,
-  docGet,
-  streamSubscribe,
-  set,
-  update,
-  delete,
-  add,
-}
+enum FirestoreOperation { queryGet, docGet, streamSubscribe, set, update, delete, add }
 
 class FirestoreTelemetryEvent {
   const FirestoreTelemetryEvent({
@@ -44,19 +36,19 @@ class FirestoreTelemetryEvent {
   final String? errorCode;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'timestamp': timestamp.toUtc().toIso8601String(),
-        'sourceTag': sourceTag,
-        'operation': operation.name,
-        'collection': collection,
-        'filtersHash': filtersHash,
-        'orderBy': orderBy,
-        'limit': limit,
-        'durationMs': durationMs,
-        'resultCount': resultCount,
-        'docId': docId,
-        'success': success,
-        'errorCode': errorCode,
-      };
+    'timestamp': timestamp.toUtc().toIso8601String(),
+    'sourceTag': sourceTag,
+    'operation': operation.name,
+    'collection': collection,
+    'filtersHash': filtersHash,
+    'orderBy': orderBy,
+    'limit': limit,
+    'durationMs': durationMs,
+    'resultCount': resultCount,
+    'docId': docId,
+    'success': success,
+    'errorCode': errorCode,
+  };
 }
 
 abstract class FirestoreTelemetrySink {
@@ -68,11 +60,7 @@ class FirestoreConsoleTelemetrySink implements FirestoreTelemetrySink {
 
   @override
   Future<void> emit(FirestoreTelemetryEvent event) async {
-    logger.i(
-      '[Firestore]',
-      tag: 'Firestore',
-      fields: event.toJson(),
-    );
+    logger.i('[Firestore]', tag: 'Firestore', fields: event.toJson());
   }
 }
 

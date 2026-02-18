@@ -7,9 +7,6 @@ class DeepLinkBuilder {
   const DeepLinkBuilder._();
 
   static Widget withBloc({required Widget child, DeepLinkBloc? bloc}) {
-    return BlocProvider<DeepLinkBloc>(
-      create: (_) => bloc ?? getIt<DeepLinkBloc>(),
-      child: child,
-    );
+    return BlocProvider<DeepLinkBloc>(create: (_) => bloc ?? getIt<DeepLinkBloc>(), child: child);
   }
 }

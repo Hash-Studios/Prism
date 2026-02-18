@@ -52,35 +52,35 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
       body: Stack(
         children: <Widget>[
           AnimatedBuilder(
-              animation: offsetAnimation,
-              builder: (buildContext, child) {
-                if (offsetAnimation.value < 0.0) {
-                  logger.d('${offsetAnimation.value + 8.0}');
-                }
-                return GestureDetector(
-                  onLongPress: () {
-                    HapticFeedback.vibrate();
-                    shakeController.forward(from: 0.0);
-                  },
-                  onTap: () {
-                    HapticFeedback.vibrate();
-                    shakeController.forward(from: 0.0);
-                  },
-                  child: Container(
-                    margin: EdgeInsets.symmetric(
-                        vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(offsetAnimation.value),
-                      image: DecorationImage(
-                        image: FileImage(file),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    height: MediaQuery.of(context).size.height,
-                    width: MediaQuery.of(context).size.width,
+            animation: offsetAnimation,
+            builder: (buildContext, child) {
+              if (offsetAnimation.value < 0.0) {
+                logger.d('${offsetAnimation.value + 8.0}');
+              }
+              return GestureDetector(
+                onLongPress: () {
+                  HapticFeedback.vibrate();
+                  shakeController.forward(from: 0.0);
+                },
+                onTap: () {
+                  HapticFeedback.vibrate();
+                  shakeController.forward(from: 0.0);
+                },
+                child: Container(
+                  margin: EdgeInsets.symmetric(
+                    vertical: offsetAnimation.value * 1.25,
+                    horizontal: offsetAnimation.value / 2,
                   ),
-                );
-              }),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(offsetAnimation.value),
+                    image: DecorationImage(image: FileImage(file), fit: BoxFit.cover),
+                  ),
+                  height: MediaQuery.of(context).size.height,
+                  width: MediaQuery.of(context).size.width,
+                ),
+              );
+            },
+          ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -97,9 +97,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
                   Navigator.pop(context);
                 },
                 color: Theme.of(context).colorScheme.secondary,
-                icon: const Icon(
-                  JamIcons.chevron_left,
-                ),
+                icon: const Icon(JamIcons.chevron_left),
               ),
             ),
           ),
@@ -111,29 +109,25 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
                 onPressed: () {
                   final link = file.path;
                   Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) {
-                            animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                            return FadeTransition(
-                                opacity: animation,
-                                child: ClockOverlay(
-                                  colorChanged: false,
-                                  accent: null,
-                                  link: link,
-                                  file: true,
-                                ));
-                          },
-                          fullscreenDialog: true,
-                          opaque: false));
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) {
+                        animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                        return FadeTransition(
+                          opacity: animation,
+                          child: ClockOverlay(colorChanged: false, accent: null, link: link, file: true),
+                        );
+                      },
+                      fullscreenDialog: true,
+                      opaque: false,
+                    ),
+                  );
                 },
                 color: Theme.of(context).colorScheme.secondary,
-                icon: const Icon(
-                  JamIcons.clock,
-                ),
+                icon: const Icon(JamIcons.clock),
               ),
             ),
-          )
+          ),
         ],
       ),
     );

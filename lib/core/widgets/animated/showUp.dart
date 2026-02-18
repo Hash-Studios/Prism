@@ -22,8 +22,13 @@ class ShowUpTransition extends StatefulWidget {
   /// From which direction start the [Slide] animation
   final SlideFromSlide slideSide;
 
-  const ShowUpTransition(
-      {required this.child, this.duration, this.delay, this.slideSide = SlideFromSlide.left, required this.forward});
+  const ShowUpTransition({
+    required this.child,
+    this.duration,
+    this.delay,
+    this.slideSide = SlideFromSlide.left,
+    required this.forward,
+  });
 
   @override
   _ShowUpTransitionState createState() => _ShowUpTransitionState();
@@ -55,8 +60,10 @@ class _ShowUpTransitionState extends State<ShowUpTransition> with SingleTickerPr
       case SlideFromSlide.top:
         selectedSlide = slideSides[3];
     }
-    _animOffset = Tween<Offset>(begin: selectedSlide, end: Offset.zero)
-        .animate(CurvedAnimation(curve: Curves.fastLinearToSlowEaseIn, parent: _animController));
+    _animOffset = Tween<Offset>(
+      begin: selectedSlide,
+      end: Offset.zero,
+    ).animate(CurvedAnimation(curve: Curves.fastLinearToSlowEaseIn, parent: _animController));
   }
 
   @override
@@ -77,10 +84,7 @@ class _ShowUpTransitionState extends State<ShowUpTransition> with SingleTickerPr
     return widget.forward
         ? FadeTransition(
             opacity: _animController,
-            child: SlideTransition(
-              position: _animOffset,
-              child: widget.child,
-            ),
+            child: SlideTransition(position: _animOffset, child: widget.child),
           )
         : Container();
   }

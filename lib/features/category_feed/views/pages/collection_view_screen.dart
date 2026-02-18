@@ -9,27 +9,20 @@ import 'package:auto_route/auto_route.dart';
 @RoutePage()
 class CollectionViewScreen extends StatelessWidget {
   final List? arguments;
-  const CollectionViewScreen({
-    super.key,
-    required this.arguments,
-  });
+  const CollectionViewScreen({super.key, required this.arguments});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: PreferredSize(
         preferredSize: const Size(double.infinity, 55),
-        child: HeadingChipBar(
-          current: (arguments![0] as String).capitalize(),
-        ),
+        child: HeadingChipBar(current: (arguments![0] as String).capitalize()),
       ),
       body: FutureBuilder(
         future: getCollectionWithName(arguments![0].toString()),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.hasData) {
-            return const BottomBar(
-              child: CollectionViewGrid(),
-            );
+            return const BottomBar(child: CollectionViewGrid());
           }
           return const LoadingCards();
         },

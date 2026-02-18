@@ -13,11 +13,8 @@ part 'session_bloc.j.freezed.dart';
 
 @injectable
 class SessionBloc extends Bloc<SessionEvent, SessionState> {
-  SessionBloc(
-    this._getSessionUseCase,
-    this._refreshPremiumUseCase,
-    this._signOutUseCase,
-  ) : super(SessionState.initial()) {
+  SessionBloc(this._getSessionUseCase, this._refreshPremiumUseCase, this._signOutUseCase)
+    : super(SessionState.initial()) {
     on<_Started>(_onStarted);
     on<_PremiumRefreshRequested>(_onPremiumRefreshRequested);
     on<_SignOutRequested>(_onSignOutRequested);
@@ -32,59 +29,35 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     final result = await _getSessionUseCase(const NoParams());
 
     result.fold(
-      onSuccess: (session) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.idle,
-        session: session,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (session) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.idle, session: session, failure: null),
+      ),
+      onFailure: (failure) =>
+          emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onPremiumRefreshRequested(
-    _PremiumRefreshRequested event,
-    Emitter<SessionState> emit,
-  ) async {
+  Future<void> _onPremiumRefreshRequested(_PremiumRefreshRequested event, Emitter<SessionState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final result = await _refreshPremiumUseCase(const NoParams());
 
     result.fold(
-      onSuccess: (session) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        session: session,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (session) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, session: session, failure: null),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onSignOutRequested(
-    _SignOutRequested event,
-    Emitter<SessionState> emit,
-  ) async {
+  Future<void> _onSignOutRequested(_SignOutRequested event, Emitter<SessionState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final result = await _signOutUseCase(const NoParams());
 
     result.fold(
-      onSuccess: (session) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        session: session,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (session) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, session: session, failure: null),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 }

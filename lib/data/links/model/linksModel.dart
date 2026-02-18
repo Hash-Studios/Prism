@@ -7,12 +7,7 @@ class LinksModel {
   IconData icon;
   String username;
 
-  LinksModel({
-    required this.username,
-    required this.name,
-    required this.link,
-    required this.icon,
-  });
+  LinksModel({required this.username, required this.name, required this.link, required this.icon});
 
   factory LinksModel.fromLinkAndKey(String names, String links) {
     if (names.toLowerCase() == "twitter") {
@@ -24,8 +19,9 @@ class LinksModel {
         icon: JamIcons.twitter,
       );
     } else if (names.toLowerCase() == "instagram") {
-      final RegExp instagramUser =
-          RegExp(r"(?:(?:http|https):\/\/)?(?:www.)?(?:instagram.com|instagr.am)\/(?:@)?([A-Za-z0-9-_]+)");
+      final RegExp instagramUser = RegExp(
+        r"(?:(?:http|https):\/\/)?(?:www.)?(?:instagram.com|instagr.am)\/(?:@)?([A-Za-z0-9-_]+)",
+      );
       return LinksModel(
         username: instagramUser.firstMatch(links)!.group(1)!,
         name: "Instagram",

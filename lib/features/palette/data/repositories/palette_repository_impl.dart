@@ -17,21 +17,13 @@ class PaletteRepositoryImpl implements PaletteRepository {
 
     try {
       final generator = await PaletteGenerator.fromImageProvider(
-        ResizeImage(
-          CachedNetworkImageProvider(imageUrl),
-          height: 10,
-          width: 10,
-        ),
+        ResizeImage(CachedNetworkImageProvider(imageUrl), height: 10, width: 10),
       );
 
       final dominant = generator.dominantColor?.color.toARGB32() ?? 0xffe57697;
       final colors = generator.paletteColors.map((color) => color.color.toARGB32()).toList();
       return Result.success(
-        PaletteEntity(
-          imageUrl: imageUrl,
-          dominantColorValue: dominant,
-          paletteColorValues: colors,
-        ),
+        PaletteEntity(imageUrl: imageUrl, dominantColorValue: dominant, paletteColorValues: colors),
       );
     } catch (error) {
       return Result.error(NetworkFailure('Failed to build palette: $error'));

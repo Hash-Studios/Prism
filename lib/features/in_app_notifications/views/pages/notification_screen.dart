@@ -44,12 +44,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ),
         actions: <Widget>[
           IconButton(
-              tooltip: "Notification Settings",
-              icon: const Icon(JamIcons.settings_alt),
-              onPressed: () {
-                showModalBottomSheet(
-                    isScrollControlled: true, context: context, builder: (context) => NotificationSettingsSheet());
-              })
+            tooltip: "Notification Settings",
+            icon: const Icon(JamIcons.settings_alt),
+            onPressed: () {
+              showModalBottomSheet(
+                isScrollControlled: true,
+                context: context,
+                builder: (context) => NotificationSettingsSheet(),
+              );
+            },
+          ),
         ],
       ),
       body: Container(
@@ -58,16 +62,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 itemCount: notifications.length,
                 itemBuilder: (BuildContext context, int index) {
                   box.put(
-                      box.keys.toList()[index],
-                      InAppNotif(
-                          pageName: notifications[index].pageName,
-                          title: notifications[index].title,
-                          body: notifications[index].body,
-                          imageUrl: notifications[index].imageUrl,
-                          arguments: notifications[index].arguments,
-                          url: notifications[index].url,
-                          createdAt: notifications[index].createdAt,
-                          read: true));
+                    box.keys.toList()[index],
+                    InAppNotif(
+                      pageName: notifications[index].pageName,
+                      title: notifications[index].title,
+                      body: notifications[index].body,
+                      imageUrl: notifications[index].imageUrl,
+                      arguments: notifications[index].arguments,
+                      url: notifications[index].url,
+                      createdAt: notifications[index].createdAt,
+                      read: true,
+                    ),
+                  );
                   return Dismissible(
                     onDismissed: (DismissDirection direction) {
                       setState(() {
@@ -80,20 +86,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       color: Colors.red,
                       child: Align(
                         alignment: Alignment.centerRight,
-                        child: Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(JamIcons.trash),
-                        ),
+                        child: Padding(padding: EdgeInsets.all(8.0), child: Icon(JamIcons.trash)),
                       ),
                     ),
                     background: const ColoredBox(
                       color: Colors.red,
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(JamIcons.trash),
-                        ),
+                        child: Padding(padding: EdgeInsets.all(8.0), child: Icon(JamIcons.trash)),
                       ),
                     ),
                     key: UniqueKey(),
@@ -102,7 +102,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 },
               )
             : Center(
-                child: Text('No new notifications', style: TextStyle(color: Theme.of(context).colorScheme.secondary))),
+                child: Text('No new notifications', style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
+              ),
       ),
       floatingActionButton: notifications.isNotEmpty
           ? FloatingActionButton(
@@ -114,7 +115,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   title: Text(
                     'Clear all notifications?',
                     style: TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
                   ),
                   actions: [
                     MaterialButton(
@@ -127,13 +131,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           box.clear();
                         });
                       },
-                      child: const Text(
-                        'YES',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: const Text('YES', style: TextStyle(fontSize: 16.0, color: Colors.white)),
                     ),
                     MaterialButton(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -141,13 +139,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
-                      child: const Text(
-                        'NO',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: const Text('NO', style: TextStyle(fontSize: 16.0, color: Colors.white)),
                     ),
                   ],
                   backgroundColor: Theme.of(context).primaryColor,
@@ -204,7 +196,10 @@ class NotificationCard extends StatelessWidget {
       title: Text(
         notification!.title!,
         style: TextStyle(
-            color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+          color: Theme.of(context).colorScheme.secondary,
+          fontWeight: FontWeight.w500,
+          fontFamily: "Proxima Nova",
+        ),
       ),
       subtitle: Text(
         notification!.body!,
@@ -252,18 +247,14 @@ class NotificationCard extends StatelessWidget {
                     alignment: Alignment.topRight,
                     child: Text(
                       stringForDatetime(notification!.createdAt!),
-                      style: const TextStyle(
-                        backgroundColor: Colors.white24,
-                        color: Colors.black,
-                        fontSize: 12,
-                      ),
+                      style: const TextStyle(backgroundColor: Colors.white24, color: Colors.black, fontSize: 12),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        )
+        ),
       ],
     );
   }
@@ -291,18 +282,12 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(20),
-        topRight: Radius.circular(20),
-      ),
+      borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
       child: Container(
         height: MediaQuery.of(context).size.height / 2.3 > 380 ? MediaQuery.of(context).size.height / 2.3 : 380,
         decoration: BoxDecoration(
           color: Theme.of(context).primaryColor,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
+          borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
         ),
         child: ListView(
           physics: const BouncingScrollPhysics(),
@@ -316,10 +301,12 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   child: Container(
                     height: 5,
                     width: 30,
-                    decoration:
-                        BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(500)),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).hintColor,
+                      borderRadius: BorderRadius.circular(500),
+                    ),
                   ),
-                )
+                ),
               ],
             ),
             Padding(
@@ -340,21 +327,17 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
             ),
             SwitchListTile(
               activeThumbColor: Theme.of(context).colorScheme.error,
-              secondary: const Icon(
-                JamIcons.user_plus,
-              ),
+              secondary: const Icon(JamIcons.user_plus),
               value: followersSubscriber!,
               title: Text(
                 "Followers",
                 style: TextStyle(
-                    color: Theme.of(context).colorScheme.secondary,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova",
+                ),
               ),
-              subtitle: const Text(
-                "Get notifications for new followers.",
-                style: TextStyle(fontSize: 12),
-              ),
+              subtitle: const Text("Get notifications for new followers.", style: TextStyle(fontSize: 12)),
               onChanged: (bool value) async {
                 if (globals.prismUser.loggedIn == true) {
                   main.prefs.put("followersSubscriber", value);
@@ -390,16 +373,15 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
             ),
             SwitchListTile(
               activeThumbColor: Theme.of(context).colorScheme.error,
-              secondary: const Icon(
-                JamIcons.pictures,
-              ),
+              secondary: const Icon(JamIcons.pictures),
               value: postsSubscriber!,
               title: Text(
                 "Posts",
                 style: TextStyle(
-                    color: Theme.of(context).colorScheme.secondary,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova",
+                ),
               ),
               subtitle: const Text(
                 "Get notifications for posts from the artists you follow.",
@@ -433,16 +415,15 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
             ),
             SwitchListTile(
               activeThumbColor: Theme.of(context).colorScheme.error,
-              secondary: const Icon(
-                JamIcons.picture,
-              ),
+              secondary: const Icon(JamIcons.picture),
               value: inappSubscriber!,
               title: Text(
                 "In-App",
                 style: TextStyle(
-                    color: Theme.of(context).colorScheme.secondary,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova",
+                ),
               ),
               subtitle: const Text(
                 "Get in app notifications for giveaways, contests and reviews.",
@@ -462,14 +443,12 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               title: Text(
                 "Recommendations",
                 style: TextStyle(
-                    color: Theme.of(context).colorScheme.secondary,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova",
+                ),
               ),
-              subtitle: const Text(
-                "Get recommendations from Prism.",
-                style: TextStyle(fontSize: 12),
-              ),
+              subtitle: const Text("Get recommendations from Prism.", style: TextStyle(fontSize: 12)),
               onChanged: (bool value) async {
                 main.prefs.put("recommendationsSubscriber", value);
                 setState(() {
@@ -490,9 +469,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                 }
               },
             ),
-            const SizedBox(
-              height: 24,
-            )
+            const SizedBox(height: 24),
           ],
         ),
       ),

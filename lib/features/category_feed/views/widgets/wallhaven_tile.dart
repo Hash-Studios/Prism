@@ -7,11 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class WallhavenTile extends StatelessWidget {
-  const WallhavenTile({
-    super.key,
-    required this.widget,
-    required this.index,
-  });
+  const WallhavenTile({super.key, required this.widget, required this.index});
 
   final WallHavenGrid widget;
   final int index;
@@ -34,10 +30,9 @@ class WallhavenTile extends StatelessWidget {
                       : Colors.black.withValues(alpha: .1),
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
-                      image: CachedNetworkImageProvider(
-                        wData.walls[index].thumbs!["original"].toString(),
-                      ),
-                      fit: BoxFit.cover),
+                    image: CachedNetworkImageProvider(wData.walls[index].thumbs!["original"].toString()),
+                    fit: BoxFit.cover,
+                  ),
                 ),
         ),
         ClipRRect(
@@ -50,11 +45,9 @@ class WallhavenTile extends StatelessWidget {
               onTap: () {
                 if (wData.walls == []) {
                 } else {
-                  context.router.push(WallpaperRoute(arguments: [
-                    widget.provider,
-                    index,
-                    wData.walls[index].thumbs!["small"].toString(),
-                  ]));
+                  context.router.push(
+                    WallpaperRoute(arguments: [widget.provider, index, wData.walls[index].thumbs!["small"].toString()]),
+                  );
                 }
               },
             ),

@@ -56,31 +56,20 @@ void main() {
     deleteUseCase = _MockDeleteNotificationUseCase();
     clearUseCase = _MockClearNotificationsUseCase();
 
-    when(() => fetchUseCase(any())).thenAnswer(
-      (_) async => Result.success(<InAppNotificationEntity>[unread]),
-    );
+    when(() => fetchUseCase(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread]));
 
-    when(() => markUseCase(any())).thenAnswer(
-      (_) async => Result.success(<InAppNotificationEntity>[read]),
-    );
+    when(() => markUseCase(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[read]));
 
-    when(() => deleteUseCase(any())).thenAnswer(
-      (_) async => Result.success(const <InAppNotificationEntity>[]),
-    );
+    when(() => deleteUseCase(any())).thenAnswer((_) async => Result.success(const <InAppNotificationEntity>[]));
 
-    when(() => clearUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(const <InAppNotificationEntity>[]),
-    );
+    when(
+      () => clearUseCase(const NoParams()),
+    ).thenAnswer((_) async => Result.success(const <InAppNotificationEntity>[]));
   });
 
   blocTest<InAppNotificationsBloc, InAppNotificationsState>(
     'loads notifications and marks one as read',
-    build: () => InAppNotificationsBloc(
-      fetchUseCase,
-      markUseCase,
-      deleteUseCase,
-      clearUseCase,
-    ),
+    build: () => InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, clearUseCase),
     act: (bloc) => bloc
       ..add(const InAppNotificationsEvent.started(syncRemote: true))
       ..add(const InAppNotificationsEvent.markReadRequested(index: 0)),

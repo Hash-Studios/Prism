@@ -14,9 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 final FirebaseMessaging f = FirebaseMessaging.instance;
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({
-    super.key,
-  });
+  const HomeScreen({super.key});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();

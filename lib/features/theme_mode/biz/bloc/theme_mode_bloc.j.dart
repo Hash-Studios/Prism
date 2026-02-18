@@ -13,10 +13,7 @@ part 'theme_mode_bloc.j.freezed.dart';
 
 @injectable
 class ThemeModeBloc extends Bloc<ThemeModeEvent, ThemeModeState> {
-  ThemeModeBloc(
-    this._loadThemeModeUseCase,
-    this._updateThemeModeUseCase,
-  ) : super(ThemeModeState.initial()) {
+  ThemeModeBloc(this._loadThemeModeUseCase, this._updateThemeModeUseCase) : super(ThemeModeState.initial()) {
     on<_Started>(_onStarted);
     on<_ModeChanged>(_onModeChanged);
   }
@@ -28,39 +25,21 @@ class ThemeModeBloc extends Bloc<ThemeModeEvent, ThemeModeState> {
     emit(state.copyWith(status: LoadStatus.loading, failure: null));
     final result = await _loadThemeModeUseCase(const NoParams());
     result.fold(
-      onSuccess: (mode) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.idle,
-        mode: mode,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (mode) =>
+          emit(state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.idle, mode: mode, failure: null)),
+      onFailure: (failure) =>
+          emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onModeChanged(
-    _ModeChanged event,
-    Emitter<ThemeModeState> emit,
-  ) async {
+  Future<void> _onModeChanged(_ModeChanged event, Emitter<ThemeModeState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-    final result = await _updateThemeModeUseCase(
-      UpdateThemeModeParams(mode: event.mode),
-    );
+    final result = await _updateThemeModeUseCase(UpdateThemeModeParams(mode: event.mode));
     result.fold(
-      onSuccess: (mode) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        mode: mode,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (mode) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, mode: mode, failure: null),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 }

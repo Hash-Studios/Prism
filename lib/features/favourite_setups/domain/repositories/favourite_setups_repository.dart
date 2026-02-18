@@ -10,10 +10,7 @@ abstract class FavouriteSetupsRepository {
     required FavouriteSetupEntity setup,
   });
 
-  Future<Result<List<FavouriteSetupEntity>>> removeFavourite({
-    required String userId,
-    required String setupId,
-  });
+  Future<Result<List<FavouriteSetupEntity>>> removeFavourite({required String userId, required String setupId});
 
   Future<Result<List<FavouriteSetupEntity>>> clearAll({required String userId});
 }

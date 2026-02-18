@@ -22,22 +22,11 @@ void main() {
       const ToggleFavouriteWallParams(
         userId: 'user_1',
         currentlyFavourited: false,
-        wall: FavouriteWallEntity(
-          id: 'w1',
-          provider: 'Prism',
-          payload: <String, dynamic>{},
-        ),
+        wall: FavouriteWallEntity(id: 'w1', provider: 'Prism', payload: <String, dynamic>{}),
       ),
     );
-    registerFallbackValue(
-      const RemoveFavouriteWallParams(userId: 'user_1', wallId: 'w1'),
-    );
-    registerFallbackValue(
-      const ClearFavouriteWallsParams(
-        userId: 'user_1',
-        wallIds: <String>['w1'],
-      ),
-    );
+    registerFallbackValue(const RemoveFavouriteWallParams(userId: 'user_1', wallId: 'w1'));
+    registerFallbackValue(const ClearFavouriteWallsParams(userId: 'user_1', wallIds: <String>['w1']));
   });
 
   late _MockFetchFavouriteWallsUseCase fetchUseCase;
@@ -52,47 +41,26 @@ void main() {
     clearUseCase = _MockClearFavouriteWallsUseCase();
 
     when(() => fetchUseCase(any())).thenAnswer(
-      (_) async => Result.success(
-        const <FavouriteWallEntity>[
-          FavouriteWallEntity(
-            id: 'w1',
-            provider: 'Prism',
-            payload: <String, dynamic>{},
-          ),
-        ],
-      ),
+      (_) async => Result.success(const <FavouriteWallEntity>[
+        FavouriteWallEntity(id: 'w1', provider: 'Prism', payload: <String, dynamic>{}),
+      ]),
     );
 
-    when(() => toggleUseCase(any())).thenAnswer(
-      (_) async => Result.success(true),
-    );
+    when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(true));
 
-    when(() => removeUseCase(any())).thenAnswer(
-      (_) async => Result.success(true),
-    );
+    when(() => removeUseCase(any())).thenAnswer((_) async => Result.success(true));
 
-    when(() => clearUseCase(any())).thenAnswer(
-      (_) async => Result.success(true),
-    );
+    when(() => clearUseCase(any())).thenAnswer((_) async => Result.success(true));
   });
 
   blocTest<FavouriteWallsBloc, FavouriteWallsState>(
     'loads favourites for user and toggles item',
-    build: () => FavouriteWallsBloc(
-      fetchUseCase,
-      toggleUseCase,
-      removeUseCase,
-      clearUseCase,
-    ),
+    build: () => FavouriteWallsBloc(fetchUseCase, toggleUseCase, removeUseCase, clearUseCase),
     act: (bloc) => bloc
       ..add(const FavouriteWallsEvent.started(userId: 'user_1'))
       ..add(
         const FavouriteWallsEvent.toggleRequested(
-          wall: FavouriteWallEntity(
-            id: 'w2',
-            provider: 'Pexels',
-            payload: <String, dynamic>{},
-          ),
+          wall: FavouriteWallEntity(id: 'w2', provider: 'Pexels', payload: <String, dynamic>{}),
         ),
       ),
     verify: (bloc) {

@@ -7,9 +7,6 @@ class CategoryFeedBuilder {
   const CategoryFeedBuilder._();
 
   static Widget withBloc({required Widget child, CategoryFeedBloc? bloc}) {
-    return BlocProvider<CategoryFeedBloc>(
-      create: (_) => bloc ?? getIt<CategoryFeedBloc>(),
-      child: child,
-    );
+    return BlocProvider<CategoryFeedBloc>(create: (_) => bloc ?? getIt<CategoryFeedBloc>(), child: child);
   }
 }

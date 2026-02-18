@@ -7,9 +7,6 @@ class StartupBuilder {
   const StartupBuilder._();
 
   static Widget withBloc({required Widget child, StartupBloc? bloc}) {
-    return BlocProvider<StartupBloc>(
-      create: (_) => bloc ?? getIt<StartupBloc>(),
-      child: child,
-    );
+    return BlocProvider<StartupBloc>(create: (_) => bloc ?? getIt<StartupBloc>(), child: child);
   }
 }

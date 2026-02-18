@@ -15,7 +15,7 @@ class PublicProfileSnapshot {
 
 class PublicProfileAdapter {
   PublicProfileAdapter(BuildContext context, {required bool listen})
-      : _bloc = listen ? context.watch<PublicProfileBloc>() : context.read<PublicProfileBloc>();
+    : _bloc = listen ? context.watch<PublicProfileBloc>() : context.read<PublicProfileBloc>();
 
   final PublicProfileBloc _bloc;
 

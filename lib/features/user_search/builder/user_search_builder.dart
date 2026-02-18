@@ -7,9 +7,6 @@ class UserSearchBuilder {
   const UserSearchBuilder._();
 
   static Widget withBloc({required Widget child, UserSearchBloc? bloc}) {
-    return BlocProvider<UserSearchBloc>(
-      create: (_) => bloc ?? getIt<UserSearchBloc>(),
-      child: child,
-    );
+    return BlocProvider<UserSearchBloc>(create: (_) => bloc ?? getIt<UserSearchBloc>(), child: child);
   }
 }

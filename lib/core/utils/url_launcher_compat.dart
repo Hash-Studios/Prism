@@ -6,9 +6,6 @@ Future<bool> launch(String url) {
   return launcher.launchUrl(Uri.parse(url));
 }
 
-Future<bool> launchUrl(
-  Uri url, {
-  LaunchMode mode = LaunchMode.platformDefault,
-}) {
+Future<bool> launchUrl(Uri url, {LaunchMode mode = LaunchMode.platformDefault}) {
   return launcher.launchUrl(url, mode: mode);
 }

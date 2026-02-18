@@ -9,11 +9,7 @@ import 'package:flutter/services.dart';
 class SetWallpaperButton extends StatefulWidget {
   final String? url;
   final bool colorChanged;
-  const SetWallpaperButton({
-    super.key,
-    required this.url,
-    required this.colorChanged,
-  });
+  const SetWallpaperButton({super.key, required this.url, required this.colorChanged});
 
   @override
   _SetWallpaperButtonState createState() => _SetWallpaperButtonState();
@@ -25,10 +21,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   Future<void> _setWallPaper() async {
     bool? result;
     try {
-      result = await WallpaperService.setWallpaperFromSource(
-        widget.url!,
-        WallpaperTarget.both,
-      );
+      result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.both);
       if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
@@ -56,10 +49,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   Future<void> _setBothWallPaper() async {
     bool? result;
     try {
-      result = await WallpaperService.setWallpaperFromSource(
-        widget.url!,
-        WallpaperTarget.both,
-      );
+      result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.both);
       if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
@@ -88,10 +78,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   Future<void> _setLockWallPaper() async {
     bool? result;
     try {
-      result = await WallpaperService.setWallpaperFromSource(
-        widget.url!,
-        WallpaperTarget.lock,
-      );
+      result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.lock);
       if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Success'});
@@ -120,10 +107,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   Future<void> _setHomeWallPaper() async {
     bool? result;
     try {
-      result = await WallpaperService.setWallpaperFromSource(
-        widget.url!,
-        WallpaperTarget.home,
-      );
+      result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.home);
       if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Success'});
@@ -207,23 +191,20 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
+                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
               ],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
-            child: Icon(
-              JamIcons.picture,
-              color: Theme.of(context).colorScheme.secondary,
-              size: 20,
-            ),
+            child: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary, size: 20),
           ),
           Positioned(
-              top: 0,
-              left: 0,
-              height: 53,
-              width: 53,
-              child: isLoading ? const CircularProgressIndicator() : Container())
+            top: 0,
+            left: 0,
+            height: 53,
+            width: 53,
+            child: isLoading ? const CircularProgressIndicator() : Container(),
+          ),
         ],
       ),
     );
@@ -234,12 +215,7 @@ class SetOptionsPanel extends StatefulWidget {
   final Function? onTap1;
   final Function? onTap2;
   final Function? onTap3;
-  const SetOptionsPanel({
-    super.key,
-    this.onTap1,
-    this.onTap2,
-    this.onTap3,
-  });
+  const SetOptionsPanel({super.key, this.onTap1, this.onTap2, this.onTap3});
 
   @override
   _SetOptionsPanelState createState() => _SetOptionsPanelState();
@@ -258,10 +234,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
       height: MediaQuery.of(context).size.height / 2 > 400 ? MediaQuery.of(context).size.height / 2 : 400,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
       ),
       child: Column(
         children: <Widget>[
@@ -274,17 +247,16 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                 child: Container(
                   height: 5,
                   width: 30,
-                  decoration:
-                      BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(500)),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).hintColor,
+                    borderRadius: BorderRadius.circular(500),
+                  ),
                 ),
-              )
+              ),
             ],
           ),
           const Spacer(),
-          Text(
-            "Set Wallpaper as",
-            style: Theme.of(context).textTheme.displayMedium,
-          ),
+          Text("Set Wallpaper as", style: Theme.of(context).textTheme.displayMedium),
           const Spacer(flex: 2),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -310,9 +282,10 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                         child: Text(
                           "Home Screen",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontWeight: FontWeight.bold),
+                            fontSize: 16,
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -340,9 +313,10 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                         child: Text(
                           "Lock Screen",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontWeight: FontWeight.bold),
+                            fontSize: 16,
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -370,9 +344,10 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                         child: Text(
                           "Both",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontWeight: FontWeight.bold),
+                            fontSize: 16,
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -389,10 +364,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
               child: Text(
                 "Select where wallpaper you want to change with this wallpaper. Selecting both, will change the wallpaper on home screen as well as lock screen.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
+                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.secondary),
               ),
             ),
           ),

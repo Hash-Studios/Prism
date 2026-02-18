@@ -35,9 +35,7 @@ class MarkNotificationAsReadUseCase implements UseCase<List<InAppNotificationEnt
   final NotificationsRepository _repository;
 
   @override
-  Future<Result<List<InAppNotificationEntity>>> call(
-    MarkNotificationAsReadParams params,
-  ) {
+  Future<Result<List<InAppNotificationEntity>>> call(MarkNotificationAsReadParams params) {
     return _repository.markAsRead(index: params.index);
   }
 }

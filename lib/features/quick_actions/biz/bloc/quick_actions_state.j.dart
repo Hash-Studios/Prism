@@ -11,9 +11,9 @@ abstract class QuickActionsState with _$QuickActionsState {
   }) = _QuickActionsState;
 
   factory QuickActionsState.initial() => const QuickActionsState(
-        status: LoadStatus.initial,
-        actionStatus: ActionStatus.idle,
-        latestAction: null,
-        history: <QuickActionEntity>[],
-      );
+    status: LoadStatus.initial,
+    actionStatus: ActionStatus.idle,
+    latestAction: null,
+    history: <QuickActionEntity>[],
+  );
 }

@@ -60,16 +60,17 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                     carouselController: carouselController,
                     itemCount: 5,
                     options: CarouselOptions(
-                        height: 200,
-                        autoPlay: true,
-                        autoPlayInterval: const Duration(seconds: 3),
-                        onPageChanged: (index, reason) {
-                          if (mounted) {
-                            setState(() {
-                              _current = index;
-                            });
-                          }
-                        }),
+                      height: 200,
+                      autoPlay: true,
+                      autoPlayInterval: const Duration(seconds: 3),
+                      onPageChanged: (index, reason) {
+                        if (mounted) {
+                          setState(() {
+                            _current = index;
+                          });
+                        }
+                      },
+                    ),
                     itemBuilder: (BuildContext context, int i, int rI) => i == 4
                         ? Container(
                             width: MediaQuery.of(context).size.width,
@@ -80,12 +81,15 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: context.prismModeStyleForContext() == "Dark"
-                                        ? Colors.white10
-                                        : Colors.black.withValues(alpha: .1),
-                                    borderRadius: BorderRadius.circular(20),
-                                    image: DecorationImage(
-                                        image: CachedNetworkImageProvider(globals.topImageLink), fit: BoxFit.cover)),
+                                  color: context.prismModeStyleForContext() == "Dark"
+                                      ? Colors.white10
+                                      : Colors.black.withValues(alpha: .1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                    image: CachedNetworkImageProvider(globals.topImageLink),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                                 child: Center(
                                   child: Container(
                                     width: MediaQuery.of(context).size.width,
@@ -98,10 +102,11 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                         globals.bannerTextOn == "true" ? globals.bannerText.toUpperCase() : "",
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .displayMedium!
-                                            .copyWith(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
+                                        style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                                          fontSize: 20,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -116,11 +121,9 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                               onTap: () {
                                 if (wData.walls == []) {
                                 } else {
-                                  context.router.push(WallpaperRoute(arguments: [
-                                    widget.provider,
-                                    i,
-                                    wData.walls[i].thumbs!["small"],
-                                  ]));
+                                  context.router.push(
+                                    WallpaperRoute(arguments: [widget.provider, i, wData.walls[i].thumbs!["small"]]),
+                                  );
                                 }
                               },
                               child: wData.walls.isEmpty
@@ -134,14 +137,17 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                     )
                                   : Container(
                                       decoration: BoxDecoration(
-                                          color: context.prismModeStyleForContext() == "Dark"
-                                              ? Colors.white10
-                                              : Colors.black.withValues(alpha: .1),
-                                          borderRadius: BorderRadius.circular(20),
-                                          image: DecorationImage(
-                                              image: CachedNetworkImageProvider(
-                                                  wData.walls[i].thumbs!["original"].toString()),
-                                              fit: BoxFit.cover)),
+                                        color: context.prismModeStyleForContext() == "Dark"
+                                            ? Colors.white10
+                                            : Colors.black.withValues(alpha: .1),
+                                        borderRadius: BorderRadius.circular(20),
+                                        image: DecorationImage(
+                                          image: CachedNetworkImageProvider(
+                                            wData.walls[i].thumbs!["original"].toString(),
+                                          ),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
                                       child: Center(
                                         child: Container(
                                           width: MediaQuery.of(context).size.width,
@@ -153,7 +159,10 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                               textAlign: TextAlign.center,
                                               maxLines: 1,
                                               style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                                  color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                                                color: Colors.white,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -191,10 +200,11 @@ class _WallHavenGridState extends State<WallHavenGrid> {
               itemCount: wData.walls.isEmpty ? 20 : wData.walls.length - 4,
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                  childAspectRatio: 0.6625,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8),
+                maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+                childAspectRatio: 0.6625,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+              ),
               itemBuilder: (context, index) {
                 index = index + 4;
                 if (index == wData.walls.length - 1) {
@@ -204,12 +214,10 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                       if (!seeMoreLoader) {
                         context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
 
-                        setState(
-                          () {
-                            seeMoreLoader = true;
-                            Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
-                          },
-                        );
+                        setState(() {
+                          seeMoreLoader = true;
+                          Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
+                        });
                       }
                     },
                   );

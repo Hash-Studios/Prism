@@ -32,14 +32,12 @@ class PremiumList extends StatelessWidget {
             title: Text(
               "Buy Premium",
               style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.w500,
+                fontFamily: "Proxima Nova",
+              ),
             ),
-            subtitle: const Text(
-              "Get unlimited setups and filters.",
-              style: TextStyle(fontSize: 12),
-            ),
+            subtitle: const Text("Get unlimited setups and filters.", style: TextStyle(fontSize: 12)),
           ),
       ],
     );

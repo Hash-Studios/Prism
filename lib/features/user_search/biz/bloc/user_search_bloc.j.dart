@@ -19,31 +19,24 @@ class UserSearchBloc extends Bloc<UserSearchEvent, UserSearchState> {
 
   final SearchUsersUseCase _searchUsersUseCase;
 
-  Future<void> _onSearchRequested(
-    _SearchRequested event,
-    Emitter<UserSearchState> emit,
-  ) async {
-    emit(state.copyWith(
-      status: LoadStatus.loading,
-      actionStatus: ActionStatus.inProgress,
-      query: event.query,
-      failure: null,
-    ));
+  Future<void> _onSearchRequested(_SearchRequested event, Emitter<UserSearchState> emit) async {
+    emit(
+      state.copyWith(
+        status: LoadStatus.loading,
+        actionStatus: ActionStatus.inProgress,
+        query: event.query,
+        failure: null,
+      ),
+    );
 
     final result = await _searchUsersUseCase(SearchUsersParams(query: event.query));
 
     result.fold(
-      onSuccess: (users) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        users: users,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (users) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, users: users, failure: null),
+      ),
+      onFailure: (failure) =>
+          emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 

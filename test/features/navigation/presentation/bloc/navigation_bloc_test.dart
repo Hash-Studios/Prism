@@ -38,38 +38,30 @@ void main() {
     resetUseCase = _MockResetNavigationUseCase();
     replaceUseCase = _MockReplaceNavigationStackUseCase();
 
-    when(() => getUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(const NavigationStackEntity(stack: <String>['Home'])),
-    );
+    when(
+      () => getUseCase(const NoParams()),
+    ).thenAnswer((_) async => Result.success(const NavigationStackEntity(stack: <String>['Home'])));
 
-    when(() => pushUseCase(any())).thenAnswer(
-      (_) async => Result.success(const NavigationStackEntity(stack: <String>['Home', 'Setups'])),
-    );
+    when(
+      () => pushUseCase(any()),
+    ).thenAnswer((_) async => Result.success(const NavigationStackEntity(stack: <String>['Home', 'Setups'])));
 
-    when(() => popUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(const NavigationStackEntity(stack: <String>['Home'])),
-    );
+    when(
+      () => popUseCase(const NoParams()),
+    ).thenAnswer((_) async => Result.success(const NavigationStackEntity(stack: <String>['Home'])));
 
-    when(() => resetUseCase(any())).thenAnswer(
-      (_) async => Result.success(const NavigationStackEntity(stack: <String>['Home'])),
-    );
+    when(
+      () => resetUseCase(any()),
+    ).thenAnswer((_) async => Result.success(const NavigationStackEntity(stack: <String>['Home'])));
 
-    when(() => replaceUseCase(any())).thenAnswer(
-      (_) async => Result.success(
-        const NavigationStackEntity(stack: <String>['Home', 'Profile']),
-      ),
-    );
+    when(
+      () => replaceUseCase(any()),
+    ).thenAnswer((_) async => Result.success(const NavigationStackEntity(stack: <String>['Home', 'Profile'])));
   });
 
   blocTest<NavigationBloc, NavigationState>(
     'push and pop update stack and canPop flag',
-    build: () => NavigationBloc(
-      getUseCase,
-      pushUseCase,
-      popUseCase,
-      resetUseCase,
-      replaceUseCase,
-    ),
+    build: () => NavigationBloc(getUseCase, pushUseCase, popUseCase, resetUseCase, replaceUseCase),
     act: (bloc) => bloc
       ..add(const NavigationEvent.started())
       ..add(const NavigationEvent.routePushed(routeName: 'Setups'))

@@ -7,9 +7,6 @@ class SetupsBuilder {
   const SetupsBuilder._();
 
   static Widget withBloc({required Widget child, SetupsBloc? bloc}) {
-    return BlocProvider<SetupsBloc>(
-      create: (_) => bloc ?? getIt<SetupsBloc>(),
-      child: child,
-    );
+    return BlocProvider<SetupsBloc>(create: (_) => bloc ?? getIt<SetupsBloc>(), child: child);
   }
 }

@@ -115,15 +115,7 @@ String _packageTypeLabel(PackageType type) {
 }
 
 String _currencySymbol(String code) {
-  const symbols = {
-    'INR': '₹',
-    'USD': '\$',
-    'EUR': '€',
-    'GBP': '£',
-    'AUD': 'A\$',
-    'CAD': 'C\$',
-    'JPY': '¥',
-  };
+  const symbols = {'INR': '₹', 'USD': '\$', 'EUR': '€', 'GBP': '£', 'AUD': 'A\$', 'CAD': 'C\$', 'JPY': '¥'};
   return symbols[code] ?? code;
 }
 
@@ -307,10 +299,7 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
             children: [
               const SizedBox(height: 48),
               // Header: "UPGRADE TO / PRISM PREMIUM / AND UNLOCK EVERY FEATURE"
-              _UpgradeHeader(
-                isPremium: widget.isPremium,
-                expiryDateLabel: widget.expiryDateLabel,
-              ),
+              _UpgradeHeader(isPremium: widget.isPremium, expiryDateLabel: widget.expiryDateLabel),
               const SizedBox(height: 20),
               const _StarDivider(),
               // Package pills — hidden when already premium or no offerings
@@ -332,9 +321,9 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
                       '${_packageTypeLabel(selectedPackage.packageType).toLowerCase()}',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
-                            letterSpacing: 0.4,
-                          ),
+                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+                        letterSpacing: 0.4,
+                      ),
                     ),
                   ),
                 const SizedBox(height: 16),
@@ -349,14 +338,11 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
                       Text(
                         widget.offeringsError ? 'Unable to load packages' : 'No packages available',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                            ),
+                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: widget.onRetry,
-                        child: const Text('Retry'),
-                      ),
+                      TextButton(onPressed: widget.onRetry, child: const Text('Retry')),
                     ],
                   ),
                 ),
@@ -390,35 +376,30 @@ class _UpgradeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final secondary = Theme.of(context).colorScheme.secondary;
     final labelStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: secondary.withValues(alpha: 0.6),
-          letterSpacing: 1.2,
-          wordSpacing: 2,
-          fontWeight: FontWeight.w300,
-        );
+      color: secondary.withValues(alpha: 0.6),
+      letterSpacing: 1.2,
+      wordSpacing: 2,
+      fontWeight: FontWeight.w300,
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          Text(
-            isPremium ? 'UPGRADED TO' : 'UPGRADE TO',
-            textAlign: TextAlign.center,
-            style: labelStyle,
-          ),
+          Text(isPremium ? 'UPGRADED TO' : 'UPGRADE TO', textAlign: TextAlign.center, style: labelStyle),
           const SizedBox(height: 6),
           ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color(0xFFE57697), Colors.white],
-            ).createShader(bounds),
+            shaderCallback: (bounds) =>
+                const LinearGradient(colors: [Color(0xFFE57697), Colors.white]).createShader(bounds),
             child: Text(
               'PRISM PREMIUM',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
-                    color: Colors.white, // required for ShaderMask to work
-                  ),
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+                color: Colors.white, // required for ShaderMask to work
+              ),
             ),
           ),
           const SizedBox(height: 6),
@@ -450,11 +431,7 @@ class _StarDivider extends StatelessWidget {
           Expanded(child: Divider(color: color)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Icon(
-              Icons.star,
-              size: 14,
-              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
-            ),
+            child: Icon(Icons.star, size: 14, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4)),
           ),
           Expanded(child: Divider(color: color)),
         ],
@@ -472,11 +449,7 @@ class _PackagePillRow extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
 
-  const _PackagePillRow({
-    required this.packages,
-    required this.selectedIndex,
-    required this.onTap,
-  });
+  const _PackagePillRow({required this.packages, required this.selectedIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -485,11 +458,7 @@ class _PackagePillRow extends StatelessWidget {
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(right: i < packages.length - 1 ? 12 : 0),
-            child: _PackagePill(
-              package: packages[i],
-              isSelected: selectedIndex == i,
-              onTap: () => onTap(i),
-            ),
+            child: _PackagePill(package: packages[i], isSelected: selectedIndex == i, onTap: () => onTap(i)),
           ),
         );
       }),
@@ -502,11 +471,7 @@ class _PackagePill extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _PackagePill({
-    required this.package,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const _PackagePill({required this.package, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -521,10 +486,7 @@ class _PackagePill extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: isSelected ? accentColor : Colors.white10,
-          border: Border.all(
-            color: isSelected ? accentColor : Colors.white24,
-            width: isSelected ? 2 : 1,
-          ),
+          border: Border.all(color: isSelected ? accentColor : Colors.white24, width: isSelected ? 2 : 1),
           borderRadius: BorderRadius.circular(12),
         ),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
@@ -537,25 +499,20 @@ class _PackagePill extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: cs.secondary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: cs.secondary),
                 ),
                 if (isAnnual) ...[
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.amber,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                    decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(4)),
                     child: Text(
                       'BEST',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
                     ),
                   ),
                 ],
@@ -563,16 +520,12 @@ class _PackagePill extends StatelessWidget {
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
                     child: Text(
                       'SALE',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
                 ],
@@ -581,9 +534,7 @@ class _PackagePill extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               package.storeProduct.priceString,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: cs.secondary,
-                  ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: cs.secondary),
             ),
           ],
         ),
@@ -614,19 +565,16 @@ class _FeatureSection extends StatelessWidget {
             isPremium ? 'UNLOCKED FEATURES' : 'FEATURES',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontSize: 14,
-                  letterSpacing: 1.2,
-                  wordSpacing: 2,
-                  color: secondary.withValues(alpha: 0.45),
-                ),
+              fontSize: 14,
+              letterSpacing: 1.2,
+              wordSpacing: 2,
+              color: secondary.withValues(alpha: 0.45),
+            ),
           ),
         ],
       ),
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: secondary.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: secondary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
       dividerMargin: 0,
       children: _features.map((f) => _FeatureTile(data: f)).toList(),
     );
@@ -648,25 +596,16 @@ class _FeatureTile extends StatelessWidget {
       leading: Container(
         width: 30,
         height: 30,
-        decoration: BoxDecoration(
-          color: data.color,
-          borderRadius: BorderRadius.circular(7),
-        ),
+        decoration: BoxDecoration(color: data.color, borderRadius: BorderRadius.circular(7)),
         child: Icon(data.icon, size: 16, color: Colors.white),
       ),
       title: Text(
         data.title,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: secondary,
-            ),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: secondary),
       ),
       subtitle: Text(
         data.subtitle,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: secondary.withValues(alpha: 0.6),
-              height: 1.4,
-            ),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: secondary.withValues(alpha: 0.6), height: 1.4),
       ),
     );
   }
@@ -681,11 +620,7 @@ class _StickyBottomSheet extends StatelessWidget {
   final Package? selectedPackage;
   final VoidCallback onPremiumUnlocked;
 
-  const _StickyBottomSheet({
-    required this.isPremium,
-    required this.selectedPackage,
-    required this.onPremiumUnlocked,
-  });
+  const _StickyBottomSheet({required this.isPremium, required this.selectedPackage, required this.onPremiumUnlocked});
 
   @override
   Widget build(BuildContext context) {
@@ -694,18 +629,9 @@ class _StickyBottomSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
-        border: Border(
-          top: BorderSide(
-            color: secondary.withValues(alpha: 0.12),
-          ),
-        ),
+        border: Border(top: BorderSide(color: secondary.withValues(alpha: 0.12))),
       ),
-      padding: EdgeInsets.fromLTRB(
-        24,
-        16,
-        24,
-        16 + MediaQuery.of(context).padding.bottom,
-      ),
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + MediaQuery.of(context).padding.bottom),
       child: isPremium
           ? Center(
               child: Row(
@@ -715,10 +641,9 @@ class _StickyBottomSheet extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     "You're on Prism Premium",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: secondary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(color: secondary, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -727,10 +652,7 @@ class _StickyBottomSheet extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (selectedPackage != null)
-                  _PurchaseCTAButton(
-                    package: selectedPackage!,
-                    onPremiumUnlocked: onPremiumUnlocked,
-                  )
+                  _PurchaseCTAButton(package: selectedPackage!, onPremiumUnlocked: onPremiumUnlocked)
                 else
                   const SizedBox(height: 52),
                 const SizedBox(height: 12),
@@ -738,25 +660,21 @@ class _StickyBottomSheet extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     TextButton(
-                      onPressed: () => launchUrl(
-                        Uri.parse(PurchaseConstants.termsOfUseUrl),
-                      ),
+                      onPressed: () => launchUrl(Uri.parse(PurchaseConstants.termsOfUseUrl)),
                       style: TextButton.styleFrom(
                         minimumSize: Size.zero,
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       ),
                       child: Text(
                         'Terms of Use',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: secondary.withValues(alpha: 0.55),
-                            ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: secondary.withValues(alpha: 0.55)),
                       ),
                     ),
                     Text(
                       '·',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: secondary.withValues(alpha: 0.4),
-                          ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: secondary.withValues(alpha: 0.4)),
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
@@ -789,9 +707,9 @@ class _StickyBottomSheet extends StatelessWidget {
                       },
                       child: Text(
                         'Restore',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: secondary.withValues(alpha: 0.55),
-                            ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: secondary.withValues(alpha: 0.55)),
                       ),
                     ),
                   ],
@@ -810,10 +728,7 @@ class _PurchaseCTAButton extends StatefulWidget {
   final Package package;
   final VoidCallback onPremiumUnlocked;
 
-  const _PurchaseCTAButton({
-    required this.package,
-    required this.onPremiumUnlocked,
-  });
+  const _PurchaseCTAButton({required this.package, required this.onPremiumUnlocked});
 
   @override
   State<_PurchaseCTAButton> createState() => _PurchaseCTAButtonState();
@@ -861,35 +776,22 @@ class _PurchaseCTAButtonState extends State<_PurchaseCTAButton> {
       onTap: _isPurchasing ? null : _purchase,
       child: Container(
         width: double.infinity,
-        decoration: BoxDecoration(
-          color: accentColor,
-          borderRadius: BorderRadius.circular(500),
-        ),
+        decoration: BoxDecoration(color: accentColor, borderRadius: BorderRadius.circular(500)),
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: _isPurchasing
-            ? const Center(
-                child: SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
+            ? const Center(child: SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2)))
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     label,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(
-                    Icons.arrow_forward,
-                    size: 20,
-                    color: Theme.of(context).primaryColor,
-                  ),
+                  Icon(Icons.arrow_forward, size: 20, color: Theme.of(context).primaryColor),
                 ],
               ),
       ),

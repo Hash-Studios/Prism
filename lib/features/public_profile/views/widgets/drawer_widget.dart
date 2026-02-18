@@ -24,9 +24,10 @@ class ProfileDrawer extends StatelessWidget {
     return SizedBox(
       height: 150,
       child: DrawerHeader(
-          margin: EdgeInsets.zero,
-          padding: EdgeInsets.zero,
-          child: Stack(children: <Widget>[
+        margin: EdgeInsets.zero,
+        padding: EdgeInsets.zero,
+        child: Stack(
+          children: <Widget>[
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
@@ -40,10 +41,9 @@ class ProfileDrawer extends StatelessWidget {
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
                           globals.prismUser.premium == true ? "Prism Pro" : "Prism",
-                          style: Theme.of(context)
-                              .textTheme
-                              .displaySmall!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                       ),
                       SizedBox(
@@ -52,10 +52,9 @@ class ProfileDrawer extends StatelessWidget {
                           globals.prismUser.premium == true
                               ? "Exclusive premium walls & setups!"
                               : "Exclusive wallpapers & setups!",
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                       ),
                     ],
@@ -63,31 +62,30 @@ class ProfileDrawer extends StatelessWidget {
                 ),
               ),
             ),
-          ])),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget createDrawerBodyItem(
-      {IconData? icon, required String text, GestureTapCallback? onTap, required BuildContext context}) {
+  Widget createDrawerBodyItem({
+    IconData? icon,
+    required String text,
+    GestureTapCallback? onTap,
+    required BuildContext context,
+  }) {
     return ListTile(
       dense: true,
-      trailing: Icon(
-        JamIcons.chevron_right,
-        color: Theme.of(context).colorScheme.secondary,
-      ),
+      trailing: Icon(JamIcons.chevron_right, color: Theme.of(context).colorScheme.secondary),
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      leading: Icon(
-        icon,
-        color: Theme.of(context).colorScheme.secondary,
-      ),
+      leading: Icon(icon, color: Theme.of(context).colorScheme.secondary),
       title: SizedBox(
         width: MediaQuery.of(context).size.width / 2,
         child: Text(
           text,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall!
-              .copyWith(fontFamily: "Proxima Nova", color: Theme.of(context).colorScheme.secondary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall!.copyWith(fontFamily: "Proxima Nova", color: Theme.of(context).colorScheme.secondary),
         ),
       ),
       onTap: onTap,
@@ -99,11 +97,13 @@ class ProfileDrawer extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
       child: SizedBox(
         width: MediaQuery.of(context).size.width / 2,
-        child: Text(text,
-            style: Theme.of(context)
-                .textTheme
-                .displaySmall!
-                .copyWith(fontSize: 12, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4))),
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.displaySmall!.copyWith(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
+          ),
+        ),
       ),
     );
   }
@@ -125,31 +125,34 @@ class ProfileDrawer extends StatelessWidget {
               Container()
             else
               createDrawerBodyItem(
-                  icon: JamIcons.coin,
-                  text: 'Buy Premium',
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.router.push(const UpgradeRoute());
-                  },
-                  context: context),
+                icon: JamIcons.coin,
+                text: 'Buy Premium',
+                onTap: () {
+                  Navigator.pop(context);
+                  context.router.push(const UpgradeRoute());
+                },
+                context: context,
+              ),
             if (globals.prismUser.premium == true) Container() else const Divider(),
             createDrawerBodyHeader(text: "FAVOURITES", context: context),
             createDrawerBodyItem(
-                icon: JamIcons.picture,
-                text: 'Wallpapers',
-                onTap: () {
-                  Navigator.pop(context);
-                  context.router.push(const FavouriteWallpaperRoute());
-                },
-                context: context),
+              icon: JamIcons.picture,
+              text: 'Wallpapers',
+              onTap: () {
+                Navigator.pop(context);
+                context.router.push(const FavouriteWallpaperRoute());
+              },
+              context: context,
+            ),
             createDrawerBodyItem(
-                icon: JamIcons.instant_picture,
-                text: 'Setups',
-                onTap: () {
-                  Navigator.pop(context);
-                  context.router.push(const FavouriteSetupRoute());
-                },
-                context: context),
+              icon: JamIcons.instant_picture,
+              text: 'Setups',
+              onTap: () {
+                Navigator.pop(context);
+                context.router.push(const FavouriteSetupRoute());
+              },
+              context: context,
+            ),
             const Divider(),
             createDrawerBodyHeader(text: "DOWNLOADS", context: context),
             createDrawerBodyItem(
@@ -169,11 +172,7 @@ class ProfileDrawer extends StatelessWidget {
                 showModal(
                   context: context,
                   builder: (context) => AlertDialog(
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      ),
-                    ),
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                     content: SizedBox(
                       height: 50,
                       width: 250,
@@ -227,10 +226,7 @@ class ProfileDrawer extends StatelessWidget {
                         },
                         child: Text(
                           'YES',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
+                          style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
                         ),
                       ),
                       Padding(
@@ -241,13 +237,7 @@ class ProfileDrawer extends StatelessWidget {
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
-                          child: const Text(
-                            'NO',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              color: Colors.white,
-                            ),
-                          ),
+                          child: const Text('NO', style: TextStyle(fontSize: 16.0, color: Colors.white)),
                         ),
                       ),
                     ],
@@ -292,18 +282,19 @@ class ProfileDrawer extends StatelessWidget {
             const Divider(),
             createDrawerBodyHeader(text: "USER", context: context),
             createDrawerBodyItem(
-                icon: JamIcons.share_alt,
-                text: 'Share your Profile',
-                context: context,
-                onTap: () {
-                  createUserDynamicLink(
-                    globals.prismUser.name,
-                    globals.prismUser.username,
-                    globals.prismUser.email,
-                    globals.prismUser.bio,
-                    globals.prismUser.profilePhoto,
-                  );
-                }),
+              icon: JamIcons.share_alt,
+              text: 'Share your Profile',
+              context: context,
+              onTap: () {
+                createUserDynamicLink(
+                  globals.prismUser.name,
+                  globals.prismUser.username,
+                  globals.prismUser.email,
+                  globals.prismUser.bio,
+                  globals.prismUser.profilePhoto,
+                );
+              },
+            ),
             createDrawerBodyItem(
               icon: JamIcons.log_out,
               text: 'Log out',
@@ -354,53 +345,50 @@ class ProfileDrawer extends StatelessWidget {
             const Divider(),
             createDrawerBodyHeader(text: "MORE", context: context),
             createDrawerBodyItem(
-                icon: JamIcons.bug,
-                text: 'Report a bug',
-                context: context,
-                onTap: () async {
-                  if (Platform.isAndroid) {
-                    final androidInfo = await DeviceInfoPlugin().androidInfo;
-                    final release = androidInfo.version.release;
-                    final sdkInt = androidInfo.version.sdkInt;
-                    final manufacturer = androidInfo.manufacturer;
-                    final model = androidInfo.model;
-                    logger.d('Android $release (SDK $sdkInt), $manufacturer $model');
-                    final String zipPath = await zipLogs();
-                    if (zipPath.startsWith(logExportDisabledMarker)) {
-                      toasts.error('Log export is temporarily disabled.');
-                      return;
-                    }
-                    final String encryptedZipPath = zipPath.split("::::").last;
-                    final String encryptedZipKey = zipPath.split("::::").first;
+              icon: JamIcons.bug,
+              text: 'Report a bug',
+              context: context,
+              onTap: () async {
+                if (Platform.isAndroid) {
+                  final androidInfo = await DeviceInfoPlugin().androidInfo;
+                  final release = androidInfo.version.release;
+                  final sdkInt = androidInfo.version.sdkInt;
+                  final manufacturer = androidInfo.manufacturer;
+                  final model = androidInfo.model;
+                  logger.d('Android $release (SDK $sdkInt), $manufacturer $model');
+                  final String zipPath = await zipLogs();
+                  if (zipPath.startsWith(logExportDisabledMarker)) {
+                    toasts.error('Log export is temporarily disabled.');
+                    return;
+                  }
+                  final String encryptedZipPath = zipPath.split("::::").last;
+                  final String encryptedZipKey = zipPath.split("::::").first;
+                  final MailOptions mailOptions = MailOptions(
+                    body:
+                        '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
+                    subject: '[BUG REPORT::PRISM] - $encryptedZipKey',
+                    recipients: ['hash.studios.inc@gmail.com'],
+                    isHTML: true,
+                    attachments: [encryptedZipPath],
+                    appSchema: 'com.google.android.gm',
+                  );
+                  final MailerResponse response = await FlutterMailer.send(mailOptions);
+                  if (response != MailerResponse.android) {
                     final MailOptions mailOptions = MailOptions(
                       body:
                           '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
-                      subject: '[BUG REPORT::PRISM] - $encryptedZipKey',
+                      subject: '[BUG REPORT::PRISM]',
                       recipients: ['hash.studios.inc@gmail.com'],
                       isHTML: true,
-                      attachments: [
-                        encryptedZipPath,
-                      ],
-                      appSchema: 'com.google.android.gm',
+                      attachments: [zipPath],
                     );
-                    final MailerResponse response = await FlutterMailer.send(mailOptions);
-                    if (response != MailerResponse.android) {
-                      final MailOptions mailOptions = MailOptions(
-                        body:
-                            '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
-                        subject: '[BUG REPORT::PRISM]',
-                        recipients: ['hash.studios.inc@gmail.com'],
-                        isHTML: true,
-                        attachments: [
-                          zipPath,
-                        ],
-                      );
-                      await FlutterMailer.send(mailOptions);
-                    } else {
-                      toasts.codeSend("Bug report sent!");
-                    }
+                    await FlutterMailer.send(mailOptions);
+                  } else {
+                    toasts.codeSend("Bug report sent!");
                   }
-                }),
+                }
+              },
+            ),
             Padding(
               padding: const EdgeInsets.only(bottom: 100),
               child: createDrawerBodyItem(

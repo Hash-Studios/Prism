@@ -7,9 +7,6 @@ class FavouriteSetupsBuilder {
   const FavouriteSetupsBuilder._();
 
   static Widget withBloc({required Widget child, FavouriteSetupsBloc? bloc}) {
-    return BlocProvider<FavouriteSetupsBloc>(
-      create: (_) => bloc ?? getIt<FavouriteSetupsBloc>(),
-      child: child,
-    );
+    return BlocProvider<FavouriteSetupsBloc>(create: (_) => bloc ?? getIt<FavouriteSetupsBloc>(), child: child);
   }
 }

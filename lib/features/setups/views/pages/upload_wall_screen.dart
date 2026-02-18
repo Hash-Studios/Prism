@@ -85,11 +85,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<Uint8List> compressFile(File file) async {
-    final result = await FlutterImageCompress.compressWithFile(
-      file.absolute.path,
-      minWidth: 400,
-      quality: 85,
-    );
+    final result = await FlutterImageCompress.compressWithFile(file.absolute.path, minWidth: 400, quality: 85);
     logger.d(file.lengthSync().toString());
     logger.d(result!.length.toString());
     return result;
@@ -119,9 +115,19 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   Future deleteFile() async {
     final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
     await github.repositories.deleteFile(
-        RepositorySlug(Env.ghUserName, Env.ghRepoWalls), wallpaperPath, wallpaperPath, wallpaperSha, "master");
-    await github.repositories
-        .deleteFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls), thumbPath, thumbPath, thumbSha, "master");
+      RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+      wallpaperPath,
+      wallpaperPath,
+      wallpaperSha,
+      "master",
+    );
+    await github.repositories.deleteFile(
+      RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+      thumbPath,
+      thumbPath,
+      thumbSha,
+      "master",
+    );
     logger.d("Files deleted");
   }
 
@@ -135,25 +141,33 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       final String base64ImageThumb = base64Encode(imageBytesThumb);
       final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
       await github.repositories
-          .createFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
-              CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)))
-          .then((value) => setState(() {
-                wallpaperUrl = value.content!.downloadUrl;
-                wallpaperPath = value.content!.path!;
-                wallpaperSha = value.content!.sha!;
-              }));
+          .createFile(
+            RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+            CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)),
+          )
+          .then(
+            (value) => setState(() {
+              wallpaperUrl = value.content!.downloadUrl;
+              wallpaperPath = value.content!.path!;
+              wallpaperSha = value.content!.sha!;
+            }),
+          );
       await github.repositories
           .createFile(
-              RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
-              CreateFile(
-                  message: "thumb_${Path.basename(image.path)}",
-                  content: base64ImageThumb,
-                  path: 'thumb_${Path.basename(image.path)}'))
-          .then((value) => setState(() {
-                wallpaperThumb = value.content!.downloadUrl;
-                thumbPath = value.content!.path!;
-                thumbSha = value.content!.sha!;
-              }));
+            RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+            CreateFile(
+              message: "thumb_${Path.basename(image.path)}",
+              content: base64ImageThumb,
+              path: 'thumb_${Path.basename(image.path)}',
+            ),
+          )
+          .then(
+            (value) => setState(() {
+              wallpaperThumb = value.content!.downloadUrl;
+              thumbPath = value.content!.path!;
+              thumbSha = value.content!.sha!;
+            }),
+          );
       logger.d('File Uploaded');
       setState(() {
         isUploading = false;
@@ -178,10 +192,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
-          title: Text(
-            "Upload Wallpaper",
-            style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-          ),
+          title: Text("Upload Wallpaper", style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
         ),
         body: Column(
           children: <Widget>[
@@ -192,9 +203,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 height: MediaQuery.of(context).size.width,
                 child: PhotoView(
                   imageProvider: FileImage(image),
-                  backgroundDecoration: BoxDecoration(
-                    color: Theme.of(context).hintColor,
-                  ),
+                  backgroundDecoration: BoxDecoration(color: Theme.of(context).hintColor),
                 ),
               ),
             ),
@@ -215,10 +224,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 child: Text(
                   "Uploading...",
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                 ),
               )
             else
@@ -229,23 +235,22 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 child: Text(
                   "Processing...",
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                 ),
               )
             else
               Container(),
             if (isProcessing || isUploading)
               SizedBox(
-                  width: MediaQuery.of(context).size.width / 2,
-                  child: ClipRRect(
-                      borderRadius: BorderRadius.circular(500),
-                      child: LinearProgressIndicator(
-                        backgroundColor: Theme.of(context).hintColor,
-                        valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
-                      )))
+                width: MediaQuery.of(context).size.width / 2,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(500),
+                  child: LinearProgressIndicator(
+                    backgroundColor: Theme.of(context).hintColor,
+                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
+                  ),
+                ),
+              )
             else
               Container(),
             const Spacer(),
@@ -256,10 +261,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 0.2,
                     child: Center(
-                      child: Icon(
-                        JamIcons.info,
-                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                      ),
+                      child: Icon(JamIcons.info, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6)),
                     ),
                   ),
                   SizedBox(
@@ -282,28 +284,36 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor:
-              !isProcessing && !isUploading ? Theme.of(context).colorScheme.error : Theme.of(context).hintColor,
+          backgroundColor: !isProcessing && !isUploading
+              ? Theme.of(context).colorScheme.error
+              : Theme.of(context).hintColor,
           disabledElevation: 0,
           onPressed: !isProcessing && !isUploading
               ? () async {
                   Navigator.pop(context, [wallpaperUrl, id]);
-                  analytics
-                      .logEvent(name: 'upload_wallpaper', parameters: {'id': id ?? '', 'link': wallpaperUrl ?? ''});
-                  WallStore.createRecord(id, wallpaperProvider, wallpaperThumb, wallpaperUrl, wallpaperResolution,
-                      wallpaperSize, wallpaperCategory, wallpaperDesc, fromSetupRoute ? "setup" : review);
+                  analytics.logEvent(
+                    name: 'upload_wallpaper',
+                    parameters: {'id': id ?? '', 'link': wallpaperUrl ?? ''},
+                  );
+                  WallStore.createRecord(
+                    id,
+                    wallpaperProvider,
+                    wallpaperThumb,
+                    wallpaperUrl,
+                    wallpaperResolution,
+                    wallpaperSize,
+                    wallpaperCategory,
+                    wallpaperDesc,
+                    fromSetupRoute ? "setup" : review,
+                  );
                   context.router.push(const ReviewRoute());
                 }
               : null,
-          child: const Icon(
-            JamIcons.check,
-            size: 40,
-            color: Colors.white,
-          ),
+          child: const Icon(JamIcons.check, size: 40, color: Colors.white),
         ),
       ),
     );

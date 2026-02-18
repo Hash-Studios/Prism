@@ -4,9 +4,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 
 class LoadingCards extends StatefulWidget {
-  const LoadingCards({
-    super.key,
-  });
+  const LoadingCards({super.key});
 
   @override
   _LoadingCardsState createState() => _LoadingCardsState();
@@ -19,50 +17,38 @@ class _LoadingCardsState extends State<LoadingCards> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
-        ? TweenSequence<Color?>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.white10,
-                  end: const Color(0x22FFFFFF),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: const Color(0x22FFFFFF),
-                  end: Colors.white10,
-                ),
-              ),
-            ],
-          ).animate(_controller)
-        : TweenSequence<Color?>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black12.withValues(alpha: .1),
-                  end: Colors.black.withValues(alpha: .14),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withValues(alpha: .14),
-                  end: Colors.black.withValues(alpha: .1),
-                ),
-              ),
-            ],
-          ).animate(_controller)
-      ..addListener(() {
-        setState(() {});
-      });
+    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    animation =
+        context.prismModeStyleForWindow(listen: false) == "Dark"
+              ? TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
+                  ),
+                ]).animate(_controller)
+              : TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black12.withValues(alpha: .1),
+                      end: Colors.black.withValues(alpha: .14),
+                    ),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .14),
+                      end: Colors.black.withValues(alpha: .1),
+                    ),
+                  ),
+                ]).animate(_controller)
+          ..addListener(() {
+            setState(() {});
+          });
     _controller.repeat();
   }
 
@@ -90,16 +76,14 @@ class _LoadingCardsState extends State<LoadingCards> with SingleTickerProviderSt
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                childAspectRatio: 0.6625,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8),
+              maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+              childAspectRatio: 0.6625,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+            ),
             itemBuilder: (context, index) {
               return Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: animation.value,
-                ),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: animation.value),
               );
             },
           )
@@ -108,16 +92,14 @@ class _LoadingCardsState extends State<LoadingCards> with SingleTickerProviderSt
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                childAspectRatio: 0.6625,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8),
+              maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+              childAspectRatio: 0.6625,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+            ),
             itemBuilder: (context, index) {
               return Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: animation.value,
-                ),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: animation.value),
               );
             },
           );

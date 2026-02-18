@@ -2,16 +2,11 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 class FavoriteIcon extends StatefulWidget {
-  const FavoriteIcon({
-    double? iconSize,
-    Color? iconColor,
-    bool? isFavorite,
-    required Function valueChanged,
-    super.key,
-  })  : _iconSize = iconSize ?? 60.0,
-        _iconColor = iconColor ?? Colors.red,
-        _isFavorite = isFavorite ?? false,
-        _valueChanged = valueChanged;
+  const FavoriteIcon({double? iconSize, Color? iconColor, bool? isFavorite, required Function valueChanged, super.key})
+    : _iconSize = iconSize ?? 60.0,
+      _iconColor = iconColor ?? Colors.red,
+      _isFavorite = isFavorite ?? false,
+      _valueChanged = valueChanged;
 
   final double _iconSize;
   final Color _iconColor;
@@ -45,8 +40,8 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
     _maxIconSize = (widget._iconSize < 20.0)
         ? 20.0
         : (widget._iconSize > 100.0)
-            ? 100.0
-            : widget._iconSize;
+        ? 100.0
+        : widget._iconSize;
     final double sizeDifference = _maxIconSize * 0.30;
     _minIconSize = _maxIconSize - sizeDifference;
 
@@ -67,24 +62,16 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
     ).animate(_curve);
 
     _colorAnimation = (_isFavorite == true) ? selectedColorAnimation : deSelectedColorAnimation;
-    _sizeAnimation = TweenSequence(
-      <TweenSequenceItem<double>>[
-        TweenSequenceItem<double>(
-          tween: Tween<double>(
-            begin: _minIconSize,
-            end: _maxIconSize,
-          ),
-          weight: 50,
-        ),
-        TweenSequenceItem<double>(
-          tween: Tween<double>(
-            begin: _maxIconSize,
-            end: _minIconSize,
-          ),
-          weight: 50,
-        ),
-      ],
-    ).animate(_curve);
+    _sizeAnimation = TweenSequence(<TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: _minIconSize, end: _maxIconSize),
+        weight: 50,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: _maxIconSize, end: _minIconSize),
+        weight: 50,
+      ),
+    ]).animate(_curve);
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {

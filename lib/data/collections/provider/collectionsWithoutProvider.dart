@@ -14,23 +14,24 @@ Future<List?> getCollections() async {
   collections = [];
   await firestoreClient
       .query<Map<String, dynamic>>(
-    const FirestoreQuerySpec(
-      collection: FirebaseCollections.collections,
-      sourceTag: 'collections.getCollections',
-      orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'lastEditTime', descending: true)],
-      cachePolicy: FirestoreCachePolicy.memoryFirst,
-      dedupeWindowMs: 30000,
-    ),
-    (data, _) => data,
-  )
+        const FirestoreQuerySpec(
+          collection: FirebaseCollections.collections,
+          sourceTag: 'collections.getCollections',
+          orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'lastEditTime', descending: true)],
+          cachePolicy: FirestoreCachePolicy.memoryFirst,
+          dedupeWindowMs: 30000,
+        ),
+        (data, _) => data,
+      )
       .then((value) {
-    for (final doc in value) {
-      collections!.add(doc);
-    }
-  }).catchError((e) {
-    logger.d(e.toString());
-    logger.d("data done with error");
-  });
+        for (final doc in value) {
+          collections!.add(doc);
+        }
+      })
+      .catchError((e) {
+        logger.d(e.toString());
+        logger.d("data done with error");
+      });
   return collections;
 }
 

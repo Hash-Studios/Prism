@@ -3,11 +3,12 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 void codeSend(String msg) {
   Fluttertoast.showToast(
-      msg: msg,
-      toastLength: Toast.LENGTH_LONG,
-      gravity: ToastGravity.BOTTOM,
-      textColor: Colors.white,
-      backgroundColor: Colors.green[400]);
+    msg: msg,
+    toastLength: Toast.LENGTH_LONG,
+    gravity: ToastGravity.BOTTOM,
+    textColor: Colors.white,
+    backgroundColor: Colors.green[400],
+  );
 }
 
 void error(String msg) {

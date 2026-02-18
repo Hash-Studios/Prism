@@ -14,12 +14,12 @@ abstract class ProfileWallsState with _$ProfileWallsState {
   }) = _ProfileWallsState;
 
   factory ProfileWallsState.initial() => const ProfileWallsState(
-        status: LoadStatus.initial,
-        actionStatus: ActionStatus.idle,
-        email: '',
-        items: <ProfileWallEntity>[],
-        hasMore: true,
-        nextCursor: null,
-        isFetchingMore: false,
-      );
+    status: LoadStatus.initial,
+    actionStatus: ActionStatus.idle,
+    email: '',
+    items: <ProfileWallEntity>[],
+    hasMore: true,
+    nextCursor: null,
+    isFetchingMore: false,
+  );
 }

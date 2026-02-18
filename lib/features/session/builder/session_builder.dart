@@ -7,9 +7,6 @@ class SessionBuilder {
   const SessionBuilder._();
 
   static Widget withBloc({required Widget child, SessionBloc? bloc}) {
-    return BlocProvider<SessionBloc>(
-      create: (_) => bloc ?? getIt<SessionBloc>(),
-      child: child,
-    );
+    return BlocProvider<SessionBloc>(create: (_) => bloc ?? getIt<SessionBloc>(), child: child);
   }
 }

@@ -7,19 +7,20 @@ class AboutList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-        leading: const Icon(JamIcons.info),
-        title: Text(
-          "About Prism",
-          style: TextStyle(
-              color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w500, fontFamily: "Proxima Nova"),
+      leading: const Icon(JamIcons.info),
+      title: Text(
+        "About Prism",
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.secondary,
+          fontWeight: FontWeight.w500,
+          fontFamily: "Proxima Nova",
         ),
-        subtitle: const Text(
-          "GitHub, website & more!",
-          style: TextStyle(fontSize: 12),
-        ),
-        trailing: const Icon(JamIcons.chevron_right),
-        onTap: () {
-          context.router.push(const AboutRoute());
-        });
+      ),
+      subtitle: const Text("GitHub, website & more!", style: TextStyle(fontSize: 12)),
+      trailing: const Icon(JamIcons.chevron_right),
+      onTap: () {
+        context.router.push(const AboutRoute());
+      },
+    );
   }
 }

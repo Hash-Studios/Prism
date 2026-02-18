@@ -11,19 +11,9 @@ class AdsEntity {
   final bool adLoaded;
   final bool adFailed;
 
-  static const AdsEntity empty = AdsEntity(
-    downloadCoins: 0,
-    loadingAd: false,
-    adLoaded: false,
-    adFailed: false,
-  );
+  static const AdsEntity empty = AdsEntity(downloadCoins: 0, loadingAd: false, adLoaded: false, adFailed: false);
 
-  AdsEntity copyWith({
-    num? downloadCoins,
-    bool? loadingAd,
-    bool? adLoaded,
-    bool? adFailed,
-  }) {
+  AdsEntity copyWith({num? downloadCoins, bool? loadingAd, bool? adLoaded, bool? adFailed}) {
     return AdsEntity(
       downloadCoins: downloadCoins ?? this.downloadCoins,
       loadingAd: loadingAd ?? this.loadingAd,

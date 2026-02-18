@@ -7,9 +7,6 @@ class ThemeDarkBuilder {
   const ThemeDarkBuilder._();
 
   static Widget withBloc({required Widget child, ThemeDarkBloc? bloc}) {
-    return BlocProvider<ThemeDarkBloc>(
-      create: (_) => bloc ?? getIt<ThemeDarkBloc>(),
-      child: child,
-    );
+    return BlocProvider<ThemeDarkBloc>(create: (_) => bloc ?? getIt<ThemeDarkBloc>(), child: child);
   }
 }

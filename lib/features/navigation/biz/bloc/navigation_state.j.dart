@@ -12,10 +12,10 @@ abstract class NavigationState with _$NavigationState {
   }) = _NavigationState;
 
   factory NavigationState.initial() => const NavigationState(
-        status: LoadStatus.initial,
-        actionStatus: ActionStatus.idle,
-        stack: <String>['Home'],
-        currentRoute: 'Home',
-        canPop: false,
-      );
+    status: LoadStatus.initial,
+    actionStatus: ActionStatus.idle,
+    stack: <String>['Home'],
+    currentRoute: 'Home',
+    canPop: false,
+  );
 }

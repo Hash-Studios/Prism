@@ -30,11 +30,7 @@ class CanonicalLinkBuilder {
   }
 
   Uri setup({required String index, required String name, required String thumbUrl}) {
-    return Uri.https(_shareDomain, '/setup', <String, String>{
-      'index': index,
-      'name': name,
-      'thumbUrl': thumbUrl,
-    });
+    return Uri.https(_shareDomain, '/setup', <String, String>{'index': index, 'name': name, 'thumbUrl': thumbUrl});
   }
 
   Uri refer({required String userId}) {
@@ -56,10 +52,7 @@ class ShortLinkService {
       final response = await http
           .post(
             endpoint,
-            headers: const <String, String>{
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
+            headers: const <String, String>{'Content-Type': 'application/json', 'Accept': 'application/json'},
             body: jsonEncode(<String, dynamic>{
               'type': type,
               'payload': payload ?? const <String, dynamic>{},
@@ -70,11 +63,14 @@ class ShortLinkService {
           .timeout(const Duration(seconds: 6));
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        logger.w('Short-link API non-success status', fields: <String, Object?>{
-          'status': response.statusCode,
-          'body': response.body,
-          'canonical': canonicalUri.toString(),
-        });
+        logger.w(
+          'Short-link API non-success status',
+          fields: <String, Object?>{
+            'status': response.statusCode,
+            'body': response.body,
+            'canonical': canonicalUri.toString(),
+          },
+        );
         return canonicalUri;
       }
 
@@ -104,11 +100,12 @@ class ShortLinkService {
 const CanonicalLinkBuilder _canonicalLinkBuilder = CanonicalLinkBuilder();
 const ShortLinkService _shortLinkService = ShortLinkService();
 
-Future<String> _buildShareableLink(
-    {required String type,
-    required Uri canonicalUri,
-    Map<String, dynamic>? payload,
-    Map<String, dynamic>? preview}) async {
+Future<String> _buildShareableLink({
+  required String type,
+  required Uri canonicalUri,
+  Map<String, dynamic>? payload,
+  Map<String, dynamic>? preview,
+}) async {
   final Uri resolved = await _shortLinkService.createShortLink(
     type: type,
     canonicalUri: canonicalUri,
@@ -120,21 +117,11 @@ Future<String> _buildShareableLink(
 }
 
 Future<String> createDynamicLink(String id, String provider, String? url, String thumbUrl) async {
-  final Uri canonical = _canonicalLinkBuilder.wallpaper(
-    id: id,
-    provider: provider,
-    url: url,
-    thumbUrl: thumbUrl,
-  );
+  final Uri canonical = _canonicalLinkBuilder.wallpaper(id: id, provider: provider, url: url, thumbUrl: thumbUrl);
   final String link = await _buildShareableLink(
     type: 'share',
     canonicalUri: canonical,
-    payload: <String, dynamic>{
-      'id': id,
-      'provider': provider,
-      if (url != null) 'url': url,
-      'thumb': thumbUrl,
-    },
+    payload: <String, dynamic>{'id': id, 'provider': provider, if (url != null) 'url': url, 'thumb': thumbUrl},
     preview: <String, dynamic>{
       'title': '$id - Prism',
       'description': 'Check out this amazing wallpaper from Prism.',
@@ -191,10 +178,7 @@ Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) 
 
   await Clipboard.setData(ClipboardData(text: link));
   SharePlus.instance.share(
-    ShareParams(
-      text: 'Hey check this out ➜ $link',
-      sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
-    ),
+    ShareParams(text: 'Hey check this out ➜ $link', sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
   );
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
 }
@@ -243,18 +227,8 @@ Future<String> createCopyrightLink(
     analytics.logEvent(name: 'reportSetup');
   } else {
     type = 'share';
-    canonical = _canonicalLinkBuilder.wallpaper(
-      id: id!,
-      provider: provider!,
-      url: url,
-      thumbUrl: thumbUrl!,
-    );
-    payload = <String, dynamic>{
-      'id': id,
-      'provider': provider,
-      if (url != null) 'url': url,
-      'thumb': thumbUrl,
-    };
+    canonical = _canonicalLinkBuilder.wallpaper(id: id!, provider: provider!, url: url, thumbUrl: thumbUrl!);
+    payload = <String, dynamic>{'id': id, 'provider': provider, if (url != null) 'url': url, 'thumb': thumbUrl};
     preview = <String, dynamic>{
       'title': '$id - Prism',
       'description': 'Check out this amazing wallpaper from Prism.',
@@ -276,10 +250,7 @@ Future<String> createCopyrightLink(
   }
   showModal(
     context: context,
-    builder: (BuildContext context) => CopyrightPopUp(
-      setup: setup,
-      shortlink: link,
-    ),
+    builder: (BuildContext context) => CopyrightPopUp(setup: setup, shortlink: link),
   );
   return '';
 }

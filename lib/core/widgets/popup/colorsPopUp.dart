@@ -27,7 +27,7 @@ List<Color> colors = [
   const Color(0xFF9e9e9e),
   const Color(0xFF607d8b),
   const Color(0xFF000000),
-  const Color(0xFFFFFFFF)
+  const Color(0xFFFFFFFF),
 ];
 List<Color> accentColors = [
   const Color(0xFFFF0000),
@@ -69,12 +69,10 @@ Color showColors(BuildContext context) {
             height: 150,
             width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-                color: Theme.of(context).hintColor),
-            child: const SafeRiveAsset(
-              assetName: "assets/animations/Color.flr",
-              animations: <String>["color"],
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+              color: Theme.of(context).hintColor,
             ),
+            child: const SafeRiveAsset(assetName: "assets/animations/Color.flr", animations: <String>["color"]),
           ),
           Row(
             children: [
@@ -83,14 +81,15 @@ Color showColors(BuildContext context) {
                 child: Text(
                   "Select a color",
                   style: TextStyle(
-                      fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(
-            height: 5,
-          ),
+          const SizedBox(height: 5),
           Wrap(
             children: <Widget>[
               for (final color in colors)
@@ -98,29 +97,28 @@ Color showColors(BuildContext context) {
                   onTap: () {
                     currentColor = color;
                     Navigator.pop(context);
-                    context.router.push(ColorRoute(arguments: [
-                      color
-                          .toString()
-                          .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                          .replaceAll("Color(0xff", "")
-                          .replaceAll(")", ""),
-                    ]));
+                    context.router.push(
+                      ColorRoute(
+                        arguments: [
+                          color
+                              .toString()
+                              .replaceAll("MaterialColor(primary value: Color(0xff", "")
+                              .replaceAll("Color(0xff", "")
+                              .replaceAll(")", ""),
+                        ],
+                      ),
+                    );
                   },
                   child: Container(
                     margin: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.white38,
-                      ),
+                      border: Border.all(color: Colors.white38),
                       color: color,
                       shape: BoxShape.circle,
                     ),
-                    child: const SizedBox(
-                      width: 41,
-                      height: 41,
-                    ),
+                    child: const SizedBox(width: 41, height: 41),
                   ),
-                )
+                ),
             ],
           ),
         ],
@@ -133,10 +131,7 @@ Color showColors(BuildContext context) {
         onPressed: () {
           Navigator.of(context).pop();
         },
-        child: const Text(
-          'CLOSE',
-          style: TextStyle(fontSize: 16.0, color: Colors.white),
-        ),
+        child: const Text('CLOSE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
       ),
     ],
     contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),

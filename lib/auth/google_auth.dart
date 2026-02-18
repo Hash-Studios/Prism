@@ -49,9 +49,7 @@ class GoogleAuth {
       final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
       final GoogleSignInAuthentication googleSignInAuthentication = googleSignInAccount.authentication;
 
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        idToken: googleSignInAuthentication.idToken,
-      );
+      final AuthCredential credential = GoogleAuthProvider.credential(idToken: googleSignInAuthentication.idToken);
 
       final UserCredential authResult = await _auth.signInWithCredential(credential);
       final User? user = authResult.user;
@@ -68,14 +66,10 @@ class GoogleAuth {
       if (usersData[0] != null && usersData[1] != null) {
         final doc = usersData[1]!;
         globals.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
-        firestoreClient.updateDoc(
-            USER_NEW_COLLECTION,
-            globals.prismUser.id,
-            {
-              'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
-              'loggedIn': true,
-            },
-            sourceTag: 'auth.signin.update_last_login');
+        firestoreClient.updateDoc(USER_NEW_COLLECTION, globals.prismUser.id, {
+          'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
+          'loggedIn': true,
+        }, sourceTag: 'auth.signin.update_last_login');
         logger.d("USERDATA CASE1");
       }
       // User exists in old database. Copy/create him in the new db.
@@ -94,14 +88,10 @@ class GoogleAuth {
       else if (usersData[0] == null && usersData[1] != null) {
         final doc = usersData[1]!;
         globals.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
-        firestoreClient.updateDoc(
-            USER_NEW_COLLECTION,
-            globals.prismUser.id,
-            {
-              'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
-              'loggedIn': true,
-            },
-            sourceTag: 'auth.signin.update_last_login_existing');
+        firestoreClient.updateDoc(USER_NEW_COLLECTION, globals.prismUser.id, {
+          'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
+          'loggedIn': true,
+        }, sourceTag: 'auth.signin.update_last_login_existing');
         logger.d("USERDATA CASE3");
       }
       // User exists in none. Create new data in new db and sign him in.
@@ -136,11 +126,7 @@ class GoogleAuth {
       }
 
       await prefs.put(main.userHiveKey, globals.prismUser);
-      await subscribeToTopicSafely(
-        home.f,
-        user.email!.split("@")[0],
-        sourceTag: 'auth.signin.followers_topic',
-      );
+      await subscribeToTopicSafely(home.f, user.email!.split("@")[0], sourceTag: 'auth.signin.followers_topic');
       assert(!user.isAnonymous);
       final User? currentUser = _auth.currentUser;
       assert(user.uid == currentUser!.uid);
@@ -158,12 +144,7 @@ class GoogleAuth {
         logger.i('signInWithGoogle canceled by user', tag: 'GoogleAuth');
         return signInCancelledResult;
       }
-      logger.e(
-        'signInWithGoogle failed',
-        tag: 'GoogleAuth',
-        error: e,
-        stackTrace: st,
-      );
+      logger.e('signInWithGoogle failed', tag: 'GoogleAuth', error: e, stackTrace: st);
       rethrow;
     } finally {
       isLoading = false;
@@ -211,11 +192,7 @@ class GoogleAuth {
       transactions: [],
       coverPhoto: "",
     );
-    await syncSentryUserScope(
-      loggedIn: false,
-      id: "",
-      email: "",
-    );
+    await syncSentryUserScope(loggedIn: false, id: "", email: "");
     Hive.openBox('prefs').then((value) {
       value.put(main.userHiveKey, globals.prismUser);
     });
@@ -231,13 +208,9 @@ class GoogleAuth {
     }
     try {
       if (existingUserId.isNotEmpty) {
-        firestoreClient.updateDoc(
-            USER_NEW_COLLECTION,
-            existingUserId,
-            {
-              'loggedIn': false,
-            },
-            sourceTag: 'auth.signout.mark_logged_out');
+        firestoreClient.updateDoc(USER_NEW_COLLECTION, existingUserId, {
+          'loggedIn': false,
+        }, sourceTag: 'auth.signout.mark_logged_out');
       }
     } catch (e, st) {
       logger.e('Failed to mark user logged out', error: e, stackTrace: st);
@@ -249,7 +222,8 @@ class GoogleAuth {
   Future<bool> isSignedIn() async {
     try {
       final User? currentUser = _auth.currentUser;
-      final bool signedInWithFirebase = currentUser != null &&
+      final bool signedInWithFirebase =
+          currentUser != null &&
           !currentUser.isAnonymous &&
           (currentUser.email ?? '').trim().isNotEmpty &&
           currentUser.providerData.any((provider) => provider.providerId == GoogleAuthProvider.PROVIDER_ID);
@@ -273,9 +247,7 @@ class GoogleAuth {
       FirestoreQuerySpec(
         collection: USER_OLD_COLLECTION,
         sourceTag: 'auth.get_user_old',
-        filters: <FirestoreFilter>[
-          FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user!.uid),
-        ],
+        filters: <FirestoreFilter>[FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user!.uid)],
         limit: 1,
       ),
       (data, docId) => <String, dynamic>{...data, '__docId': docId},
@@ -295,9 +267,7 @@ class GoogleAuth {
       FirestoreQuerySpec(
         collection: USER_NEW_COLLECTION,
         sourceTag: 'auth.get_user_new',
-        filters: <FirestoreFilter>[
-          FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user!.uid),
-        ],
+        filters: <FirestoreFilter>[FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user!.uid)],
         limit: 1,
       ),
       (data, docId) => <String, dynamic>{...data, '__docId': docId},

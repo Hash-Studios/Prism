@@ -13,11 +13,8 @@ part 'theme_dark_bloc.j.freezed.dart';
 
 @injectable
 class ThemeDarkBloc extends Bloc<ThemeDarkEvent, ThemeDarkState> {
-  ThemeDarkBloc(
-    this._loadThemeDarkUseCase,
-    this._updateThemeDarkUseCase,
-    this._updateThemeDarkAccentUseCase,
-  ) : super(ThemeDarkState.initial()) {
+  ThemeDarkBloc(this._loadThemeDarkUseCase, this._updateThemeDarkUseCase, this._updateThemeDarkAccentUseCase)
+    : super(ThemeDarkState.initial()) {
     on<_Started>(_onStarted);
     on<_ThemeChanged>(_onThemeChanged);
     on<_AccentChanged>(_onAccentChanged);
@@ -32,61 +29,35 @@ class ThemeDarkBloc extends Bloc<ThemeDarkEvent, ThemeDarkState> {
     emit(state.copyWith(status: LoadStatus.loading, failure: null));
     final result = await _loadThemeDarkUseCase(const NoParams());
     result.fold(
-      onSuccess: (theme) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.idle,
-        theme: theme,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (theme) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.idle, theme: theme, failure: null),
+      ),
+      onFailure: (failure) =>
+          emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onThemeChanged(
-    _ThemeChanged event,
-    Emitter<ThemeDarkState> emit,
-  ) async {
+  Future<void> _onThemeChanged(_ThemeChanged event, Emitter<ThemeDarkState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-    final result = await _updateThemeDarkUseCase(
-      UpdateThemeDarkParams(themeId: event.themeId),
-    );
+    final result = await _updateThemeDarkUseCase(UpdateThemeDarkParams(themeId: event.themeId));
     result.fold(
-      onSuccess: (theme) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        theme: theme,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (theme) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, theme: theme, failure: null),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onAccentChanged(
-    _AccentChanged event,
-    Emitter<ThemeDarkState> emit,
-  ) async {
+  Future<void> _onAccentChanged(_AccentChanged event, Emitter<ThemeDarkState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final result = await _updateThemeDarkAccentUseCase(
       UpdateThemeDarkAccentParams(accentColorValue: event.accentColorValue),
     );
     result.fold(
-      onSuccess: (theme) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        theme: theme,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (theme) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, theme: theme, failure: null),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 

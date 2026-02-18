@@ -73,10 +73,12 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
     });
     if (accent!.computeLuminance() > 0.5) {
       SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
+        SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
+      );
     } else {
       SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
+        SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light),
+      );
     }
   }
 
@@ -91,10 +93,12 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
       });
       if (accent!.computeLuminance() > 0.5) {
         SystemChrome.setSystemUIOverlayStyle(
-            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
+        );
       } else {
         SystemChrome.setSystemUIOverlayStyle(
-            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light),
+        );
       }
     }
   }
@@ -142,36 +146,32 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                   });
                   if (colorChanged) {
                     screenshotController
-                        .capture(
-                      pixelRatio: 3,
-                      delay: const Duration(milliseconds: 10),
-                    )
+                        .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                         .then((Uint8List? image) async {
-                      setState(() {
-                        _imageFile = File.fromRawPath(image!);
-                        screenshotTaken = true;
-                        panelClosed = false;
-                      });
-                      logger.d('Screenshot Taken');
-                    }).catchError((onError) {
-                      logger.d(onError.toString());
-                    });
+                          setState(() {
+                            _imageFile = File.fromRawPath(image!);
+                            screenshotTaken = true;
+                            panelClosed = false;
+                          });
+                          logger.d('Screenshot Taken');
+                        })
+                        .catchError((onError) {
+                          logger.d(onError.toString());
+                        });
                   } else {
                     main.prefs.get('optimisedWallpapers') as bool? ?? true
                         ? screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: const Duration(milliseconds: 10),
-                          )
-                            .then((Uint8List? image) async {
-                            setState(() {
-                              _imageFile = File.fromRawPath(image!);
-                              screenshotTaken = true;
-                            });
-                            logger.d('Screenshot Taken');
-                          }).catchError((onError) {
-                            logger.d(onError.toString());
-                          })
+                              .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
+                              .then((Uint8List? image) async {
+                                setState(() {
+                                  _imageFile = File.fromRawPath(image!);
+                                  screenshotTaken = true;
+                                });
+                                logger.d('Screenshot Taken');
+                              })
+                              .catchError((onError) {
+                                logger.d(onError.toString());
+                              })
                         : logger.d("Wallpaper Optimisation is disabled!");
                   }
                 }
@@ -185,15 +185,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                 });
               },
               backdropEnabled: true,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
               boxShadow: const [],
-              collapsed: CollapsedPanel(
-                panelCollapsed: panelCollapsed,
-                panelController: panelController,
-              ),
+              collapsed: CollapsedPanel(panelCollapsed: panelCollapsed, panelController: panelController),
               minHeight: MediaQuery.of(context).size.height / 20,
               parallaxEnabled: true,
               parallaxOffset: 0.00,
@@ -220,22 +214,20 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Center(
-                              child: Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: AnimatedOpacity(
-                              duration: Duration.zero,
-                              opacity: panelCollapsed ? 0.0 : 1.0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  panelController.close();
-                                },
-                                child: Icon(
-                                  JamIcons.chevron_down,
-                                  color: Theme.of(context).colorScheme.secondary,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: AnimatedOpacity(
+                                duration: Duration.zero,
+                                opacity: panelCollapsed ? 0.0 : 1.0,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    panelController.close();
+                                  },
+                                  child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ),
                             ),
-                          )),
+                          ),
                           ColorBar(colors: colors),
                           Expanded(
                             flex: 8,
@@ -253,10 +245,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Text(
                                           wdata.wallsS[index].id.toString().toUpperCase(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyLarge!
-                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                         ),
                                       ),
                                       Row(
@@ -269,10 +260,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           const SizedBox(width: 10),
                                           Text(
                                             wdata.wallsS[index].views.toString(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -287,10 +277,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           const SizedBox(width: 10),
                                           Text(
                                             wdata.wallsS[index].favourites.toString(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -305,10 +294,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           const SizedBox(width: 10),
                                           Text(
                                             "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -325,10 +313,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                             Text(
                                               wdata.wallsS[index].category.toString()[0].toUpperCase() +
                                                   wdata.wallsS[index].category.toString().substring(1),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium!
-                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
@@ -344,10 +331,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                         children: [
                                           Text(
                                             wdata.wallsS[index].resolution.toString(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                           const SizedBox(width: 10),
                                           Icon(
@@ -362,10 +348,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                         children: [
                                           Text(
                                             query.toString()[0].toUpperCase() + query.toString().substring(1),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                           ),
                                           const SizedBox(width: 10),
                                           Icon(
@@ -391,8 +376,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                   link: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path.toString(),
                                 ),
                                 SetWallpaperButton(
-                                    colorChanged: colorChanged,
-                                    url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path),
+                                  colorChanged: colorChanged,
+                                  url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path,
+                                ),
                                 FavouriteWallpaperButton(
                                   id: wdata.wallsS[index].id.toString(),
                                   provider: "WallHaven",
@@ -400,13 +386,12 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                   trash: false,
                                 ),
                                 ShareButton(
-                                    id: wdata.wallsS[index].id,
-                                    provider: "WallHaven",
-                                    url: wdata.wallsS[index].path,
-                                    thumbUrl: wdata.wallsS[index].thumbs!["original"].toString()),
-                                EditButton(
+                                  id: wdata.wallsS[index].id,
+                                  provider: "WallHaven",
                                   url: wdata.wallsS[index].path,
+                                  thumbUrl: wdata.wallsS[index].thumbs!["original"].toString(),
                                 ),
+                                EditButton(url: wdata.wallsS[index].path),
                               ],
                             ),
                           ),
@@ -419,71 +404,73 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
               body: Stack(
                 children: <Widget>[
                   AnimatedBuilder(
-                      animation: offsetAnimation,
-                      builder: (buildContext, child) {
-                        if (offsetAnimation.value < 0.0) {
-                          logger.d('${offsetAnimation.value + 8.0}');
-                        }
-                        return GestureDetector(
-                          onPanUpdate: (details) {
-                            if (details.delta.dy < -10) {
-                              panelController.open();
-                            }
-                          },
-                          onLongPress: () {
-                            setState(() {
-                              colorChanged = false;
-                            });
-                            HapticFeedback.vibrate();
-                            shakeController.forward(from: 0.0);
-                          },
-                          onTap: () {
-                            HapticFeedback.vibrate();
-                            !isLoading ? updateAccent() : logger.d("");
-                            shakeController.forward(from: 0.0);
-                          },
-                          child: CachedNetworkImage(
-                            imageUrl: wdata.wallsS[index].path!,
-                            imageBuilder: (context, imageProvider) => Screenshot(
-                              controller: screenshotController,
-                              child: Container(
-                                margin: EdgeInsets.symmetric(
-                                    vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(offsetAnimation.value),
-                                  image: DecorationImage(
-                                    colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
-                                    image: imageProvider,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                    animation: offsetAnimation,
+                    builder: (buildContext, child) {
+                      if (offsetAnimation.value < 0.0) {
+                        logger.d('${offsetAnimation.value + 8.0}');
+                      }
+                      return GestureDetector(
+                        onPanUpdate: (details) {
+                          if (details.delta.dy < -10) {
+                            panelController.open();
+                          }
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            colorChanged = false;
+                          });
+                          HapticFeedback.vibrate();
+                          shakeController.forward(from: 0.0);
+                        },
+                        onTap: () {
+                          HapticFeedback.vibrate();
+                          !isLoading ? updateAccent() : logger.d("");
+                          shakeController.forward(from: 0.0);
+                        },
+                        child: CachedNetworkImage(
+                          imageUrl: wdata.wallsS[index].path!,
+                          imageBuilder: (context, imageProvider) => Screenshot(
+                            controller: screenshotController,
+                            child: Container(
+                              margin: EdgeInsets.symmetric(
+                                vertical: offsetAnimation.value * 1.25,
+                                horizontal: offsetAnimation.value / 2,
                               ),
-                            ),
-                            progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-                              children: <Widget>[
-                                const SizedBox.expand(child: Text("")),
-                                Center(
-                                  child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation(
-                                        Theme.of(context).colorScheme.error,
-                                      ),
-                                      value: downloadProgress.progress),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(offsetAnimation.value),
+                                image: DecorationImage(
+                                  colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
                                 ),
-                              ],
-                            ),
-                            errorWidget: (context, url, error) => Center(
-                              child: Icon(
-                                JamIcons.close_circle_f,
-                                color: isLoading
-                                    ? Theme.of(context).colorScheme.secondary
-                                    : accent!.computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white,
                               ),
                             ),
                           ),
-                        );
-                      }),
+                          progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
+                            children: <Widget>[
+                              const SizedBox.expand(child: Text("")),
+                              Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                                  value: downloadProgress.progress,
+                                ),
+                              ),
+                            ],
+                          ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Icon(
+                              JamIcons.close_circle_f,
+                              color: isLoading
+                                  ? Theme.of(context).colorScheme.secondary
+                                  : accent!.computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   Align(
                     alignment: Alignment.topLeft,
                     child: Padding(
@@ -495,11 +482,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                        icon: const Icon(
-                          JamIcons.chevron_left,
-                        ),
+                            ? Colors.black
+                            : Colors.white,
+                        icon: const Icon(JamIcons.chevron_left),
                       ),
                     ),
                   ),
@@ -511,33 +496,34 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         onPressed: () {
                           final link = wdata.wallsS[index].path;
                           Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) {
-                                    animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                                    return FadeTransition(
-                                        opacity: animation,
-                                        child: ClockOverlay(
-                                          colorChanged: colorChanged,
-                                          accent: accent,
-                                          link: link,
-                                          file: false,
-                                        ));
-                                  },
-                                  fullscreenDialog: true,
-                                  opaque: false));
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) {
+                                animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: ClockOverlay(
+                                    colorChanged: colorChanged,
+                                    accent: accent,
+                                    link: link,
+                                    file: false,
+                                  ),
+                                );
+                              },
+                              fullscreenDialog: true,
+                              opaque: false,
+                            ),
+                          );
                         },
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                        icon: const Icon(
-                          JamIcons.clock,
-                        ),
+                            ? Colors.black
+                            : Colors.white,
+                        icon: const Icon(JamIcons.clock),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -557,36 +543,32 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                   });
                   if (colorChanged) {
                     screenshotController
-                        .capture(
-                      pixelRatio: 3,
-                      delay: const Duration(milliseconds: 10),
-                    )
+                        .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                         .then((Uint8List? image) async {
-                      setState(() {
-                        _imageFile = File.fromRawPath(image!);
-                        screenshotTaken = true;
-                        panelClosed = false;
-                      });
-                      logger.d('Screenshot Taken');
-                    }).catchError((onError) {
-                      logger.d(onError.toString());
-                    });
+                          setState(() {
+                            _imageFile = File.fromRawPath(image!);
+                            screenshotTaken = true;
+                            panelClosed = false;
+                          });
+                          logger.d('Screenshot Taken');
+                        })
+                        .catchError((onError) {
+                          logger.d(onError.toString());
+                        });
                   } else {
                     main.prefs.get('optimisedWallpapers') as bool? ?? true
                         ? screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: const Duration(milliseconds: 10),
-                          )
-                            .then((Uint8List? image) async {
-                            setState(() {
-                              _imageFile = File.fromRawPath(image!);
-                              screenshotTaken = true;
-                            });
-                            logger.d('Screenshot Taken');
-                          }).catchError((onError) {
-                            logger.d(onError.toString());
-                          })
+                              .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
+                              .then((Uint8List? image) async {
+                                setState(() {
+                                  _imageFile = File.fromRawPath(image!);
+                                  screenshotTaken = true;
+                                });
+                                logger.d('Screenshot Taken');
+                              })
+                              .catchError((onError) {
+                                logger.d(onError.toString());
+                              })
                         : logger.d("Wallpaper Optimisation is disabled!");
                   }
                 }
@@ -600,15 +582,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                 });
               },
               backdropEnabled: true,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
               boxShadow: const [],
-              collapsed: CollapsedPanel(
-                panelCollapsed: panelCollapsed,
-                panelController: panelController,
-              ),
+              collapsed: CollapsedPanel(panelCollapsed: panelCollapsed, panelController: panelController),
               minHeight: MediaQuery.of(context).size.height / 20,
               parallaxEnabled: true,
               parallaxOffset: 0.00,
@@ -635,22 +611,20 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Center(
-                              child: Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: AnimatedOpacity(
-                              duration: Duration.zero,
-                              opacity: panelCollapsed ? 0.0 : 1.0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  panelController.close();
-                                },
-                                child: Icon(
-                                  JamIcons.chevron_down,
-                                  color: Theme.of(context).colorScheme.secondary,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: AnimatedOpacity(
+                                duration: Duration.zero,
+                                opacity: panelCollapsed ? 0.0 : 1.0,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    panelController.close();
+                                  },
+                                  child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ),
                             ),
-                          )),
+                          ),
                           ColorBar(colors: colors),
                           Expanded(
                             flex: 8,
@@ -673,17 +647,17 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                     .length >
                                                 8
                                             ? pdata.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll("https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")[0]
-                                                    .toUpperCase() +
-                                                pdata.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll("https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")
-                                                    .substring(
+                                                      .toString()
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")[0]
+                                                      .toUpperCase() +
+                                                  pdata.wallsPS[index].url
+                                                      .toString()
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .substring(
                                                         1,
                                                         pdata.wallsPS[index].url
                                                                 .toString()
@@ -691,23 +665,23 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                                 .replaceAll("-", " ")
                                                                 .replaceAll("/", "")
                                                                 .length -
-                                                            7)
+                                                            7,
+                                                      )
                                             : pdata.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll("https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")[0]
-                                                    .toUpperCase() +
-                                                pdata.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll("https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")
-                                                    .substring(1),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyLarge!
-                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                      .toString()
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")[0]
+                                                      .toUpperCase() +
+                                                  pdata.wallsPS[index].url
+                                                      .toString()
+                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .substring(1),
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                         overflow: TextOverflow.ellipsis,
                                         maxLines: 1,
                                       ),
@@ -731,10 +705,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               const SizedBox(width: 10),
                                               Text(
                                                 pdata.wallsPS[index].id.toString(),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -749,10 +722,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               const SizedBox(width: 10),
                                               Text(
                                                 "${pdata.wallsPS[index].width}x${pdata.wallsPS[index].height}",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -771,14 +743,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                                   launch(pdata.wallsPS[index].url!);
                                                 },
                                                 padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                                                avatar: Icon(JamIcons.camera,
-                                                    color: Theme.of(context).colorScheme.secondary),
+                                                avatar: Icon(
+                                                  JamIcons.camera,
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                                 labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                 label: Text(
                                                   pdata.wallsPS[index].photographer.toString(),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium!
+                                                  style: Theme.of(context).textTheme.bodyMedium!
                                                       .copyWith(color: Theme.of(context).colorScheme.secondary)
                                                       .copyWith(fontSize: 16),
                                                   overflow: TextOverflow.fade,
@@ -790,10 +762,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                             children: [
                                               Text(
                                                 query.toString(),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                               const SizedBox(width: 10),
                                               Icon(
@@ -817,15 +788,17 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: <Widget>[
                                 DownloadButton(
-                                    colorChanged: colorChanged,
-                                    link: screenshotTaken
-                                        ? _imageFile.path
-                                        : pdata.wallsPS[index].src!["original"].toString()),
+                                  colorChanged: colorChanged,
+                                  link: screenshotTaken
+                                      ? _imageFile.path
+                                      : pdata.wallsPS[index].src!["original"].toString(),
+                                ),
                                 SetWallpaperButton(
-                                    colorChanged: colorChanged,
-                                    url: screenshotTaken
-                                        ? _imageFile.path
-                                        : pdata.wallsPS[index].src!["original"].toString()),
+                                  colorChanged: colorChanged,
+                                  url: screenshotTaken
+                                      ? _imageFile.path
+                                      : pdata.wallsPS[index].src!["original"].toString(),
+                                ),
                                 FavouriteWallpaperButton(
                                   id: pdata.wallsPS[index].id.toString(),
                                   provider: "Pexels",
@@ -833,13 +806,12 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                   trash: false,
                                 ),
                                 ShareButton(
-                                    id: pdata.wallsPS[index].id,
-                                    provider: selectedProvider,
-                                    url: pdata.wallsPS[index].src!["original"].toString(),
-                                    thumbUrl: pdata.wallsPS[index].src!["medium"].toString()),
-                                EditButton(
+                                  id: pdata.wallsPS[index].id,
+                                  provider: selectedProvider,
                                   url: pdata.wallsPS[index].src!["original"].toString(),
+                                  thumbUrl: pdata.wallsPS[index].src!["medium"].toString(),
                                 ),
+                                EditButton(url: pdata.wallsPS[index].src!["original"].toString()),
                               ],
                             ),
                           ),
@@ -852,71 +824,73 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
               body: Stack(
                 children: <Widget>[
                   AnimatedBuilder(
-                      animation: offsetAnimation,
-                      builder: (buildContext, child) {
-                        if (offsetAnimation.value < 0.0) {
-                          logger.d('${offsetAnimation.value + 8.0}');
-                        }
-                        return GestureDetector(
-                          onPanUpdate: (details) {
-                            if (details.delta.dy < -10) {
-                              panelController.open();
-                            }
-                          },
-                          onLongPress: () {
-                            setState(() {
-                              colorChanged = false;
-                            });
-                            HapticFeedback.vibrate();
-                            shakeController.forward(from: 0.0);
-                          },
-                          onTap: () {
-                            HapticFeedback.vibrate();
-                            !isLoading ? updateAccent() : logger.d("");
-                            shakeController.forward(from: 0.0);
-                          },
-                          child: CachedNetworkImage(
-                            imageUrl: pdata.wallsPS[index].src!["original"].toString(),
-                            imageBuilder: (context, imageProvider) => Screenshot(
-                              controller: screenshotController,
-                              child: Container(
-                                margin: EdgeInsets.symmetric(
-                                    vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(offsetAnimation.value),
-                                  image: DecorationImage(
-                                    colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
-                                    image: imageProvider,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                    animation: offsetAnimation,
+                    builder: (buildContext, child) {
+                      if (offsetAnimation.value < 0.0) {
+                        logger.d('${offsetAnimation.value + 8.0}');
+                      }
+                      return GestureDetector(
+                        onPanUpdate: (details) {
+                          if (details.delta.dy < -10) {
+                            panelController.open();
+                          }
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            colorChanged = false;
+                          });
+                          HapticFeedback.vibrate();
+                          shakeController.forward(from: 0.0);
+                        },
+                        onTap: () {
+                          HapticFeedback.vibrate();
+                          !isLoading ? updateAccent() : logger.d("");
+                          shakeController.forward(from: 0.0);
+                        },
+                        child: CachedNetworkImage(
+                          imageUrl: pdata.wallsPS[index].src!["original"].toString(),
+                          imageBuilder: (context, imageProvider) => Screenshot(
+                            controller: screenshotController,
+                            child: Container(
+                              margin: EdgeInsets.symmetric(
+                                vertical: offsetAnimation.value * 1.25,
+                                horizontal: offsetAnimation.value / 2,
                               ),
-                            ),
-                            progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-                              children: <Widget>[
-                                const SizedBox.expand(child: Text("")),
-                                Center(
-                                  child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation(
-                                        Theme.of(context).colorScheme.error,
-                                      ),
-                                      value: downloadProgress.progress),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(offsetAnimation.value),
+                                image: DecorationImage(
+                                  colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
                                 ),
-                              ],
-                            ),
-                            errorWidget: (context, url, error) => Center(
-                              child: Icon(
-                                JamIcons.close_circle_f,
-                                color: isLoading
-                                    ? Theme.of(context).colorScheme.secondary
-                                    : accent!.computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white,
                               ),
                             ),
                           ),
-                        );
-                      }),
+                          progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
+                            children: <Widget>[
+                              const SizedBox.expand(child: Text("")),
+                              Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                                  value: downloadProgress.progress,
+                                ),
+                              ),
+                            ],
+                          ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Icon(
+                              JamIcons.close_circle_f,
+                              color: isLoading
+                                  ? Theme.of(context).colorScheme.secondary
+                                  : accent!.computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   Align(
                     alignment: Alignment.topLeft,
                     child: Padding(
@@ -928,11 +902,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                        icon: const Icon(
-                          JamIcons.chevron_left,
-                        ),
+                            ? Colors.black
+                            : Colors.white,
+                        icon: const Icon(JamIcons.chevron_left),
                       ),
                     ),
                   ),
@@ -944,33 +916,34 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                         onPressed: () {
                           final link = pdata.wallsPS[index].src!["original"];
                           Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) {
-                                    animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                                    return FadeTransition(
-                                        opacity: animation,
-                                        child: ClockOverlay(
-                                          colorChanged: colorChanged,
-                                          accent: accent,
-                                          link: link.toString(),
-                                          file: false,
-                                        ));
-                                  },
-                                  fullscreenDialog: true,
-                                  opaque: false));
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) {
+                                animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: ClockOverlay(
+                                    colorChanged: colorChanged,
+                                    accent: accent,
+                                    link: link.toString(),
+                                    file: false,
+                                  ),
+                                );
+                              },
+                              fullscreenDialog: true,
+                              opaque: false,
+                            ),
+                          );
                         },
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                        icon: const Icon(
-                          JamIcons.clock,
-                        ),
+                            ? Colors.black
+                            : Colors.white,
+                        icon: const Icon(JamIcons.clock),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),

@@ -5,9 +5,7 @@ import 'package:json_annotation/json_annotation.dart';
 part 'transactionModel.g.dart';
 
 @HiveType(typeId: 13)
-@JsonSerializable(
-  explicitToJson: true,
-)
+@JsonSerializable(explicitToJson: true)
 class PrismTransaction {
   @HiveField(0)
   String name;

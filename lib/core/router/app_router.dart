@@ -54,85 +54,80 @@ part 'app_router.gr.dart';
 class AppRouter extends RootStackRouter {
   @override
   List<AutoRoute> get routes => [
-        // Startup
-        AutoRoute(path: '/', page: SplashWidgetRoute.page),
-        AutoRoute(path: '/onboarding', page: OnboardingRoute.page),
+    // Startup
+    AutoRoute(path: '/', page: SplashWidgetRoute.page),
+    AutoRoute(path: '/onboarding', page: OnboardingRoute.page),
 
-        // Dashboard shell with bottom nav tabs
+    // Dashboard shell with bottom nav tabs
+    AutoRoute(
+      path: '/dashboard',
+      page: DashboardRoute.page,
+      children: [
+        // Home tab
+        AutoRoute(path: 'home', page: HomeTabRoute.page),
+        // Search tab
         AutoRoute(
-          path: '/dashboard',
-          page: DashboardRoute.page,
+          path: 'search',
+          page: SearchTabRoute.page,
           children: [
-            // Home tab
-            AutoRoute(
-              path: 'home',
-              page: HomeTabRoute.page,
-            ),
-            // Search tab
-            AutoRoute(
-              path: 'search',
-              page: SearchTabRoute.page,
-              children: [
-                AutoRoute(path: '', page: SearchRoute.page),
-                AutoRoute(path: 'users', page: UserSearchRoute.page),
-              ],
-            ),
-            // Setups tab
-            AutoRoute(
-              path: 'setups',
-              page: SetupsTabRoute.page,
-              children: [
-                AutoRoute(path: '', page: SetupRoute.page),
-              ],
-            ),
-            // Profile tab
-            AutoRoute(
-              path: 'profile',
-              page: ProfileTabRoute.page,
-              children: [
-                AutoRoute(path: '', page: ProfileRoute.page),
-                AutoRoute(path: 'settings', page: SettingsRoute.page),
-                AutoRoute(path: 'about', page: AboutRoute.page),
-                AutoRoute(path: 'share-prism', page: SharePrismRoute.page),
-                AutoRoute(path: 'edit', page: EditProfilePanelRoute.page),
-                AutoRoute(path: 'fav-walls', page: FavouriteWallpaperRoute.page),
-                AutoRoute(path: 'fav-setups', page: FavouriteSetupRoute.page),
-                AutoRoute(path: 'downloads', page: DownloadRoute.page),
-                AutoRoute(path: 'followers', page: FollowersRoute.page),
-              ],
-            ),
+            AutoRoute(path: '', page: SearchRoute.page),
+            AutoRoute(path: 'users', page: UserSearchRoute.page),
           ],
         ),
+        // Setups tab
+        AutoRoute(
+          path: 'setups',
+          page: SetupsTabRoute.page,
+          children: [AutoRoute(path: '', page: SetupRoute.page)],
+        ),
+        // Profile tab
+        AutoRoute(
+          path: 'profile',
+          page: ProfileTabRoute.page,
+          children: [
+            AutoRoute(path: '', page: ProfileRoute.page),
+            AutoRoute(path: 'settings', page: SettingsRoute.page),
+            AutoRoute(path: 'about', page: AboutRoute.page),
+            AutoRoute(path: 'share-prism', page: SharePrismRoute.page),
+            AutoRoute(path: 'edit', page: EditProfilePanelRoute.page),
+            AutoRoute(path: 'fav-walls', page: FavouriteWallpaperRoute.page),
+            AutoRoute(path: 'fav-setups', page: FavouriteSetupRoute.page),
+            AutoRoute(path: 'downloads', page: DownloadRoute.page),
+            AutoRoute(path: 'followers', page: FollowersRoute.page),
+          ],
+        ),
+      ],
+    ),
 
-        // Global routes (pushed over entire shell as full-screen dialogs)
-        AutoRoute(path: '/wallpaper', page: WallpaperRoute.page),
-        AutoRoute(path: '/search-wallpaper', page: SearchWallpaperRoute.page),
-        AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
-        AutoRoute(path: '/share', page: ShareWallpaperViewRoute.page),
-        AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
-        AutoRoute(path: '/fav-wall-view', page: FavWallpaperViewRoute.page),
-        AutoRoute(path: '/fav-setup-view', page: FavSetupViewRoute.page),
-        AutoRoute(path: '/setup-view', page: SetupViewRoute.page),
-        AutoRoute(path: '/share-setup', page: ShareSetupViewRoute.page),
-        AutoRoute(path: '/profile-wall-view', page: ProfileWallViewRoute.page),
-        AutoRoute(path: '/profile-setup-view', page: ProfileSetupViewRoute.page),
-        AutoRoute(path: '/user-profile-wall-view', page: UserProfileWallViewRoute.page),
-        AutoRoute(path: '/user-profile-setup-view', page: UserProfileSetupViewRoute.page),
-        AutoRoute(path: '/upload-setup', page: UploadSetupRoute.page),
-        AutoRoute(path: '/edit-setup-details', page: EditSetupReviewRoute.page),
-        AutoRoute(path: '/setup-guidelines', page: SetupGuidelinesRoute.page),
-        AutoRoute(path: '/upload-wall', page: UploadWallRoute.page),
-        AutoRoute(path: '/edit-wall', page: EditWallRoute.page),
-        AutoRoute(path: '/draft-setup', page: DraftSetupRoute.page),
-        AutoRoute(path: '/review', page: ReviewRoute.page),
-        AutoRoute(path: '/premium', page: UpgradeRoute.page),
-        AutoRoute(path: '/theme', page: ThemeViewRoute.page),
-        AutoRoute(path: '/notifications', page: NotificationRoute.page),
-        AutoRoute(path: '/color', page: ColorRoute.page),
-        AutoRoute(path: '/collection-view', page: CollectionViewRoute.page),
-        AutoRoute(path: '/follower-profile', page: ProfileRoute.page),
-        AutoRoute(path: '/ads-not-loading', page: AdsNotLoadingRoute.page),
-        AutoRoute(path: '/downloads', page: DownloadRoute.page),
-        AutoRoute(path: '/admin-review', page: AdminReviewRoute.page),
-      ];
+    // Global routes (pushed over entire shell as full-screen dialogs)
+    AutoRoute(path: '/wallpaper', page: WallpaperRoute.page),
+    AutoRoute(path: '/search-wallpaper', page: SearchWallpaperRoute.page),
+    AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
+    AutoRoute(path: '/share', page: ShareWallpaperViewRoute.page),
+    AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
+    AutoRoute(path: '/fav-wall-view', page: FavWallpaperViewRoute.page),
+    AutoRoute(path: '/fav-setup-view', page: FavSetupViewRoute.page),
+    AutoRoute(path: '/setup-view', page: SetupViewRoute.page),
+    AutoRoute(path: '/share-setup', page: ShareSetupViewRoute.page),
+    AutoRoute(path: '/profile-wall-view', page: ProfileWallViewRoute.page),
+    AutoRoute(path: '/profile-setup-view', page: ProfileSetupViewRoute.page),
+    AutoRoute(path: '/user-profile-wall-view', page: UserProfileWallViewRoute.page),
+    AutoRoute(path: '/user-profile-setup-view', page: UserProfileSetupViewRoute.page),
+    AutoRoute(path: '/upload-setup', page: UploadSetupRoute.page),
+    AutoRoute(path: '/edit-setup-details', page: EditSetupReviewRoute.page),
+    AutoRoute(path: '/setup-guidelines', page: SetupGuidelinesRoute.page),
+    AutoRoute(path: '/upload-wall', page: UploadWallRoute.page),
+    AutoRoute(path: '/edit-wall', page: EditWallRoute.page),
+    AutoRoute(path: '/draft-setup', page: DraftSetupRoute.page),
+    AutoRoute(path: '/review', page: ReviewRoute.page),
+    AutoRoute(path: '/premium', page: UpgradeRoute.page),
+    AutoRoute(path: '/theme', page: ThemeViewRoute.page),
+    AutoRoute(path: '/notifications', page: NotificationRoute.page),
+    AutoRoute(path: '/color', page: ColorRoute.page),
+    AutoRoute(path: '/collection-view', page: CollectionViewRoute.page),
+    AutoRoute(path: '/follower-profile', page: ProfileRoute.page),
+    AutoRoute(path: '/ads-not-loading', page: AdsNotLoadingRoute.page),
+    AutoRoute(path: '/downloads', page: DownloadRoute.page),
+    AutoRoute(path: '/admin-review', page: AdminReviewRoute.page),
+  ];
 }

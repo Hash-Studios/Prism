@@ -31,118 +31,82 @@ class FavouriteSetupsBloc extends Bloc<FavouriteSetupsEvent, FavouriteSetupsStat
   final ClearFavouriteSetupsUseCase _clearFavouriteSetupsUseCase;
 
   Future<void> _onStarted(_Started event, Emitter<FavouriteSetupsState> emit) async {
-    emit(state.copyWith(
-      status: LoadStatus.loading,
-      actionStatus: ActionStatus.inProgress,
-      userId: event.userId,
-      failure: null,
-    ));
+    emit(
+      state.copyWith(
+        status: LoadStatus.loading,
+        actionStatus: ActionStatus.inProgress,
+        userId: event.userId,
+        failure: null,
+      ),
+    );
     await _fetch(emit);
   }
 
-  Future<void> _onRefreshRequested(
-    _RefreshRequested event,
-    Emitter<FavouriteSetupsState> emit,
-  ) {
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<FavouriteSetupsState> emit) {
     emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
     return _fetch(emit);
   }
 
   Future<void> _fetch(Emitter<FavouriteSetupsState> emit) async {
     if (state.userId.isEmpty) {
-      emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: const ValidationFailure('userId is required'),
-      ));
+      emit(
+        state.copyWith(
+          status: LoadStatus.failure,
+          actionStatus: ActionStatus.failure,
+          failure: const ValidationFailure('userId is required'),
+        ),
+      );
       return;
     }
 
-    final result = await _fetchFavouriteSetupsUseCase(
-      FetchFavouriteSetupsParams(userId: state.userId),
-    );
+    final result = await _fetchFavouriteSetupsUseCase(FetchFavouriteSetupsParams(userId: state.userId));
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        items: items,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        status: LoadStatus.failure,
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (items) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, items: items, failure: null),
+      ),
+      onFailure: (failure) =>
+          emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onToggleRequested(
-    _ToggleRequested event,
-    Emitter<FavouriteSetupsState> emit,
-  ) async {
+  Future<void> _onToggleRequested(_ToggleRequested event, Emitter<FavouriteSetupsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final result = await _toggleFavouriteSetupUseCase(
       ToggleFavouriteSetupParams(userId: state.userId, setup: event.setup),
     );
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        items: items,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (items) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, items: items, failure: null),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onRemoveRequested(
-    _RemoveRequested event,
-    Emitter<FavouriteSetupsState> emit,
-  ) async {
+  Future<void> _onRemoveRequested(_RemoveRequested event, Emitter<FavouriteSetupsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final result = await _removeFavouriteSetupUseCase(
       RemoveFavouriteSetupParams(userId: state.userId, setupId: event.setupId),
     );
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        items: items,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (items) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, items: items, failure: null),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 
-  Future<void> _onClearRequested(
-    _ClearRequested event,
-    Emitter<FavouriteSetupsState> emit,
-  ) async {
+  Future<void> _onClearRequested(_ClearRequested event, Emitter<FavouriteSetupsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-    final result = await _clearFavouriteSetupsUseCase(
-      ClearFavouriteSetupsParams(userId: state.userId),
-    );
+    final result = await _clearFavouriteSetupsUseCase(ClearFavouriteSetupsParams(userId: state.userId));
 
     result.fold(
-      onSuccess: (items) => emit(state.copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        items: items,
-        failure: null,
-      )),
-      onFailure: (failure) => emit(state.copyWith(
-        actionStatus: ActionStatus.failure,
-        failure: failure,
-      )),
+      onSuccess: (items) => emit(
+        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, items: items, failure: null),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 }

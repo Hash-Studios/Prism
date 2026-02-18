@@ -7,9 +7,6 @@ class ConnectivityBuilder {
   const ConnectivityBuilder._();
 
   static Widget withBloc({required Widget child, ConnectivityBloc? bloc}) {
-    return BlocProvider<ConnectivityBloc>(
-      create: (_) => bloc ?? getIt<ConnectivityBloc>(),
-      child: child,
-    );
+    return BlocProvider<ConnectivityBloc>(create: (_) => bloc ?? getIt<ConnectivityBloc>(), child: child);
   }
 }

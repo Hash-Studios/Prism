@@ -21,10 +21,7 @@ class _QueryCacheEntry {
 }
 
 class FirestoreTrackedClient implements FirestoreClient {
-  FirestoreTrackedClient(
-    this._firestore,
-    this._telemetry,
-  );
+  FirestoreTrackedClient(this._firestore, this._telemetry);
 
   final FirebaseFirestore _firestore;
   final FirestoreTelemetrySink _telemetry;
@@ -130,10 +127,7 @@ class FirestoreTrackedClient implements FirestoreClient {
     }
   }
 
-  List<T> _mapCachedDocs<T>(
-    _QueryCacheEntry cached,
-    T Function(Map<String, dynamic> data, String docId) map,
-  ) {
+  List<T> _mapCachedDocs<T>(_QueryCacheEntry cached, T Function(Map<String, dynamic> data, String docId) map) {
     return cached.docs.map((doc) => map(Map<String, dynamic>.from(doc.data), doc.id)).toList(growable: false);
   }
 
@@ -150,8 +144,10 @@ class FirestoreTrackedClient implements FirestoreClient {
     if (cachedDoc != null) {
       return query.startAfterDocument(cachedDoc);
     }
-    final DocumentSnapshot<Map<String, dynamic>> doc =
-        await _firestore.collection(spec.collection).doc(startAfterDocId).get();
+    final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore
+        .collection(spec.collection)
+        .doc(startAfterDocId)
+        .get();
     if (doc.exists) {
       _cacheCursorDoc(doc, spec.collection);
       return query.startAfterDocument(doc);
@@ -227,10 +223,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   }
 
   @override
-  Future<List<T>> query<T>(
-    FirestoreQuerySpec spec,
-    T Function(Map<String, dynamic> data, String docId) map,
-  ) async {
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
     final String key = _queryKey(spec);
     final _QueryCacheEntry? cached = _queryCache[key];
     if (_canUseCache(spec) && cached != null && _isCacheFresh(cached, spec)) {
@@ -303,11 +296,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   }
 
   @override
-  Future<String> addDoc(
-    String collection,
-    Map<String, dynamic> data, {
-    required String sourceTag,
-  }) async {
+  Future<String> addDoc(String collection, Map<String, dynamic> data, {required String sourceTag}) async {
     final Stopwatch sw = Stopwatch()..start();
     try {
       final ref = await _firestore.collection(collection).add(data);
@@ -385,12 +374,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   }
 
   @override
-  Future<void> updateDoc(
-    String collection,
-    String id,
-    Map<String, dynamic> data, {
-    required String sourceTag,
-  }) async {
+  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) async {
     final Stopwatch sw = Stopwatch()..start();
     try {
       await _firestore.collection(collection).doc(id).update(data);
@@ -426,11 +410,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   }
 
   @override
-  Future<void> deleteDoc(
-    String collection,
-    String id, {
-    required String sourceTag,
-  }) async {
+  Future<void> deleteDoc(String collection, String id, {required String sourceTag}) async {
     final Stopwatch sw = Stopwatch()..start();
     try {
       await _firestore.collection(collection).doc(id).delete();
@@ -466,10 +446,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   }
 
   @override
-  Stream<List<T>> watchQuery<T>(
-    FirestoreQuerySpec spec,
-    T Function(Map<String, dynamic> data, String docId) map,
-  ) {
+  Stream<List<T>> watchQuery<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) {
     final Query<Map<String, dynamic>> query = _applySpec(spec);
     final DateTime start = DateTime.now();
     unawaited(
@@ -487,25 +464,28 @@ class FirestoreTrackedClient implements FirestoreClient {
         ),
       ),
     );
-    return query.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => map(doc.data(), doc.id)).toList(growable: false);
-    }).handleError((Object error) async {
-      final FirestoreError mapped = mapFirestoreError(error);
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: spec.sourceTag,
-          operation: FirestoreOperation.streamSubscribe,
-          collection: spec.collection,
-          filtersHash: spec.filtersHash,
-          orderBy: _orderByList(spec),
-          limit: spec.limit,
-          durationMs: DateTime.now().difference(start).inMilliseconds,
-          success: false,
-          errorCode: mapped.code,
-        ),
-      );
-      throw mapped;
-    });
+    return query
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) => map(doc.data(), doc.id)).toList(growable: false);
+        })
+        .handleError((Object error) async {
+          final FirestoreError mapped = mapFirestoreError(error);
+          await _emitTelemetry(
+            FirestoreTelemetryEvent(
+              timestamp: DateTime.now(),
+              sourceTag: spec.sourceTag,
+              operation: FirestoreOperation.streamSubscribe,
+              collection: spec.collection,
+              filtersHash: spec.filtersHash,
+              orderBy: _orderByList(spec),
+              limit: spec.limit,
+              durationMs: DateTime.now().difference(start).inMilliseconds,
+              success: false,
+              errorCode: mapped.code,
+            ),
+          );
+          throw mapped;
+        });
   }
 }

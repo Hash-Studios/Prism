@@ -6,8 +6,5 @@ import 'package:Prism/features/category_feed/domain/entities/category_feed_page.
 abstract class CategoryFeedRepository {
   Future<Result<List<CategoryEntity>>> getCategories();
 
-  Future<Result<CategoryFeedPage>> fetchCategoryFeed({
-    required CategoryEntity category,
-    required bool refresh,
-  });
+  Future<Result<CategoryFeedPage>> fetchCategoryFeed({required CategoryEntity category, required bool refresh});
 }

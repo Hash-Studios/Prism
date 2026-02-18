@@ -70,8 +70,5 @@ class ReplaceNavigationStackUseCase implements UseCase<NavigationStackEntity, Re
   final NavigationRepository _repository;
 
   @override
-  Future<Result<NavigationStackEntity>> call(
-    ReplaceNavigationStackParams params,
-  ) =>
-      _repository.replace(params.stack);
+  Future<Result<NavigationStackEntity>> call(ReplaceNavigationStackParams params) => _repository.replace(params.stack);
 }

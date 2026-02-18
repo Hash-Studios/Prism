@@ -16,12 +16,8 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation> with Single
 
   @override
   void initState() {
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(
-        milliseconds: 600,
-      ),
-    )..addListener(() {
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))
+      ..addListener(() {
         if (mounted) setState(() {});
       });
     animation = Tween(begin: 0.0, end: 0.3).chain(CurveTween(curve: Curves.easeInCubic)).animate(_controller);

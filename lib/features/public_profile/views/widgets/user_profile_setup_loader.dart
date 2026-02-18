@@ -33,9 +33,7 @@ class _UserProfileSetupLoaderState extends State<UserProfileSetupLoader>
             logger.d("snapshot none, waiting");
             return const LoadingSetupCards();
           } else {
-            return UserProfileSetupGrid(
-              email: widget.email,
-            );
+            return UserProfileSetupGrid(email: widget.email);
           }
         },
       ),

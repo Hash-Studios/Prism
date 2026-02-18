@@ -10,12 +10,7 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AutoTabsRouter(
-      routes: const [
-        HomeTabRoute(),
-        SearchTabRoute(),
-        SetupsTabRoute(),
-        ProfileTabRoute(),
-      ],
+      routes: const [HomeTabRoute(), SearchTabRoute(), SetupsTabRoute(), ProfileTabRoute()],
       builder: (context, child) {
         final tabsRouter = AutoTabsRouter.of(context);
         return PopScope(
@@ -25,9 +20,7 @@ class DashboardPage extends StatelessWidget {
               tabsRouter.setActiveIndex(0);
             }
           },
-          child: BottomBar(
-            child: child,
-          ),
+          child: BottomBar(child: child),
         );
       },
     );

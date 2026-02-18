@@ -5,9 +5,7 @@ import 'package:json_annotation/json_annotation.dart';
 part 'badgeModel.g.dart';
 
 @HiveType(typeId: 12)
-@JsonSerializable(
-  explicitToJson: true,
-)
+@JsonSerializable(explicitToJson: true)
 class Badge {
   @HiveField(0)
   String name;

@@ -21,23 +21,20 @@ class OldVersion extends StatelessWidget {
         children: <Widget>[
           const Spacer(),
           Center(
-              child: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.7,
-            child: Text(
-              "The version ${globals.currentAppVersion}+${globals.currentAppVersionCode} is obsolete and no longer supported. Please update the app to the latest version, to use it.",
-              textAlign: TextAlign.center,
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width * 0.7,
+              child: Text(
+                "The version ${globals.currentAppVersion}+${globals.currentAppVersionCode} is obsolete and no longer supported. Please update the app to the latest version, to use it.",
+                textAlign: TextAlign.center,
+              ),
             ),
-          )),
-          const SizedBox(
-            height: 16,
           ),
+          const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () async {
               launch("https://play.google.com/store/apps/details?id=com.hash.prism");
             },
-            style: ButtonStyle(
-              backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
-            ),
+            style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
             child: const SizedBox(
               width: 60,
               child: Text(

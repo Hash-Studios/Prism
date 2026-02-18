@@ -7,9 +7,6 @@ class PublicProfileBuilder {
   const PublicProfileBuilder._();
 
   static Widget withBloc({required Widget child, PublicProfileBloc? bloc}) {
-    return BlocProvider<PublicProfileBloc>(
-      create: (_) => bloc ?? getIt<PublicProfileBloc>(),
-      child: child,
-    );
+    return BlocProvider<PublicProfileBloc>(create: (_) => bloc ?? getIt<PublicProfileBloc>(), child: child);
   }
 }

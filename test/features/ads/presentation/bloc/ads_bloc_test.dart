@@ -33,36 +33,17 @@ void main() {
     resetUseCase = _MockResetAdsUseCase();
 
     when(() => createUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(
-        const AdsEntity(
-          downloadCoins: 0,
-          loadingAd: false,
-          adLoaded: true,
-          adFailed: false,
-        ),
-      ),
+      (_) async => Result.success(const AdsEntity(downloadCoins: 0, loadingAd: false, adLoaded: true, adFailed: false)),
     );
 
     when(() => addRewardUseCase(any())).thenAnswer(
-      (_) async => Result.success(
-        const AdsEntity(
-          downloadCoins: 10,
-          loadingAd: false,
-          adLoaded: true,
-          adFailed: false,
-        ),
-      ),
+      (_) async =>
+          Result.success(const AdsEntity(downloadCoins: 10, loadingAd: false, adLoaded: true, adFailed: false)),
     );
 
-    when(() => resetUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(AdsEntity.empty),
-    );
+    when(() => resetUseCase(const NoParams())).thenAnswer((_) async => Result.success(AdsEntity.empty));
 
-    when(() => showUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(
-        AdsEntity.empty,
-      ),
-    );
+    when(() => showUseCase(const NoParams())).thenAnswer((_) async => Result.success(AdsEntity.empty));
   });
 
   AdsBloc buildBloc() => AdsBloc(createUseCase, showUseCase, addRewardUseCase, resetUseCase);
@@ -74,40 +55,22 @@ void main() {
       ..add(const AdsEvent.started())
       ..add(const AdsEvent.rewardEarned(rewardAmount: 10)),
     expect: () => <AdsState>[
-      AdsState.initial().copyWith(
-        status: LoadStatus.loading,
-        actionStatus: ActionStatus.inProgress,
-      ),
+      AdsState.initial().copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress),
       AdsState.initial().copyWith(
         status: LoadStatus.success,
         actionStatus: ActionStatus.success,
-        ads: const AdsEntity(
-          downloadCoins: 0,
-          loadingAd: false,
-          adLoaded: true,
-          adFailed: false,
-        ),
+        ads: const AdsEntity(downloadCoins: 0, loadingAd: false, adLoaded: true, adFailed: false),
       ),
       AdsState.initial().copyWith(
         status: LoadStatus.success,
         actionStatus: ActionStatus.inProgress,
-        ads: const AdsEntity(
-          downloadCoins: 0,
-          loadingAd: false,
-          adLoaded: true,
-          adFailed: false,
-        ),
+        ads: const AdsEntity(downloadCoins: 0, loadingAd: false, adLoaded: true, adFailed: false),
       ),
       AdsState.initial().copyWith(
         status: LoadStatus.success,
         actionStatus: ActionStatus.success,
         shouldUnlockDownload: true,
-        ads: const AdsEntity(
-          downloadCoins: 10,
-          loadingAd: false,
-          adLoaded: true,
-          adFailed: false,
-        ),
+        ads: const AdsEntity(downloadCoins: 10, loadingAd: false, adLoaded: true, adFailed: false),
       ),
     ],
   );

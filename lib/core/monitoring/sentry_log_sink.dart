@@ -4,10 +4,8 @@ import 'package:Prism/logger/app_logger.dart';
 import 'package:Prism/logger/log_sink.dart';
 
 class SentryLogSink implements LogSink {
-  SentryLogSink({
-    this.dedupeWindow = const Duration(milliseconds: 1500),
-    DateTime Function()? clock,
-  }) : _clock = clock ?? DateTime.now;
+  SentryLogSink({this.dedupeWindow = const Duration(milliseconds: 1500), DateTime Function()? clock})
+    : _clock = clock ?? DateTime.now;
 
   final Duration dedupeWindow;
   final DateTime Function() _clock;
@@ -56,12 +54,7 @@ class SentryLogSink implements LogSink {
       return;
     }
 
-    reporter.captureMessage(
-      record.message,
-      severity: severity,
-      tag: record.tag,
-      extras: extras,
-    );
+    reporter.captureMessage(record.message, severity: severity, tag: record.tag, extras: extras);
   }
 
   void _cleanupOldEntries() {

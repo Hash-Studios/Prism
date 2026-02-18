@@ -24,9 +24,9 @@ void main() {
     watchUseCase = _MockWatchConnectionUseCase();
     streamController = StreamController<ConnectivityEntity>.broadcast();
 
-    when(() => checkUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(const ConnectivityEntity(isConnected: true)),
-    );
+    when(
+      () => checkUseCase(const NoParams()),
+    ).thenAnswer((_) async => Result.success(const ConnectivityEntity(isConnected: true)));
 
     when(() => watchUseCase()).thenAnswer((_) => streamController.stream);
   });

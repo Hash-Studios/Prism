@@ -9,10 +9,7 @@ String jsonFile = 'dummy.json';
 final Codec<String, String> _stringToBase64 = utf8.fuse(base64);
 
 class _RepoSnapshot {
-  _RepoSnapshot({
-    required this.repoContents,
-    required this.jsonMap,
-  });
+  _RepoSnapshot({required this.repoContents, required this.jsonMap});
 
   final RepositoryContents repoContents;
   final Map<String, dynamic> jsonMap;
@@ -30,11 +27,7 @@ bool _isBadCredentials(Object error) {
   return error.toString().contains('Bad credentials');
 }
 
-void _logGitHubError({
-  required String action,
-  required Object error,
-  required StackTrace stackTrace,
-}) {
+void _logGitHubError({required String action, required Object error, required StackTrace stackTrace}) {
   if (_isBadCredentials(error)) {
     logger.w(
       'GitHub credentials are invalid while $action. Skipping informatics sync.',
@@ -44,18 +37,10 @@ void _logGitHubError({
     );
     return;
   }
-  logger.w(
-    'GitHub request failed while $action.',
-    tag: 'Informatics',
-    error: error,
-    stackTrace: stackTrace,
-  );
+  logger.w('GitHub request failed while $action.', tag: 'Informatics', error: error, stackTrace: stackTrace);
 }
 
-Future<_RepoSnapshot?> _loadRepoSnapshot(
-  GitHub github, {
-  required String action,
-}) async {
+Future<_RepoSnapshot?> _loadRepoSnapshot(GitHub github, {required String action}) async {
   try {
     final RepositoryContents repoContents = await github.repositories.getContents(
       RepositorySlug(Env.ghUserName, Env.ghRepoData),
@@ -63,26 +48,15 @@ Future<_RepoSnapshot?> _loadRepoSnapshot(
     );
     final String? encodedContent = repoContents.file?.content;
     if (encodedContent == null) {
-      logger.w(
-        'GitHub content was empty while $action.',
-        tag: 'Informatics',
-      );
+      logger.w('GitHub content was empty while $action.', tag: 'Informatics');
       return null;
     }
-    final dynamic decodedJson = json.decode(
-      _stringToBase64.decode(encodedContent.replaceAll('\n', '')),
-    );
+    final dynamic decodedJson = json.decode(_stringToBase64.decode(encodedContent.replaceAll('\n', '')));
     if (decodedJson is! Map) {
-      logger.w(
-        'GitHub content had unexpected shape while $action.',
-        tag: 'Informatics',
-      );
+      logger.w('GitHub content had unexpected shape while $action.', tag: 'Informatics');
       return null;
     }
-    return _RepoSnapshot(
-      repoContents: repoContents,
-      jsonMap: decodedJson.cast<String, dynamic>(),
-    );
+    return _RepoSnapshot(repoContents: repoContents, jsonMap: decodedJson.cast<String, dynamic>());
   } catch (e, st) {
     _logGitHubError(action: action, error: e, stackTrace: st);
     return null;
@@ -107,24 +81,18 @@ String _counterValue(
   return value?.toString() ?? '0';
 }
 
-Future<void> _incrementCounter(
-  String section,
-  String field,
-  String id,
-) async {
+Future<void> _incrementCounter(String section, String field, String id) async {
   final GitHub github = _buildGitHubClient();
   try {
-    final _RepoSnapshot? snapshot = await _loadRepoSnapshot(
-      github,
-      action: 'loading $section/$field for $id',
-    );
+    final _RepoSnapshot? snapshot = await _loadRepoSnapshot(github, action: 'loading $section/$field for $id');
     if (snapshot == null) {
       return;
     }
 
     final dynamic sectionValue = snapshot.jsonMap[section];
-    final Map<String, dynamic> sectionMap =
-        sectionValue is Map ? sectionValue.cast<String, dynamic>() : <String, dynamic>{};
+    final Map<String, dynamic> sectionMap = sectionValue is Map
+        ? sectionValue.cast<String, dynamic>()
+        : <String, dynamic>{};
 
     final dynamic itemValue = sectionMap[id];
     final Map<String, dynamic> itemMap = itemValue is Map ? itemValue.cast<String, dynamic>() : <String, dynamic>{};
@@ -136,10 +104,7 @@ Future<void> _incrementCounter(
 
     final String? sha = snapshot.repoContents.file?.sha;
     if (sha == null) {
-      logger.w(
-        'GitHub content SHA missing while updating $section/$field for $id.',
-        tag: 'Informatics',
-      );
+      logger.w('GitHub content SHA missing while updating $section/$field for $id.', tag: 'Informatics');
       return;
     }
 
@@ -152,11 +117,7 @@ Future<void> _incrementCounter(
       branch: 'main',
     );
   } catch (e, st) {
-    _logGitHubError(
-      action: 'updating $section/$field for $id',
-      error: e,
-      stackTrace: st,
-    );
+    _logGitHubError(action: 'updating $section/$field for $id', error: e, stackTrace: st);
   } finally {
     github.dispose();
   }
@@ -165,10 +126,7 @@ Future<void> _incrementCounter(
 Future<Map?> getMapFromGitHub() async {
   final GitHub github = _buildGitHubClient();
   try {
-    final _RepoSnapshot? snapshot = await _loadRepoSnapshot(
-      github,
-      action: 'reading map',
-    );
+    final _RepoSnapshot? snapshot = await _loadRepoSnapshot(github, action: 'reading map');
     return snapshot?.jsonMap;
   } finally {
     github.dispose();
@@ -178,19 +136,11 @@ Future<Map?> getMapFromGitHub() async {
 Future<String> getViews(String id) async {
   final GitHub github = _buildGitHubClient();
   try {
-    final _RepoSnapshot? snapshot = await _loadRepoSnapshot(
-      github,
-      action: 'reading wallpaper views for $id',
-    );
+    final _RepoSnapshot? snapshot = await _loadRepoSnapshot(github, action: 'reading wallpaper views for $id');
     if (snapshot == null) {
       return '0';
     }
-    return _counterValue(
-      snapshot.jsonMap,
-      section: 'wallpapers',
-      id: id,
-      field: 'views',
-    );
+    return _counterValue(snapshot.jsonMap, section: 'wallpapers', id: id, field: 'views');
   } finally {
     github.dispose();
   }
@@ -211,19 +161,11 @@ Future<void> updateFavorites(String id) async {
 Future<String> getViewsSetup(String id) async {
   final GitHub github = _buildGitHubClient();
   try {
-    final _RepoSnapshot? snapshot = await _loadRepoSnapshot(
-      github,
-      action: 'reading setup views for $id',
-    );
+    final _RepoSnapshot? snapshot = await _loadRepoSnapshot(github, action: 'reading setup views for $id');
     if (snapshot == null) {
       return '0';
     }
-    return _counterValue(
-      snapshot.jsonMap,
-      section: 'setups',
-      id: id,
-      field: 'views',
-    );
+    return _counterValue(snapshot.jsonMap, section: 'setups', id: id, field: 'views');
   } finally {
     github.dispose();
   }

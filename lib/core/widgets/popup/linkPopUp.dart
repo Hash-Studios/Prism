@@ -28,37 +28,31 @@ void showLinksPopUp(BuildContext context, String id) {
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .78,
       child: FutureBuilder<List<LinksModel>>(
-          future: getLinks(id),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting ||
-                snapshot.connectionState == ConnectionState.none) {
-              logger.d("snapshot none, waiting");
-              return SizedBox(height: 300, child: Center(child: Loader()));
-            } else {
-              if (snapshot.data!.isNotEmpty) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      children: snapshot.data!
-                          .map(
-                            (e) => ActionButton(
-                              icon: e.icon,
-                              link: e.link,
-                              text: "@${e.username}",
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ],
-                );
-              }
-              Navigator.pop(context);
-              return Container();
+        future: getLinks(id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
+            logger.d("snapshot none, waiting");
+            return SizedBox(height: 300, child: Center(child: Loader()));
+          } else {
+            if (snapshot.data!.isNotEmpty) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    children: snapshot.data!
+                        .map((e) => ActionButton(icon: e.icon, link: e.link, text: "@${e.username}"))
+                        .toList(),
+                  ),
+                ],
+              );
             }
-          }),
+            Navigator.pop(context);
+            return Container();
+          }
+        },
+      ),
     ),
     backgroundColor: Theme.of(context).primaryColor,
     contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
