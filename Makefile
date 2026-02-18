@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard file-gen pigeon-gen run build attach ios-setup build-ios
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -41,11 +41,14 @@ fmt: format
 format-check: ensure-fvm
 	@fvm dart format --line-length $(DART_FORMAT_LINE_LENGTH) --set-exit-if-changed -o none $(DART_FORMAT_PATHS)
 
-analyze: ensure-fvm
+analyze: ensure-fvm env-guard
 	@fvm flutter analyze
 
 firestore-guard:
 	@./tool/firestore_guard.sh
+
+env-guard:
+	@./tool/env_define_guard.sh
 
 file-gen: ensure-fvm
 	@fvm dart run build_runner build --delete-conflicting-outputs
