@@ -3,6 +3,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
@@ -190,7 +191,7 @@ class WallTile extends StatelessWidget {
   final FirestoreDocument wallpaper;
   WallTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
-  static const platform = MethodChannel('flutter.prism.set_wallpaper');
+  static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -363,30 +364,15 @@ class WallTile extends StatelessWidget {
                                       toasts.codeSend("Starting Download");
                                       main.localNotification.createDownloadNotification();
 
-                                      if (sdkInt >= 30) {
-                                        await platform.invokeMethod('save_image', {"link": link}).then((value) {
-                                          if (value as bool) {
-                                            analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
-                                            toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-                                            main.localNotification.cancelDownloadNotification();
-                                          } else {
-                                            toasts.error("Couldn't download! Please Retry!");
-                                          }
-                                        }).catchError((e) {
-                                          logger.d(e.toString());
-                                        });
+                                      final request = SaveMediaRequest(
+                                          link: link, isLocalFile: false, kind: SaveMediaKind.wallpaper);
+                                      final result = await _prismMediaApi.saveMedia(request);
+                                      if (result.success) {
+                                        analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
+                                        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+                                        main.localNotification.cancelDownloadNotification();
                                       } else {
-                                        await platform.invokeMethod('save_image', {"link": link}).then((value) {
-                                          if (value as bool) {
-                                            analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
-                                            toasts.codeSend("Wall Downloaded in Internal Storage/Prism!");
-                                            main.localNotification.cancelDownloadNotification();
-                                          } else {
-                                            toasts.error("Couldn't download! Please Retry!");
-                                          }
-                                        }).catchError((e) {
-                                          logger.d(e.toString());
-                                        });
+                                        toasts.codeSend("Couldn't download! Please Retry!");
                                       }
                                     },
                                   ),
@@ -484,7 +470,7 @@ class RejectedWallTile extends StatelessWidget {
   final FirestoreDocument wallpaper;
   RejectedWallTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
-  static const platform = MethodChannel('flutter.prism.set_wallpaper');
+  static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -657,30 +643,15 @@ class RejectedWallTile extends StatelessWidget {
                                       toasts.codeSend("Starting Download");
                                       main.localNotification.createDownloadNotification();
 
-                                      if (sdkInt >= 30) {
-                                        await platform.invokeMethod('save_image', {"link": link}).then((value) {
-                                          if (value as bool) {
-                                            analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
-                                            toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-                                            main.localNotification.cancelDownloadNotification();
-                                          } else {
-                                            toasts.error("Couldn't download! Please Retry!");
-                                          }
-                                        }).catchError((e) {
-                                          logger.d(e.toString());
-                                        });
+                                      final request = SaveMediaRequest(
+                                          link: link, isLocalFile: false, kind: SaveMediaKind.wallpaper);
+                                      final result = await _prismMediaApi.saveMedia(request);
+                                      if (result.success) {
+                                        analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
+                                        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+                                        main.localNotification.cancelDownloadNotification();
                                       } else {
-                                        await platform.invokeMethod('save_image', {"link": link}).then((value) {
-                                          if (value as bool) {
-                                            analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
-                                            toasts.codeSend("Wall Downloaded in Internal Storage/Prism!");
-                                            main.localNotification.cancelDownloadNotification();
-                                          } else {
-                                            toasts.error("Couldn't download! Please Retry!");
-                                          }
-                                        }).catchError((e) {
-                                          logger.d(e.toString());
-                                        });
+                                        toasts.codeSend("Couldn't download! Please Retry!");
                                       }
                                     },
                                   ),
@@ -870,7 +841,7 @@ class SetupTile extends StatelessWidget {
   final bool draft;
   SetupTile(this.wallpaper, this.draft);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
-  static const platform = MethodChannel('flutter.prism.set_wallpaper');
+  static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1231,28 +1202,14 @@ class SetupTile extends StatelessWidget {
                                       logger.d('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
 
-                                      if (sdkInt >= 30) {
-                                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
-                                          if (value as bool) {
-                                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
-                                            toasts.codeSend("Setup Downloaded in Pictures/Prism Setup!");
-                                          } else {
-                                            toasts.error("Couldn't download! Please Retry!");
-                                          }
-                                        }).catchError((e) {
-                                          logger.d(e.toString());
-                                        });
+                                      final request =
+                                          SaveMediaRequest(link: link, isLocalFile: false, kind: SaveMediaKind.setup);
+                                      final result = await _prismMediaApi.saveMedia(request);
+                                      if (result.success) {
+                                        analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                                        toasts.codeSend("Setup Downloaded in Pictures/Prism Setup!");
                                       } else {
-                                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
-                                          if (value as bool) {
-                                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
-                                            toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setup!");
-                                          } else {
-                                            toasts.error("Couldn't download! Please Retry!");
-                                          }
-                                        }).catchError((e) {
-                                          logger.d(e.toString());
-                                        });
+                                        toasts.codeSend("Couldn't download! Please Retry!");
                                       }
                                     },
                                   ),
@@ -1361,7 +1318,7 @@ class RejectedSetupTile extends StatelessWidget {
   final FirestoreDocument wallpaper;
   RejectedSetupTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
-  static const platform = MethodChannel('flutter.prism.set_wallpaper');
+  static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1687,28 +1644,14 @@ class RejectedSetupTile extends StatelessWidget {
                                       logger.d('(SDK $sdkInt)');
                                       toasts.codeSend("Starting Download");
 
-                                      if (sdkInt >= 30) {
-                                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
-                                          if (value as bool) {
-                                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
-                                            toasts.codeSend("Setup Downloaded in Pictures/Prism Setups!");
-                                          } else {
-                                            toasts.error("Couldn't download! Please Retry!");
-                                          }
-                                        }).catchError((e) {
-                                          logger.d(e.toString());
-                                        });
+                                      final request =
+                                          SaveMediaRequest(link: link, isLocalFile: false, kind: SaveMediaKind.setup);
+                                      final result = await _prismMediaApi.saveMedia(request);
+                                      if (result.success) {
+                                        analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                                        toasts.codeSend("Setup Downloaded in Pictures/Prism Setups!");
                                       } else {
-                                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
-                                          if (value as bool) {
-                                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
-                                            toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setups!");
-                                          } else {
-                                            toasts.error("Couldn't download! Please Retry!");
-                                          }
-                                        }).catchError((e) {
-                                          logger.d(e.toString());
-                                        });
+                                        toasts.codeSend("Couldn't download! Please Retry!");
                                       }
                                     },
                                   ),

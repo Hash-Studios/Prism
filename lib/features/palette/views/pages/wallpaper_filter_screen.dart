@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
@@ -122,25 +124,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     return true;
   }
 
-  static const platform = MethodChannel("flutter.prism.set_wallpaper");
-
   Future<void> _setBothWallPaper(String url) async {
     bool? result;
     try {
-      if (url.contains("com.hash.prism")) {
-        result = await platform.invokeMethod("set_both_wallpaper_file", <String, dynamic>{
-          'url': url,
-        });
-      } else if (url.contains("/0/")) {
-        result = await platform.invokeMethod("set_both_wallpaper_file", <String, dynamic>{
-          'url': "/${url.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result = await platform.invokeMethod("set_both_wallpaper", <String, dynamic>{
-          'url': url,
-        });
-      }
-      if (result!) {
+      result = await WallpaperService.setWallpaperFromSource(
+        url,
+        WallpaperTarget.both,
+      );
+      if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
@@ -158,20 +149,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<void> _setLockWallPaper(String url) async {
     bool? result;
     try {
-      if (url.contains("com.hash.prism")) {
-        result = await platform.invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
-          'url': url,
-        });
-      } else if (url.contains("/0/")) {
-        result = await platform.invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
-          'url': "/${url.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result = await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
-          'url': url,
-        });
-      }
-      if (result!) {
+      result = await WallpaperService.setWallpaperFromSource(
+        url,
+        WallpaperTarget.lock,
+      );
+      if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
@@ -189,20 +171,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<void> _setHomeWallPaper(String url) async {
     bool? result;
     try {
-      if (url.contains("com.hash.prism")) {
-        result = await platform.invokeMethod("set_home_wallpaper_file", <String, dynamic>{
-          'url': url,
-        });
-      } else if (url.contains("/0/")) {
-        result = await platform.invokeMethod("set_home_wallpaper_file", <String, dynamic>{
-          'url': "/${url.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result = await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
-          'url': url,
-        });
-      }
-      if (result!) {
+      result = await WallpaperService.setWallpaperFromSource(
+        url,
+        WallpaperTarget.home,
+      );
+      if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
@@ -276,20 +249,20 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   setState(() {
                     isLoading = true;
                   });
-                  platform.invokeMethod('save_image_file', {"link": imageFile.path}).then((value) {
-                    if (value as bool) {
-                      analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
-                      toasts.codeSend("Wall Saved in Pictures!");
-                    } else {
-                      toasts.error("Couldn't save wallpaper. Please retry!");
-                    }
-                    setState(() {
-                      isLoading = false;
-                    });
-                  }).catchError((e) {
-                    setState(() {
-                      isLoading = false;
-                    });
+                  final request = SaveMediaRequest(
+                    link: imageFile.path,
+                    isLocalFile: true,
+                    kind: SaveMediaKind.wallpaper,
+                  );
+                  final result = await PrismMediaHostApi().saveMedia(request);
+                  if (result.success) {
+                    analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
+                    toasts.codeSend("Wall Saved in Pictures!");
+                  } else {
+                    toasts.error("Couldn't save wallpaper. Please retry!");
+                  }
+                  setState(() {
+                    isLoading = false;
                   });
                 },
               ),

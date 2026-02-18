@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
@@ -37,8 +38,6 @@ class _DownloadButtonState extends State<DownloadButton> {
     isLoading = false;
     super.initState();
   }
-
-  static const platform = MethodChannel('flutter.prism.set_wallpaper');
 
   @override
   Widget build(BuildContext context) {
@@ -115,9 +114,14 @@ class _DownloadButtonState extends State<DownloadButton> {
     final sdkInt = androidInfo.version.sdkInt;
     logger.d('(SDK $sdkInt)');
     if (widget.link!.contains("com.hash.prism")) {
-      debugPrint("Downloading using Picasso");
-      final bool didSave = await platform.invokeMethod<bool>('save_image_file', {"link": widget.link}) ?? false;
-      if (didSave) {
+      debugPrint("Saving local file");
+      final request = SaveMediaRequest(
+        link: widget.link!,
+        isLocalFile: true,
+        kind: SaveMediaKind.wallpaper,
+      );
+      final result = await PrismMediaHostApi().saveMedia(request);
+      if (result.success) {
         analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
         toasts.codeSend("Wall Downloaded in Pictures/Prism!");
       } else {
@@ -129,7 +133,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         });
       }
     } else {
-      debugPrint("Downloading using Platform Method");
+      debugPrint("Downloading using DownloadManager");
       Future.delayed(const Duration(seconds: 2)).then((value) {
         if (!mounted) {
           return;
@@ -138,10 +142,11 @@ class _DownloadButtonState extends State<DownloadButton> {
           isLoading = false;
         });
       });
-      await platform.invokeMethod<void>('download_image_dm', {
-        "link": widget.link,
-        "filename": widget.link!.split('/').last.replaceAll(".jpg", "").replaceAll(".png", "")
-      });
+      final request = DownloadRequest(
+        link: widget.link!,
+        filenameWithoutExtension: widget.link!.split('/').last.replaceAll(".jpg", "").replaceAll(".png", ""),
+      );
+      await PrismMediaHostApi().enqueueDownload(request);
       toasts.codeSend("Wall Downloaded in Pictures/Prism!");
       analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
     }

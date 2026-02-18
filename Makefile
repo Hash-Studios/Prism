@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard file-gen run build attach ios-setup build-ios
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard file-gen pigeon-gen run build attach ios-setup build-ios
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -49,6 +49,9 @@ firestore-guard:
 
 file-gen: ensure-fvm
 	@fvm dart run build_runner build --delete-conflicting-outputs
+
+pigeon-gen: ensure-fvm
+	@./tool/generate_pigeon.sh
 
 run: ensure-fvm
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
