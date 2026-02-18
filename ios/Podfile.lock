@@ -1,4 +1,6 @@
 PODS:
+  - app_links (6.4.1):
+    - Flutter
   - AppAuth (2.0.0):
     - AppAuth/Core (= 2.0.0)
     - AppAuth/ExternalUserAgent (= 2.0.0)
@@ -30,9 +32,6 @@ PODS:
     - FirebaseAnalytics (~> 11.15.0)
   - Firebase/CoreOnly (11.15.0):
     - FirebaseCore (~> 11.15.0)
-  - Firebase/DynamicLinks (11.15.0):
-    - Firebase/CoreOnly
-    - FirebaseDynamicLinks (~> 11.15.0)
   - Firebase/Firestore (11.15.0):
     - Firebase/CoreOnly
     - FirebaseFirestore (~> 11.15.0)
@@ -55,10 +54,6 @@ PODS:
     - Flutter
   - firebase_core (3.15.2):
     - Firebase/CoreOnly (= 11.15.0)
-    - Flutter
-  - firebase_dynamic_links (6.1.10):
-    - Firebase/DynamicLinks (= 11.15.0)
-    - firebase_core
     - Flutter
   - firebase_in_app_messaging (0.8.1-10):
     - Firebase/InAppMessaging (= 11.15.0)
@@ -111,8 +106,6 @@ PODS:
     - FirebaseCore (~> 11.15.0)
   - FirebaseCoreInternal (11.15.0):
     - "GoogleUtilities/NSData+zlib (~> 8.1)"
-  - FirebaseDynamicLinks (11.15.0):
-    - FirebaseCore (~> 11.15.0)
   - FirebaseFirestore (11.15.0):
     - FirebaseFirestoreBinary (= 11.15.0)
   - FirebaseFirestoreAbseilBinary (1.2024072200.0)
@@ -328,6 +321,7 @@ PODS:
   - ZIPFoundation (0.9.19)
 
 DEPENDENCIES:
+  - app_links (from `.symlinks/plugins/app_links/ios`)
   - cloud_firestore (from `.symlinks/plugins/cloud_firestore/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
@@ -335,7 +329,6 @@ DEPENDENCIES:
   - firebase_analytics (from `.symlinks/plugins/firebase_analytics/ios`)
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
-  - firebase_dynamic_links (from `.symlinks/plugins/firebase_dynamic_links/ios`)
   - firebase_in_app_messaging (from `.symlinks/plugins/firebase_in_app_messaging/ios`)
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
   - firebase_remote_config (from `.symlinks/plugins/firebase_remote_config/ios`)
@@ -375,7 +368,6 @@ SPEC REPOS:
     - FirebaseCore
     - FirebaseCoreExtension
     - FirebaseCoreInternal
-    - FirebaseDynamicLinks
     - FirebaseFirestoreAbseilBinary
     - FirebaseFirestoreBinary
     - FirebaseFirestoreGRPCBoringSSLBinary
@@ -411,6 +403,8 @@ SPEC REPOS:
     - ZIPFoundation
 
 EXTERNAL SOURCES:
+  app_links:
+    :path: ".symlinks/plugins/app_links/ios"
   cloud_firestore:
     :path: ".symlinks/plugins/cloud_firestore/ios"
   connectivity_plus:
@@ -425,8 +419,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_auth/ios"
   firebase_core:
     :path: ".symlinks/plugins/firebase_core/ios"
-  firebase_dynamic_links:
-    :path: ".symlinks/plugins/firebase_dynamic_links/ios"
   firebase_in_app_messaging:
     :path: ".symlinks/plugins/firebase_in_app_messaging/ios"
   firebase_messaging:
@@ -485,6 +477,7 @@ CHECKOUT OPTIONS:
     :tag: 11.15.0
 
 SPEC CHECKSUMS:
+  app_links: 585674be3c6661708e6cd794ab4f39fb9d8356f9
   AppAuth: 1c1a8afa7e12f2ec3a294d9882dfa5ab7d3cb063
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
   cloud_firestore: 97e42181866db3cba3fe3935895ab779b6acacd6
@@ -495,7 +488,6 @@ SPEC CHECKSUMS:
   firebase_analytics: bf93e20703c95030404d6ddbb1adf05bf5c3885b
   firebase_auth: 5342db41af2ba5ed32a6177d9e326eecbebda912
   firebase_core: 99a37263b3c27536063a7b601d9e2a49400a433c
-  firebase_dynamic_links: c4fc0263d4b1aa863f3f4650315f3e4e221aa931
   firebase_in_app_messaging: 6c0e558f2ad41689c34f9c8170a40687cd5819eb
   firebase_messaging: bf6697c61f31c7cc0f654131212ff04c0115c2c7
   firebase_remote_config: 395d35aa770405fd0121c97382671371ea00734a
@@ -507,7 +499,6 @@ SPEC CHECKSUMS:
   FirebaseCore: efb3893e5b94f32b86e331e3bd6dadf18b66568e
   FirebaseCoreExtension: edbd30474b5ccf04e5f001470bdf6ea616af2435
   FirebaseCoreInternal: 9afa45b1159304c963da48addb78275ef701c6b4
-  FirebaseDynamicLinks: 639fc743dc9c9f01709139bf74319536a674f012
   FirebaseFirestore: 736c2099af30aed7728d5789059fee1914b4d213
   FirebaseFirestoreAbseilBinary: 4cfa8823cedc1b774843e04fe578ad279b387f97
   FirebaseFirestoreBinary: 43abe19da1cb39a10171786e5a2e18fa9d57b6af

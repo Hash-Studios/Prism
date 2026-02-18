@@ -9,9 +9,9 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:app_links/app_links.dart' as _i327;
 import 'package:cloud_firestore/cloud_firestore.dart' as _i974;
 import 'package:firebase_auth/firebase_auth.dart' as _i59;
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart' as _i538;
 import 'package:firebase_remote_config/firebase_remote_config.dart' as _i627;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:hive_io/hive_io.dart' as _i851;
@@ -174,9 +174,7 @@ _i174.GetIt initGetIt(
     () => appModule.firestoreTelemetrySink,
   );
   gh.lazySingleton<_i59.FirebaseAuth>(() => appModule.firebaseAuth);
-  gh.lazySingleton<_i538.FirebaseDynamicLinks>(
-    () => appModule.firebaseDynamicLinks,
-  );
+  gh.lazySingleton<_i327.AppLinks>(() => appModule.appLinks);
   gh.lazySingleton<_i627.FirebaseRemoteConfig>(() => appModule.remoteConfig);
   gh.lazySingleton<_i973.InternetConnectionChecker>(
     () => appModule.internetConnectionChecker,
@@ -215,11 +213,11 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i647.NavigationRepository>(
     () => _i69.NavigationRepositoryImpl(),
   );
-  gh.lazySingleton<_i226.DeepLinkRepository>(
-    () => _i857.DeepLinkRepositoryImpl(gh<_i538.FirebaseDynamicLinks>()),
-  );
   gh.lazySingleton<_i1019.PaletteRepository>(
     () => _i401.PaletteRepositoryImpl(),
+  );
+  gh.lazySingleton<_i226.DeepLinkRepository>(
+    () => _i857.DeepLinkRepositoryImpl(gh<_i327.AppLinks>()),
   );
   gh.lazySingleton<_i349.FirestoreClient>(
     () => appModule.firestoreClient(

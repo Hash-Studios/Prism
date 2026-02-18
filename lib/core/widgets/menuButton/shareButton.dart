@@ -1,7 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -29,7 +29,7 @@ class _ShareButtonState extends State<ShareButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        logger.d("Share");
+        logger.d('Share');
         onShare();
       },
       child: Stack(
@@ -61,29 +61,22 @@ class _ShareButtonState extends State<ShareButton> {
     setState(() {
       isLoading = true;
     });
-    final DynamicLinkParameters parameters = DynamicLinkParameters(
-      socialMetaTagParameters: SocialMetaTagParameters(
-        title: "Prism Wallpapers - ${widget.id}",
-        imageUrl: Uri.parse(widget.thumbUrl),
-        description: "Check out this amazing wallpaper I got, from Prism Wallpapers App.",
-      ),
-      uriPrefix: 'https://prismwallpapers.page.link',
-      link: Uri.parse(
-        'http://prism.hash.com/share?id=${widget.id}&provider=${widget.provider}&url=${widget.url}&thumb=${widget.thumbUrl}',
-      ),
-      androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
-      iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
-    );
-    final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
-    final Uri shortUrl = shortDynamicLink.shortUrl;
-    Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-    SharePlus.instance.share(
-      ShareParams(text: "🔥Check this out ➜ $shortUrl", sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
-    );
-    logger.d(shortUrl.toString());
-    analytics.logShare(contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
-    setState(() {
-      isLoading = false;
-    });
+
+    try {
+      final String link = await createDynamicLink(widget.id!, widget.provider!, widget.url, widget.thumbUrl);
+      await Clipboard.setData(ClipboardData(text: link));
+      SharePlus.instance.share(
+        ShareParams(text: '🔥Check this out ➜ $link', sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
+      );
+      analytics.logShare(contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
+    } catch (error, stackTrace) {
+      logger.e('Failed to share wallpaper link', error: error, stackTrace: stackTrace);
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 }

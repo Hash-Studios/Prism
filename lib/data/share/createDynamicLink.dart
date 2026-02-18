@@ -1,99 +1,202 @@
+import 'dart:convert';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/widgets/popup/copyrightPopUp.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 
-Future<String> createDynamicLink(String id, String provider, String? url, String thumbUrl) async {
-  final DynamicLinkParameters parameters = DynamicLinkParameters(
-    socialMetaTagParameters: SocialMetaTagParameters(
-      title: "$id - Prism",
-      imageUrl: Uri.parse(thumbUrl),
-      description: "Check out this amazing wallpaper I got from Prism.",
-    ),
-    uriPrefix: 'https://prismwallpapers.page.link',
-    link: Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider&url=$url&thumb=$thumbUrl'),
-    androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
-    iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
+const String _shareDomain = 'prismwalls.com';
+const String _shortLinkApiUrl = 'https://prismwalls.com/api/links';
+
+class CanonicalLinkBuilder {
+  const CanonicalLinkBuilder();
+
+  Uri wallpaper({required String id, required String provider, String? url, required String thumbUrl}) {
+    return Uri.https(_shareDomain, '/share', <String, String>{
+      'id': id,
+      'provider': provider,
+      'thumb': thumbUrl,
+      if (url != null) 'url': url,
+    });
+  }
+
+  Uri user({required String username}) {
+    return Uri.https(_shareDomain, '/user', <String, String>{'username': username});
+  }
+
+  Uri setup({required String index, required String name, required String thumbUrl}) {
+    return Uri.https(_shareDomain, '/setup', <String, String>{'index': index, 'name': name, 'thumbUrl': thumbUrl});
+  }
+
+  Uri refer({required String userId}) {
+    return Uri.https(_shareDomain, '/refer', <String, String>{'userID': userId});
+  }
+}
+
+class ShortLinkService {
+  const ShortLinkService();
+
+  Future<Uri> createShortLink({
+    required String type,
+    required Uri canonicalUri,
+    Map<String, dynamic>? payload,
+    Map<String, dynamic>? preview,
+  }) async {
+    final Uri endpoint = Uri.parse(_shortLinkApiUrl);
+    try {
+      final response = await http
+          .post(
+            endpoint,
+            headers: const <String, String>{'Content-Type': 'application/json', 'Accept': 'application/json'},
+            body: jsonEncode(<String, dynamic>{
+              'type': type,
+              'payload': payload ?? const <String, dynamic>{},
+              'canonical_url': canonicalUri.toString(),
+              'preview': preview ?? const <String, dynamic>{},
+            }),
+          )
+          .timeout(const Duration(seconds: 6));
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        logger.w(
+          'Short-link API non-success status',
+          fields: <String, Object?>{
+            'status': response.statusCode,
+            'body': response.body,
+            'canonical': canonicalUri.toString(),
+          },
+        );
+        return canonicalUri;
+      }
+
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final dynamic shortUrl = decoded['short_url'];
+        if (shortUrl is String && shortUrl.isNotEmpty) {
+          final Uri? parsed = Uri.tryParse(shortUrl);
+          if (parsed != null) {
+            return parsed;
+          }
+        }
+      }
+    } catch (error, stackTrace) {
+      logger.w(
+        'Short-link API request failed; falling back to canonical URL.',
+        error: error,
+        stackTrace: stackTrace,
+        fields: <String, Object?>{'canonical': canonicalUri.toString()},
+      );
+    }
+
+    return canonicalUri;
+  }
+}
+
+const CanonicalLinkBuilder _canonicalLinkBuilder = CanonicalLinkBuilder();
+const ShortLinkService _shortLinkService = ShortLinkService();
+
+Future<String> _buildShareableLink({
+  required String type,
+  required Uri canonicalUri,
+  Map<String, dynamic>? payload,
+  Map<String, dynamic>? preview,
+}) async {
+  final Uri resolved = await _shortLinkService.createShortLink(
+    type: type,
+    canonicalUri: canonicalUri,
+    payload: payload,
+    preview: preview,
   );
-  final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
-  final Uri shortUrl = shortDynamicLink.shortUrl;
-  Clipboard.setData(ClipboardData(text: "Hey check this out ➜ $shortUrl"));
+  logger.d(resolved.toString());
+  return resolved.toString();
+}
+
+Future<String> createDynamicLink(String id, String provider, String? url, String thumbUrl) async {
+  final Uri canonical = _canonicalLinkBuilder.wallpaper(id: id, provider: provider, url: url, thumbUrl: thumbUrl);
+  final String link = await _buildShareableLink(
+    type: 'share',
+    canonicalUri: canonical,
+    payload: <String, dynamic>{'id': id, 'provider': provider, if (url != null) 'url': url, 'thumb': thumbUrl},
+    preview: <String, dynamic>{
+      'title': '$id - Prism',
+      'description': 'Check out this amazing wallpaper from Prism.',
+      'image_source_url': thumbUrl,
+      'provider': provider,
+      'wall_id': id,
+    },
+  );
+
+  await Clipboard.setData(ClipboardData(text: 'Hey check this out ➜ $link'));
   analytics.logShare(contentType: 'focussedMenu', itemId: id, method: 'link');
-  toasts.codeSend("Sharing link copied!");
-  logger.d(shortUrl.toString());
-  return shortUrl.toString();
+  toasts.codeSend('Sharing link copied!');
+  return link;
 }
 
 Future<void> createUserDynamicLink(String name, String username, String email, String bio, String userPhoto) async {
-  final DynamicLinkParameters parameters = DynamicLinkParameters(
-    socialMetaTagParameters: SocialMetaTagParameters(
-      title: "$name (@$username)",
-      imageUrl: Uri.parse(userPhoto),
-      description: bio != "" ? bio : "Check out my walls & setups on Prism.",
-    ),
-    uriPrefix: 'https://prismwallpapers.page.link',
-    link: Uri.parse('http://prism.hash.com/user?email=$email'),
-    androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
-    iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
+  final String userIdentifier = username.isNotEmpty ? username : email;
+  final Uri canonical = _canonicalLinkBuilder.user(username: userIdentifier);
+  final String link = await _buildShareableLink(
+    type: 'user',
+    canonicalUri: canonical,
+    payload: <String, dynamic>{'username': userIdentifier},
+    preview: <String, dynamic>{
+      'title': '$name (@$userIdentifier)',
+      'description': bio.isNotEmpty ? bio : 'Check out this creator profile on Prism.',
+      'image_source_url': userPhoto,
+      'username': userIdentifier,
+    },
   );
-  // final Uri shortUrl = await parameters.buildUrl();
-  final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
-  final Uri shortUrl = shortDynamicLink.shortUrl;
-  Clipboard.setData(ClipboardData(text: shortUrl.toString()));
+
+  await Clipboard.setData(ClipboardData(text: link));
   SharePlus.instance.share(
     ShareParams(
-      text: "Hey check out my profile on Prism ➜ $shortUrl",
+      text: 'Hey check out my profile on Prism ➜ $link',
       sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
     ),
   );
-  analytics.logShare(contentType: 'userShare', itemId: username, method: 'link');
-  logger.d(shortUrl.toString());
+  analytics.logShare(contentType: 'userShare', itemId: userIdentifier, method: 'link');
 }
 
 Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) async {
-  final DynamicLinkParameters parameters = DynamicLinkParameters(
-    socialMetaTagParameters: SocialMetaTagParameters(
-      title: "$name - Prism",
-      imageUrl: Uri.parse(thumbUrl),
-      description: "Check out this amazing setup I got from Prism.",
-    ),
-    uriPrefix: 'https://prismwallpapers.page.link',
-    link: Uri.parse('http://prism.hash.com/setup?index=$index&name=$name&thumbUrl=$thumbUrl'),
-    androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
-    iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
+  final Uri canonical = _canonicalLinkBuilder.setup(index: index, name: name, thumbUrl: thumbUrl);
+  final String link = await _buildShareableLink(
+    type: 'setup',
+    canonicalUri: canonical,
+    payload: <String, dynamic>{'index': index, 'name': name, 'thumbUrl': thumbUrl},
+    preview: <String, dynamic>{
+      'title': '$name - Prism',
+      'description': 'Check out this setup shared from Prism.',
+      'image_source_url': thumbUrl,
+      'setup_name': name,
+    },
   );
-  final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
-  final Uri shortUrl = shortDynamicLink.shortUrl;
-  Clipboard.setData(ClipboardData(text: shortUrl.toString()));
+
+  await Clipboard.setData(ClipboardData(text: link));
   SharePlus.instance.share(
-    ShareParams(text: "Hey check this out ➜ $shortUrl", sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
+    ShareParams(text: 'Hey check this out ➜ $link', sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
   );
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
-  logger.d(shortUrl.toString());
 }
 
 Future<String> createSharingPrismLink(String userID) async {
-  final DynamicLinkParameters parameters = DynamicLinkParameters(
-    socialMetaTagParameters: SocialMetaTagParameters(
-      title: "Prism",
-      imageUrl: Uri.parse("https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"),
-      description: "Download Prism from my link to get 50 coins instantly!",
-    ),
-    uriPrefix: 'https://prismwallpapers.page.link',
-    link: Uri.parse('http://prism.hash.com/refer?userID=$userID'),
-    androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
-    iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
+  final Uri canonical = _canonicalLinkBuilder.refer(userId: userID);
+  final String link = await _buildShareableLink(
+    type: 'refer',
+    canonicalUri: canonical,
+    payload: <String, dynamic>{'userID': userID},
+    preview: <String, dynamic>{
+      'title': 'Join Prism',
+      'description': 'Download Prism to discover beautiful wallpapers and setups.',
+    },
   );
-  final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
-  final Uri shortUrl = shortDynamicLink.shortUrl;
+
   analytics.logShare(contentType: 'prismShare', itemId: userID, method: 'link');
-  logger.d(shortUrl.toString());
-  return shortUrl.toString();
+  return link;
 }
 
 Future<String> createCopyrightLink(
@@ -106,43 +209,48 @@ Future<String> createCopyrightLink(
   String? name,
   String? index,
 }) async {
-  Uri shortUrl;
-  if (setup == true) {
-    final DynamicLinkParameters parameters = DynamicLinkParameters(
-      socialMetaTagParameters: SocialMetaTagParameters(
-        title: "$name - Prism",
-        imageUrl: Uri.parse(thumbUrl!),
-        description: "Check out this amazing setup I got from Prism.",
-      ),
-      uriPrefix: 'https://prismwallpapers.page.link',
-      link: Uri.parse('http://prism.hash.com/setup?index=$index&name=$name&thumbUrl=$thumbUrl'),
-      androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
-      iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
-    );
-    final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
-    shortUrl = shortDynamicLink.shortUrl;
+  late final Uri canonical;
+  late final String type;
+  late final Map<String, dynamic> payload;
+  late final Map<String, dynamic> preview;
+
+  if (setup) {
+    type = 'setup';
+    canonical = _canonicalLinkBuilder.setup(index: index!, name: name!, thumbUrl: thumbUrl!);
+    payload = <String, dynamic>{'index': index, 'name': name, 'thumbUrl': thumbUrl};
+    preview = <String, dynamic>{
+      'title': '$name - Prism',
+      'description': 'Check out this setup shared from Prism.',
+      'image_source_url': thumbUrl,
+      'setup_name': name,
+    };
     analytics.logEvent(name: 'reportSetup');
-    logger.d(shortUrl.toString());
   } else {
-    final DynamicLinkParameters parameters = DynamicLinkParameters(
-      socialMetaTagParameters: SocialMetaTagParameters(
-        title: "$id - Prism",
-        imageUrl: Uri.parse(thumbUrl!),
-        description: "Check out this amazing wallpaper I got from Prism.",
-      ),
-      uriPrefix: 'https://prismwallpapers.page.link',
-      link: Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider&url=$url&thumb=$thumbUrl'),
-      androidParameters: const AndroidParameters(packageName: 'com.hash.prism', minimumVersion: 1),
-      iosParameters: const IOSParameters(bundleId: 'com.hash.prism', minimumVersion: '1.0.1', appStoreId: '1405860595'),
-    );
-    final ShortDynamicLink shortDynamicLink = await FirebaseDynamicLinks.instance.buildShortLink(parameters);
-    shortUrl = shortDynamicLink.shortUrl;
+    type = 'share';
+    canonical = _canonicalLinkBuilder.wallpaper(id: id!, provider: provider!, url: url, thumbUrl: thumbUrl!);
+    payload = <String, dynamic>{'id': id, 'provider': provider, if (url != null) 'url': url, 'thumb': thumbUrl};
+    preview = <String, dynamic>{
+      'title': '$id - Prism',
+      'description': 'Check out this amazing wallpaper from Prism.',
+      'image_source_url': thumbUrl,
+      'provider': provider,
+      'wall_id': id,
+    };
     analytics.logEvent(name: 'reportWall');
-    logger.d(shortUrl.toString());
+  }
+
+  final String link = await _buildShareableLink(
+    type: type,
+    canonicalUri: canonical,
+    payload: payload,
+    preview: preview,
+  );
+  if (!context.mounted) {
+    return '';
   }
   showModal(
     context: context,
-    builder: (BuildContext context) => CopyrightPopUp(setup: setup, shortlink: shortUrl.toString()),
+    builder: (BuildContext context) => CopyrightPopUp(setup: setup, shortlink: link),
   );
-  return "";
+  return '';
 }
