@@ -23,16 +23,14 @@ CategoryEntity _toEntity(CategoryMenu choice, List<CategoryEntity> categories) {
   );
 }
 
-final List<CategoryMenu> categoryChoices = category_data.categories
-    .map((rawCategory) {
-      final categoryMap = rawCategory as Map<String, Object?>;
-      return CategoryMenu(
-        name: categoryMap['name'].toString(),
-        provider: categoryMap['provider'].toString(),
-        image: categoryMap['image'].toString(),
-      );
-    })
-    .toList(growable: false);
+final List<CategoryMenu> categoryChoices = category_data.categories.map((rawCategory) {
+  final categoryMap = rawCategory as Map<String, Object?>;
+  return CategoryMenu(
+    name: categoryMap['name'].toString(),
+    provider: categoryMap['provider'].toString(),
+    image: categoryMap['image'].toString(),
+  );
+}).toList(growable: false);
 
 extension CategoryFeedBlocAdapterX on BuildContext {
   CategoryFeedBloc _categoryFeedBloc(bool listen) => listen ? watch<CategoryFeedBloc>() : read<CategoryFeedBloc>();

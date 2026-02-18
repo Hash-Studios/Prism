@@ -171,9 +171,8 @@ class _WallCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final Map<String, dynamic> data = wall.data();
     final String previewUrl = data['wallpaper_thumb']?.toString() ?? '';
-    final String fullUrl = (data['wallpaper_url']?.toString() ?? '').isNotEmpty
-        ? data['wallpaper_url'].toString()
-        : previewUrl;
+    final String fullUrl =
+        (data['wallpaper_url']?.toString() ?? '').isNotEmpty ? data['wallpaper_url'].toString() : previewUrl;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(

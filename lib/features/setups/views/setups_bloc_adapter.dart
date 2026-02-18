@@ -19,7 +19,7 @@ class SetupSnapshot {
 
 class SetupsAdapter {
   SetupsAdapter(BuildContext context, {required bool listen})
-    : _bloc = listen ? context.watch<SetupsBloc>() : context.read<SetupsBloc>();
+      : _bloc = listen ? context.watch<SetupsBloc>() : context.read<SetupsBloc>();
 
   final SetupsBloc _bloc;
 
@@ -59,23 +59,22 @@ Future<Map?> getSetupFromName(String? name) async {
   setup = {};
   await firestoreClient
       .query<Map<String, dynamic>>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.setups,
-          sourceTag: 'setups.lookup.byName',
-          filters: <FirestoreFilter>[FirestoreFilter(field: 'name', op: FirestoreFilterOp.isEqualTo, value: name)],
-          limit: 1,
-        ),
-        (data, _) => data,
-      )
+    FirestoreQuerySpec(
+      collection: FirebaseCollections.setups,
+      sourceTag: 'setups.lookup.byName',
+      filters: <FirestoreFilter>[FirestoreFilter(field: 'name', op: FirestoreFilterOp.isEqualTo, value: name)],
+      limit: 1,
+    ),
+    (data, _) => data,
+  )
       .then((value) {
-        if (value.isNotEmpty) {
-          setup = value.first;
-        }
-        logger.d(setup.toString());
-      })
-      .catchError((error) {
-        logger.d('data done with error');
-        logger.d(error.toString());
-      });
+    if (value.isNotEmpty) {
+      setup = value.first;
+    }
+    logger.d(setup.toString());
+  }).catchError((error) {
+    logger.d('data done with error');
+    logger.d(error.toString());
+  });
   return setup;
 }

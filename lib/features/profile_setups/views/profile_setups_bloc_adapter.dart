@@ -16,7 +16,7 @@ class ProfileSetupSnapshot {
 
 class ProfileSetupsAdapter {
   ProfileSetupsAdapter(BuildContext context, {required bool listen})
-    : _bloc = listen ? context.watch<ProfileSetupsBloc>() : context.read<ProfileSetupsBloc>();
+      : _bloc = listen ? context.watch<ProfileSetupsBloc>() : context.read<ProfileSetupsBloc>();
 
   final ProfileSetupsBloc _bloc;
 

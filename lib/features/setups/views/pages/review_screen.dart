@@ -819,23 +819,22 @@ class SetupTile extends StatelessWidget {
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 child: RichText(
                                   text: TextSpan(
-                                    text: "${wallpaper.data()["name"]}" == ""
-                                        ? "No name"
-                                        : "${wallpaper.data()["name"]}",
+                                    text:
+                                        "${wallpaper.data()["name"]}" == "" ? "No name" : "${wallpaper.data()["name"]}",
                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      decoration: TextDecoration.underline,
-                                      color: Theme.of(context).colorScheme.secondary,
-                                    ),
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.underline,
+                                          color: Theme.of(context).colorScheme.secondary,
+                                        ),
                                     children: [
                                       TextSpan(
                                         text: "${wallpaper.data()["desc"]}" == ""
                                             ? " - No desc"
                                             : " - ${wallpaper.data()["desc"]}",
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                          decoration: TextDecoration.underline,
-                                          color: Theme.of(context).colorScheme.secondary,
-                                        ),
+                                              decoration: TextDecoration.underline,
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -910,13 +909,13 @@ class SetupTile extends StatelessWidget {
                                     child: Text(
                                       "${wallpaper.data()["wallpaper_url"]}" != ""
                                           ? "${wallpaper.data()["wallpaper_url"]}"[0] != "["
-                                                ? "Wallpaper"
-                                                : "${wallpaper.data()["wallpaper_url"][0]} - ${wallpaper.data()["wallpaper_url"][2]}"
+                                              ? "Wallpaper"
+                                              : "${wallpaper.data()["wallpaper_url"][0]} - ${wallpaper.data()["wallpaper_url"][2]}"
                                           : "Wallpaper",
                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                        decoration: TextDecoration.underline,
-                                        color: Theme.of(context).colorScheme.secondary,
-                                      ),
+                                            decoration: TextDecoration.underline,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                     ),
                                   ),
                                 ],
@@ -943,9 +942,9 @@ class SetupTile extends StatelessWidget {
                                     child: Text(
                                       "${wallpaper.data()["icon"]}" == "" ? "No icon" : "${wallpaper.data()["icon"]}",
                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                        decoration: TextDecoration.underline,
-                                        color: Theme.of(context).colorScheme.secondary,
-                                      ),
+                                            decoration: TextDecoration.underline,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                     ),
                                   ),
                                 ],
@@ -969,9 +968,9 @@ class SetupTile extends StatelessWidget {
                                       child: Text(
                                         "${wallpaper.data()["widget"]}",
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                          decoration: TextDecoration.underline,
-                                          color: Theme.of(context).colorScheme.secondary,
-                                        ),
+                                              decoration: TextDecoration.underline,
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -997,9 +996,9 @@ class SetupTile extends StatelessWidget {
                                       child: Text(
                                         "${wallpaper.data()["widget2"]}",
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                          decoration: TextDecoration.underline,
-                                          color: Theme.of(context).colorScheme.secondary,
-                                        ),
+                                              decoration: TextDecoration.underline,
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -1247,17 +1246,17 @@ class RejectedSetupTile extends StatelessWidget {
                                   text: TextSpan(
                                     text: "${wallpaper.data()["name"]}",
                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      decoration: TextDecoration.underline,
-                                      color: Theme.of(context).colorScheme.secondary,
-                                    ),
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.underline,
+                                          color: Theme.of(context).colorScheme.secondary,
+                                        ),
                                     children: [
                                       TextSpan(
                                         text: " - ${wallpaper.data()["desc"]}",
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                          decoration: TextDecoration.underline,
-                                          color: Theme.of(context).colorScheme.secondary,
-                                        ),
+                                              decoration: TextDecoration.underline,
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -1330,9 +1329,9 @@ class RejectedSetupTile extends StatelessWidget {
                                           ? "Wallpaper"
                                           : "${wallpaper.data()["wallpaper_url"][0]} - ${wallpaper.data()["wallpaper_url"][2]}",
                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                        decoration: TextDecoration.underline,
-                                        color: Theme.of(context).colorScheme.secondary,
-                                      ),
+                                            decoration: TextDecoration.underline,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                     ),
                                   ),
                                 ],
@@ -1355,9 +1354,9 @@ class RejectedSetupTile extends StatelessWidget {
                                     child: Text(
                                       "${wallpaper.data()["icon"]}",
                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                        decoration: TextDecoration.underline,
-                                        color: Theme.of(context).colorScheme.secondary,
-                                      ),
+                                            decoration: TextDecoration.underline,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                     ),
                                   ),
                                 ],
@@ -1381,9 +1380,9 @@ class RejectedSetupTile extends StatelessWidget {
                                       child: Text(
                                         "${wallpaper.data()["widget"]}",
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                          decoration: TextDecoration.underline,
-                                          color: Theme.of(context).colorScheme.secondary,
-                                        ),
+                                              decoration: TextDecoration.underline,
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -1409,9 +1408,9 @@ class RejectedSetupTile extends StatelessWidget {
                                       child: Text(
                                         "${wallpaper.data()["widget2"]}",
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                          decoration: TextDecoration.underline,
-                                          color: Theme.of(context).colorScheme.secondary,
-                                        ),
+                                              decoration: TextDecoration.underline,
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
                                       ),
                                     ),
                                   ],

@@ -36,48 +36,48 @@ class SearchFocusedMenuDetails extends StatelessWidget {
     final menuHeight = size.height * 0.14;
     final leftOffset = (childOffset.dx + maxMenuWidth) < size.width
         ? MediaQuery.of(context).orientation == Orientation.portrait
-              ? childOffset.dx + childSize!.width + size.width * 0.015
-              : childOffset.dx + childSize!.width + size.width * 0.01
+            ? childOffset.dx + childSize!.width + size.width * 0.015
+            : childOffset.dx + childSize!.width + size.width * 0.01
         : MediaQuery.of(context).orientation == Orientation.portrait
-        ? (childOffset.dx - maxMenuWidth + childSize!.width)
-        : (childOffset.dx - maxMenuWidth + childSize!.width + size.width * 0.3);
+            ? (childOffset.dx - maxMenuWidth + childSize!.width)
+            : (childOffset.dx - maxMenuWidth + childSize!.width + size.width * 0.3);
     final topOffset = (childOffset.dy + menuHeight + childSize!.height) < size.height
         ? MediaQuery.of(context).orientation == Orientation.portrait
-              ? childOffset.dy + childSize!.height + size.width * 0.015
-              : childOffset.dy + childSize!.height + size.width * 0.015
+            ? childOffset.dy + childSize!.height + size.width * 0.015
+            : childOffset.dy + childSize!.height + size.width * 0.015
         : MediaQuery.of(context).orientation == Orientation.portrait
-        ? childOffset.dy - menuHeight + size.width * 0.125
-        : childOffset.dy - menuHeight;
+            ? childOffset.dy - menuHeight + size.width * 0.125
+            : childOffset.dy - menuHeight;
 
     final fabHeartTopOffset = (childOffset.dy + menuHeight + childSize!.height) < size.height
         ? MediaQuery.of(context).orientation == Orientation.portrait
-              ? size.width * 0.175
-              : size.width * 0.1
+            ? size.width * 0.175
+            : size.width * 0.1
         : MediaQuery.of(context).orientation == Orientation.portrait
-        ? -size.width * 0.175
-        : -size.width * 0.1;
+            ? -size.width * 0.175
+            : -size.width * 0.1;
     final fabWallLeftOffset = (childOffset.dx + maxMenuWidth) < size.width
         ? MediaQuery.of(context).orientation == Orientation.portrait
-              ? -size.width * 0.175
-              : -size.width * 0.1
+            ? -size.width * 0.175
+            : -size.width * 0.1
         : MediaQuery.of(context).orientation == Orientation.portrait
-        ? size.width * 0.175
-        : size.width * 0.1;
+            ? size.width * 0.175
+            : size.width * 0.1;
 
     final fabWallTopOffset = (childOffset.dy + menuHeight + childSize!.height) < size.height
         ? MediaQuery.of(context).orientation == Orientation.portrait
-              ? size.width * 0.05
-              : size.width * 0.02
+            ? size.width * 0.05
+            : size.width * 0.02
         : MediaQuery.of(context).orientation == Orientation.portrait
-        ? -size.width * 0.05
-        : -size.width * 0.02;
+            ? -size.width * 0.05
+            : -size.width * 0.02;
     final fabHeartLeftOffset = (childOffset.dx + maxMenuWidth) < size.width
         ? MediaQuery.of(context).orientation == Orientation.portrait
-              ? -size.width * 0.05
-              : -size.width * 0.02
+            ? -size.width * 0.05
+            : -size.width * 0.02
         : MediaQuery.of(context).orientation == Orientation.portrait
-        ? size.width * 0.05
-        : size.width * 0.02;
+            ? size.width * 0.05
+            : size.width * 0.02;
     try {
       return Scaffold(
         backgroundColor: Colors.transparent,
@@ -139,8 +139,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                   padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
                                   avatar: Icon(
                                     JamIcons.ordered_list,
-                                    color:
-                                        HexColor(
+                                    color: HexColor(
                                               wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1]
                                                   .toString(),
                                             ).computeLuminance() >
@@ -156,15 +155,14 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     wdata.wallsS[index].category.toString()[0].toUpperCase() +
                                         wdata.wallsS[index].category.toString().substring(1),
                                     style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                      color:
-                                          HexColor(
-                                                wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1]
-                                                    .toString(),
-                                              ).computeLuminance() >
-                                              0.5
-                                          ? Colors.black
-                                          : Colors.white,
-                                    ),
+                                          color: HexColor(
+                                                    wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1]
+                                                        .toString(),
+                                                  ).computeLuminance() >
+                                                  0.5
+                                              ? Colors.black
+                                              : Colors.white,
+                                        ),
                                   ),
                                   onPressed: () {},
                                 ),
@@ -284,38 +282,38 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                                 .length >
                                             8
                                         ? pdata.wallsPS[index].url
-                                                  .toString()
-                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                  .replaceAll("-", " ")
-                                                  .replaceAll("/", "")[0]
-                                                  .toUpperCase() +
-                                              pdata.wallsPS[index].url
-                                                  .toString()
-                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                  .replaceAll("-", " ")
-                                                  .replaceAll("/", "")
-                                                  .substring(
-                                                    1,
-                                                    pdata.wallsPS[index].url
-                                                            .toString()
-                                                            .replaceAll("https://www.pexels.com/photo/", "")
-                                                            .replaceAll("-", " ")
-                                                            .replaceAll("/", "")
-                                                            .length -
-                                                        7,
-                                                  )
+                                                .toString()
+                                                .replaceAll("https://www.pexels.com/photo/", "")
+                                                .replaceAll("-", " ")
+                                                .replaceAll("/", "")[0]
+                                                .toUpperCase() +
+                                            pdata.wallsPS[index].url
+                                                .toString()
+                                                .replaceAll("https://www.pexels.com/photo/", "")
+                                                .replaceAll("-", " ")
+                                                .replaceAll("/", "")
+                                                .substring(
+                                                  1,
+                                                  pdata.wallsPS[index].url
+                                                          .toString()
+                                                          .replaceAll("https://www.pexels.com/photo/", "")
+                                                          .replaceAll("-", " ")
+                                                          .replaceAll("/", "")
+                                                          .length -
+                                                      7,
+                                                )
                                         : pdata.wallsPS[index].url
-                                                  .toString()
-                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                  .replaceAll("-", " ")
-                                                  .replaceAll("/", "")[0]
-                                                  .toUpperCase() +
-                                              pdata.wallsPS[index].url
-                                                  .toString()
-                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                  .replaceAll("-", " ")
-                                                  .replaceAll("/", "")
-                                                  .substring(1),
+                                                .toString()
+                                                .replaceAll("https://www.pexels.com/photo/", "")
+                                                .replaceAll("-", " ")
+                                                .replaceAll("/", "")[0]
+                                                .toUpperCase() +
+                                            pdata.wallsPS[index].url
+                                                .toString()
+                                                .replaceAll("https://www.pexels.com/photo/", "")
+                                                .replaceAll("-", " ")
+                                                .replaceAll("/", "")
+                                                .substring(1),
                                     style: Theme.of(
                                       context,
                                     ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),

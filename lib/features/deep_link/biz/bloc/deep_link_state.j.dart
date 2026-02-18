@@ -12,10 +12,10 @@ abstract class DeepLinkState with _$DeepLinkState {
   }) = _DeepLinkState;
 
   factory DeepLinkState.initial() => const DeepLinkState(
-    status: LoadStatus.initial,
-    actionStatus: ActionStatus.idle,
-    initialAction: null,
-    latestAction: null,
-    history: <DeepLinkActionEntity>[],
-  );
+        status: LoadStatus.initial,
+        actionStatus: ActionStatus.idle,
+        initialAction: null,
+        latestAction: null,
+        history: <DeepLinkActionEntity>[],
+      );
 }

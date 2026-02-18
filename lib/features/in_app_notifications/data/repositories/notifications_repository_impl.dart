@@ -15,20 +15,18 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
 
   List<InAppNotificationEntity> _readAll() {
     final values = _box.values.toList(growable: false);
-    return values
-        .map((item) {
-          return InAppNotificationEntity(
-            title: item.title ?? '',
-            pageName: item.pageName ?? '',
-            body: item.body ?? '',
-            imageUrl: item.imageUrl ?? '',
-            arguments: item.arguments ?? const <dynamic>[],
-            url: item.url ?? '',
-            createdAt: item.createdAt ?? DateTime.now(),
-            read: item.read ?? false,
-          );
-        })
-        .toList(growable: false);
+    return values.map((item) {
+      return InAppNotificationEntity(
+        title: item.title ?? '',
+        pageName: item.pageName ?? '',
+        body: item.body ?? '',
+        imageUrl: item.imageUrl ?? '',
+        arguments: item.arguments ?? const <dynamic>[],
+        url: item.url ?? '',
+        createdAt: item.createdAt ?? DateTime.now(),
+        read: item.read ?? false,
+      );
+    }).toList(growable: false);
   }
 
   @override

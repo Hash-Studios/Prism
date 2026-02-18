@@ -129,11 +129,15 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                               if (matches.isNotEmpty) {
                                 final doc = matches.first;
                                 if (doc.data["redeemed"] == false) {
-                                  await firestoreClient.updateDoc(FirebaseCollections.codes, doc.id, <String, dynamic>{
-                                    "redeemed": true,
-                                    "winner": globals.prismUser.toJson(),
-                                    "when": DateTime.now().toUtc(),
-                                  }, sourceTag: 'codes.redeem.update');
+                                  await firestoreClient.updateDoc(
+                                      FirebaseCollections.codes,
+                                      doc.id,
+                                      <String, dynamic>{
+                                        "redeemed": true,
+                                        "winner": globals.prismUser.toJson(),
+                                        "when": DateTime.now().toUtc(),
+                                      },
+                                      sourceTag: 'codes.redeem.update');
                                   toasts.codeSend("Congratulations, we will contact you!");
                                 } else {
                                   toasts.error("Sorry, this code has already been redeemed!");

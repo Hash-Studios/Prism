@@ -11,9 +11,9 @@ abstract class UserSearchState with _$UserSearchState {
   }) = _UserSearchState;
 
   factory UserSearchState.initial() => const UserSearchState(
-    status: LoadStatus.initial,
-    actionStatus: ActionStatus.idle,
-    query: '',
-    users: <UserSearchUser>[],
-  );
+        status: LoadStatus.initial,
+        actionStatus: ActionStatus.idle,
+        query: '',
+        users: <UserSearchUser>[],
+      );
 }

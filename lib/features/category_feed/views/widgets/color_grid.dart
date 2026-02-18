@@ -31,37 +31,36 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
     super.initState();
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    animation =
-        context.prismModeStyleForWindow(listen: false) == "Dark"
-              ? TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
-                  ),
-                ]).animate(_controller!)
-              : TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .1),
-                      end: Colors.black.withValues(alpha: .14),
-                    ),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .14),
-                      end: Colors.black.withValues(alpha: .1),
-                    ),
-                  ),
-                ]).animate(_controller!)
-          ..addListener(() {
-            setState(() {});
-          });
+    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
+        ? TweenSequence<Color?>([
+            TweenSequenceItem(
+              weight: 1.0,
+              tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
+            ),
+            TweenSequenceItem(
+              weight: 1.0,
+              tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
+            ),
+          ]).animate(_controller!)
+        : TweenSequence<Color?>([
+            TweenSequenceItem(
+              weight: 1.0,
+              tween: ColorTween(
+                begin: Colors.black.withValues(alpha: .1),
+                end: Colors.black.withValues(alpha: .14),
+              ),
+            ),
+            TweenSequenceItem(
+              weight: 1.0,
+              tween: ColorTween(
+                begin: Colors.black.withValues(alpha: .14),
+                end: Colors.black.withValues(alpha: .1),
+              ),
+            ),
+          ]).animate(_controller!)
+      ..addListener(() {
+        setState(() {});
+      });
     _controller!.repeat();
   }
 
@@ -93,19 +92,17 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
       key: refreshHomeKey,
       onRefresh: refreshList,
       child: NotificationListener<ScrollNotification>(
-        onNotification:
-            (ScrollNotification scrollInfo) {
-                  if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
-                    if (!seeMoreLoader) {
-                      PData.getWallsPbyColorPage(widget.provider.substring(9));
-                      setState(() {
-                        seeMoreLoader = true;
-                        Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
-                      });
-                    }
-                  }
-                }
-                as bool Function(ScrollNotification)?,
+        onNotification: (ScrollNotification scrollInfo) {
+          if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+            if (!seeMoreLoader) {
+              PData.getWallsPbyColorPage(widget.provider.substring(9));
+              setState(() {
+                seeMoreLoader = true;
+                Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
+              });
+            }
+          }
+        } as bool Function(ScrollNotification)?,
         child: GridView.builder(
           controller: controller,
           padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
@@ -120,9 +117,8 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
           itemBuilder: (context, index) {
             if (index == PData.wallsC.length - 1) {
               return MaterialButton(
-                color: context.prismModeStyleForContext() == "Dark"
-                    ? Colors.white10
-                    : Colors.black.withValues(alpha: .1),
+                color:
+                    context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withValues(alpha: .1),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 onPressed: () {
                   if (!seeMoreLoader) {

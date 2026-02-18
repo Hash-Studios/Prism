@@ -500,9 +500,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     final endpoint = Uri.parse('$_shortLinkResolveApiBase/$code');
     try {
-      final response = await http
-          .get(endpoint, headers: const <String, String>{'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 6));
+      final response = await http.get(endpoint,
+          headers: const <String, String>{'Accept': 'application/json'}).timeout(const Duration(seconds: 6));
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(response.body);

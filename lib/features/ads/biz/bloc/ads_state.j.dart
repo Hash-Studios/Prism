@@ -11,9 +11,9 @@ abstract class AdsState with _$AdsState {
   }) = _AdsState;
 
   factory AdsState.initial() => const AdsState(
-    status: LoadStatus.initial,
-    actionStatus: ActionStatus.idle,
-    ads: AdsEntity.empty,
-    shouldUnlockDownload: false,
-  );
+        status: LoadStatus.initial,
+        actionStatus: ActionStatus.idle,
+        ads: AdsEntity.empty,
+        shouldUnlockDownload: false,
+      );
 }

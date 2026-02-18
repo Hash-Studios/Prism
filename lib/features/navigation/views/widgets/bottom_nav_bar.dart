@@ -38,13 +38,13 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
     super.initState();
     bottom = 10;
     _controller = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    _offsetAnimation =
-        Tween<Offset>(
-          begin: Offset.zero,
-          end: const Offset(0, 2),
-        ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut))..addListener(() {
-          setState(() {});
-        });
+    _offsetAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0, 2),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut))
+      ..addListener(() {
+        setState(() {});
+      });
   }
 
   void showBottomBar() {
@@ -108,17 +108,17 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
               onPressed: () {
                 scrollBottomBarController
                     .animateTo(
-                      scrollBottomBarController.position.minScrollExtent,
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.easeIn,
-                    )
+                  scrollBottomBarController.position.minScrollExtent,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeIn,
+                )
                     .then((value) {
-                      setState(() {
-                        isOnTop = true;
-                        isScrollingDown = false;
-                      });
-                      showBottomBar();
-                    });
+                  setState(() {
+                    isOnTop = true;
+                    isScrollingDown = false;
+                  });
+                  showBottomBar();
+                });
               },
               child: Icon(JamIcons.arrow_up, color: Theme.of(context).primaryColor),
             ),
@@ -212,8 +212,8 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                         borderRadius: BorderRadius.circular(500),
                         color: isHome
                             ? Theme.of(context).colorScheme.error == Colors.black
-                                  ? Colors.white24
-                                  : Theme.of(context).colorScheme.error
+                                ? Colors.white24
+                                : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
                       margin: isHome ? const EdgeInsets.all(3) : EdgeInsets.zero,
@@ -247,8 +247,8 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                         borderRadius: BorderRadius.circular(500),
                         color: isSearch
                             ? Theme.of(context).colorScheme.error == Colors.black
-                                  ? Colors.white24
-                                  : Theme.of(context).colorScheme.error
+                                ? Colors.white24
+                                : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
                       margin: isSearch ? const EdgeInsets.all(3) : EdgeInsets.zero,
@@ -333,8 +333,8 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                         borderRadius: BorderRadius.circular(500),
                         color: isSetups
                             ? Theme.of(context).colorScheme.error == Colors.black
-                                  ? Colors.white24
-                                  : Theme.of(context).colorScheme.error
+                                ? Colors.white24
+                                : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
                       margin: isSetups ? const EdgeInsets.all(3) : EdgeInsets.zero,
@@ -389,8 +389,8 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                         borderRadius: BorderRadius.circular(500),
                         color: isProfile
                             ? Theme.of(context).colorScheme.error == Colors.black
-                                  ? Colors.white24
-                                  : Theme.of(context).colorScheme.error
+                                ? Colors.white24
+                                : Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.secondary,
                       ),
                       margin: isProfile ? const EdgeInsets.all(3) : EdgeInsets.zero,

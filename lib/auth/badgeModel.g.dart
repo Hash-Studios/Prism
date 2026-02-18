@@ -13,7 +13,9 @@ class BadgeAdapter extends TypeAdapter<Badge> {
   @override
   Badge read(BinaryReader reader) {
     final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read()};
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
     return Badge(
       name: fields[0] as String,
       description: fields[1] as String,
@@ -58,21 +60,21 @@ class BadgeAdapter extends TypeAdapter<Badge> {
 // **************************************************************************
 
 Badge _$BadgeFromJson(Map<String, dynamic> json) => Badge(
-  name: json['name'] as String,
-  description: json['description'] as String,
-  id: json['id'] as String,
-  awardedAt: json['awardedAt'] as String,
-  imageUrl: json['imageUrl'] as String,
-  color: json['color'] as String,
-  url: json['url'] as String,
-);
+      name: json['name'] as String,
+      description: json['description'] as String,
+      id: json['id'] as String,
+      awardedAt: json['awardedAt'] as String,
+      imageUrl: json['imageUrl'] as String,
+      color: json['color'] as String,
+      url: json['url'] as String,
+    );
 
 Map<String, dynamic> _$BadgeToJson(Badge instance) => <String, dynamic>{
-  'name': instance.name,
-  'description': instance.description,
-  'id': instance.id,
-  'awardedAt': instance.awardedAt,
-  'imageUrl': instance.imageUrl,
-  'color': instance.color,
-  'url': instance.url,
-};
+      'name': instance.name,
+      'description': instance.description,
+      'id': instance.id,
+      'awardedAt': instance.awardedAt,
+      'imageUrl': instance.imageUrl,
+      'color': instance.color,
+      'url': instance.url,
+    };

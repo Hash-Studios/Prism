@@ -36,8 +36,8 @@ class AdsRepositoryImpl implements AdsRepository {
         adUnitId: kReleaseMode
             ? "ca-app-pub-4649644680694757/3358009164"
             : (Platform.isAndroid
-                  ? 'ca-app-pub-3940256099942544/5224354917'
-                  : 'ca-app-pub-3940256099942544/1712485313'),
+                ? 'ca-app-pub-3940256099942544/5224354917'
+                : 'ca-app-pub-3940256099942544/1712485313'),
         request: _request,
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (RewardedAd ad) {

@@ -35,11 +35,15 @@ class AdminReviewRepository {
   Future<void> approveWall(FirestoreDocument wall) async {
     final Map<String, dynamic> payload = Map<String, dynamic>.from(wall.data());
     final List<dynamic> collections = payload['collections'] as List<dynamic>? ?? <dynamic>[];
-    await firestoreClient.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
-      'review': true,
-      'collections': collections.isEmpty ? <String>['community'] : collections,
-      'reviewedAt': DateTime.now().toUtc(),
-    }, sourceTag: 'admin_review.approve_wall');
+    await firestoreClient.updateDoc(
+        FirebaseCollections.walls,
+        wall.id,
+        <String, dynamic>{
+          'review': true,
+          'collections': collections.isEmpty ? <String>['community'] : collections,
+          'reviewedAt': DateTime.now().toUtc(),
+        },
+        sourceTag: 'admin_review.approve_wall');
 
     await _sendUserNotification(
       modifier: _safeString(payload['email']),
@@ -71,10 +75,14 @@ class AdminReviewRepository {
 
   Future<void> approveSetup(FirestoreDocument setup) async {
     final Map<String, dynamic> payload = Map<String, dynamic>.from(setup.data());
-    await firestoreClient.updateDoc(FirebaseCollections.setups, setup.id, <String, dynamic>{
-      'review': true,
-      'reviewedAt': DateTime.now().toUtc(),
-    }, sourceTag: 'admin_review.approve_setup');
+    await firestoreClient.updateDoc(
+        FirebaseCollections.setups,
+        setup.id,
+        <String, dynamic>{
+          'review': true,
+          'reviewedAt': DateTime.now().toUtc(),
+        },
+        sourceTag: 'admin_review.approve_setup');
 
     await _sendUserNotification(
       modifier: _safeString(payload['email']),
@@ -118,12 +126,15 @@ class AdminReviewRepository {
       return;
     }
 
-    await firestoreClient.addDoc(FirebaseCollections.notifications, <String, dynamic>{
-      'modifier': modifier,
-      'notification': <String, dynamic>{'title': title, 'body': body},
-      'data': <String, dynamic>{'pageName': '', 'arguments': const <Object?>[], 'url': '', 'imageUrl': imageUrl},
-      'createdAt': DateTime.now().toUtc(),
-    }, sourceTag: 'admin_review.user_notification');
+    await firestoreClient.addDoc(
+        FirebaseCollections.notifications,
+        <String, dynamic>{
+          'modifier': modifier,
+          'notification': <String, dynamic>{'title': title, 'body': body},
+          'data': <String, dynamic>{'pageName': '', 'arguments': const <Object?>[], 'url': '', 'imageUrl': imageUrl},
+          'createdAt': DateTime.now().toUtc(),
+        },
+        sourceTag: 'admin_review.user_notification');
   }
 
   String _safeString(Object? value) => value?.toString() ?? '';

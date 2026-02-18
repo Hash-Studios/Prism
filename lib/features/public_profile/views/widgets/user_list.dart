@@ -28,35 +28,32 @@ class UserList extends StatelessWidget {
           );
           if (globals.prismUser.loggedIn == false) {
             showDialog(barrierDismissible: false, context: context, builder: (BuildContext context) => loaderDialog);
-            globals.gAuth
-                .signInWithGoogle()
-                .then((value) {
-                  if (!context.mounted) {
-                    return;
-                  }
-                  if (value == GoogleAuth.signInCancelledResult) {
-                    Navigator.pop(context);
-                    globals.prismUser.loggedIn = false;
-                    main.prefs.put(main.userHiveKey, globals.prismUser);
-                    toasts.codeSend("Sign in cancelled.");
-                    return;
-                  }
-                  toasts.codeSend("Login Successful!");
-                  globals.prismUser.loggedIn = true;
-                  main.prefs.put(main.userHiveKey, globals.prismUser);
-                  Navigator.pop(context);
-                  main.RestartWidget.restartApp(context);
-                })
-                .catchError((e) {
-                  if (!context.mounted) {
-                    return;
-                  }
-                  logger.d(e.toString());
-                  Navigator.pop(context);
-                  globals.prismUser.loggedIn = false;
-                  main.prefs.put(main.userHiveKey, globals.prismUser);
-                  toasts.error("Something went wrong, please try again!");
-                });
+            globals.gAuth.signInWithGoogle().then((value) {
+              if (!context.mounted) {
+                return;
+              }
+              if (value == GoogleAuth.signInCancelledResult) {
+                Navigator.pop(context);
+                globals.prismUser.loggedIn = false;
+                main.prefs.put(main.userHiveKey, globals.prismUser);
+                toasts.codeSend("Sign in cancelled.");
+                return;
+              }
+              toasts.codeSend("Login Successful!");
+              globals.prismUser.loggedIn = true;
+              main.prefs.put(main.userHiveKey, globals.prismUser);
+              Navigator.pop(context);
+              main.RestartWidget.restartApp(context);
+            }).catchError((e) {
+              if (!context.mounted) {
+                return;
+              }
+              logger.d(e.toString());
+              Navigator.pop(context);
+              globals.prismUser.loggedIn = false;
+              main.prefs.put(main.userHiveKey, globals.prismUser);
+              toasts.error("Something went wrong, please try again!");
+            });
           } else {
             main.RestartWidget.restartApp(context);
           }

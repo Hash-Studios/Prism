@@ -48,37 +48,36 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
     super.initState();
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    animation =
-        context.prismModeStyleForWindow(listen: false) == "Dark"
-              ? TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
-                  ),
-                ]).animate(_controller!)
-              : TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .1),
-                      end: Colors.black.withValues(alpha: .14),
-                    ),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .14),
-                      end: Colors.black.withValues(alpha: .1),
-                    ),
-                  ),
-                ]).animate(_controller!)
-          ..addListener(() {
-            setState(() {});
-          });
+    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
+        ? TweenSequence<Color?>([
+            TweenSequenceItem(
+              weight: 1.0,
+              tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
+            ),
+            TweenSequenceItem(
+              weight: 1.0,
+              tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
+            ),
+          ]).animate(_controller!)
+        : TweenSequence<Color?>([
+            TweenSequenceItem(
+              weight: 1.0,
+              tween: ColorTween(
+                begin: Colors.black.withValues(alpha: .1),
+                end: Colors.black.withValues(alpha: .14),
+              ),
+            ),
+            TweenSequenceItem(
+              weight: 1.0,
+              tween: ColorTween(
+                begin: Colors.black.withValues(alpha: .14),
+                end: Colors.black.withValues(alpha: .1),
+              ),
+            ),
+          ]).animate(_controller!)
+      ..addListener(() {
+        setState(() {});
+      });
     _controller!.repeat();
   }
 

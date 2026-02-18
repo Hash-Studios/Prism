@@ -11,9 +11,9 @@ abstract class InAppNotificationsState with _$InAppNotificationsState {
   }) = _InAppNotificationsState;
 
   factory InAppNotificationsState.initial() => const InAppNotificationsState(
-    status: LoadStatus.initial,
-    actionStatus: ActionStatus.idle,
-    items: <InAppNotificationEntity>[],
-    unreadCount: 0,
-  );
+        status: LoadStatus.initial,
+        actionStatus: ActionStatus.idle,
+        items: <InAppNotificationEntity>[],
+        unreadCount: 0,
+      );
 }

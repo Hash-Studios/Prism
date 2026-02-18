@@ -13,7 +13,9 @@ class InAppNotifAdapter extends TypeAdapter<InAppNotif> {
   @override
   InAppNotif read(BinaryReader reader) {
     final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read()};
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
     return InAppNotif(
       pageName: fields[1] as String?,
       title: fields[0] as String?,

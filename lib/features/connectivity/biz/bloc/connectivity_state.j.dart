@@ -10,8 +10,8 @@ abstract class ConnectivityState with _$ConnectivityState {
   }) = _ConnectivityState;
 
   factory ConnectivityState.initial() => const ConnectivityState(
-    status: LoadStatus.initial,
-    actionStatus: ActionStatus.idle,
-    connectivity: ConnectivityEntity(isConnected: true),
-  );
+        status: LoadStatus.initial,
+        actionStatus: ActionStatus.idle,
+        connectivity: ConnectivityEntity(isConnected: true),
+      );
 }

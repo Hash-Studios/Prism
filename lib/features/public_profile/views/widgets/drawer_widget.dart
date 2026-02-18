@@ -100,9 +100,9 @@ class ProfileDrawer extends StatelessWidget {
         child: Text(
           text,
           style: Theme.of(context).textTheme.displaySmall!.copyWith(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
-          ),
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
+              ),
         ),
       ),
     );

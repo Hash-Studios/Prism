@@ -14,7 +14,7 @@ part 'session_bloc.j.freezed.dart';
 @injectable
 class SessionBloc extends Bloc<SessionEvent, SessionState> {
   SessionBloc(this._getSessionUseCase, this._refreshPremiumUseCase, this._signOutUseCase)
-    : super(SessionState.initial()) {
+      : super(SessionState.initial()) {
     on<_Started>(_onStarted);
     on<_PremiumRefreshRequested>(_onPremiumRefreshRequested);
     on<_SignOutRequested>(_onSignOutRequested);

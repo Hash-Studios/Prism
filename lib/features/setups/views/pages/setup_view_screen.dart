@@ -166,9 +166,9 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                       maxLines: 1,
                                       overflow: TextOverflow.fade,
                                       style: Theme.of(context).textTheme.displayLarge!.copyWith(
-                                        fontSize: 30,
-                                        color: Theme.of(context).colorScheme.secondary,
-                                      ),
+                                            fontSize: 30,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
                                     ),
                                   ),
                           ),
@@ -225,9 +225,9 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                       .toUpperCase(),
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
-                                                    fontSize: 16,
-                                                  ),
+                                                        color: Theme.of(context).colorScheme.secondary,
+                                                        fontSize: 16,
+                                                      ),
                                                 ),
                                                 Padding(
                                                   padding: const EdgeInsets.symmetric(horizontal: 6.0),
@@ -245,26 +245,26 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                         return Text(
                                                           "",
                                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                            color: Theme.of(context).colorScheme.secondary,
-                                                            fontSize: 16,
-                                                          ),
+                                                                color: Theme.of(context).colorScheme.secondary,
+                                                                fontSize: 16,
+                                                              ),
                                                         );
                                                       case ConnectionState.none:
                                                         return Text(
                                                           "",
                                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                            color: Theme.of(context).colorScheme.secondary,
-                                                            fontSize: 16,
-                                                          ),
+                                                                color: Theme.of(context).colorScheme.secondary,
+                                                                fontSize: 16,
+                                                              ),
                                                         );
                                                       default:
                                                         if (snapshot.hasError) {
                                                           return Text(
                                                             "",
                                                             style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                              color: Theme.of(context).colorScheme.secondary,
-                                                              fontSize: 16,
-                                                            ),
+                                                                  color: Theme.of(context).colorScheme.secondary,
+                                                                  fontSize: 16,
+                                                                ),
                                                           );
                                                         } else {
                                                           return Text(
@@ -272,9 +272,9 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                             overflow: TextOverflow.fade,
                                                             softWrap: false,
                                                             style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                              color: Theme.of(context).colorScheme.secondary,
-                                                              fontSize: 16,
-                                                            ),
+                                                                  color: Theme.of(context).colorScheme.secondary,
+                                                                  fontSize: 16,
+                                                                ),
                                                           );
                                                         }
                                                     }
@@ -312,9 +312,9 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                 "Report",
                                                 overflow: TextOverflow.fade,
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  decoration: TextDecoration.underline,
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                                      decoration: TextDecoration.underline,
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -341,8 +341,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                           .toString(),
                                                       overflow: TextOverflow.fade,
                                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                        color: Theme.of(context).colorScheme.secondary,
-                                                      ),
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                          ),
                                                     ),
                                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                     avatar: CircleAvatar(
@@ -358,9 +358,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                       context.router.push(
                                                         ProfileRoute(
                                                           arguments: [
-                                                            context
-                                                                .setupsAdapter(listen: false)
-                                                                .setups![index!]["email"],
+                                                            context.setupsAdapter(listen: false).setups![index!]
+                                                                ["email"],
                                                           ],
                                                         ),
                                                       );
@@ -383,10 +382,12 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                           "E57697",
                                                           Theme.of(context).colorScheme.error == Colors.black
                                                               ? "E57697"
-                                                              : Theme.of(context).colorScheme.error
-                                                                    .toString()
-                                                                    .replaceAll("Color(0xff", "")
-                                                                    .replaceAll(")", ""),
+                                                              : Theme.of(context)
+                                                                  .colorScheme
+                                                                  .error
+                                                                  .toString()
+                                                                  .replaceAll("Color(0xff", "")
+                                                                  .replaceAll(")", ""),
                                                         ),
                                                       ),
                                                     ),
@@ -408,8 +409,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                       flex: 16,
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                        child:
-                            context.setupsAdapter(listen: false).setups![index!]["widget"] == "" ||
+                        child: context.setupsAdapter(listen: false).setups![index!]["widget"] == "" ||
                                 context.setupsAdapter(listen: false).setups![index!]["widget"] == null
                             ? Column(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -465,24 +465,22 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                         );
                                       }
                                     },
-                                    tileText:
-                                        context
+                                    tileText: context
                                                 .setupsAdapter(listen: false)
                                                 .setups![index!]["wallpaper_url"]
                                                 .toString()[0] !=
                                             "["
                                         ? (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
-                                                  context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "")
-                                              ? "Wall Link"
-                                              : "Prism (${context.setupsAdapter(listen: false).setups![index!]["wall_id"]})"
+                                                context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "")
+                                            ? "Wall Link"
+                                            : "Prism (${context.setupsAdapter(listen: false).setups![index!]["wall_id"]})"
                                         : "${context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                     tileType: "Wallpaper",
                                     panelCollapsed: panelCollapsed,
                                     delay: const Duration(milliseconds: 150),
                                   ),
                                   SetupDetailsTile(
-                                    isInstalled:
-                                        context
+                                    isInstalled: context
                                             .setupsAdapter(listen: false)
                                             .setups![index!]["icon_url"]
                                             .toString()
@@ -539,349 +537,337 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                 ],
                               )
                             : context.setupsAdapter(listen: false).setups![index!]["widget2"] == "" ||
-                                  context.setupsAdapter(listen: false).setups![index!]["widget2"] == null
-                            ? Column(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SetupDetailsTile(
-                                    isInstalled: Future.value(false),
-                                    onTap: () async {
-                                      if (context
-                                              .setupsAdapter(listen: false)
-                                              .setups![index!]["wallpaper_url"]
-                                              .toString()[0] !=
-                                          "[") {
-                                        if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
-                                            context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "") {
-                                          logger.d("Id Not Found!");
-                                          launch(
-                                            context
-                                                .setupsAdapter(listen: false)
-                                                .setups![index!]["wallpaper_url"]
-                                                .toString(),
-                                          );
-                                        } else {
-                                          context.router.push(
-                                            ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
-                                            ),
-                                          );
-                                        }
-                                      } else {
-                                        launch(
-                                          context
-                                              .setupsAdapter(listen: false)
-                                              .setups![index!]["wallpaper_url"][1]
-                                              .toString(),
-                                        );
-                                      }
-                                    },
-                                    tileText:
-                                        context
-                                                .setupsAdapter(listen: false)
-                                                .setups![index!]["wallpaper_url"]
-                                                .toString()[0] !=
-                                            "["
-                                        ? (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
-                                                  context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "")
-                                              ? "Wall Link"
-                                              : "Prism (${context.setupsAdapter(listen: false).setups![index!]["wall_id"]})"
-                                        : "${context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
-                                    tileType: "Wallpaper",
-                                    panelCollapsed: panelCollapsed,
-                                    delay: const Duration(milliseconds: 150),
-                                  ),
-                                  SetupDetailsTile(
-                                    isInstalled:
-                                        context
-                                            .setupsAdapter(listen: false)
-                                            .setups![index!]["icon_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')
-                                        ? DeviceApps.isAppInstalled(
-                                            context
-                                                .setupsAdapter(listen: false)
-                                                .setups![index!]["icon_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          )
-                                        : Future.value(false),
-                                    onTap: () async {
-                                      if (context
-                                          .setupsAdapter(listen: false)
-                                          .setups![index!]["icon_url"]
-                                          .toString()
-                                          .contains('play.google.com/store/apps/details?id=')) {
-                                        final isInstalled = await DeviceApps.isAppInstalled(
-                                          context
-                                              .setupsAdapter(listen: false)
-                                              .setups![index!]["icon_url"]
-                                              .toString()
-                                              .split("details?id=")[1]
-                                              .split("&")[0],
-                                        );
-                                        isInstalled
-                                            ? DeviceApps.openApp(
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["icon_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              )
-                                            : launch(
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["icon_url"]
-                                                    .toString(),
-                                              );
-                                      } else {
-                                        launch(
-                                          context.setupsAdapter(listen: false).setups![index!]["icon_url"].toString(),
-                                        );
-                                      }
-                                    },
-                                    tileText: context.setupsAdapter(listen: false).setups![index!]["icon"].toString(),
-                                    tileType: "Icons",
-                                    panelCollapsed: panelCollapsed,
-                                    delay: const Duration(milliseconds: 200),
-                                  ),
-                                  SetupDetailsTile(
-                                    isInstalled:
-                                        context
-                                            .setupsAdapter(listen: false)
-                                            .setups![index!]["widget_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')
-                                        ? DeviceApps.isAppInstalled(
-                                            context
-                                                .setupsAdapter(listen: false)
-                                                .setups![index!]["widget_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          )
-                                        : Future.value(false),
-                                    onTap: () async {
-                                      if (context
-                                          .setupsAdapter(listen: false)
-                                          .setups![index!]["widget_url"]
-                                          .toString()
-                                          .contains('play.google.com/store/apps/details?id=')) {
-                                        final isInstalled = await DeviceApps.isAppInstalled(
-                                          context
-                                              .setupsAdapter(listen: false)
-                                              .setups![index!]["widget_url"]
-                                              .toString()
-                                              .split("details?id=")[1]
-                                              .split("&")[0],
-                                        );
-                                        isInstalled
-                                            ? DeviceApps.openApp(
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["widget_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              )
-                                            : launch(
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["widget_url"]
-                                                    .toString(),
-                                              );
-                                      } else {
-                                        launch(
-                                          context.setupsAdapter(listen: false).setups![index!]["widget_url"].toString(),
-                                        );
-                                      }
-                                    },
-                                    tileText: context.setupsAdapter(listen: false).setups![index!]["widget"].toString(),
-                                    tileType: "Widget",
-                                    panelCollapsed: panelCollapsed,
-                                    delay: const Duration(milliseconds: 250),
-                                  ),
-                                ],
-                              )
-                            : Scrollbar(
-                                radius: const Radius.circular(500),
-                                thickness: 5,
-                                child: ListView(
-                                  children: [
-                                    SetupDetailsTile(
-                                      isInstalled: Future.value(false),
-                                      onTap: () async {
-                                        if (context
-                                                .setupsAdapter(listen: false)
-                                                .setups![index!]["wallpaper_url"]
-                                                .toString()[0] !=
-                                            "[") {
-                                          if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
-                                              context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "") {
-                                            logger.d("Id Not Found!");
-                                            launch(
-                                              context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]["wallpaper_url"]
-                                                  .toString(),
-                                            );
-                                          } else {
-                                            context.router.push(
-                                              ShareWallpaperViewRoute(
-                                                arguments: [
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["wall_id"]
-                                                      .toString(),
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["wallpaper_provider"]
-                                                      .toString(),
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                ],
-                                              ),
-                                            );
-                                          }
-                                        } else {
-                                          launch(
-                                            context
-                                                .setupsAdapter(listen: false)
-                                                .setups![index!]["wallpaper_url"][1]
-                                                .toString(),
-                                          );
-                                        }
-                                      },
-                                      tileText:
-                                          context
+                                    context.setupsAdapter(listen: false).setups![index!]["widget2"] == null
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SetupDetailsTile(
+                                        isInstalled: Future.value(false),
+                                        onTap: () async {
+                                          if (context
                                                   .setupsAdapter(listen: false)
                                                   .setups![index!]["wallpaper_url"]
                                                   .toString()[0] !=
-                                              "["
-                                          ? (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
+                                              "[") {
+                                            if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
+                                                    null ||
+                                                context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "") {
+                                              logger.d("Id Not Found!");
+                                              launch(
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_url"]
+                                                    .toString(),
+                                              );
+                                            } else {
+                                              context.router.push(
+                                                ShareWallpaperViewRoute(
+                                                  arguments: [
+                                                    context
+                                                        .setupsAdapter(listen: false)
+                                                        .setups![index!]["wall_id"]
+                                                        .toString(),
+                                                    context
+                                                        .setupsAdapter(listen: false)
+                                                        .setups![index!]["wallpaper_provider"]
+                                                        .toString(),
+                                                    context
+                                                        .setupsAdapter(listen: false)
+                                                        .setups![index!]["wallpaper_url"]
+                                                        .toString(),
+                                                    context
+                                                        .setupsAdapter(listen: false)
+                                                        .setups![index!]["wallpaper_url"]
+                                                        .toString(),
+                                                  ],
+                                                ),
+                                              );
+                                            }
+                                          } else {
+                                            launch(
+                                              context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wallpaper_url"][1]
+                                                  .toString(),
+                                            );
+                                          }
+                                        },
+                                        tileText: context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_url"]
+                                                    .toString()[0] !=
+                                                "["
+                                            ? (context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
+                                                        null ||
                                                     context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
                                                         "")
                                                 ? "Wall Link"
                                                 : "Prism (${context.setupsAdapter(listen: false).setups![index!]["wall_id"]})"
-                                          : "${context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
-                                      tileType: "Wallpaper",
-                                      panelCollapsed: panelCollapsed,
-                                      delay: const Duration(milliseconds: 150),
-                                    ),
-                                    SetupDetailsTile(
-                                      isInstalled:
-                                          context
+                                            : "${context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
+                                        tileType: "Wallpaper",
+                                        panelCollapsed: panelCollapsed,
+                                        delay: const Duration(milliseconds: 150),
+                                      ),
+                                      SetupDetailsTile(
+                                        isInstalled: context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["icon_url"]
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')
+                                            ? DeviceApps.isAppInstalled(
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0],
+                                              )
+                                            : Future.value(false),
+                                        onTap: () async {
+                                          if (context
                                               .setupsAdapter(listen: false)
                                               .setups![index!]["icon_url"]
                                               .toString()
-                                              .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
+                                              .contains('play.google.com/store/apps/details?id=')) {
+                                            final isInstalled = await DeviceApps.isAppInstalled(
                                               context
                                                   .setupsAdapter(listen: false)
                                                   .setups![index!]["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0],
-                                            )
-                                          : Future.value(false),
-                                      onTap: () async {
-                                        if (context
-                                            .setupsAdapter(listen: false)
-                                            .setups![index!]["icon_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                            context
+                                            );
+                                            isInstalled
+                                                ? DeviceApps.openApp(
+                                                    context
+                                                        .setupsAdapter(listen: false)
+                                                        .setups![index!]["icon_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0],
+                                                  )
+                                                : launch(
+                                                    context
+                                                        .setupsAdapter(listen: false)
+                                                        .setups![index!]["icon_url"]
+                                                        .toString(),
+                                                  );
+                                          } else {
+                                            launch(
+                                              context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["icon_url"]
+                                                  .toString(),
+                                            );
+                                          }
+                                        },
+                                        tileText:
+                                            context.setupsAdapter(listen: false).setups![index!]["icon"].toString(),
+                                        tileType: "Icons",
+                                        panelCollapsed: panelCollapsed,
+                                        delay: const Duration(milliseconds: 200),
+                                      ),
+                                      SetupDetailsTile(
+                                        isInstalled: context
                                                 .setupsAdapter(listen: false)
-                                                .setups![index!]["icon_url"]
+                                                .setups![index!]["widget_url"]
                                                 .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          );
-                                          isInstalled
-                                              ? DeviceApps.openApp(
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["icon_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0],
-                                                )
-                                              : launch(
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["icon_url"]
-                                                      .toString(),
-                                                );
-                                        } else {
-                                          launch(
-                                            context.setupsAdapter(listen: false).setups![index!]["icon_url"].toString(),
-                                          );
-                                        }
-                                      },
-                                      tileText: context.setupsAdapter(listen: false).setups![index!]["icon"].toString(),
-                                      tileType: "Icons",
-                                      panelCollapsed: panelCollapsed,
-                                      delay: const Duration(milliseconds: 200),
-                                    ),
-                                    SetupDetailsTile(
-                                      isInstalled:
-                                          context
+                                                .contains('play.google.com/store/apps/details?id=')
+                                            ? DeviceApps.isAppInstalled(
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["widget_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0],
+                                              )
+                                            : Future.value(false),
+                                        onTap: () async {
+                                          if (context
                                               .setupsAdapter(listen: false)
                                               .setups![index!]["widget_url"]
                                               .toString()
-                                              .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
+                                              .contains('play.google.com/store/apps/details?id=')) {
+                                            final isInstalled = await DeviceApps.isAppInstalled(
                                               context
                                                   .setupsAdapter(listen: false)
                                                   .setups![index!]["widget_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0],
-                                            )
-                                          : Future.value(false),
-                                      onTap: () async {
-                                        if (context
-                                            .setupsAdapter(listen: false)
-                                            .setups![index!]["widget_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                            context
+                                            );
+                                            isInstalled
+                                                ? DeviceApps.openApp(
+                                                    context
+                                                        .setupsAdapter(listen: false)
+                                                        .setups![index!]["widget_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0],
+                                                  )
+                                                : launch(
+                                                    context
+                                                        .setupsAdapter(listen: false)
+                                                        .setups![index!]["widget_url"]
+                                                        .toString(),
+                                                  );
+                                          } else {
+                                            launch(
+                                              context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["widget_url"]
+                                                  .toString(),
+                                            );
+                                          }
+                                        },
+                                        tileText:
+                                            context.setupsAdapter(listen: false).setups![index!]["widget"].toString(),
+                                        tileType: "Widget",
+                                        panelCollapsed: panelCollapsed,
+                                        delay: const Duration(milliseconds: 250),
+                                      ),
+                                    ],
+                                  )
+                                : Scrollbar(
+                                    radius: const Radius.circular(500),
+                                    thickness: 5,
+                                    child: ListView(
+                                      children: [
+                                        SetupDetailsTile(
+                                          isInstalled: Future.value(false),
+                                          onTap: () async {
+                                            if (context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_url"]
+                                                    .toString()[0] !=
+                                                "[") {
+                                              if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
+                                                      null ||
+                                                  context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
+                                                      "") {
+                                                logger.d("Id Not Found!");
+                                                launch(
+                                                  context
+                                                      .setupsAdapter(listen: false)
+                                                      .setups![index!]["wallpaper_url"]
+                                                      .toString(),
+                                                );
+                                              } else {
+                                                context.router.push(
+                                                  ShareWallpaperViewRoute(
+                                                    arguments: [
+                                                      context
+                                                          .setupsAdapter(listen: false)
+                                                          .setups![index!]["wall_id"]
+                                                          .toString(),
+                                                      context
+                                                          .setupsAdapter(listen: false)
+                                                          .setups![index!]["wallpaper_provider"]
+                                                          .toString(),
+                                                      context
+                                                          .setupsAdapter(listen: false)
+                                                          .setups![index!]["wallpaper_url"]
+                                                          .toString(),
+                                                      context
+                                                          .setupsAdapter(listen: false)
+                                                          .setups![index!]["wallpaper_url"]
+                                                          .toString(),
+                                                    ],
+                                                  ),
+                                                );
+                                              }
+                                            } else {
+                                              launch(
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_url"][1]
+                                                    .toString(),
+                                              );
+                                            }
+                                          },
+                                          tileText: context
+                                                      .setupsAdapter(listen: false)
+                                                      .setups![index!]["wallpaper_url"]
+                                                      .toString()[0] !=
+                                                  "["
+                                              ? (context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
+                                                          null ||
+                                                      context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
+                                                          "")
+                                                  ? "Wall Link"
+                                                  : "Prism (${context.setupsAdapter(listen: false).setups![index!]["wall_id"]})"
+                                              : "${context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
+                                          tileType: "Wallpaper",
+                                          panelCollapsed: panelCollapsed,
+                                          delay: const Duration(milliseconds: 150),
+                                        ),
+                                        SetupDetailsTile(
+                                          isInstalled: context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["icon_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')
+                                              ? DeviceApps.isAppInstalled(
+                                                  context
+                                                      .setupsAdapter(listen: false)
+                                                      .setups![index!]["icon_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0],
+                                                )
+                                              : Future.value(false),
+                                          onTap: () async {
+                                            if (context
                                                 .setupsAdapter(listen: false)
-                                                .setups![index!]["widget_url"]
+                                                .setups![index!]["icon_url"]
                                                 .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          );
-                                          isInstalled
-                                              ? DeviceApps.openApp(
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0],
+                                              );
+                                              isInstalled
+                                                  ? DeviceApps.openApp(
+                                                      context
+                                                          .setupsAdapter(listen: false)
+                                                          .setups![index!]["icon_url"]
+                                                          .toString()
+                                                          .split("details?id=")[1]
+                                                          .split("&")[0],
+                                                    )
+                                                  : launch(
+                                                      context
+                                                          .setupsAdapter(listen: false)
+                                                          .setups![index!]["icon_url"]
+                                                          .toString(),
+                                                    );
+                                            } else {
+                                              launch(
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["icon_url"]
+                                                    .toString(),
+                                              );
+                                            }
+                                          },
+                                          tileText:
+                                              context.setupsAdapter(listen: false).setups![index!]["icon"].toString(),
+                                          tileType: "Icons",
+                                          panelCollapsed: panelCollapsed,
+                                          delay: const Duration(milliseconds: 200),
+                                        ),
+                                        SetupDetailsTile(
+                                          isInstalled: context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["widget_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')
+                                              ? DeviceApps.isAppInstalled(
                                                   context
                                                       .setupsAdapter(listen: false)
                                                       .setups![index!]["widget_url"]
@@ -889,61 +875,58 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                       .split("details?id=")[1]
                                                       .split("&")[0],
                                                 )
-                                              : launch(
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["widget_url"]
-                                                      .toString(),
-                                                );
-                                        } else {
-                                          launch(
-                                            context
+                                              : Future.value(false),
+                                          onTap: () async {
+                                            if (context
                                                 .setupsAdapter(listen: false)
                                                 .setups![index!]["widget_url"]
-                                                .toString(),
-                                          );
-                                        }
-                                      },
-                                      tileText: context
-                                          .setupsAdapter(listen: false)
-                                          .setups![index!]["widget"]
-                                          .toString(),
-                                      tileType: "Widget",
-                                      panelCollapsed: panelCollapsed,
-                                      delay: const Duration(milliseconds: 250),
-                                    ),
-                                    SetupDetailsTile(
-                                      isInstalled:
-                                          context
-                                              .setupsAdapter(listen: false)
-                                              .setups![index!]["widget_url2"]
-                                              .toString()
-                                              .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
-                                              context
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["widget_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0],
+                                              );
+                                              isInstalled
+                                                  ? DeviceApps.openApp(
+                                                      context
+                                                          .setupsAdapter(listen: false)
+                                                          .setups![index!]["widget_url"]
+                                                          .toString()
+                                                          .split("details?id=")[1]
+                                                          .split("&")[0],
+                                                    )
+                                                  : launch(
+                                                      context
+                                                          .setupsAdapter(listen: false)
+                                                          .setups![index!]["widget_url"]
+                                                          .toString(),
+                                                    );
+                                            } else {
+                                              launch(
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["widget_url"]
+                                                    .toString(),
+                                              );
+                                            }
+                                          },
+                                          tileText:
+                                              context.setupsAdapter(listen: false).setups![index!]["widget"].toString(),
+                                          tileType: "Widget",
+                                          panelCollapsed: panelCollapsed,
+                                          delay: const Duration(milliseconds: 250),
+                                        ),
+                                        SetupDetailsTile(
+                                          isInstalled: context
                                                   .setupsAdapter(listen: false)
                                                   .setups![index!]["widget_url2"]
                                                   .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0],
-                                            )
-                                          : Future.value(false),
-                                      onTap: () async {
-                                        if (context
-                                            .setupsAdapter(listen: false)
-                                            .setups![index!]["widget_url2"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                            context
-                                                .setupsAdapter(listen: false)
-                                                .setups![index!]["widget_url2"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          );
-                                          isInstalled
-                                              ? DeviceApps.openApp(
+                                                  .contains('play.google.com/store/apps/details?id=')
+                                              ? DeviceApps.isAppInstalled(
                                                   context
                                                       .setupsAdapter(listen: false)
                                                       .setups![index!]["widget_url2"]
@@ -951,32 +934,56 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                       .split("details?id=")[1]
                                                       .split("&")[0],
                                                 )
-                                              : launch(
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["widget_url2"]
-                                                      .toString(),
-                                                );
-                                        } else {
-                                          launch(
-                                            context
+                                              : Future.value(false),
+                                          onTap: () async {
+                                            if (context
                                                 .setupsAdapter(listen: false)
                                                 .setups![index!]["widget_url2"]
-                                                .toString(),
-                                          );
-                                        }
-                                      },
-                                      tileText: context
-                                          .setupsAdapter(listen: false)
-                                          .setups![index!]["widget2"]
-                                          .toString(),
-                                      tileType: "Widget",
-                                      panelCollapsed: panelCollapsed,
-                                      delay: const Duration(milliseconds: 300),
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["widget_url2"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0],
+                                              );
+                                              isInstalled
+                                                  ? DeviceApps.openApp(
+                                                      context
+                                                          .setupsAdapter(listen: false)
+                                                          .setups![index!]["widget_url2"]
+                                                          .toString()
+                                                          .split("details?id=")[1]
+                                                          .split("&")[0],
+                                                    )
+                                                  : launch(
+                                                      context
+                                                          .setupsAdapter(listen: false)
+                                                          .setups![index!]["widget_url2"]
+                                                          .toString(),
+                                                    );
+                                            } else {
+                                              launch(
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["widget_url2"]
+                                                    .toString(),
+                                              );
+                                            }
+                                          },
+                                          tileText: context
+                                              .setupsAdapter(listen: false)
+                                              .setups![index!]["widget2"]
+                                              .toString(),
+                                          tileType: "Widget",
+                                          panelCollapsed: panelCollapsed,
+                                          delay: const Duration(milliseconds: 300),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
+                                  ),
                       ),
                     ),
                     Expanded(
@@ -1017,12 +1024,10 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                               },
                               iconColor: Theme.of(context).colorScheme.secondary,
                               iconSize: 30,
-                              isFavorite:
-                                  box.get(
-                                        context.setupsAdapter(listen: false).setups![index!]["id"].toString(),
-                                        defaultValue: false,
-                                      )
-                                      as bool,
+                              isFavorite: box.get(
+                                context.setupsAdapter(listen: false).setups![index!]["id"].toString(),
+                                defaultValue: false,
+                              ) as bool,
                             ),
                           ),
                           GestureDetector(
@@ -1271,31 +1276,31 @@ class ModifiedDownloadButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString()[0] != "["
         ? context.setupsAdapter(listen: false).setups![index!]["wall_id"] != null &&
-                  context.setupsAdapter(listen: false).setups![index!]["wall_id"] != ""
-              ? DownloadButton(
-                  link: context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString(),
-                  colorChanged: false,
-                )
-              : GestureDetector(
-                  onTap: () async {
-                    launch(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString());
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: .25),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      borderRadius: BorderRadius.circular(500),
-                    ),
-                    padding: const EdgeInsets.all(17),
-                    child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
+                context.setupsAdapter(listen: false).setups![index!]["wall_id"] != ""
+            ? DownloadButton(
+                link: context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString(),
+                colorChanged: false,
+              )
+            : GestureDetector(
+                onTap: () async {
+                  launch(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .25),
+                        blurRadius: 4,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    borderRadius: BorderRadius.circular(500),
                   ),
-                )
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][1].toString());
@@ -1322,31 +1327,31 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString()[0] != "["
         ? context.setupsAdapter(listen: false).setups![index!]["wall_id"] != null &&
-                  context.setupsAdapter(listen: false).setups![index!]["wall_id"] != ""
-              ? SetWallpaperButton(
-                  url: context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString(),
-                  colorChanged: false,
-                )
-              : GestureDetector(
-                  onTap: () async {
-                    launch(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString());
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: .25),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      borderRadius: BorderRadius.circular(500),
-                    ),
-                    padding: const EdgeInsets.all(17),
-                    child: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary, size: 20),
+                context.setupsAdapter(listen: false).setups![index!]["wall_id"] != ""
+            ? SetWallpaperButton(
+                url: context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString(),
+                colorChanged: false,
+              )
+            : GestureDetector(
+                onTap: () async {
+                  launch(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .25),
+                        blurRadius: 4,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    borderRadius: BorderRadius.circular(500),
                   ),
-                )
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary, size: 20),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][1].toString());

@@ -126,8 +126,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                   color: Colors.transparent,
                   maxHeight: globals.prismUser.premium == true
                       ? MediaQuery.of(context).size.height * .70 > 600
-                            ? MediaQuery.of(context).size.height * .70
-                            : 600
+                          ? MediaQuery.of(context).size.height * .70
+                          : 600
                       : 300,
                   controller: panelController,
                   onPanelOpened: () {
@@ -144,8 +144,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                     margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
                     height: globals.prismUser.premium == true
                         ? MediaQuery.of(context).size.height * .70 > 600
-                              ? MediaQuery.of(context).size.height * .70
-                              : 600
+                            ? MediaQuery.of(context).size.height * .70
+                            : 600
                         : 300,
                     width: MediaQuery.of(context).size.width,
                     child: ClipRRect(
@@ -200,9 +200,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 maxLines: 1,
                                                 overflow: TextOverflow.fade,
                                                 style: Theme.of(context).textTheme.displayLarge!.copyWith(
-                                                  fontSize: 30,
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                                      fontSize: 30,
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
                                               ),
                                             ),
                                     ),
@@ -219,8 +219,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 maxLines: 2,
                                                 overflow: TextOverflow.fade,
                                                 style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
                                               ),
                                             ),
                                     ),
@@ -255,9 +255,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                             sdata.setup!["id"].toString().toUpperCase(),
                                                             overflow: TextOverflow.fade,
                                                             style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                              color: Theme.of(context).colorScheme.secondary,
-                                                              fontSize: 16,
-                                                            ),
+                                                                  color: Theme.of(context).colorScheme.secondary,
+                                                                  fontSize: 16,
+                                                                ),
                                                           ),
                                                           Padding(
                                                             padding: const EdgeInsets.symmetric(horizontal: 6.0),
@@ -274,30 +274,32 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                                 case ConnectionState.waiting:
                                                                   return Text(
                                                                     "",
-                                                                    style: Theme.of(context).textTheme.bodyLarge!
-                                                                        .copyWith(
-                                                                          color: Theme.of(
-                                                                            context,
-                                                                          ).colorScheme.secondary,
-                                                                          fontSize: 16,
-                                                                        ),
+                                                                    style:
+                                                                        Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                              color: Theme.of(
+                                                                                context,
+                                                                              ).colorScheme.secondary,
+                                                                              fontSize: 16,
+                                                                            ),
                                                                   );
                                                                 case ConnectionState.none:
                                                                   return Text(
                                                                     "",
-                                                                    style: Theme.of(context).textTheme.bodyLarge!
-                                                                        .copyWith(
-                                                                          color: Theme.of(
-                                                                            context,
-                                                                          ).colorScheme.secondary,
-                                                                          fontSize: 16,
-                                                                        ),
+                                                                    style:
+                                                                        Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                              color: Theme.of(
+                                                                                context,
+                                                                              ).colorScheme.secondary,
+                                                                              fontSize: 16,
+                                                                            ),
                                                                   );
                                                                 default:
                                                                   if (snapshot.hasError) {
                                                                     return Text(
                                                                       "",
-                                                                      style: Theme.of(context).textTheme.bodyLarge!
+                                                                      style: Theme.of(context)
+                                                                          .textTheme
+                                                                          .bodyLarge!
                                                                           .copyWith(
                                                                             color: Theme.of(
                                                                               context,
@@ -310,7 +312,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                                       "${snapshot.data} views",
                                                                       overflow: TextOverflow.fade,
                                                                       softWrap: false,
-                                                                      style: Theme.of(context).textTheme.bodyLarge!
+                                                                      style: Theme.of(context)
+                                                                          .textTheme
+                                                                          .bodyLarge!
                                                                           .copyWith(
                                                                             color: Theme.of(
                                                                               context,
@@ -350,9 +354,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                           "Report",
                                                           overflow: TextOverflow.fade,
                                                           style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                            decoration: TextDecoration.underline,
-                                                            color: Theme.of(context).colorScheme.secondary,
-                                                          ),
+                                                                decoration: TextDecoration.underline,
+                                                                color: Theme.of(context).colorScheme.secondary,
+                                                              ),
                                                         ),
                                                       ],
                                                     ),
@@ -376,8 +380,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                                 sdata.setup!["by"].toString(),
                                                                 overflow: TextOverflow.fade,
                                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                  color: Theme.of(context).colorScheme.secondary,
-                                                                ),
+                                                                      color: Theme.of(context).colorScheme.secondary,
+                                                                    ),
                                                               ),
                                                               padding: const EdgeInsets.symmetric(
                                                                 vertical: 5,
@@ -409,10 +413,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                                     "E57697",
                                                                     Theme.of(context).colorScheme.error == Colors.black
                                                                         ? "E57697"
-                                                                        : Theme.of(context).colorScheme.error
-                                                                              .toString()
-                                                                              .replaceAll("Color(0xff", "")
-                                                                              .replaceAll(")", ""),
+                                                                        : Theme.of(context)
+                                                                            .colorScheme
+                                                                            .error
+                                                                            .toString()
+                                                                            .replaceAll("Color(0xff", "")
+                                                                            .replaceAll(")", ""),
                                                                   ),
                                                                 ),
                                                               ),
@@ -466,18 +472,17 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 },
                                                 tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
                                                     ? (sdata.setup!["wall_id"] == null || sdata.setup!["wall_id"] == "")
-                                                          ? "Wall Link"
-                                                          : "Prism (${sdata.setup!["wall_id"]})"
+                                                        ? "Wall Link"
+                                                        : "Prism (${sdata.setup!["wall_id"]})"
                                                     : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
                                                 tileType: "Wallpaper",
                                                 panelCollapsed: panelCollapsed,
                                                 delay: const Duration(milliseconds: 150),
                                               ),
                                               SetupDetailsTile(
-                                                isInstalled:
-                                                    sdata.setup!["icon_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )
+                                                isInstalled: sdata.setup!["icon_url"].toString().contains(
+                                                          'play.google.com/store/apps/details?id=',
+                                                        )
                                                     ? DeviceApps.isAppInstalled(
                                                         sdata.setup!["icon_url"]
                                                             .toString()
@@ -487,8 +492,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                     : Future.value(false),
                                                 onTap: () async {
                                                   if (sdata.setup!["icon_url"].toString().contains(
-                                                    'play.google.com/store/apps/details?id=',
-                                                  )) {
+                                                        'play.google.com/store/apps/details?id=',
+                                                      )) {
                                                     final isInstalled = await DeviceApps.isAppInstalled(
                                                       sdata.setup!["icon_url"]
                                                           .toString()
@@ -515,282 +520,278 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                             ],
                                           )
                                         : sdata.setup!["widget2"] == "" || sdata.setup!["widget2"] == null
-                                        ? Column(
-                                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SetupDetailsTile(
-                                                isInstalled: Future.value(false),
-                                                onTap: () async {
-                                                  if (sdata.setup!["wallpaper_url"].toString()[0] != "[") {
-                                                    if (sdata.setup!["wall_id"] == null ||
-                                                        sdata.setup!["wall_id"] == "") {
-                                                      logger.d("Id Not Found!");
-                                                      launch(sdata.setup!["wallpaper_url"].toString());
-                                                    } else {
-                                                      context.router.push(
-                                                        ShareWallpaperViewRoute(
-                                                          arguments: [
-                                                            sdata.setup!["wall_id"].toString(),
-                                                            sdata.setup!["wallpaper_provider"].toString(),
-                                                            sdata.setup!["wallpaper_url"].toString(),
-                                                            sdata.setup!["wallpaper_url"].toString(),
-                                                          ],
-                                                        ),
-                                                      );
-                                                    }
-                                                  } else {
-                                                    launch(sdata.setup!["wallpaper_url"][1].toString());
-                                                  }
-                                                },
-                                                tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
-                                                    ? (sdata.setup!["wall_id"] == null || sdata.setup!["wall_id"] == "")
-                                                          ? "Wall Link"
-                                                          : "Prism (${sdata.setup!["wall_id"]})"
-                                                    : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
-                                                tileType: "Wallpaper",
-                                                panelCollapsed: panelCollapsed,
-                                                delay: const Duration(milliseconds: 150),
-                                              ),
-                                              SetupDetailsTile(
-                                                isInstalled:
-                                                    sdata.setup!["icon_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )
-                                                    ? DeviceApps.isAppInstalled(
-                                                        sdata.setup!["icon_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      )
-                                                    : Future.value(false),
-                                                onTap: () async {
-                                                  if (sdata.setup!["icon_url"].toString().contains(
-                                                    'play.google.com/store/apps/details?id=',
-                                                  )) {
-                                                    final isInstalled = await DeviceApps.isAppInstalled(
-                                                      sdata.setup!["icon_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    );
-                                                    isInstalled
-                                                        ? DeviceApps.openApp(
+                                            ? Column(
+                                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  SetupDetailsTile(
+                                                    isInstalled: Future.value(false),
+                                                    onTap: () async {
+                                                      if (sdata.setup!["wallpaper_url"].toString()[0] != "[") {
+                                                        if (sdata.setup!["wall_id"] == null ||
+                                                            sdata.setup!["wall_id"] == "") {
+                                                          logger.d("Id Not Found!");
+                                                          launch(sdata.setup!["wallpaper_url"].toString());
+                                                        } else {
+                                                          context.router.push(
+                                                            ShareWallpaperViewRoute(
+                                                              arguments: [
+                                                                sdata.setup!["wall_id"].toString(),
+                                                                sdata.setup!["wallpaper_provider"].toString(),
+                                                                sdata.setup!["wallpaper_url"].toString(),
+                                                                sdata.setup!["wallpaper_url"].toString(),
+                                                              ],
+                                                            ),
+                                                          );
+                                                        }
+                                                      } else {
+                                                        launch(sdata.setup!["wallpaper_url"][1].toString());
+                                                      }
+                                                    },
+                                                    tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
+                                                        ? (sdata.setup!["wall_id"] == null ||
+                                                                sdata.setup!["wall_id"] == "")
+                                                            ? "Wall Link"
+                                                            : "Prism (${sdata.setup!["wall_id"]})"
+                                                        : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
+                                                    tileType: "Wallpaper",
+                                                    panelCollapsed: panelCollapsed,
+                                                    delay: const Duration(milliseconds: 150),
+                                                  ),
+                                                  SetupDetailsTile(
+                                                    isInstalled: sdata.setup!["icon_url"].toString().contains(
+                                                              'play.google.com/store/apps/details?id=',
+                                                            )
+                                                        ? DeviceApps.isAppInstalled(
                                                             sdata.setup!["icon_url"]
                                                                 .toString()
                                                                 .split("details?id=")[1]
                                                                 .split("&")[0],
                                                           )
-                                                        : launch(sdata.setup!["icon_url"].toString());
-                                                  } else {
-                                                    launch(sdata.setup!["icon_url"].toString());
-                                                  }
-                                                },
-                                                tileText: sdata.setup!["icon"].toString(),
-                                                tileType: "Icons",
-                                                panelCollapsed: panelCollapsed,
-                                                delay: const Duration(milliseconds: 200),
-                                              ),
-                                              SetupDetailsTile(
-                                                isInstalled:
-                                                    sdata.setup!["widget_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )
-                                                    ? DeviceApps.isAppInstalled(
-                                                        sdata.setup!["widget_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      )
-                                                    : Future.value(false),
-                                                onTap: () async {
-                                                  if (sdata.setup!["widget_url"].toString().contains(
-                                                    'play.google.com/store/apps/details?id=',
-                                                  )) {
-                                                    final isInstalled = await DeviceApps.isAppInstalled(
-                                                      sdata.setup!["widget_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    );
-                                                    isInstalled
-                                                        ? DeviceApps.openApp(
+                                                        : Future.value(false),
+                                                    onTap: () async {
+                                                      if (sdata.setup!["icon_url"].toString().contains(
+                                                            'play.google.com/store/apps/details?id=',
+                                                          )) {
+                                                        final isInstalled = await DeviceApps.isAppInstalled(
+                                                          sdata.setup!["icon_url"]
+                                                              .toString()
+                                                              .split("details?id=")[1]
+                                                              .split("&")[0],
+                                                        );
+                                                        isInstalled
+                                                            ? DeviceApps.openApp(
+                                                                sdata.setup!["icon_url"]
+                                                                    .toString()
+                                                                    .split("details?id=")[1]
+                                                                    .split("&")[0],
+                                                              )
+                                                            : launch(sdata.setup!["icon_url"].toString());
+                                                      } else {
+                                                        launch(sdata.setup!["icon_url"].toString());
+                                                      }
+                                                    },
+                                                    tileText: sdata.setup!["icon"].toString(),
+                                                    tileType: "Icons",
+                                                    panelCollapsed: panelCollapsed,
+                                                    delay: const Duration(milliseconds: 200),
+                                                  ),
+                                                  SetupDetailsTile(
+                                                    isInstalled: sdata.setup!["widget_url"].toString().contains(
+                                                              'play.google.com/store/apps/details?id=',
+                                                            )
+                                                        ? DeviceApps.isAppInstalled(
                                                             sdata.setup!["widget_url"]
                                                                 .toString()
                                                                 .split("details?id=")[1]
                                                                 .split("&")[0],
                                                           )
-                                                        : launch(sdata.setup!["widget_url"].toString());
-                                                  } else {
-                                                    launch(sdata.setup!["widget_url"].toString());
-                                                  }
-                                                },
-                                                tileText: sdata.setup!["widget"].toString(),
-                                                tileType: "Widget",
-                                                panelCollapsed: panelCollapsed,
-                                                delay: const Duration(milliseconds: 250),
-                                              ),
-                                            ],
-                                          )
-                                        : Scrollbar(
-                                            radius: const Radius.circular(500),
-                                            thickness: 5,
-                                            child: ListView(
-                                              children: [
-                                                SetupDetailsTile(
-                                                  isInstalled: Future.value(false),
-                                                  onTap: () async {
-                                                    if (sdata.setup!["wallpaper_url"].toString()[0] != "[") {
-                                                      if (sdata.setup!["wall_id"] == null ||
-                                                          sdata.setup!["wall_id"] == "") {
-                                                        logger.d("Id Not Found!");
-                                                        launch(sdata.setup!["wallpaper_url"].toString());
-                                                      } else {
-                                                        context.router.push(
-                                                          ShareWallpaperViewRoute(
-                                                            arguments: [
-                                                              sdata.setup!["wall_id"].toString(),
-                                                              sdata.setup!["wallpaper_provider"].toString(),
-                                                              sdata.setup!["wallpaper_url"].toString(),
-                                                              sdata.setup!["wallpaper_url"].toString(),
-                                                            ],
-                                                          ),
-                                                        );
-                                                      }
-                                                    } else {
-                                                      launch(sdata.setup!["wallpaper_url"][1].toString());
-                                                    }
-                                                  },
-                                                  tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
-                                                      ? (sdata.setup!["wall_id"] == null ||
-                                                                sdata.setup!["wall_id"] == "")
-                                                            ? "Wall Link"
-                                                            : "Prism (${sdata.setup!["wall_id"]})"
-                                                      : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
-                                                  tileType: "Wallpaper",
-                                                  panelCollapsed: panelCollapsed,
-                                                  delay: const Duration(milliseconds: 150),
-                                                ),
-                                                SetupDetailsTile(
-                                                  isInstalled:
-                                                      sdata.setup!["icon_url"].toString().contains(
-                                                        'play.google.com/store/apps/details?id=',
-                                                      )
-                                                      ? DeviceApps.isAppInstalled(
-                                                          sdata.setup!["icon_url"]
+                                                        : Future.value(false),
+                                                    onTap: () async {
+                                                      if (sdata.setup!["widget_url"].toString().contains(
+                                                            'play.google.com/store/apps/details?id=',
+                                                          )) {
+                                                        final isInstalled = await DeviceApps.isAppInstalled(
+                                                          sdata.setup!["widget_url"]
                                                               .toString()
                                                               .split("details?id=")[1]
                                                               .split("&")[0],
-                                                        )
-                                                      : Future.value(false),
-                                                  onTap: () async {
-                                                    if (sdata.setup!["icon_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )) {
-                                                      final isInstalled = await DeviceApps.isAppInstalled(
-                                                        sdata.setup!["icon_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      );
-                                                      isInstalled
-                                                          ? DeviceApps.openApp(
+                                                        );
+                                                        isInstalled
+                                                            ? DeviceApps.openApp(
+                                                                sdata.setup!["widget_url"]
+                                                                    .toString()
+                                                                    .split("details?id=")[1]
+                                                                    .split("&")[0],
+                                                              )
+                                                            : launch(sdata.setup!["widget_url"].toString());
+                                                      } else {
+                                                        launch(sdata.setup!["widget_url"].toString());
+                                                      }
+                                                    },
+                                                    tileText: sdata.setup!["widget"].toString(),
+                                                    tileType: "Widget",
+                                                    panelCollapsed: panelCollapsed,
+                                                    delay: const Duration(milliseconds: 250),
+                                                  ),
+                                                ],
+                                              )
+                                            : Scrollbar(
+                                                radius: const Radius.circular(500),
+                                                thickness: 5,
+                                                child: ListView(
+                                                  children: [
+                                                    SetupDetailsTile(
+                                                      isInstalled: Future.value(false),
+                                                      onTap: () async {
+                                                        if (sdata.setup!["wallpaper_url"].toString()[0] != "[") {
+                                                          if (sdata.setup!["wall_id"] == null ||
+                                                              sdata.setup!["wall_id"] == "") {
+                                                            logger.d("Id Not Found!");
+                                                            launch(sdata.setup!["wallpaper_url"].toString());
+                                                          } else {
+                                                            context.router.push(
+                                                              ShareWallpaperViewRoute(
+                                                                arguments: [
+                                                                  sdata.setup!["wall_id"].toString(),
+                                                                  sdata.setup!["wallpaper_provider"].toString(),
+                                                                  sdata.setup!["wallpaper_url"].toString(),
+                                                                  sdata.setup!["wallpaper_url"].toString(),
+                                                                ],
+                                                              ),
+                                                            );
+                                                          }
+                                                        } else {
+                                                          launch(sdata.setup!["wallpaper_url"][1].toString());
+                                                        }
+                                                      },
+                                                      tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
+                                                          ? (sdata.setup!["wall_id"] == null ||
+                                                                  sdata.setup!["wall_id"] == "")
+                                                              ? "Wall Link"
+                                                              : "Prism (${sdata.setup!["wall_id"]})"
+                                                          : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
+                                                      tileType: "Wallpaper",
+                                                      panelCollapsed: panelCollapsed,
+                                                      delay: const Duration(milliseconds: 150),
+                                                    ),
+                                                    SetupDetailsTile(
+                                                      isInstalled: sdata.setup!["icon_url"].toString().contains(
+                                                                'play.google.com/store/apps/details?id=',
+                                                              )
+                                                          ? DeviceApps.isAppInstalled(
                                                               sdata.setup!["icon_url"]
                                                                   .toString()
                                                                   .split("details?id=")[1]
                                                                   .split("&")[0],
                                                             )
-                                                          : launch(sdata.setup!["icon_url"].toString());
-                                                    } else {
-                                                      launch(sdata.setup!["icon_url"].toString());
-                                                    }
-                                                  },
-                                                  tileText: sdata.setup!["icon"].toString(),
-                                                  tileType: "Icons",
-                                                  panelCollapsed: panelCollapsed,
-                                                  delay: const Duration(milliseconds: 200),
-                                                ),
-                                                SetupDetailsTile(
-                                                  isInstalled:
-                                                      sdata.setup!["widget_url"].toString().contains(
-                                                        'play.google.com/store/apps/details?id=',
-                                                      )
-                                                      ? DeviceApps.isAppInstalled(
-                                                          sdata.setup!["widget_url"]
-                                                              .toString()
-                                                              .split("details?id=")[1]
-                                                              .split("&")[0],
-                                                        )
-                                                      : Future.value(false),
-                                                  onTap: () async {
-                                                    if (sdata.setup!["widget_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )) {
-                                                      final isInstalled = await DeviceApps.isAppInstalled(
-                                                        sdata.setup!["widget_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      );
-                                                      isInstalled
-                                                          ? DeviceApps.openApp(
+                                                          : Future.value(false),
+                                                      onTap: () async {
+                                                        if (sdata.setup!["icon_url"].toString().contains(
+                                                              'play.google.com/store/apps/details?id=',
+                                                            )) {
+                                                          final isInstalled = await DeviceApps.isAppInstalled(
+                                                            sdata.setup!["icon_url"]
+                                                                .toString()
+                                                                .split("details?id=")[1]
+                                                                .split("&")[0],
+                                                          );
+                                                          isInstalled
+                                                              ? DeviceApps.openApp(
+                                                                  sdata.setup!["icon_url"]
+                                                                      .toString()
+                                                                      .split("details?id=")[1]
+                                                                      .split("&")[0],
+                                                                )
+                                                              : launch(sdata.setup!["icon_url"].toString());
+                                                        } else {
+                                                          launch(sdata.setup!["icon_url"].toString());
+                                                        }
+                                                      },
+                                                      tileText: sdata.setup!["icon"].toString(),
+                                                      tileType: "Icons",
+                                                      panelCollapsed: panelCollapsed,
+                                                      delay: const Duration(milliseconds: 200),
+                                                    ),
+                                                    SetupDetailsTile(
+                                                      isInstalled: sdata.setup!["widget_url"].toString().contains(
+                                                                'play.google.com/store/apps/details?id=',
+                                                              )
+                                                          ? DeviceApps.isAppInstalled(
                                                               sdata.setup!["widget_url"]
                                                                   .toString()
                                                                   .split("details?id=")[1]
                                                                   .split("&")[0],
                                                             )
-                                                          : launch(sdata.setup!["widget_url"].toString());
-                                                    } else {
-                                                      launch(sdata.setup!["widget_url"].toString());
-                                                    }
-                                                  },
-                                                  tileText: sdata.setup!["widget"].toString(),
-                                                  tileType: "Widget",
-                                                  panelCollapsed: panelCollapsed,
-                                                  delay: const Duration(milliseconds: 250),
-                                                ),
-                                                SetupDetailsTile(
-                                                  isInstalled:
-                                                      sdata.setup!["widget_url2"].toString().contains(
-                                                        'play.google.com/store/apps/details?id=',
-                                                      )
-                                                      ? DeviceApps.isAppInstalled(
-                                                          sdata.setup!["widget_url2"]
-                                                              .toString()
-                                                              .split("details?id=")[1]
-                                                              .split("&")[0],
-                                                        )
-                                                      : Future.value(false),
-                                                  onTap: () async {
-                                                    if (sdata.setup!["widget_url2"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )) {
-                                                      final isInstalled = await DeviceApps.isAppInstalled(
-                                                        sdata.setup!["widget_url2"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      );
-                                                      isInstalled
-                                                          ? DeviceApps.openApp(
+                                                          : Future.value(false),
+                                                      onTap: () async {
+                                                        if (sdata.setup!["widget_url"].toString().contains(
+                                                              'play.google.com/store/apps/details?id=',
+                                                            )) {
+                                                          final isInstalled = await DeviceApps.isAppInstalled(
+                                                            sdata.setup!["widget_url"]
+                                                                .toString()
+                                                                .split("details?id=")[1]
+                                                                .split("&")[0],
+                                                          );
+                                                          isInstalled
+                                                              ? DeviceApps.openApp(
+                                                                  sdata.setup!["widget_url"]
+                                                                      .toString()
+                                                                      .split("details?id=")[1]
+                                                                      .split("&")[0],
+                                                                )
+                                                              : launch(sdata.setup!["widget_url"].toString());
+                                                        } else {
+                                                          launch(sdata.setup!["widget_url"].toString());
+                                                        }
+                                                      },
+                                                      tileText: sdata.setup!["widget"].toString(),
+                                                      tileType: "Widget",
+                                                      panelCollapsed: panelCollapsed,
+                                                      delay: const Duration(milliseconds: 250),
+                                                    ),
+                                                    SetupDetailsTile(
+                                                      isInstalled: sdata.setup!["widget_url2"].toString().contains(
+                                                                'play.google.com/store/apps/details?id=',
+                                                              )
+                                                          ? DeviceApps.isAppInstalled(
                                                               sdata.setup!["widget_url2"]
                                                                   .toString()
                                                                   .split("details?id=")[1]
                                                                   .split("&")[0],
                                                             )
-                                                          : launch(sdata.setup!["widget_url2"].toString());
-                                                    } else {
-                                                      launch(sdata.setup!["widget_url2"].toString());
-                                                    }
-                                                  },
-                                                  tileText: sdata.setup!["widget2"].toString(),
-                                                  tileType: "Widget",
-                                                  panelCollapsed: panelCollapsed,
-                                                  delay: const Duration(milliseconds: 300),
+                                                          : Future.value(false),
+                                                      onTap: () async {
+                                                        if (sdata.setup!["widget_url2"].toString().contains(
+                                                              'play.google.com/store/apps/details?id=',
+                                                            )) {
+                                                          final isInstalled = await DeviceApps.isAppInstalled(
+                                                            sdata.setup!["widget_url2"]
+                                                                .toString()
+                                                                .split("details?id=")[1]
+                                                                .split("&")[0],
+                                                          );
+                                                          isInstalled
+                                                              ? DeviceApps.openApp(
+                                                                  sdata.setup!["widget_url2"]
+                                                                      .toString()
+                                                                      .split("details?id=")[1]
+                                                                      .split("&")[0],
+                                                                )
+                                                              : launch(sdata.setup!["widget_url2"].toString());
+                                                        } else {
+                                                          launch(sdata.setup!["widget_url2"].toString());
+                                                        }
+                                                      },
+                                                      tileText: sdata.setup!["widget2"].toString(),
+                                                      tileType: "Widget",
+                                                      panelCollapsed: panelCollapsed,
+                                                      delay: const Duration(milliseconds: 300),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                          ),
+                                              ),
                                   ),
                                 )
                               else
@@ -1105,27 +1106,27 @@ class ModifiedShareDownloadButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return sdata.setup!["wallpaper_url"].toString()[0] != "["
         ? sdata.setup!["wall_id"] != null && sdata.setup!["wall_id"] != ""
-              ? DownloadButton(link: sdata.setup!["wallpaper_url"].toString(), colorChanged: false)
-              : GestureDetector(
-                  onTap: () async {
-                    launch(sdata.setup!["wallpaper_url"].toString());
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: .25),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      borderRadius: BorderRadius.circular(500),
-                    ),
-                    padding: const EdgeInsets.all(17),
-                    child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
+            ? DownloadButton(link: sdata.setup!["wallpaper_url"].toString(), colorChanged: false)
+            : GestureDetector(
+                onTap: () async {
+                  launch(sdata.setup!["wallpaper_url"].toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .25),
+                        blurRadius: 4,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    borderRadius: BorderRadius.circular(500),
                   ),
-                )
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(sdata.setup!["wallpaper_url"][1].toString());
@@ -1150,27 +1151,27 @@ class ModifiedShareSetWallpaperButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return sdata.setup!["wallpaper_url"].toString()[0] != "["
         ? sdata.setup!["wall_id"] != null && sdata.setup!["wall_id"] != ""
-              ? SetWallpaperButton(url: sdata.setup!["wallpaper_url"].toString(), colorChanged: false)
-              : GestureDetector(
-                  onTap: () async {
-                    launch(sdata.setup!["wallpaper_url"].toString());
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: .25),
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      borderRadius: BorderRadius.circular(500),
-                    ),
-                    padding: const EdgeInsets.all(17),
-                    child: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary, size: 20),
+            ? SetWallpaperButton(url: sdata.setup!["wallpaper_url"].toString(), colorChanged: false)
+            : GestureDetector(
+                onTap: () async {
+                  launch(sdata.setup!["wallpaper_url"].toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .25),
+                        blurRadius: 4,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    borderRadius: BorderRadius.circular(500),
                   ),
-                )
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary, size: 20),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(sdata.setup!["wallpaper_url"][1].toString());

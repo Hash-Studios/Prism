@@ -34,24 +34,21 @@ class UserSearchRepositoryImpl implements UserSearchRepository {
         (data, docId) => <String, dynamic>{...data, '__docId': docId},
       );
 
-      final users = rows
-          .map((data) {
-            return UserSearchUser(
-              id: (data['id'] ?? data['__docId'] ?? '').toString(),
-              name: (data['name'] ?? '').toString(),
-              username: (data['username'] ?? '').toString(),
-              email: (data['email'] ?? '').toString(),
-              profilePhoto: (data['profilePhoto'] ?? '').toString(),
-              coverPhoto: data['coverPhoto']?.toString(),
-              bio: (data['bio'] ?? '').toString(),
-              links:
-                  (data['links'] as Map?)?.map((key, value) => MapEntry(key.toString(), value)) ?? <String, dynamic>{},
-              followers: (data['followers'] as List?)?.toList(growable: false) ?? <dynamic>[],
-              following: (data['following'] as List?)?.toList(growable: false) ?? <dynamic>[],
-              premium: (data['premium'] ?? false) as bool,
-            );
-          })
-          .toList(growable: false);
+      final users = rows.map((data) {
+        return UserSearchUser(
+          id: (data['id'] ?? data['__docId'] ?? '').toString(),
+          name: (data['name'] ?? '').toString(),
+          username: (data['username'] ?? '').toString(),
+          email: (data['email'] ?? '').toString(),
+          profilePhoto: (data['profilePhoto'] ?? '').toString(),
+          coverPhoto: data['coverPhoto']?.toString(),
+          bio: (data['bio'] ?? '').toString(),
+          links: (data['links'] as Map?)?.map((key, value) => MapEntry(key.toString(), value)) ?? <String, dynamic>{},
+          followers: (data['followers'] as List?)?.toList(growable: false) ?? <dynamic>[],
+          following: (data['following'] as List?)?.toList(growable: false) ?? <dynamic>[],
+          premium: (data['premium'] ?? false) as bool,
+        );
+      }).toList(growable: false);
 
       return Result.success(users);
     } catch (error) {

@@ -37,13 +37,11 @@ class ProfileWallsRepositoryImpl implements ProfileWallsRepository {
         _cursorByEmail[email] = rows.last['__docId']?.toString() ?? '';
       }
 
-      final items = rows
-          .map((data) {
-            final payload = <String, dynamic>{...data};
-            payload.remove('__docId');
-            return ProfileWallEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
-          })
-          .toList(growable: false);
+      final items = rows.map((data) {
+        final payload = <String, dynamic>{...data};
+        payload.remove('__docId');
+        return ProfileWallEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
+      }).toList(growable: false);
 
       return Result.success(
         ProfileWallsPage(items: items, hasMore: rows.length == 12, nextCursor: _cursorByEmail[email]),

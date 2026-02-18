@@ -11,9 +11,9 @@ abstract class FavouriteSetupsState with _$FavouriteSetupsState {
   }) = _FavouriteSetupsState;
 
   factory FavouriteSetupsState.initial() => const FavouriteSetupsState(
-    status: LoadStatus.initial,
-    actionStatus: ActionStatus.idle,
-    userId: '',
-    items: <FavouriteSetupEntity>[],
-  );
+        status: LoadStatus.initial,
+        actionStatus: ActionStatus.idle,
+        userId: '',
+        items: <FavouriteSetupEntity>[],
+      );
 }

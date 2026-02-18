@@ -13,11 +13,11 @@ abstract class SetupsState with _$SetupsState {
   }) = _SetupsState;
 
   factory SetupsState.initial() => const SetupsState(
-    status: LoadStatus.initial,
-    actionStatus: ActionStatus.idle,
-    items: <SetupEntity>[],
-    hasMore: true,
-    nextCursor: null,
-    isFetchingMore: false,
-  );
+        status: LoadStatus.initial,
+        actionStatus: ActionStatus.idle,
+        items: <SetupEntity>[],
+        hasMore: true,
+        nextCursor: null,
+        isFetchingMore: false,
+      );
 }

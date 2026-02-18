@@ -61,17 +61,17 @@ class FirestoreQuerySpec {
   final int dedupeWindowMs;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'collection': collection,
-    'sourceTag': sourceTag,
-    'filters': filters.map((f) => f.toJson()).toList(growable: false),
-    'orderBy': orderBy.map((o) => o.toJson()).toList(growable: false),
-    'limit': limit,
-    'startAfterDocId': startAfterDocId,
-    'startAfterFieldValues': startAfterFieldValues?.map(_jsonSafeValue).toList(growable: false),
-    'isStream': isStream,
-    'cachePolicy': cachePolicy.name,
-    'dedupeWindowMs': dedupeWindowMs,
-  };
+        'collection': collection,
+        'sourceTag': sourceTag,
+        'filters': filters.map((f) => f.toJson()).toList(growable: false),
+        'orderBy': orderBy.map((o) => o.toJson()).toList(growable: false),
+        'limit': limit,
+        'startAfterDocId': startAfterDocId,
+        'startAfterFieldValues': startAfterFieldValues?.map(_jsonSafeValue).toList(growable: false),
+        'isStream': isStream,
+        'cachePolicy': cachePolicy.name,
+        'dedupeWindowMs': dedupeWindowMs,
+      };
 
   String get filtersHash => base64Url.encode(utf8.encode(jsonEncode(toJson())));
 }

@@ -14,7 +14,7 @@ part 'theme_dark_bloc.j.freezed.dart';
 @injectable
 class ThemeDarkBloc extends Bloc<ThemeDarkEvent, ThemeDarkState> {
   ThemeDarkBloc(this._loadThemeDarkUseCase, this._updateThemeDarkUseCase, this._updateThemeDarkAccentUseCase)
-    : super(ThemeDarkState.initial()) {
+      : super(ThemeDarkState.initial()) {
     on<_Started>(_onStarted);
     on<_ThemeChanged>(_onThemeChanged);
     on<_AccentChanged>(_onAccentChanged);

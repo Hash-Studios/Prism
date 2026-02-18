@@ -19,17 +19,17 @@ abstract class PublicProfileState with _$PublicProfileState {
   }) = _PublicProfileState;
 
   factory PublicProfileState.initial() => const PublicProfileState(
-    status: LoadStatus.initial,
-    actionStatus: ActionStatus.idle,
-    email: '',
-    profile: PublicProfileEntity.empty,
-    walls: <PublicProfileWallEntity>[],
-    setups: <PublicProfileSetupEntity>[],
-    hasMoreWalls: true,
-    hasMoreSetups: true,
-    wallsCursor: null,
-    setupsCursor: null,
-    isFetchingMoreWalls: false,
-    isFetchingMoreSetups: false,
-  );
+        status: LoadStatus.initial,
+        actionStatus: ActionStatus.idle,
+        email: '',
+        profile: PublicProfileEntity.empty,
+        walls: <PublicProfileWallEntity>[],
+        setups: <PublicProfileSetupEntity>[],
+        hasMoreWalls: true,
+        hasMoreSetups: true,
+        wallsCursor: null,
+        setupsCursor: null,
+        isFetchingMoreWalls: false,
+        isFetchingMoreSetups: false,
+      );
 }

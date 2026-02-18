@@ -11,644 +11,721 @@ part of 'theme_dark_bloc.j.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
 mixin _$ThemeDarkEvent {
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType && other is ThemeDarkEvent);
+  }
 
+  @override
+  int get hashCode => runtimeType.hashCode;
 
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ThemeDarkEvent);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'ThemeDarkEvent()';
-}
-
-
+  @override
+  String toString() {
+    return 'ThemeDarkEvent()';
+  }
 }
 
 /// @nodoc
-class $ThemeDarkEventCopyWith<$Res>  {
-$ThemeDarkEventCopyWith(ThemeDarkEvent _, $Res Function(ThemeDarkEvent) __);
+class $ThemeDarkEventCopyWith<$Res> {
+  $ThemeDarkEventCopyWith(ThemeDarkEvent _, $Res Function(ThemeDarkEvent) __);
 }
-
 
 /// Adds pattern-matching-related methods to [ThemeDarkEvent].
 extension ThemeDarkEventPatterns on ThemeDarkEvent {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Reloaded value)?  reloaded,TResult Function( _ThemeChanged value)?  themeChanged,TResult Function( _AccentChanged value)?  accentChanged,required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case _Started() when started != null:
-return started(_that);case _Reloaded() when reloaded != null:
-return reloaded(_that);case _ThemeChanged() when themeChanged != null:
-return themeChanged(_that);case _AccentChanged() when accentChanged != null:
-return accentChanged(_that);case _:
-  return orElse();
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(_Started value)? started,
+    TResult Function(_Reloaded value)? reloaded,
+    TResult Function(_ThemeChanged value)? themeChanged,
+    TResult Function(_AccentChanged value)? accentChanged,
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _Started() when started != null:
+        return started(_that);
+      case _Reloaded() when reloaded != null:
+        return reloaded(_that);
+      case _ThemeChanged() when themeChanged != null:
+        return themeChanged(_that);
+      case _AccentChanged() when accentChanged != null:
+        return accentChanged(_that);
+      case _:
+        return orElse();
+    }
+  }
 
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Reloaded value)  reloaded,required TResult Function( _ThemeChanged value)  themeChanged,required TResult Function( _AccentChanged value)  accentChanged,}){
-final _that = this;
-switch (_that) {
-case _Started():
-return started(_that);case _Reloaded():
-return reloaded(_that);case _ThemeChanged():
-return themeChanged(_that);case _AccentChanged():
-return accentChanged(_that);case _:
-  throw StateError('Unexpected subclass');
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(_Started value) started,
+    required TResult Function(_Reloaded value) reloaded,
+    required TResult Function(_ThemeChanged value) themeChanged,
+    required TResult Function(_AccentChanged value) accentChanged,
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _Started():
+        return started(_that);
+      case _Reloaded():
+        return reloaded(_that);
+      case _ThemeChanged():
+        return themeChanged(_that);
+      case _AccentChanged():
+        return accentChanged(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
 
-}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Reloaded value)?  reloaded,TResult? Function( _ThemeChanged value)?  themeChanged,TResult? Function( _AccentChanged value)?  accentChanged,}){
-final _that = this;
-switch (_that) {
-case _Started() when started != null:
-return started(_that);case _Reloaded() when reloaded != null:
-return reloaded(_that);case _ThemeChanged() when themeChanged != null:
-return themeChanged(_that);case _AccentChanged() when accentChanged != null:
-return accentChanged(_that);case _:
-  return null;
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(_Started value)? started,
+    TResult? Function(_Reloaded value)? reloaded,
+    TResult? Function(_ThemeChanged value)? themeChanged,
+    TResult? Function(_AccentChanged value)? accentChanged,
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _Started() when started != null:
+        return started(_that);
+      case _Reloaded() when reloaded != null:
+        return reloaded(_that);
+      case _ThemeChanged() when themeChanged != null:
+        return themeChanged(_that);
+      case _AccentChanged() when accentChanged != null:
+        return accentChanged(_that);
+      case _:
+        return null;
+    }
+  }
 
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  reloaded,TResult Function( String themeId)?  themeChanged,TResult Function( int accentColorValue)?  accentChanged,required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case _Started() when started != null:
-return started();case _Reloaded() when reloaded != null:
-return reloaded();case _ThemeChanged() when themeChanged != null:
-return themeChanged(_that.themeId);case _AccentChanged() when accentChanged != null:
-return accentChanged(_that.accentColorValue);case _:
-  return orElse();
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? started,
+    TResult Function()? reloaded,
+    TResult Function(String themeId)? themeChanged,
+    TResult Function(int accentColorValue)? accentChanged,
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _Started() when started != null:
+        return started();
+      case _Reloaded() when reloaded != null:
+        return reloaded();
+      case _ThemeChanged() when themeChanged != null:
+        return themeChanged(_that.themeId);
+      case _AccentChanged() when accentChanged != null:
+        return accentChanged(_that.accentColorValue);
+      case _:
+        return orElse();
+    }
+  }
 
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  reloaded,required TResult Function( String themeId)  themeChanged,required TResult Function( int accentColorValue)  accentChanged,}) {final _that = this;
-switch (_that) {
-case _Started():
-return started();case _Reloaded():
-return reloaded();case _ThemeChanged():
-return themeChanged(_that.themeId);case _AccentChanged():
-return accentChanged(_that.accentColorValue);case _:
-  throw StateError('Unexpected subclass');
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() started,
+    required TResult Function() reloaded,
+    required TResult Function(String themeId) themeChanged,
+    required TResult Function(int accentColorValue) accentChanged,
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _Started():
+        return started();
+      case _Reloaded():
+        return reloaded();
+      case _ThemeChanged():
+        return themeChanged(_that.themeId);
+      case _AccentChanged():
+        return accentChanged(_that.accentColorValue);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
 
-}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  reloaded,TResult? Function( String themeId)?  themeChanged,TResult? Function( int accentColorValue)?  accentChanged,}) {final _that = this;
-switch (_that) {
-case _Started() when started != null:
-return started();case _Reloaded() when reloaded != null:
-return reloaded();case _ThemeChanged() when themeChanged != null:
-return themeChanged(_that.themeId);case _AccentChanged() when accentChanged != null:
-return accentChanged(_that.accentColorValue);case _:
-  return null;
-
-}
-}
-
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? started,
+    TResult? Function()? reloaded,
+    TResult? Function(String themeId)? themeChanged,
+    TResult? Function(int accentColorValue)? accentChanged,
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _Started() when started != null:
+        return started();
+      case _Reloaded() when reloaded != null:
+        return reloaded();
+      case _ThemeChanged() when themeChanged != null:
+        return themeChanged(_that.themeId);
+      case _AccentChanged() when accentChanged != null:
+        return accentChanged(_that.accentColorValue);
+      case _:
+        return null;
+    }
+  }
 }
 
 /// @nodoc
-
 
 class _Started implements ThemeDarkEvent {
   const _Started();
-  
 
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _Started);
+  }
 
+  @override
+  int get hashCode => runtimeType.hashCode;
 
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Started);
+  @override
+  String toString() {
+    return 'ThemeDarkEvent.started()';
+  }
 }
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'ThemeDarkEvent.started()';
-}
-
-
-}
-
-
-
 
 /// @nodoc
-
 
 class _Reloaded implements ThemeDarkEvent {
   const _Reloaded();
-  
 
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType && other is _Reloaded);
+  }
 
+  @override
+  int get hashCode => runtimeType.hashCode;
 
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Reloaded);
+  @override
+  String toString() {
+    return 'ThemeDarkEvent.reloaded()';
+  }
 }
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'ThemeDarkEvent.reloaded()';
-}
-
-
-}
-
-
-
 
 /// @nodoc
 
-
 class _ThemeChanged implements ThemeDarkEvent {
   const _ThemeChanged({required this.themeId});
-  
 
- final  String themeId;
+  final String themeId;
 
-/// Create a copy of ThemeDarkEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$ThemeChangedCopyWith<_ThemeChanged> get copyWith => __$ThemeChangedCopyWithImpl<_ThemeChanged>(this, _$identity);
+  /// Create a copy of ThemeDarkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  _$ThemeChangedCopyWith<_ThemeChanged> get copyWith => __$ThemeChangedCopyWithImpl<_ThemeChanged>(this, _$identity);
 
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _ThemeChanged &&
+            (identical(other.themeId, themeId) || other.themeId == themeId));
+  }
 
+  @override
+  int get hashCode => Object.hash(runtimeType, themeId);
 
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ThemeChanged&&(identical(other.themeId, themeId) || other.themeId == themeId));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,themeId);
-
-@override
-String toString() {
-  return 'ThemeDarkEvent.themeChanged(themeId: $themeId)';
-}
-
-
+  @override
+  String toString() {
+    return 'ThemeDarkEvent.themeChanged(themeId: $themeId)';
+  }
 }
 
 /// @nodoc
 abstract mixin class _$ThemeChangedCopyWith<$Res> implements $ThemeDarkEventCopyWith<$Res> {
   factory _$ThemeChangedCopyWith(_ThemeChanged value, $Res Function(_ThemeChanged) _then) = __$ThemeChangedCopyWithImpl;
-@useResult
-$Res call({
- String themeId
-});
-
-
-
-
+  @useResult
+  $Res call({String themeId});
 }
+
 /// @nodoc
-class __$ThemeChangedCopyWithImpl<$Res>
-    implements _$ThemeChangedCopyWith<$Res> {
+class __$ThemeChangedCopyWithImpl<$Res> implements _$ThemeChangedCopyWith<$Res> {
   __$ThemeChangedCopyWithImpl(this._self, this._then);
 
   final _ThemeChanged _self;
   final $Res Function(_ThemeChanged) _then;
 
-/// Create a copy of ThemeDarkEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? themeId = null,}) {
-  return _then(_ThemeChanged(
-themeId: null == themeId ? _self.themeId : themeId // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-
+  /// Create a copy of ThemeDarkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? themeId = null,
+  }) {
+    return _then(_ThemeChanged(
+      themeId: null == themeId
+          ? _self.themeId
+          : themeId // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
 }
 
 /// @nodoc
 
-
 class _AccentChanged implements ThemeDarkEvent {
   const _AccentChanged({required this.accentColorValue});
-  
 
- final  int accentColorValue;
+  final int accentColorValue;
 
-/// Create a copy of ThemeDarkEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$AccentChangedCopyWith<_AccentChanged> get copyWith => __$AccentChangedCopyWithImpl<_AccentChanged>(this, _$identity);
+  /// Create a copy of ThemeDarkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  _$AccentChangedCopyWith<_AccentChanged> get copyWith =>
+      __$AccentChangedCopyWithImpl<_AccentChanged>(this, _$identity);
 
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _AccentChanged &&
+            (identical(other.accentColorValue, accentColorValue) || other.accentColorValue == accentColorValue));
+  }
 
+  @override
+  int get hashCode => Object.hash(runtimeType, accentColorValue);
 
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AccentChanged&&(identical(other.accentColorValue, accentColorValue) || other.accentColorValue == accentColorValue));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,accentColorValue);
-
-@override
-String toString() {
-  return 'ThemeDarkEvent.accentChanged(accentColorValue: $accentColorValue)';
-}
-
-
+  @override
+  String toString() {
+    return 'ThemeDarkEvent.accentChanged(accentColorValue: $accentColorValue)';
+  }
 }
 
 /// @nodoc
 abstract mixin class _$AccentChangedCopyWith<$Res> implements $ThemeDarkEventCopyWith<$Res> {
-  factory _$AccentChangedCopyWith(_AccentChanged value, $Res Function(_AccentChanged) _then) = __$AccentChangedCopyWithImpl;
-@useResult
-$Res call({
- int accentColorValue
-});
-
-
-
-
+  factory _$AccentChangedCopyWith(_AccentChanged value, $Res Function(_AccentChanged) _then) =
+      __$AccentChangedCopyWithImpl;
+  @useResult
+  $Res call({int accentColorValue});
 }
+
 /// @nodoc
-class __$AccentChangedCopyWithImpl<$Res>
-    implements _$AccentChangedCopyWith<$Res> {
+class __$AccentChangedCopyWithImpl<$Res> implements _$AccentChangedCopyWith<$Res> {
   __$AccentChangedCopyWithImpl(this._self, this._then);
 
   final _AccentChanged _self;
   final $Res Function(_AccentChanged) _then;
 
-/// Create a copy of ThemeDarkEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? accentColorValue = null,}) {
-  return _then(_AccentChanged(
-accentColorValue: null == accentColorValue ? _self.accentColorValue : accentColorValue // ignore: cast_nullable_to_non_nullable
-as int,
-  ));
-}
-
-
+  /// Create a copy of ThemeDarkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? accentColorValue = null,
+  }) {
+    return _then(_AccentChanged(
+      accentColorValue: null == accentColorValue
+          ? _self.accentColorValue
+          : accentColorValue // ignore: cast_nullable_to_non_nullable
+              as int,
+    ));
+  }
 }
 
 /// @nodoc
 mixin _$ThemeDarkState {
+  LoadStatus get status;
+  ActionStatus get actionStatus;
+  ThemeDarkEntity get theme;
+  Failure? get failure;
 
- LoadStatus get status; ActionStatus get actionStatus; ThemeDarkEntity get theme; Failure? get failure;
-/// Create a copy of ThemeDarkState
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$ThemeDarkStateCopyWith<ThemeDarkState> get copyWith => _$ThemeDarkStateCopyWithImpl<ThemeDarkState>(this as ThemeDarkState, _$identity);
+  /// Create a copy of ThemeDarkState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $ThemeDarkStateCopyWith<ThemeDarkState> get copyWith =>
+      _$ThemeDarkStateCopyWithImpl<ThemeDarkState>(this as ThemeDarkState, _$identity);
 
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is ThemeDarkState &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.theme, theme) || other.theme == theme) &&
+            (identical(other.failure, failure) || other.failure == failure));
+  }
 
+  @override
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, theme, failure);
 
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ThemeDarkState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.failure, failure) || other.failure == failure));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,theme,failure);
-
-@override
-String toString() {
-  return 'ThemeDarkState(status: $status, actionStatus: $actionStatus, theme: $theme, failure: $failure)';
-}
-
-
+  @override
+  String toString() {
+    return 'ThemeDarkState(status: $status, actionStatus: $actionStatus, theme: $theme, failure: $failure)';
+  }
 }
 
 /// @nodoc
-abstract mixin class $ThemeDarkStateCopyWith<$Res>  {
-  factory $ThemeDarkStateCopyWith(ThemeDarkState value, $Res Function(ThemeDarkState) _then) = _$ThemeDarkStateCopyWithImpl;
-@useResult
-$Res call({
- LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure
-});
-
-
-
-
+abstract mixin class $ThemeDarkStateCopyWith<$Res> {
+  factory $ThemeDarkStateCopyWith(ThemeDarkState value, $Res Function(ThemeDarkState) _then) =
+      _$ThemeDarkStateCopyWithImpl;
+  @useResult
+  $Res call({LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure});
 }
+
 /// @nodoc
-class _$ThemeDarkStateCopyWithImpl<$Res>
-    implements $ThemeDarkStateCopyWith<$Res> {
+class _$ThemeDarkStateCopyWithImpl<$Res> implements $ThemeDarkStateCopyWith<$Res> {
   _$ThemeDarkStateCopyWithImpl(this._self, this._then);
 
   final ThemeDarkState _self;
   final $Res Function(ThemeDarkState) _then;
 
-/// Create a copy of ThemeDarkState
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? theme = null,Object? failure = freezed,}) {
-  return _then(_self.copyWith(
-status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
-as ActionStatus,theme: null == theme ? _self.theme : theme // ignore: cast_nullable_to_non_nullable
-as ThemeDarkEntity,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
-  ));
+  /// Create a copy of ThemeDarkState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? status = null,
+    Object? actionStatus = null,
+    Object? theme = null,
+    Object? failure = freezed,
+  }) {
+    return _then(_self.copyWith(
+      status: null == status
+          ? _self.status
+          : status // ignore: cast_nullable_to_non_nullable
+              as LoadStatus,
+      actionStatus: null == actionStatus
+          ? _self.actionStatus
+          : actionStatus // ignore: cast_nullable_to_non_nullable
+              as ActionStatus,
+      theme: null == theme
+          ? _self.theme
+          : theme // ignore: cast_nullable_to_non_nullable
+              as ThemeDarkEntity,
+      failure: freezed == failure
+          ? _self.failure
+          : failure // ignore: cast_nullable_to_non_nullable
+              as Failure?,
+    ));
+  }
 }
-
-}
-
 
 /// Adds pattern-matching-related methods to [ThemeDarkState].
 extension ThemeDarkStatePatterns on ThemeDarkState {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ThemeDarkState value)?  $default,{required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case _ThemeDarkState() when $default != null:
-return $default(_that);case _:
-  return orElse();
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>(
+    TResult Function(_ThemeDarkState value)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _ThemeDarkState() when $default != null:
+        return $default(_that);
+      case _:
+        return orElse();
+    }
+  }
 
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ThemeDarkState value)  $default,){
-final _that = this;
-switch (_that) {
-case _ThemeDarkState():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>(
+    TResult Function(_ThemeDarkState value) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _ThemeDarkState():
+        return $default(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
 
-}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ThemeDarkState value)?  $default,){
-final _that = this;
-switch (_that) {
-case _ThemeDarkState() when $default != null:
-return $default(_that);case _:
-  return null;
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>(
+    TResult? Function(_ThemeDarkState value)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _ThemeDarkState() when $default != null:
+        return $default(_that);
+      case _:
+        return null;
+    }
+  }
 
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  ThemeDarkEntity theme,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case _ThemeDarkState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.theme,_that.failure);case _:
-  return orElse();
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>(
+    TResult Function(LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _ThemeDarkState() when $default != null:
+        return $default(_that.status, _that.actionStatus, _that.theme, _that.failure);
+      case _:
+        return orElse();
+    }
+  }
 
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  ThemeDarkEntity theme,  Failure? failure)  $default,) {final _that = this;
-switch (_that) {
-case _ThemeDarkState():
-return $default(_that.status,_that.actionStatus,_that.theme,_that.failure);case _:
-  throw StateError('Unexpected subclass');
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>(
+    TResult Function(LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _ThemeDarkState():
+        return $default(_that.status, _that.actionStatus, _that.theme, _that.failure);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
 
-}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  ThemeDarkEntity theme,  Failure? failure)?  $default,) {final _that = this;
-switch (_that) {
-case _ThemeDarkState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.theme,_that.failure);case _:
-  return null;
-
-}
-}
-
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>(
+    TResult? Function(LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _ThemeDarkState() when $default != null:
+        return $default(_that.status, _that.actionStatus, _that.theme, _that.failure);
+      case _:
+        return null;
+    }
+  }
 }
 
 /// @nodoc
 
-
 class _ThemeDarkState implements ThemeDarkState {
   const _ThemeDarkState({required this.status, required this.actionStatus, required this.theme, this.failure});
-  
 
-@override final  LoadStatus status;
-@override final  ActionStatus actionStatus;
-@override final  ThemeDarkEntity theme;
-@override final  Failure? failure;
+  @override
+  final LoadStatus status;
+  @override
+  final ActionStatus actionStatus;
+  @override
+  final ThemeDarkEntity theme;
+  @override
+  final Failure? failure;
 
-/// Create a copy of ThemeDarkState
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$ThemeDarkStateCopyWith<_ThemeDarkState> get copyWith => __$ThemeDarkStateCopyWithImpl<_ThemeDarkState>(this, _$identity);
+  /// Create a copy of ThemeDarkState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  _$ThemeDarkStateCopyWith<_ThemeDarkState> get copyWith =>
+      __$ThemeDarkStateCopyWithImpl<_ThemeDarkState>(this, _$identity);
 
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _ThemeDarkState &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus) &&
+            (identical(other.theme, theme) || other.theme == theme) &&
+            (identical(other.failure, failure) || other.failure == failure));
+  }
 
+  @override
+  int get hashCode => Object.hash(runtimeType, status, actionStatus, theme, failure);
 
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ThemeDarkState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.failure, failure) || other.failure == failure));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,theme,failure);
-
-@override
-String toString() {
-  return 'ThemeDarkState(status: $status, actionStatus: $actionStatus, theme: $theme, failure: $failure)';
-}
-
-
+  @override
+  String toString() {
+    return 'ThemeDarkState(status: $status, actionStatus: $actionStatus, theme: $theme, failure: $failure)';
+  }
 }
 
 /// @nodoc
 abstract mixin class _$ThemeDarkStateCopyWith<$Res> implements $ThemeDarkStateCopyWith<$Res> {
-  factory _$ThemeDarkStateCopyWith(_ThemeDarkState value, $Res Function(_ThemeDarkState) _then) = __$ThemeDarkStateCopyWithImpl;
-@override @useResult
-$Res call({
- LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure
-});
-
-
-
-
+  factory _$ThemeDarkStateCopyWith(_ThemeDarkState value, $Res Function(_ThemeDarkState) _then) =
+      __$ThemeDarkStateCopyWithImpl;
+  @override
+  @useResult
+  $Res call({LoadStatus status, ActionStatus actionStatus, ThemeDarkEntity theme, Failure? failure});
 }
+
 /// @nodoc
-class __$ThemeDarkStateCopyWithImpl<$Res>
-    implements _$ThemeDarkStateCopyWith<$Res> {
+class __$ThemeDarkStateCopyWithImpl<$Res> implements _$ThemeDarkStateCopyWith<$Res> {
   __$ThemeDarkStateCopyWithImpl(this._self, this._then);
 
   final _ThemeDarkState _self;
   final $Res Function(_ThemeDarkState) _then;
 
-/// Create a copy of ThemeDarkState
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? theme = null,Object? failure = freezed,}) {
-  return _then(_ThemeDarkState(
-status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
-as ActionStatus,theme: null == theme ? _self.theme : theme // ignore: cast_nullable_to_non_nullable
-as ThemeDarkEntity,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
-  ));
-}
-
-
+  /// Create a copy of ThemeDarkState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? status = null,
+    Object? actionStatus = null,
+    Object? theme = null,
+    Object? failure = freezed,
+  }) {
+    return _then(_ThemeDarkState(
+      status: null == status
+          ? _self.status
+          : status // ignore: cast_nullable_to_non_nullable
+              as LoadStatus,
+      actionStatus: null == actionStatus
+          ? _self.actionStatus
+          : actionStatus // ignore: cast_nullable_to_non_nullable
+              as ActionStatus,
+      theme: null == theme
+          ? _self.theme
+          : theme // ignore: cast_nullable_to_non_nullable
+              as ThemeDarkEntity,
+      failure: freezed == failure
+          ? _self.failure
+          : failure // ignore: cast_nullable_to_non_nullable
+              as Failure?,
+    ));
+  }
 }
 
 // dart format on

@@ -307,11 +307,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                     child: Text(
                                                       "System",
                                                       style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                                                        color:
-                                                            MediaQuery.of(context).platformBrightness == Brightness.dark
-                                                            ? Colors.white
-                                                            : Colors.black,
-                                                      ),
+                                                            color: MediaQuery.of(context).platformBrightness ==
+                                                                    Brightness.dark
+                                                                ? Colors.white
+                                                                : Colors.black,
+                                                          ),
                                                     ),
                                                   ),
                                                 ],
@@ -335,8 +335,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       JamIcons.check,
                                                       color:
                                                           MediaQuery.of(context).platformBrightness == Brightness.dark
-                                                          ? Colors.black
-                                                          : Colors.white,
+                                                              ? Colors.black
+                                                              : Colors.white,
                                                     ),
                                                   ],
                                                 ),
@@ -471,55 +471,56 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 );
                               }
                             : isSignedIn!
-                            ? () {
-                                toasts.codeSend("Already signed-in!");
-                              }
-                            : isLoading
-                            ? () {}
-                            : () async {
-                                logger.i('Sign in tapped', tag: 'Onboarding');
-                                setState(() {
-                                  isLoading = true;
-                                });
-                                try {
-                                  final String signInResult = await globals.gAuth.signInWithGoogle();
-                                  if (signInResult == GoogleAuth.signInCancelledResult) {
-                                    globals.prismUser.loggedIn = false;
-                                    main.prefs.put(main.userHiveKey, globals.prismUser);
-                                    toasts.codeSend("Sign in cancelled.");
-                                  } else {
-                                    toasts.codeSend("Login Successful!");
-                                    globals.prismUser.loggedIn = true;
-                                    main.prefs.put(main.userHiveKey, globals.prismUser);
-                                    await Future.delayed(const Duration(milliseconds: 500));
-                                    if (!context.mounted) {
-                                      return;
-                                    }
-                                    main.prefs.put('onboarded_new', true);
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const OptionalInfo3(
-                                          heading: 'Follow top creators',
-                                          subheading: 'Never miss the latest and greatest',
-                                          showSkip: false,
-                                          skipText: "Skip",
-                                          doneText: "DONE",
-                                        ),
-                                      ),
-                                    );
+                                ? () {
+                                    toasts.codeSend("Already signed-in!");
                                   }
-                                } catch (e, st) {
-                                  logger.e('Google sign-in failed', tag: 'Onboarding', error: e, stackTrace: st);
-                                  globals.prismUser.loggedIn = false;
-                                  main.prefs.put(main.userHiveKey, globals.prismUser);
-                                  toasts.error("Something went wrong, please try again!");
-                                }
-                                setState(() {
-                                  isLoading = false;
-                                  isSignedIn = globals.prismUser.loggedIn;
-                                });
-                              },
+                                : isLoading
+                                    ? () {}
+                                    : () async {
+                                        logger.i('Sign in tapped', tag: 'Onboarding');
+                                        setState(() {
+                                          isLoading = true;
+                                        });
+                                        try {
+                                          final String signInResult = await globals.gAuth.signInWithGoogle();
+                                          if (signInResult == GoogleAuth.signInCancelledResult) {
+                                            globals.prismUser.loggedIn = false;
+                                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                                            toasts.codeSend("Sign in cancelled.");
+                                          } else {
+                                            toasts.codeSend("Login Successful!");
+                                            globals.prismUser.loggedIn = true;
+                                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                                            await Future.delayed(const Duration(milliseconds: 500));
+                                            if (!context.mounted) {
+                                              return;
+                                            }
+                                            main.prefs.put('onboarded_new', true);
+                                            Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => const OptionalInfo3(
+                                                  heading: 'Follow top creators',
+                                                  subheading: 'Never miss the latest and greatest',
+                                                  showSkip: false,
+                                                  skipText: "Skip",
+                                                  doneText: "DONE",
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        } catch (e, st) {
+                                          logger.e('Google sign-in failed',
+                                              tag: 'Onboarding', error: e, stackTrace: st);
+                                          globals.prismUser.loggedIn = false;
+                                          main.prefs.put(main.userHiveKey, globals.prismUser);
+                                          toasts.error("Something went wrong, please try again!");
+                                        }
+                                        setState(() {
+                                          isLoading = false;
+                                          isSignedIn = globals.prismUser.loggedIn;
+                                        });
+                                      },
                         style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
                         child: SizedBox(
                           width: 60,
@@ -528,8 +529,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   _currentPage == 0
                                       ? 'NEXT'
                                       : _currentPage == 1
-                                      ? 'NEXT'
-                                      : 'SIGN IN',
+                                          ? 'NEXT'
+                                          : 'SIGN IN',
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: Color(0xFFE57697),
@@ -539,31 +540,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   ),
                                 )
                               : isSignedIn!
-                              ? const Icon(JamIcons.check, color: Color(0xFFE57697))
-                              : isLoading
-                              ? const Center(
-                                  child: SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE57697)),
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  _currentPage == 0
-                                      ? 'NEXT'
-                                      : _currentPage == 1
-                                      ? 'NEXT'
-                                      : 'SIGN IN',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Color(0xFFE57697),
-                                    fontSize: 15,
-                                    fontFamily: "Roboto",
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                                  ? const Icon(JamIcons.check, color: Color(0xFFE57697))
+                                  : isLoading
+                                      ? const Center(
+                                          child: SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE57697)),
+                                            ),
+                                          ),
+                                        )
+                                      : Text(
+                                          _currentPage == 0
+                                              ? 'NEXT'
+                                              : _currentPage == 1
+                                                  ? 'NEXT'
+                                                  : 'SIGN IN',
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: Color(0xFFE57697),
+                                            fontSize: 15,
+                                            fontFamily: "Roboto",
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
                         ),
                       ),
                     ],

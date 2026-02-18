@@ -37,13 +37,11 @@ class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
         _cursorByEmail[email] = rows.last['__docId']?.toString() ?? '';
       }
 
-      final items = rows
-          .map((data) {
-            final payload = <String, dynamic>{...data};
-            payload.remove('__docId');
-            return ProfileSetupEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
-          })
-          .toList(growable: false);
+      final items = rows.map((data) {
+        final payload = <String, dynamic>{...data};
+        payload.remove('__docId');
+        return ProfileSetupEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
+      }).toList(growable: false);
 
       return Result.success(
         ProfileSetupsPage(items: items, hasMore: rows.length == 8, nextCursor: _cursorByEmail[email]),

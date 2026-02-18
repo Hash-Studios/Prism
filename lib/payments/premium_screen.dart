@@ -321,9 +321,9 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
                       '${_packageTypeLabel(selectedPackage.packageType).toLowerCase()}',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
-                        letterSpacing: 0.4,
-                      ),
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+                            letterSpacing: 0.4,
+                          ),
                     ),
                   ),
                 const SizedBox(height: 16),
@@ -338,8 +338,8 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
                       Text(
                         widget.offeringsError ? 'Unable to load packages' : 'No packages available',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                        ),
+                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
+                            ),
                       ),
                       const SizedBox(height: 8),
                       TextButton(onPressed: widget.onRetry, child: const Text('Retry')),
@@ -376,11 +376,11 @@ class _UpgradeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final secondary = Theme.of(context).colorScheme.secondary;
     final labelStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
-      color: secondary.withValues(alpha: 0.6),
-      letterSpacing: 1.2,
-      wordSpacing: 2,
-      fontWeight: FontWeight.w300,
-    );
+          color: secondary.withValues(alpha: 0.6),
+          letterSpacing: 1.2,
+          wordSpacing: 2,
+          fontWeight: FontWeight.w300,
+        );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -395,11 +395,11 @@ class _UpgradeHeader extends StatelessWidget {
               'PRISM PREMIUM',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                fontSize: 36,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.2,
-                color: Colors.white, // required for ShaderMask to work
-              ),
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                    color: Colors.white, // required for ShaderMask to work
+                  ),
             ),
           ),
           const SizedBox(height: 6),
@@ -565,11 +565,11 @@ class _FeatureSection extends StatelessWidget {
             isPremium ? 'UNLOCKED FEATURES' : 'FEATURES',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              fontSize: 14,
-              letterSpacing: 1.2,
-              wordSpacing: 2,
-              color: secondary.withValues(alpha: 0.45),
-            ),
+                  fontSize: 14,
+                  letterSpacing: 1.2,
+                  wordSpacing: 2,
+                  color: secondary.withValues(alpha: 0.45),
+                ),
           ),
         ],
       ),
@@ -786,9 +786,9 @@ class _PurchaseCTAButtonState extends State<_PurchaseCTAButton> {
                   Text(
                     label,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
                   ),
                   const SizedBox(width: 8),
                   Icon(Icons.arrow_forward, size: 20, color: Theme.of(context).primaryColor),

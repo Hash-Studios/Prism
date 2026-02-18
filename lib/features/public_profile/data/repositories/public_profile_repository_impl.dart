@@ -108,13 +108,11 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
         _wallCursorByEmail[email] = rows.last['__docId']?.toString() ?? '';
       }
 
-      final items = rows
-          .map((data) {
-            final payload = <String, dynamic>{...data};
-            payload.remove('__docId');
-            return PublicProfileWallEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
-          })
-          .toList(growable: false);
+      final items = rows.map((data) {
+        final payload = <String, dynamic>{...data};
+        payload.remove('__docId');
+        return PublicProfileWallEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
+      }).toList(growable: false);
 
       return Result.success(
         PublicProfilePage<PublicProfileWallEntity>(
@@ -154,13 +152,11 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
         _setupCursorByEmail[email] = rows.last['__docId']?.toString() ?? '';
       }
 
-      final items = rows
-          .map((data) {
-            final payload = <String, dynamic>{...data};
-            payload.remove('__docId');
-            return PublicProfileSetupEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
-          })
-          .toList(growable: false);
+      final items = rows.map((data) {
+        final payload = <String, dynamic>{...data};
+        payload.remove('__docId');
+        return PublicProfileSetupEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
+      }).toList(growable: false);
 
       return Result.success(
         PublicProfilePage<PublicProfileSetupEntity>(
@@ -182,12 +178,20 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required String targetUserEmail,
   }) async {
     try {
-      await _firestoreClient.updateDoc(FirebaseCollections.usersV2, currentUserId, <String, dynamic>{
-        'following': FirestoreSentinels.arrayUnion(<Object?>[targetUserEmail]),
-      }, sourceTag: 'public_profile.follow.current_user');
-      await _firestoreClient.updateDoc(FirebaseCollections.usersV2, targetUserId, <String, dynamic>{
-        'followers': FirestoreSentinels.arrayUnion(<Object?>[currentUserEmail]),
-      }, sourceTag: 'public_profile.follow.target_user');
+      await _firestoreClient.updateDoc(
+          FirebaseCollections.usersV2,
+          currentUserId,
+          <String, dynamic>{
+            'following': FirestoreSentinels.arrayUnion(<Object?>[targetUserEmail]),
+          },
+          sourceTag: 'public_profile.follow.current_user');
+      await _firestoreClient.updateDoc(
+          FirebaseCollections.usersV2,
+          targetUserId,
+          <String, dynamic>{
+            'followers': FirestoreSentinels.arrayUnion(<Object?>[currentUserEmail]),
+          },
+          sourceTag: 'public_profile.follow.target_user');
       return fetchProfile(email: targetUserEmail);
     } catch (error) {
       return Result.error(ServerFailure('Unable to follow user: $error'));
@@ -202,12 +206,20 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required String targetUserEmail,
   }) async {
     try {
-      await _firestoreClient.updateDoc(FirebaseCollections.usersV2, currentUserId, <String, dynamic>{
-        'following': FirestoreSentinels.arrayRemove(<Object?>[targetUserEmail]),
-      }, sourceTag: 'public_profile.unfollow.current_user');
-      await _firestoreClient.updateDoc(FirebaseCollections.usersV2, targetUserId, <String, dynamic>{
-        'followers': FirestoreSentinels.arrayRemove(<Object?>[currentUserEmail]),
-      }, sourceTag: 'public_profile.unfollow.target_user');
+      await _firestoreClient.updateDoc(
+          FirebaseCollections.usersV2,
+          currentUserId,
+          <String, dynamic>{
+            'following': FirestoreSentinels.arrayRemove(<Object?>[targetUserEmail]),
+          },
+          sourceTag: 'public_profile.unfollow.current_user');
+      await _firestoreClient.updateDoc(
+          FirebaseCollections.usersV2,
+          targetUserId,
+          <String, dynamic>{
+            'followers': FirestoreSentinels.arrayRemove(<Object?>[currentUserEmail]),
+          },
+          sourceTag: 'public_profile.unfollow.target_user');
       return fetchProfile(email: targetUserEmail);
     } catch (error) {
       return Result.error(ServerFailure('Unable to unfollow user: $error'));
@@ -217,9 +229,13 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   @override
   Future<Result<PublicProfileEntity>> updateLinks({required String userId, required Map<String, String> links}) async {
     try {
-      await _firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-        'links': links,
-      }, sourceTag: 'public_profile.update_links');
+      await _firestoreClient.updateDoc(
+          FirebaseCollections.usersV2,
+          userId,
+          <String, dynamic>{
+            'links': links,
+          },
+          sourceTag: 'public_profile.update_links');
       final updated = await _firestoreClient.getById<Map<String, dynamic>>(
         FirebaseCollections.usersV2,
         userId,

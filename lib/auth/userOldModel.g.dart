@@ -13,7 +13,9 @@ class PrismUsersAdapter extends TypeAdapter<PrismUsers> {
   @override
   PrismUsers read(BinaryReader reader) {
     final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read()};
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
     return PrismUsers(
       username: fields[0] as String,
       email: fields[1] as String,

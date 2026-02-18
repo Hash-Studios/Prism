@@ -22,11 +22,11 @@ class CarouselDots extends StatelessWidget {
               borderRadius: BorderRadius.circular(500),
               color: _current == i
                   ? Theme.of(context).colorScheme.error == Colors.black
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.error
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.error
                   : Theme.of(context).colorScheme.error == Colors.black
-                  ? Colors.white38
-                  : Theme.of(context).colorScheme.error.withValues(alpha: 0.38),
+                      ? Colors.white38
+                      : Theme.of(context).colorScheme.error.withValues(alpha: 0.38),
             ),
           );
         }).toList(),

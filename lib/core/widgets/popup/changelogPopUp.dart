@@ -151,8 +151,8 @@ class Change extends StatelessWidget {
               size: 22,
               color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
                   ? Theme.of(context).colorScheme.error == Colors.black
-                        ? Theme.of(context).colorScheme.secondary
-                        : Theme.of(context).colorScheme.error
+                      ? Theme.of(context).colorScheme.secondary
+                      : Theme.of(context).colorScheme.error
                   : Theme.of(context).colorScheme.error,
             ),
             const SizedBox(width: 20),

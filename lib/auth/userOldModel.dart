@@ -75,19 +75,23 @@ class PrismUsers {
     required this.loggedIn,
   }) {
     logger.d("With Save constructor !!!!");
-    firestoreClient.updateDoc(USER_NEW_COLLECTION, id, {
-      'bio': bio,
-      'username': username,
-      'email': email,
-      'id': id,
-      'createdAt': createdAt,
-      'premium': premium,
-      'lastLogin': lastLogin,
-      'links': links,
-      'followers': followers,
-      'following': following,
-      'profilePhoto': profilePhoto,
-    }, sourceTag: 'user_old.with_save');
+    firestoreClient.updateDoc(
+        USER_NEW_COLLECTION,
+        id,
+        {
+          'bio': bio,
+          'username': username,
+          'email': email,
+          'id': id,
+          'createdAt': createdAt,
+          'premium': premium,
+          'lastLogin': lastLogin,
+          'links': links,
+          'followers': followers,
+          'following': following,
+          'profilePhoto': profilePhoto,
+        },
+        sourceTag: 'user_old.with_save');
   }
   PrismUsers.initial({
     this.bio = "",
@@ -121,14 +125,18 @@ class PrismUsers {
     required this.loggedIn,
   }) {
     logger.d("Without save constructor !!!!");
-    firestoreClient.updateDoc(USER_NEW_COLLECTION, id, {
-      'bio': bio,
-      'username': username,
-      'following': following,
-      'lastLogin': DateTime.now(),
-      'links': links,
-      'profilePhoto': profilePhoto,
-    }, sourceTag: 'user_old.without_save');
+    firestoreClient.updateDoc(
+        USER_NEW_COLLECTION,
+        id,
+        {
+          'bio': bio,
+          'username': username,
+          'following': following,
+          'lastLogin': DateTime.now(),
+          'links': links,
+          'profilePhoto': profilePhoto,
+        },
+        sourceTag: 'user_old.without_save');
   }
 
   factory PrismUsers.fromMapWithUser(Map<String, dynamic> raw, User user) {
@@ -157,12 +165,12 @@ class PrismUsers {
   }
 
   Map<String, dynamic> toJson() => {
-    "bio": bio,
-    "createdAt": createdAt,
-    "email": email,
-    "username": username,
-    "links": links,
-    "premium": premium,
-    "profilePhoto": profilePhoto,
-  };
+        "bio": bio,
+        "createdAt": createdAt,
+        "email": email,
+        "username": username,
+        "links": links,
+        "premium": premium,
+        "profilePhoto": profilePhoto,
+      };
 }

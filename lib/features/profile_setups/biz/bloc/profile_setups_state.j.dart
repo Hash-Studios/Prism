@@ -14,12 +14,12 @@ abstract class ProfileSetupsState with _$ProfileSetupsState {
   }) = _ProfileSetupsState;
 
   factory ProfileSetupsState.initial() => const ProfileSetupsState(
-    status: LoadStatus.initial,
-    actionStatus: ActionStatus.idle,
-    email: '',
-    items: <ProfileSetupEntity>[],
-    hasMore: true,
-    nextCursor: null,
-    isFetchingMore: false,
-  );
+        status: LoadStatus.initial,
+        actionStatus: ActionStatus.idle,
+        email: '',
+        items: <ProfileSetupEntity>[],
+        hasMore: true,
+        nextCursor: null,
+        isFetchingMore: false,
+      );
 }
