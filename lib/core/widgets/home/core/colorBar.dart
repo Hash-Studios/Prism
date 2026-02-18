@@ -1,6 +1,6 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

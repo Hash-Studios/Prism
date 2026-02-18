@@ -19,17 +19,17 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image/image.dart' as imagelib;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photofilters/filters/filters.dart';
 import 'package:photofilters/filters/preset_filters.dart';
-import 'package:auto_route/auto_route.dart';
 
 @RoutePage()
 class WallpaperFilterScreen extends StatefulWidget {
@@ -152,6 +152,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       logger.d(e.toString());
     }
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pop();
   }
 
@@ -174,6 +177,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       logger.d(e.toString());
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
     }
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pop();
   }
 
@@ -195,6 +201,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     } catch (e) {
       logger.d(e.toString());
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
+    }
+    if (!mounted) {
+      return;
     }
     Navigator.of(context).pop();
   }
@@ -392,8 +401,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     );
   }
 
-  Future<bool> _ensureRewardedAdReady() async {
-    final AdsBloc bloc = context.read<AdsBloc>();
+  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
     if (bloc.state.ads.adLoaded) {
       return true;
     }
@@ -411,11 +419,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<bool> _watchRewardedAd() async {
-    if (!await _ensureRewardedAdReady()) {
+    final AdsBloc bloc = context.read<AdsBloc>();
+    if (!await _ensureRewardedAdReady(bloc)) {
       return false;
     }
-
-    final AdsBloc bloc = context.read<AdsBloc>();
     try {
       final Future<AdsState> completion = bloc.stream
           .firstWhere(
@@ -440,6 +447,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     final status = await Permission.storage.status;
     if (!status.isGranted) {
       await Permission.storage.request();
+    }
+    if (!mounted) {
+      return;
     }
     setState(() {
       isLoading = true;

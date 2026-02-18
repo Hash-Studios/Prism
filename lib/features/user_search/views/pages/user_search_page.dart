@@ -7,8 +7,8 @@ import 'package:Prism/features/user_search/domain/entities/user_search_user.dart
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';

@@ -1,10 +1,11 @@
 import 'dart:convert';
+
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
-import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/env/env.dart';
+import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
