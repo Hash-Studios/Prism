@@ -58,6 +58,7 @@ const ALLOWED_PATHS = new Set(['/share', '/user', '/setup', '/refer']);
 const APP_LINK_PATHS = ['/share', '/user', '/setup', '/refer', '/l'];
 const SHORT_CODE_REGEX = /^[A-Za-z0-9]{7,10}$/;
 const DEFAULT_OG_VERSION = 1;
+const PRISM_APP_ICON_URL = 'https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png';
 const BOT_UA_FRAGMENTS = [
   'facebookexternalhit',
   'facebot',
@@ -72,19 +73,19 @@ const BOT_UA_FRAGMENTS = [
 ];
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     if (request.method === 'POST' && url.pathname === '/api/links') {
-      return createLink(request, env);
+      return createLink(request, env, ctx);
     }
 
     if (request.method === 'GET' && url.pathname.startsWith('/api/links/')) {
       return getLinkDetails(url.pathname, env);
     }
 
-    if (request.method === 'GET' && url.pathname.startsWith('/og/')) {
-      return getOgImage(url.pathname, env);
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname.startsWith('/og/')) {
+      return getOgImage(url.pathname, request.method, env);
     }
 
     if (request.method === 'GET' && url.pathname.startsWith('/l/')) {
@@ -99,7 +100,7 @@ export default {
   },
 };
 
-async function createLink(request: Request, env: Env): Promise<Response> {
+async function createLink(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const ip = getClientIp(request);
   const withinRateLimit = await enforceCreateRateLimits(ip, env);
   if (!withinRateLimit) {
@@ -137,13 +138,25 @@ async function createLink(request: Request, env: Env): Promise<Response> {
     version: DEFAULT_OG_VERSION,
   };
 
-  const ogPersisted = await generateAndPersistOgImage(code, record, env);
-  if (ogPersisted != null) {
-    record.og_image_path = `/og/${code}.png`;
-    record.og_storage = ogPersisted;
-  }
-
   await persistLinkRecord(code, record, env);
+
+  // Keep short-link creation fast; generate branded OG image asynchronously.
+  ctx.waitUntil((async () => {
+    try {
+      const ogPersisted = await generateAndPersistOgImage(code, record, env);
+      if (ogPersisted == null) {
+        return;
+      }
+      const updatedRecord: LinkRecord = {
+        ...record,
+        og_image_path: `/og/${code}.png`,
+        og_storage: ogPersisted,
+      };
+      await persistLinkRecord(code, updatedRecord, env);
+    } catch (error) {
+      console.warn('Async OG generation failed', error);
+    }
+  })());
 
   return json(
     {
@@ -203,7 +216,7 @@ async function resolveShortLink(pathname: string, request: Request, env: Env): P
   return html(renderHumanLandingHtml(code, record, request, env));
 }
 
-async function getOgImage(pathname: string, env: Env): Promise<Response> {
+async function getOgImage(pathname: string, method: string, env: Env): Promise<Response> {
   const codePart = pathname.replace('/og/', '').trim();
   if (!codePart.endsWith('.png')) {
     return new Response('Not found', { status: 404 });
@@ -221,6 +234,9 @@ async function getOgImage(pathname: string, env: Env): Promise<Response> {
 
   const fromStorage = await fetchOgImageFromStorage(code, record, env);
   if (fromStorage != null) {
+    if (method === 'HEAD') {
+      return new Response(null, { status: fromStorage.status, headers: fromStorage.headers });
+    }
     return fromStorage;
   }
 
@@ -232,6 +248,9 @@ async function getOgImage(pathname: string, env: Env): Promise<Response> {
 
     const generated = await fetchOgImageFromStorage(code, record, env);
     if (generated != null) {
+      if (method === 'HEAD') {
+        return new Response(null, { status: generated.status, headers: generated.headers });
+      }
       return generated;
     }
   }
@@ -580,10 +599,9 @@ function renderOgCardHtml(record: LinkRecord, code: string): string {
   const title = escapeHtml(preview.title || 'Prism');
   const description = escapeHtml(preview.description || 'Discover amazing wallpapers on Prism.');
   const subtitle = escapeHtml(buildSubtitle(record));
-  const image = preview.image_source_url;
-  const imageBlock = image
-    ? `<img src="${escapeAttribute(image)}" alt="preview" style="width:220px;height:220px;object-fit:cover;border-radius:20px;border:1px solid rgba(255,255,255,.14);"/>`
-    : `<div style="width:220px;height:220px;border-radius:20px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);font-size:80px;">🖼️</div>`;
+  const image = isNonEmptyString(preview.image_source_url) ? preview.image_source_url : PRISM_APP_ICON_URL;
+  const cta = escapeHtml(buildCtaText(record.type));
+  const typeBadge = escapeHtml(record.type.toUpperCase());
 
   return `<!doctype html>
 <html>
@@ -595,23 +613,40 @@ function renderOgCardHtml(record: LinkRecord, code: string): string {
     margin: 0;
     width: 1200px;
     height: 630px;
-    background: radial-gradient(1300px 630px at 5% -20%, #3f2a81 0%, #141423 55%, #090a14 100%);
+    background: #0a0b14;
     color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
   }
 </style>
 </head>
 <body>
-  <div style="padding:52px;display:flex;flex-direction:column;height:100%;">
-    <div style="font-size:40px;font-weight:700;letter-spacing:.3px;">Prism</div>
-    <div style="margin-top:28px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);backdrop-filter: blur(6px);border-radius:28px;padding:36px;display:flex;justify-content:space-between;align-items:center;gap:30px;flex:1;">
-      <div style="display:flex;flex-direction:column;gap:16px;max-width:760px;">
-        <div style="font-size:54px;font-weight:800;line-height:1.05;">${title}</div>
-        <div style="font-size:28px;font-weight:600;color:#c8c2ff;">${subtitle}</div>
-        <div style="font-size:27px;line-height:1.35;color:#ebe9ff;">${description}</div>
-        <div style="margin-top:auto;font-size:22px;color:#b6b2e6;">prismwalls.com/l/${escapeHtml(code)}</div>
+  <img src="${escapeAttribute(image)}" alt="bg" style="position:absolute;inset:-40px;width:1280px;height:710px;object-fit:cover;filter:blur(32px) brightness(.45) saturate(1.2);" />
+  <div style="position:absolute;inset:0;background:linear-gradient(120deg,rgba(9,10,20,.85) 0%, rgba(18,20,34,.73) 40%, rgba(13,14,25,.88) 100%);"></div>
+  <div style="position:absolute;inset:0;padding:42px 48px;display:flex;gap:34px;">
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <img src="${escapeAttribute(PRISM_APP_ICON_URL)}" alt="Prism" style="width:52px;height:52px;border-radius:12px;box-shadow:0 8px 22px rgba(0,0,0,.35);" />
+        <div style="font-size:40px;font-weight:800;letter-spacing:.2px;">Prism</div>
+        <div style="margin-left:10px;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:14px;font-weight:700;letter-spacing:.8px;color:#efeaff;background:rgba(255,255,255,.07);">${typeBadge}</div>
       </div>
-      ${imageBlock}
+      <div style="margin-top:24px;font-size:62px;font-weight:850;line-height:1.02;letter-spacing:-.8px;max-width:700px;white-space:pre-wrap;">${title}</div>
+      <div style="margin-top:14px;font-size:30px;font-weight:600;color:#cfc8ff;">${subtitle}</div>
+      <div style="margin-top:16px;font-size:28px;line-height:1.28;color:#ece9ff;max-width:760px;">${description}</div>
+      <div style="margin-top:auto;display:flex;align-items:center;gap:14px;">
+        <div style="padding:14px 18px;border-radius:14px;background:linear-gradient(90deg,#7f6cf9 0%,#8a5fff 45%,#6f8dff 100%);font-size:22px;font-weight:800;box-shadow:0 10px 24px rgba(94,76,214,.35);">${cta}</div>
+        <div style="font-size:22px;color:#c4bdf3;">prismwalls.com/l/${escapeHtml(code)}</div>
+      </div>
+    </div>
+    <div style="width:390px;display:flex;align-items:center;justify-content:center;">
+      <div style="position:relative;width:350px;height:520px;border-radius:24px;padding:9px;background:linear-gradient(160deg,rgba(255,255,255,.55),rgba(255,255,255,.06));box-shadow:0 18px 34px rgba(0,0,0,.45);">
+        <div style="position:absolute;inset:9px;border-radius:16px;overflow:hidden;background:#111;">
+          <img src="${escapeAttribute(image)}" alt="preview" style="width:100%;height:100%;object-fit:cover;" />
+        </div>
+        <div style="position:absolute;left:16px;right:16px;bottom:18px;padding:12px 14px;border-radius:12px;background:rgba(5,6,12,.62);backdrop-filter:blur(6px);font-size:17px;font-weight:700;color:#f0efff;line-height:1.25;border:1px solid rgba(255,255,255,.2);">
+          Open in Prism app to view full quality
+        </div>
+      </div>
     </div>
   </div>
 </body>
@@ -631,6 +666,19 @@ function buildSubtitle(record: LinkRecord): string {
     return record.preview.username ? `@${record.preview.username}` : 'Creator profile';
   }
   return 'Invite';
+}
+
+function buildCtaText(type: LinkType): string {
+  if (type === 'share') {
+    return 'Open Wallpaper in Prism';
+  }
+  if (type === 'setup') {
+    return 'Open Setup in Prism';
+  }
+  if (type === 'user') {
+    return 'View Creator in Prism';
+  }
+  return 'Install Prism App';
 }
 
 function renderCrawlerPreviewHtml(code: string, record: LinkRecord, env: Env): string {
@@ -730,8 +778,8 @@ function isCrawlerRequest(request: Request): boolean {
 }
 
 function getOgImageUrl(record: LinkRecord, env: Env): string {
-  if (isNonEmptyString(record.og_image_path)) {
-    return `https://${DOMAIN}${record.og_image_path}`;
+  if (isNonEmptyString(record.code)) {
+    return `https://${DOMAIN}/og/${record.code}.png`;
   }
   if (isNonEmptyString(record.preview.image_source_url)) {
     return record.preview.image_source_url;
@@ -739,7 +787,7 @@ function getOgImageUrl(record: LinkRecord, env: Env): string {
   if (isNonEmptyString(env.OG_FALLBACK_IMAGE)) {
     return env.OG_FALLBACK_IMAGE;
   }
-  return 'https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png';
+  return PRISM_APP_ICON_URL;
 }
 
 function selectStoreUrl(request: Request, env: Env): string {
