@@ -32,7 +32,7 @@ jobs:
 
       - name: Generate Firebase options stub for CI
         run: |
-          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
+          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
 
       - name: Check formatting
         run: make format-check CI=true
