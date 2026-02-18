@@ -58,10 +58,15 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
       );
     }
     if (path == 'refer') {
+      final String? inviterId =
+          uri.queryParameters['userID'] ??
+          uri.queryParameters['userId'] ??
+          uri.queryParameters['userid'] ??
+          uri.queryParameters['id'];
       return DeepLinkActionEntity(
         type: DeepLinkActionType.refer,
         route: '',
-        arguments: const <dynamic>[],
+        arguments: <dynamic>[inviterId],
         rawUri: uri.toString(),
       );
     }
@@ -124,6 +129,7 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
     return _controller.stream;
   }
 
+  @override
   @disposeMethod
   Future<void> dispose() async {
     await _appLinksSubscription?.cancel();

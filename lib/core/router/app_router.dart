@@ -1,5 +1,3 @@
-import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart';
 import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/ads/views/pages/ads_not_loading_page.dart';
@@ -47,6 +45,8 @@ import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 
 part 'app_router.gr.dart';
 

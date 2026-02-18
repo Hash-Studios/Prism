@@ -1,5 +1,6 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/setupOld.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
@@ -104,10 +105,8 @@ class _SetupPageState extends State<SetupPage> {
                 width: MediaQuery.of(context).size.width - 25,
                 padding: EdgeInsets.only(left: 25, top: 5 + globals.notchSize!),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.8,
+                    Expanded(
                       child: Text(
                         hasSetups ? setups[currentPage]['name'].toString().toUpperCase() : "",
                         maxLines: 1,
@@ -115,6 +114,8 @@ class _SetupPageState extends State<SetupPage> {
                         style: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 30),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    const CoinBalanceChip(sourceTag: 'coins.chip.setup_screen'),
                   ],
                 ),
               ),

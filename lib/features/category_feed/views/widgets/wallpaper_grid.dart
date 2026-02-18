@@ -1,4 +1,3 @@
-import 'package:auto_route/auto_route.dart';
 import 'dart:async';
 
 import 'package:Prism/core/router/app_router.dart';
@@ -6,7 +5,6 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
 import 'package:Prism/core/widgets/premiumBanners/wallsCarousel.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
@@ -15,6 +13,7 @@ import 'package:Prism/features/navigation/views/widgets/inherited_scroll_control
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -42,15 +41,6 @@ class _WallpaperGridState extends State<WallpaperGrid> {
     Data.prismWalls = [];
     Data.subPrismWalls = [];
     await Data.getPrismWalls();
-  }
-
-  void showGooglePopUp(BuildContext context, VoidCallback func) {
-    logger.d(globals.prismUser.loggedIn.toString());
-    if (globals.prismUser.loggedIn == false) {
-      googleSignInPopUp(context, func);
-    } else {
-      func();
-    }
   }
 
   Future<void> _triggerSeeMore(List<dynamic> subWalls) async {
@@ -194,15 +184,9 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             if (wall == null) {
                               return;
                             }
-                            globals.isPremiumWall(globals.premiumCollections, wall["collections"] as List? ?? []) ==
-                                        true &&
-                                    globals.prismUser.premium != true
-                                ? showGooglePopUp(context, () {
-                                    context.router.push(const UpgradeRoute());
-                                  })
-                                : context.router.push(
-                                    WallpaperRoute(arguments: [widget.provider, i, wall["wallpaper_thumb"]]),
-                                  );
+                            context.router.push(
+                              WallpaperRoute(arguments: [widget.provider, i, wall["wallpaper_thumb"]]),
+                            );
                           },
                           child: wall == null
                               ? Container(

@@ -1,6 +1,12 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -10,55 +16,51 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class DownloadButton extends StatefulWidget {
+  const DownloadButton({
+    required this.link,
+    required this.colorChanged,
+    this.isPremiumContent = false,
+    this.contentId,
+    this.sourceContext,
+    super.key,
+  });
+
   final String? link;
   final bool colorChanged;
-
-  const DownloadButton({required this.link, required this.colorChanged, super.key});
+  final bool isPremiumContent;
+  final String? contentId;
+  final String? sourceContext;
 
   @override
-  _DownloadButtonState createState() => _DownloadButtonState();
+  State<DownloadButton> createState() => _DownloadButtonState();
 }
+
+enum _LowBalanceAction { none, downloadNow, watchAndDownload, upgrade }
 
 class _DownloadButtonState extends State<DownloadButton> {
   late bool isLoading;
 
+  CoinSpendAction get _downloadSpendAction =>
+      widget.isPremiumContent ? CoinSpendAction.premiumWallpaperDownload : CoinSpendAction.wallpaperDownload;
+
+  int get _downloadCost => _downloadSpendAction.cost();
+
   @override
   void initState() {
-    isLoading = false;
     super.initState();
+    isLoading = false;
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        if (!isLoading) {
-          if (globals.prismUser.loggedIn == true) {
-            if (globals.prismUser.premium == true) {
-              onDownload();
-            } else {
-              showDownloadPopup(context, () {
-                logger.d("Download");
-                onDownload();
-              });
-            }
-          } else {
-            showDownloadPopup(context, () {
-              logger.d("Download");
-              onDownload();
-            });
-          }
-        } else {
-          toasts.error("Wait for download to complete!");
-        }
-      },
+      onTap: _handleTap,
       child: Stack(
         children: [
           Container(
@@ -84,235 +86,443 @@ class _DownloadButtonState extends State<DownloadButton> {
     );
   }
 
-  void showPremiumPopUp(VoidCallback func) {
-    if (globals.prismUser.premium == false) {
-      toasts.codeSend("Variants are a premium feature.");
-      context.router.push(const UpgradeRoute());
-    } else {
-      func();
+  Future<void> _handleTap() async {
+    if (isLoading) {
+      toasts.error('Wait for download to complete!');
+      return;
     }
-  }
 
-  Future<void> onDownload() async {
-    final status = await Permission.storage.status;
-    if (!status.isGranted) {
-      await Permission.storage.request();
+    final String link = widget.link?.trim() ?? '';
+    if (link.isEmpty) {
+      toasts.error('No download link available.');
+      return;
     }
-    setState(() {
-      isLoading = true;
-    });
-    logger.d(widget.link);
 
-    final androidInfo = await DeviceInfoPlugin().androidInfo;
-    final sdkInt = androidInfo.version.sdkInt;
-    logger.d('(SDK $sdkInt)');
-    if (widget.link!.contains("com.hash.prism")) {
-      debugPrint("Saving local file");
-      try {
-        final request = SaveMediaRequest(link: widget.link!, isLocalFile: true, kind: SaveMediaKind.wallpaper);
-        final result = await PrismMediaHostApi().saveMedia(request);
-        if (result.success) {
-          analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
-          toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-        } else {
-          toasts.error("Couldn't download! Please Retry!");
-        }
-      } on PlatformException catch (e) {
-        logger.e('saveMedia failed', error: e);
-        toasts.error("Couldn't download! Please Retry!");
-      } catch (e) {
-        logger.e('Unexpected saveMedia failure', error: e);
-        toasts.error("Something went wrong!");
-      } finally {
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-          });
-        }
-      }
-    } else {
-      debugPrint("Downloading using DownloadManager");
-      try {
-        final request = DownloadRequest(
-          link: widget.link!,
-          filenameWithoutExtension: widget.link!.split('/').last.replaceAll(".jpg", "").replaceAll(".png", ""),
-        );
-        await PrismMediaHostApi().enqueueDownload(request);
-        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-        analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
-      } on PlatformException catch (e) {
-        logger.e('enqueueDownload failed', error: e);
-        toasts.error("Couldn't download! Please Retry!");
-      } catch (e) {
-        logger.e('Unexpected enqueueDownload failure', error: e);
-        toasts.error("Something went wrong!");
-      } finally {
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-          });
-        }
+    if (!globals.prismUser.loggedIn) {
+      await _showGuestAdGatePopup();
+      return;
+    }
+
+    if (globals.prismUser.premium) {
+      await _performDownload();
+      return;
+    }
+
+    final int balance = CoinsService.instance.balanceNotifier.value;
+    if (balance < CoinPolicy.lowBalanceNudgeThreshold) {
+      final bool handled = await _showLowBalanceNudge(
+        requiredCoins: _downloadCost,
+        allowDownloadNow: balance >= _downloadCost,
+        sourceTag: 'coins.download.low_balance_nudge',
+      );
+      if (handled) {
+        return;
       }
     }
-  }
-}
 
-void showDownloadPopup(BuildContext context, VoidCallback rewardFunc) {
-  showModal(
-    context: context,
-    builder: (BuildContext context) => StatefulBuilder(
-      builder: (BuildContext context, StateSetter setState) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: DownloadDialogContent(rewardFunc: rewardFunc),
-        );
-      },
-    ),
-  );
-}
-
-class DownloadDialogContent extends StatefulWidget {
-  final VoidCallback rewardFunc;
-
-  const DownloadDialogContent({required this.rewardFunc});
-
-  @override
-  _DownloadDialogContentState createState() => _DownloadDialogContentState();
-}
-
-class _DownloadDialogContentState extends State<DownloadDialogContent> {
-  @override
-  void initState() {
-    final adsState = context.read<AdsBloc>().state;
-    if (!adsState.ads.loadingAd && !adsState.ads.adLoaded) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        context.read<AdsBloc>().add(const AdsEvent.started());
-      });
+    if (balance < _downloadCost) {
+      await _showLowBalanceNudge(
+        requiredCoins: _downloadCost,
+        allowDownloadNow: false,
+        sourceTag: 'coins.download.insufficient_balance_nudge',
+      );
+      return;
     }
-    super.initState();
+
+    await _attemptCoinSpendAndDownload(sourceTag: 'coins.download.spend');
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return BlocConsumer<AdsBloc, AdsState>(
-      listenWhen: (previous, current) =>
-          previous.ads != current.ads || previous.shouldUnlockDownload != current.shouldUnlockDownload,
-      listener: (context, state) {
-        if (state.shouldUnlockDownload) {
-          widget.rewardFunc();
-          context.read<AdsBloc>().add(const AdsEvent.transientStateCleared());
-          Navigator.of(context).pop();
-        }
-      },
-      builder: (context, state) {
-        final ads = state.ads;
-        final adFailed = ads.adFailed;
-        final canWatchAd = !ads.loadingAd && ads.adLoaded && !adFailed;
-
-        return Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: Theme.of(context).primaryColor),
-          width: MediaQuery.of(context).size.width * .78,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                height: 150,
-                width: MediaQuery.of(context).size.width * .78,
+  Future<void> _showGuestAdGatePopup() async {
+    await showModal<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        bool watchingAd = false;
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-                  color: Theme.of(context).hintColor,
+                  borderRadius: BorderRadius.circular(20),
+                  color: Theme.of(context).primaryColor,
                 ),
-                child: const SafeRiveAsset(assetName: "assets/animations/Update.flr", animations: <String>["update"]),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const SizedBox(width: 20),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.7,
-                        child: Text(
-                          "Watch a small video ad to download this wallpaper.",
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                width: MediaQuery.of(context).size.width * .78,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(
+                      height: 150,
+                      width: MediaQuery.of(context).size.width * .78,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
                         ),
+                        color: Theme.of(context).hintColor,
                       ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 25),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  MaterialButton(
-                    shape: const StadiumBorder(),
-                    color: Theme.of(context).colorScheme.error,
-                    onPressed: () {
-                      if (globals.prismUser.loggedIn == false) {
-                        googleSignInPopUp(context, () {
-                          Navigator.of(context).pop();
-                          context.router.push(const UpgradeRoute());
-                        });
-                      } else {
-                        Navigator.of(context).pop();
-                        context.router.push(const UpgradeRoute());
-                      }
-                    },
-                    child: Text(
-                      'BUY PREMIUM',
-                      style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
+                      child: const SafeRiveAsset(
+                        assetName: 'assets/animations/Update.flr',
+                        animations: <String>['update'],
+                      ),
                     ),
-                  ),
-                  MaterialButton(
-                    shape: const StadiumBorder(),
-                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                    onPressed: () {
-                      if (adFailed) {
-                        context.read<AdsBloc>().add(const AdsEvent.transientStateCleared());
-                        context.read<AdsBloc>().add(const AdsEvent.started());
-                      } else if (canWatchAd) {
-                        context.read<AdsBloc>().add(const AdsEvent.watchAdRequested());
-                      } else {
-                        toasts.error("Loading ads");
-                      }
-                    },
-                    child: adFailed
-                        ? Text(
-                            'WATCH AD',
-                            style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
-                          )
-                        : canWatchAd
-                        ? Text(
-                            'WATCH AD',
-                            style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
-                          )
-                        : Stack(
-                            alignment: Alignment.center,
-                            children: <Widget>[
-                              Text(
-                                'WATCH AD',
-                                style: TextStyle(
-                                  fontSize: 16.0,
-                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              const SizedBox(height: 16, width: 16, child: CircularProgressIndicator()),
-                            ],
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Watch a small video ad to download this wallpaper.',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: <Widget>[
+                        MaterialButton(
+                          shape: const StadiumBorder(),
+                          color: Theme.of(context).colorScheme.error,
+                          onPressed: () {
+                            if (globals.prismUser.loggedIn == false) {
+                              googleSignInPopUp(context, () {
+                                Navigator.of(dialogContext).pop();
+                                this.context.router.push(const UpgradeRoute());
+                              });
+                            } else {
+                              Navigator.of(dialogContext).pop();
+                              this.context.router.push(const UpgradeRoute());
+                            }
+                          },
+                          child: Text(
+                            'BUY PREMIUM',
+                            style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                           ),
-                  ),
-                ],
+                        ),
+                        MaterialButton(
+                          shape: const StadiumBorder(),
+                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                          onPressed: watchingAd
+                              ? null
+                              : () async {
+                                  setDialogState(() => watchingAd = true);
+                                  final bool watched = await _watchRewardedAd();
+                                  if (mounted) {
+                                    setDialogState(() => watchingAd = false);
+                                  }
+                                  if (!watched) {
+                                    toasts.error('Ad was not completed.');
+                                    return;
+                                  }
+                                  if (Navigator.of(dialogContext).canPop()) {
+                                    Navigator.of(dialogContext).pop();
+                                  }
+                                  await _performDownload();
+                                },
+                          child: watchingAd
+                              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              : Text(
+                                  'WATCH AD',
+                                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
+                                ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
-              const SizedBox(height: 15),
-            ],
-          ),
+            );
+          },
         );
       },
     );
+  }
+
+  Future<bool> _showLowBalanceNudge({
+    required int requiredCoins,
+    required bool allowDownloadNow,
+    required String sourceTag,
+  }) async {
+    if (!mounted) {
+      return false;
+    }
+
+    CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: requiredCoins);
+
+    final _LowBalanceAction action =
+        await showModalBottomSheet<_LowBalanceAction>(
+          context: context,
+          backgroundColor: Theme.of(context).primaryColor,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          builder: (sheetContext) {
+            final int balance = CoinsService.instance.balanceNotifier.value;
+            final int missing = (requiredCoins - balance).clamp(0, requiredCoins);
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(sheetContext).hintColor,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Low coin balance', style: Theme.of(sheetContext).textTheme.displaySmall),
+                  const SizedBox(height: 10),
+                  Text(
+                    missing > 0
+                        ? 'You need $missing more coins for this download.'
+                        : 'You are below ${CoinPolicy.lowBalanceNudgeThreshold} coins.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(sheetContext).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  if (allowDownloadNow)
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(_LowBalanceAction.downloadNow),
+                        child: Text('Download (-$requiredCoins)'),
+                      ),
+                    ),
+                  if (allowDownloadNow) const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(_LowBalanceAction.watchAndDownload),
+                      child: const Text('Watch & Download (+10)'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(_LowBalanceAction.upgrade),
+                      child: const Text('Upgrade to Pro'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ) ??
+        _LowBalanceAction.none;
+
+    switch (action) {
+      case _LowBalanceAction.downloadNow:
+        await _attemptCoinSpendAndDownload(
+          sourceTag: 'coins.download.nudge_download_now',
+          showNudgeOnInsufficient: false,
+        );
+        return true;
+      case _LowBalanceAction.watchAndDownload:
+        CoinsService.instance.logWatchAndDownloadUsed(
+          isPremiumContent: widget.isPremiumContent,
+          sourceTag: 'coins.download.watch_and_download',
+        );
+        await _handleWatchAndDownload(requiredCoins: requiredCoins);
+        return true;
+      case _LowBalanceAction.upgrade:
+        if (mounted) {
+          context.router.push(const UpgradeRoute());
+        }
+        return true;
+      case _LowBalanceAction.none:
+        return false;
+    }
+  }
+
+  Future<void> _handleWatchAndDownload({required int requiredCoins}) async {
+    final bool watched = await _watchRewardedAd();
+    if (!watched) {
+      toasts.error('Ad was not completed.');
+      return;
+    }
+
+    try {
+      await CoinsService.instance.award(
+        CoinEarnAction.rewardedAd,
+        sourceTag: 'coins.download.watch_and_download.rewarded_ad',
+      );
+    } catch (error, stackTrace) {
+      CoinsService.instance.logCoinError(
+        sourceTag: 'coins.download.watch_and_download.rewarded_ad',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      toasts.error('Unable to credit coins right now.');
+      return;
+    }
+
+    final int balance = CoinsService.instance.balanceNotifier.value;
+    if (balance < requiredCoins) {
+      toasts.error('Need ${requiredCoins - balance} more coins.');
+      return;
+    }
+
+    await _attemptCoinSpendAndDownload(
+      sourceTag: 'coins.download.watch_and_download.spend',
+      showNudgeOnInsufficient: false,
+    );
+  }
+
+  Future<bool> _attemptCoinSpendAndDownload({required String sourceTag, bool showNudgeOnInsufficient = true}) async {
+    CoinMutationResult spendResult;
+    try {
+      spendResult = await CoinsService.instance.spend(
+        _downloadSpendAction,
+        sourceTag: sourceTag,
+        reason: widget.contentId?.trim().isNotEmpty == true ? 'content_${widget.contentId!.trim()}' : null,
+      );
+    } catch (error, stackTrace) {
+      CoinsService.instance.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
+      toasts.error('Unable to process coins right now.');
+      return false;
+    }
+
+    if (!spendResult.success) {
+      if (spendResult.insufficientBalance) {
+        if (showNudgeOnInsufficient) {
+          await _showLowBalanceNudge(
+            requiredCoins: _downloadCost,
+            allowDownloadNow: false,
+            sourceTag: 'coins.download.insufficient_balance_nudge',
+          );
+        }
+        return false;
+      }
+      toasts.error('Unable to process coins right now.');
+      return false;
+    }
+
+    final bool downloaded = await _performDownload();
+    if (!downloaded && spendResult.changed) {
+      try {
+        await CoinsService.instance.refundSpend(
+          _downloadSpendAction,
+          sourceTag: '$sourceTag.refund',
+          reason: 'download_failed_refund',
+        );
+        toasts.codeSend('Download failed. $_downloadCost coins refunded.');
+      } catch (error, stackTrace) {
+        CoinsService.instance.logCoinError(sourceTag: '$sourceTag.refund', error: error, stackTrace: stackTrace);
+      }
+    }
+    return downloaded;
+  }
+
+  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
+    if (bloc.state.ads.adLoaded) {
+      return true;
+    }
+    if (!bloc.state.ads.loadingAd) {
+      bloc.add(const AdsEvent.started());
+    }
+    try {
+      final AdsState state = await bloc.stream
+          .firstWhere((state) => state.ads.adLoaded || state.ads.adFailed)
+          .timeout(const Duration(seconds: 30));
+      return state.ads.adLoaded;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _watchRewardedAd() async {
+    final AdsBloc bloc = context.read<AdsBloc>();
+    if (!await _ensureRewardedAdReady(bloc)) {
+      return false;
+    }
+    bool watchRequested = false;
+    try {
+      final Future<AdsState> completion = bloc.stream
+          .firstWhere(
+            (state) => state.shouldUnlockDownload || state.actionStatus == ActionStatus.failure || state.ads.adFailed,
+          )
+          .timeout(const Duration(seconds: 60));
+      bloc.add(const AdsEvent.watchAdRequested());
+      watchRequested = true;
+      final AdsState result = await completion;
+      return result.shouldUnlockDownload;
+    } catch (_) {
+      return false;
+    } finally {
+      if (watchRequested) {
+        bloc.add(const AdsEvent.transientStateCleared());
+      }
+    }
+  }
+
+  Future<bool> _ensureStoragePermission() async {
+    final PermissionStatus status = await Permission.storage.status;
+    if (status.isGranted) {
+      return true;
+    }
+    final PermissionStatus requested = await Permission.storage.request();
+    return requested.isGranted;
+  }
+
+  Future<bool> _performDownload() async {
+    final String link = widget.link?.trim() ?? '';
+    if (link.isEmpty) {
+      toasts.error('No download link available.');
+      return false;
+    }
+
+    final bool storageGranted = await _ensureStoragePermission();
+    if (!storageGranted) {
+      toasts.error('Storage permission is required to download.');
+      return false;
+    }
+
+    if (mounted) {
+      setState(() => isLoading = true);
+    }
+
+    try {
+      logger.d(link);
+      if (link.contains('com.hash.prism')) {
+        final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
+        final OperationResult result = await PrismMediaHostApi().saveMedia(request);
+        if (!result.success) {
+          toasts.error("Couldn't download! Please retry.");
+          return false;
+        }
+      } else {
+        final DownloadRequest request = DownloadRequest(
+          link: link,
+          filenameWithoutExtension: link.split('/').last.replaceAll('.jpg', '').replaceAll('.png', ''),
+        );
+        await PrismMediaHostApi().enqueueDownload(request);
+      }
+
+      analytics.logEvent(
+        name: 'download_wallpaper',
+        parameters: <String, Object>{
+          'link': link,
+          'sourceContext': widget.sourceContext ?? '',
+          'premiumContent': widget.isPremiumContent,
+        },
+      );
+      toasts.codeSend('Wall downloaded in Pictures/Prism!');
+      return true;
+    } on PlatformException catch (e) {
+      logger.e('Download failed', error: e);
+      toasts.error("Couldn't download! Please retry.");
+      return false;
+    } catch (e) {
+      logger.e('Unexpected download failure', error: e);
+      toasts.error('Something went wrong!');
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
   }
 }

@@ -6,7 +6,6 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menuButton/favIconButton.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/followingFeed.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -231,15 +230,6 @@ class _FollowingTileState extends State<FollowingTile> {
     super.initState();
   }
 
-  void showGooglePopUp(BuildContext context, VoidCallback func) {
-    logger.d(globals.prismUser.loggedIn.toString());
-    if (globals.prismUser.loggedIn == false) {
-      googleSignInPopUp(context, func);
-    } else {
-      func();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     if (widget.index >= widget.finalDocs.length) {
@@ -258,25 +248,16 @@ class _FollowingTileState extends State<FollowingTile> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    globals.isPremiumWall(
-                                  globals.premiumCollections,
-                                  widget.finalDocs[widget.index]["collections"] as List? ?? [],
-                                ) ==
-                                true &&
-                            globals.prismUser.premium != true
-                        ? showGooglePopUp(context, () {
-                            context.router.push(const UpgradeRoute());
-                          })
-                        : context.router.push(
-                            ShareWallpaperViewRoute(
-                              arguments: [
-                                widget.finalDocs[widget.index]["id"],
-                                widget.finalDocs[widget.index]["wallpaper_provider"],
-                                widget.finalDocs[widget.index]["wallpaper_url"],
-                                widget.finalDocs[widget.index]["wallpaper_thumb"],
-                              ],
-                            ),
-                          );
+                    context.router.push(
+                      ShareWallpaperViewRoute(
+                        arguments: [
+                          widget.finalDocs[widget.index]["id"],
+                          widget.finalDocs[widget.index]["wallpaper_provider"],
+                          widget.finalDocs[widget.index]["wallpaper_url"],
+                          widget.finalDocs[widget.index]["wallpaper_thumb"],
+                        ],
+                      ),
+                    );
                   },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(25),

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/env/env.dart';
@@ -13,13 +14,13 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:github/github.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:path/path.dart' as Path;
 
 @RoutePage(name: 'EditProfilePanelRoute')
@@ -932,6 +933,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               "name": nameController.text,
                             }, 'profile.edit.name');
                           }
+                          await CoinsService.instance.maybeAwardProfileCompletion();
                           setState(() {
                             isLoading = false;
                           });
@@ -976,6 +978,45 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               if (linkIcons[p]["value"] != "") {
                                 links[linkIcons[p]["name"]] = linkIcons[p]["value"];
                               }
+                              if (_pfp != null && pfpEdit) {
+                                await processImage();
+                              }
+                              if (_cover != null && coverEdit) {
+                                await processImageCover();
+                              }
+                              if (bioEdit && bioController.text != "") {
+                                globals.prismUser.bio = bioController.text;
+                                main.prefs.put(main.userHiveKey, globals.prismUser);
+                                await _updateCurrentUser(<String, dynamic>{
+                                  "bio": bioController.text,
+                                }, 'profile.edit.bio.withUsername');
+                              }
+                              if (nameEdit && nameController.text != "") {
+                                globals.prismUser.name = nameController.text;
+                                main.prefs.put(main.userHiveKey, globals.prismUser);
+                                await _updateCurrentUser(<String, dynamic>{
+                                  "name": nameController.text,
+                                }, 'profile.edit.name.withUsername');
+                              }
+                              if (linkEdit) {
+                                final Map links = globals.prismUser.links;
+                                for (int p = 0; p < linkIcons.length; p++) {
+                                  if (linkIcons[p]["value"] != "") {
+                                    links[linkIcons[p]["name"]] = linkIcons[p]["value"];
+                                  }
+                                }
+                                globals.prismUser.links = links;
+                                main.prefs.put(main.userHiveKey, globals.prismUser);
+                                await _updateCurrentUser(<String, dynamic>{
+                                  "links": links,
+                                }, 'profile.edit.links.withUsername');
+                              }
+                              await CoinsService.instance.maybeAwardProfileCompletion();
+                              setState(() {
+                                isLoading = false;
+                              });
+                              Navigator.pop(context);
+                              toasts.codeSend("Details updated!");
                             }
                             globals.prismUser.links = links;
                             main.prefs.put(main.userHiveKey, globals.prismUser);

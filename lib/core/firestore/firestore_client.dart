@@ -1,5 +1,15 @@
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 
+abstract class FirestoreTransaction {
+  Future<Map<String, dynamic>?> getDoc(String collection, String id);
+
+  void setDoc(String collection, String id, Map<String, dynamic> data, {bool merge = false});
+
+  void updateDoc(String collection, String id, Map<String, dynamic> data);
+
+  void deleteDoc(String collection, String id);
+}
+
 abstract class FirestoreClient {
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map);
 
@@ -25,4 +35,11 @@ abstract class FirestoreClient {
   Future<String> addDoc(String collection, Map<String, dynamic> data, {required String sourceTag});
 
   Stream<List<T>> watchQuery<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map);
+
+  Future<T> runTransaction<T>(
+    Future<T> Function(FirestoreTransaction transaction) action, {
+    required String sourceTag,
+    required String collection,
+    String? docId,
+  });
 }

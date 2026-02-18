@@ -1,4 +1,3 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
@@ -15,6 +14,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -1502,6 +1502,39 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                     : widget.provider == "Liked"
                     ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["url"].toString()
                     : PData.wallsC[widget.index].src!["original"].toString(),
+                isPremiumContent: widget.provider == "Prism"
+                    ? globals.isPremiumWall(
+                        globals.premiumCollections,
+                        Data.subPrismWalls![widget.index]["collections"] as List? ?? [],
+                      )
+                    : widget.provider == "ProfileWall"
+                    ? globals.isPremiumWall(
+                        globals.premiumCollections,
+                        context.profileWallsSnapshots(listen: false)![widget.index].data()["collections"] as List? ??
+                            [],
+                      )
+                    : widget.provider == "UserProfileWall"
+                    ? globals.isPremiumWall(
+                        globals.premiumCollections,
+                        context.publicProfileAdapter().userProfileWalls![widget.index].data()["collections"] as List? ??
+                            [],
+                      )
+                    : widget.provider == "Liked" &&
+                          globals.isPremiumWall(
+                            globals.premiumCollections,
+                            context.favouriteWallsAdapter(listen: false).liked![widget.index]["collections"] as List? ??
+                                [],
+                          ),
+                contentId: widget.provider == "Prism"
+                    ? Data.subPrismWalls![widget.index]["id"]?.toString()
+                    : widget.provider == "ProfileWall"
+                    ? context.profileWallsSnapshots(listen: false)![widget.index].data()["id"]?.toString()
+                    : widget.provider == "UserProfileWall"
+                    ? context.publicProfileAdapter().userProfileWalls![widget.index].data()["id"]?.toString()
+                    : widget.provider == "Liked"
+                    ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["id"]?.toString()
+                    : null,
+                sourceContext: 'focused_menu.${widget.provider ?? "unknown"}',
               ),
             ),
           ],

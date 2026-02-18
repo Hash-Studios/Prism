@@ -1,33 +1,40 @@
-import 'package:auto_route/auto_route.dart';
+import 'dart:async';
 import 'dart:math';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
+import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CollectionsGrid extends StatefulWidget {
   @override
   _CollectionsGridState createState() => _CollectionsGridState();
 }
 
+enum _PremiumPreviewAction { none, unlockNow, watchAndUnlock, upgrade }
+
 class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
   AnimationController? _controller;
   late Animation<Color?> animation;
-  bool? isLoggedin;
   GlobalKey<RefreshIndicatorState> refreshKey = GlobalKey<RefreshIndicatorState>();
   Random r = Random();
 
   @override
   void initState() {
-    checkSignIn();
     super.initState();
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
     animation =
@@ -70,26 +77,259 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     super.dispose();
   }
 
-  void showPremiumPopUp(VoidCallback func) {
-    if (globals.prismUser.premium == false) {
-      context.router.push(const UpgradeRoute());
-    } else {
-      func();
+  Future<void> _handleCollectionTap({required bool isPremium, required String collectionName}) async {
+    final String normalizedCollectionName = collectionName.trim().toLowerCase();
+    if (!isPremium) {
+      _openCollection(normalizedCollectionName);
+      return;
+    }
+    if (globals.prismUser.premium) {
+      _openCollection(normalizedCollectionName);
+      return;
+    }
+    if (!globals.prismUser.loggedIn) {
+      googleSignInPopUp(context, () {
+        unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: normalizedCollectionName));
+      });
+      return;
+    }
+
+    bool hasPreviewAccess = false;
+    try {
+      hasPreviewAccess = await CoinsService.instance.hasPremiumPreviewAccessForCollection(normalizedCollectionName);
+    } catch (error, stackTrace) {
+      CoinsService.instance.logCoinError(
+        sourceTag: 'coins.preview.check.collections_grid',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    if (hasPreviewAccess) {
+      _openCollection(normalizedCollectionName);
+      return;
+    }
+
+    await _showPremiumPreviewSheet(
+      collectionName: normalizedCollectionName,
+      sourceTag: 'coins.preview.sheet.collections_grid',
+    );
+  }
+
+  void _openCollection(String collectionName) {
+    context.router.push(CollectionViewRoute(arguments: [collectionName.trim().toLowerCase()]));
+  }
+
+  Future<void> _showPremiumPreviewSheet({required String collectionName, required String sourceTag}) async {
+    if (!mounted) {
+      return;
+    }
+    final int balance = CoinsService.instance.balanceNotifier.value;
+    if (balance < CoinPolicy.premiumPreview24h) {
+      CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: CoinPolicy.premiumPreview24h);
+    }
+
+    final _PremiumPreviewAction action =
+        await showModalBottomSheet<_PremiumPreviewAction>(
+          context: context,
+          backgroundColor: Theme.of(context).primaryColor,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          builder: (sheetContext) {
+            final int currentBalance = CoinsService.instance.balanceNotifier.value;
+            final int missing = (CoinPolicy.premiumPreview24h - currentBalance).clamp(0, CoinPolicy.premiumPreview24h);
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(sheetContext).hintColor,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Premium Collection', style: Theme.of(sheetContext).textTheme.displaySmall),
+                  const SizedBox(height: 10),
+                  Text(
+                    missing > 0
+                        ? 'Unlock 24h preview for -10 coins. Need $missing more coins.'
+                        : 'Unlock this premium collection for 24 hours for -10 coins.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(sheetContext).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumPreviewAction.unlockNow),
+                      child: const Text('Unlock 24h (-10)'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumPreviewAction.watchAndUnlock),
+                      child: const Text('Watch Ad (+10) & Unlock'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumPreviewAction.upgrade),
+                      child: const Text('Upgrade to Pro'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ) ??
+        _PremiumPreviewAction.none;
+
+    switch (action) {
+      case _PremiumPreviewAction.unlockNow:
+        await _attemptPreviewUnlockAndOpen(
+          collectionName: collectionName,
+          sourceTag: 'coins.preview.unlock.collections_grid',
+        );
+        return;
+      case _PremiumPreviewAction.watchAndUnlock:
+        await _watchAdAndUnlockPreview(collectionName: collectionName);
+        return;
+      case _PremiumPreviewAction.upgrade:
+        if (mounted) {
+          context.router.push(const UpgradeRoute());
+        }
+        return;
+      case _PremiumPreviewAction.none:
+        return;
     }
   }
 
-  Future<void> checkSignIn() async {
-    setState(() {
-      isLoggedin = globals.prismUser.loggedIn;
-    });
+  Future<void> _attemptPreviewUnlockAndOpen({required String collectionName, required String sourceTag}) async {
+    analytics.logEvent(
+      name: 'coin_preview_unlock_attempt',
+      parameters: <String, Object>{'collection': collectionName, 'sourceTag': sourceTag},
+    );
+    CoinMutationResult result;
+    try {
+      result = await CoinsService.instance.unlockPremiumPreview24hForCollection(
+        collectionKey: collectionName,
+        sourceTag: sourceTag,
+      );
+    } catch (error, stackTrace) {
+      CoinsService.instance.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
+      toasts.error('Unable to unlock premium preview right now.');
+      return;
+    }
+
+    if (!result.success) {
+      if (result.insufficientBalance) {
+        final int missing = (CoinPolicy.premiumPreview24h - CoinsService.instance.balanceNotifier.value).clamp(
+          1,
+          CoinPolicy.premiumPreview24h,
+        );
+        toasts.error('Need $missing more coins.');
+        await _showPremiumPreviewSheet(
+          collectionName: collectionName,
+          sourceTag: 'coins.preview.low_balance_nudge.collections_grid',
+        );
+        return;
+      }
+      toasts.error('Unable to unlock premium preview right now.');
+      return;
+    }
+
+    if (result.changed) {
+      analytics.logEvent(
+        name: 'coin_preview_unlock_success',
+        parameters: <String, Object>{
+          'collection': collectionName,
+          'sourceTag': sourceTag,
+          'coinsSpent': CoinPolicy.premiumPreview24h,
+        },
+      );
+      toasts.codeSend('24h preview unlocked (-${CoinPolicy.premiumPreview24h} coins).');
+    }
+    _openCollection(collectionName);
   }
 
-  void showGooglePopUp(VoidCallback func) {
-    logger.d(globals.prismUser.loggedIn.toString());
-    if (globals.prismUser.loggedIn == false) {
-      googleSignInPopUp(context, func);
-    } else {
-      func();
+  Future<void> _watchAdAndUnlockPreview({required String collectionName}) async {
+    analytics.logEvent(
+      name: 'coin_preview_watch_and_unlock_used',
+      parameters: <String, Object>{
+        'collection': collectionName,
+        'sourceTag': 'coins.preview.watch_and_unlock.collections_grid',
+      },
+    );
+    final bool watched = await _watchRewardedAd();
+    if (!watched) {
+      toasts.error('Ad was not completed.');
+      return;
+    }
+    try {
+      await CoinsService.instance.award(
+        CoinEarnAction.rewardedAd,
+        sourceTag: 'coins.preview.watch_and_unlock.rewarded_ad',
+      );
+    } catch (error, stackTrace) {
+      CoinsService.instance.logCoinError(
+        sourceTag: 'coins.preview.watch_and_unlock.rewarded_ad',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      toasts.error('Unable to credit coins right now.');
+      return;
+    }
+    await _attemptPreviewUnlockAndOpen(
+      collectionName: collectionName,
+      sourceTag: 'coins.preview.watch_and_unlock.unlock',
+    );
+  }
+
+  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
+    if (bloc.state.ads.adLoaded) {
+      return true;
+    }
+    if (!bloc.state.ads.loadingAd) {
+      bloc.add(const AdsEvent.started());
+    }
+    try {
+      final AdsState state = await bloc.stream
+          .firstWhere((state) => state.ads.adLoaded || state.ads.adFailed)
+          .timeout(const Duration(seconds: 30));
+      return state.ads.adLoaded;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _watchRewardedAd() async {
+    final AdsBloc bloc = context.read<AdsBloc>();
+    if (!await _ensureRewardedAdReady(bloc)) {
+      return false;
+    }
+    bool watchRequested = false;
+    try {
+      final Future<AdsState> completion = bloc.stream
+          .firstWhere(
+            (state) => state.shouldUnlockDownload || state.actionStatus == ActionStatus.failure || state.ads.adFailed,
+          )
+          .timeout(const Duration(seconds: 60));
+      bloc.add(const AdsEvent.watchAdRequested());
+      watchRequested = true;
+      final AdsState result = await completion;
+      return result.shouldUnlockDownload;
+    } catch (_) {
+      return false;
+    } finally {
+      if (watchRequested) {
+        bloc.add(const AdsEvent.transientStateCleared());
+      }
     }
   }
 
@@ -124,25 +364,8 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       return GestureDetector(
         onTap: loading
             ? null
-            : () {
-                if (!isPremium) {
-                  context.router.push(
-                    CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]),
-                  );
-                  return;
-                }
-                if (globals.prismUser.premium == true) {
-                  context.router.push(
-                    CollectionViewRoute(arguments: [collection['name'].toString().trim().toLowerCase()]),
-                  );
-                  return;
-                }
-                showGooglePopUp(() {
-                  showPremiumPopUp(() {
-                    main.RestartWidget.restartApp(context);
-                  });
-                });
-              },
+            : () =>
+                  unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: collection['name'].toString())),
         child: PremiumBanner(
           comparator: !isPremium,
           child: Stack(

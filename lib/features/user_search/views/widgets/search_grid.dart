@@ -1,4 +1,3 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/focussedMenu/searchFocusedMenu.dart';
@@ -9,6 +8,7 @@ import 'package:Prism/features/navigation/views/widgets/inherited_scroll_control
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

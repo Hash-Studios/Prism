@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:Prism/logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
-enum FirestoreOperation { queryGet, docGet, streamSubscribe, set, update, delete, add }
+enum FirestoreOperation { queryGet, docGet, streamSubscribe, set, update, delete, add, transaction }
 
 class FirestoreTelemetryEvent {
   const FirestoreTelemetryEvent({
