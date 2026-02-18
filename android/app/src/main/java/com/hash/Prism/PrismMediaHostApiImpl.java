@@ -30,23 +30,41 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PrismMediaHostApiImpl implements PrismMediaHostApi {
     private final Context context;
     private final Handler mainHandler;
+    private final ExecutorService ioExecutor;
 
     public PrismMediaHostApiImpl(Context context) {
         this.context = context;
         this.mainHandler = new Handler(Looper.getMainLooper());
+        this.ioExecutor = Executors.newSingleThreadExecutor();
     }
 
     @Override
     @NonNull
     public OperationResult saveMedia(@NonNull SaveMediaRequest request) {
+        try {
+            return ioExecutor.submit(() -> saveMediaInternal(request)).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return createErrorResult("INTERRUPTED", "Save media task interrupted");
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            String message = cause != null && cause.getMessage() != null ? cause.getMessage() : e.getMessage();
+            return createErrorResult("EXCEPTION", message);
+        }
+    }
+
+    @NonNull
+    private OperationResult saveMediaInternal(@NonNull SaveMediaRequest request) {
         String link = request.getLink();
         boolean isLocalFile = request.getIsLocalFile();
         SaveMediaKind kind = request.getKind();
-
         try {
             Bitmap bitmap;
             if (isLocalFile) {
