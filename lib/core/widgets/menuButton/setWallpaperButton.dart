@@ -44,6 +44,12 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       logger.d(e.toString());
+      toasts.error("Something went wrong!");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -70,6 +76,12 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       logger.d(e.toString());
+      toasts.error("Something went wrong!");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -96,6 +108,12 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       logger.d(e.toString());
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
+      toasts.error("Something went wrong!");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -122,6 +140,12 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       logger.d(e.toString());
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
+      toasts.error("Something went wrong!");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
