@@ -85,6 +85,7 @@ dependencies:
   timeago: ^3.0.2
   url_launcher: ^6.0.3
   auto_route: ^11.1.0
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   auto_route_generator: ^10.4.0
