@@ -20,10 +20,6 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   String? selectedProvider;
   SearchProviderMenuItem? selectedProviders;
   final List providers = [
@@ -119,283 +115,244 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            titleSpacing: 0,
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(top: 6.0),
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.9,
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Column(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                            child: TextField(
-                              cursorColor: Theme.of(context).colorScheme.error,
-                              style: Theme.of(context)
+    return Scaffold(
+        backgroundColor: Theme.of(context).primaryColor,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          titleSpacing: 0,
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(top: 6.0),
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
+                          child: TextField(
+                            cursorColor: Theme.of(context).colorScheme.error,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall!
+                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                              border: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              hintText: "Search",
+                              hintStyle: Theme.of(context)
                                   .textTheme
                                   .headlineSmall!
                                   .copyWith(color: Theme.of(context).colorScheme.secondary),
-                              controller: searchController,
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                                border: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                hintText: "Search",
-                                hintStyle: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall!
-                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                suffixIcon: Icon(
-                                  JamIcons.search,
-                                  color: Theme.of(context).colorScheme.secondary,
-                                ),
+                              suffixIcon: Icon(
+                                JamIcons.search,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
-                              onSubmitted: (tex) {
-                                setState(() {
-                                  isSubmitted = true;
-                                  if (selectedProvider == "WallHaven") {
-                                    wdata.wallsS = [];
-                                    _future = wdata.getWallsbyQuery(tex, main.prefs.get('WHcategories') as int?,
-                                        main.prefs.get('WHpurity') as int?);
-                                  } else if (selectedProvider == "Pexels") {
-                                    pdata.wallsPS = [];
-                                    _future = pdata.getWallsPbyQuery(tex);
-                                  }
-                                });
-                              },
                             ),
+                            onSubmitted: (tex) {
+                              setState(() {
+                                isSubmitted = true;
+                                if (selectedProvider == "WallHaven") {
+                                  wdata.wallsS = [];
+                                  _future = wdata.getWallsbyQuery(
+                                      tex, main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
+                                } else if (selectedProvider == "Pexels") {
+                                  pdata.wallsPS = [];
+                                  _future = pdata.getWallsPbyQuery(tex);
+                                }
+                              });
+                            },
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.1,
-                  child: PopupMenuButton(
-                    offset: const Offset(5, 30),
-                    icon: Icon(JamIcons.more_vertical, color: Theme.of(context).colorScheme.secondary),
-                    elevation: 4,
-                    initialValue: selectedProviders,
-                    onCanceled: () {
-                      logger.d('You have not choosed anything');
-                    },
-                    color: Theme.of(context).hintColor,
-                    tooltip: 'Providers',
-                    onSelected: (dynamic choice) {
-                      setState(() {
-                        selectedProviders = choice as SearchProviderMenuItem;
-                        selectedProvider = choice.title.toString();
-                        main.prefs.put('selectedSearchProvider', selectedProvider);
-                        if (searchController.text != "") {
-                          isSubmitted = true;
-                          if (choice.title == "WallHaven") {
-                            wdata.wallsS = [];
-                            _future = wdata.getWallsbyQuery(searchController.text,
-                                main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
-                          } else if (choice.title == "Pexels") {
-                            pdata.wallsPS = [];
-                            _future = pdata.getWallsPbyQuery(searchController.text);
-                          }
+              ),
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.1,
+                child: PopupMenuButton(
+                  offset: const Offset(5, 30),
+                  icon: Icon(JamIcons.more_vertical, color: Theme.of(context).colorScheme.secondary),
+                  elevation: 4,
+                  initialValue: selectedProviders,
+                  onCanceled: () {
+                    logger.d('You have not choosed anything');
+                  },
+                  color: Theme.of(context).hintColor,
+                  tooltip: 'Providers',
+                  onSelected: (dynamic choice) {
+                    setState(() {
+                      selectedProviders = choice as SearchProviderMenuItem;
+                      selectedProvider = choice.title.toString();
+                      main.prefs.put('selectedSearchProvider', selectedProvider);
+                      if (searchController.text != "") {
+                        isSubmitted = true;
+                        if (choice.title == "WallHaven") {
+                          wdata.wallsS = [];
+                          _future = wdata.getWallsbyQuery(searchController.text, main.prefs.get('WHcategories') as int?,
+                              main.prefs.get('WHpurity') as int?);
+                        } else if (choice.title == "Pexels") {
+                          pdata.wallsPS = [];
+                          _future = pdata.getWallsPbyQuery(searchController.text);
                         }
-                      });
-                    },
-                    itemBuilder: (BuildContext context) {
-                      return providers.map((choice) {
-                        return PopupMenuItem(
-                          textStyle: Theme.of(context)
-                              .textTheme
-                              .headlineMedium!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
-                          value: choice,
-                          child: Row(
-                            children: <Widget>[
-                              Icon(choice.icon as IconData?, color: Theme.of(context).colorScheme.secondary),
-                              const SizedBox(width: 10),
-                              Text(choice.title.toString()),
-                            ],
-                          ),
-                        );
-                      }).toList();
-                    },
-                  ),
-                )
-              ],
-            ),
-            bottom: PreferredSize(
-              preferredSize: const Size(double.infinity, 54),
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: 53,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: tags.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return Container();
-                      // return IconButton(
-                      //   onPressed: () {
-                      //     context.router.push(const UserSearchRoute());
-                      //   },
-                      //   icon: const Icon(
-                      //     JamIcons.users,
-                      //   ),
-                      // );
-                    } else {
-                      index = index - 1;
-                      return Align(
-                        child: Stack(
+                      }
+                    });
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return providers.map((choice) {
+                      return PopupMenuItem(
+                        textStyle: Theme.of(context)
+                            .textTheme
+                            .headlineMedium!
+                            .copyWith(color: Theme.of(context).colorScheme.secondary),
+                        value: choice,
+                        child: Row(
                           children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
-                              child: ActionChip(
-                                  pressElevation: 5,
-                                  padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                  backgroundColor: searchController.text.toLowerCase() == tags[index].toLowerCase()
-                                      ? Theme.of(context).colorScheme.secondary
-                                      : Theme.of(context).hintColor,
-                                  label: Text(tags[index],
-                                      style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                          color: searchController.text.toLowerCase() == tags[index].toLowerCase()
-                                              ? Theme.of(context).primaryColor
-                                              : Theme.of(context).colorScheme.secondary)),
-                                  onPressed: () {
-                                    setState(() {
-                                      searchController.text = tags[index];
-                                      isSubmitted = true;
-                                      if (selectedProvider == "WallHaven") {
-                                        wdata.wallsS = [];
-                                        _future = wdata.getWallsbyQuery(tags[index],
-                                            main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
-                                      } else if (selectedProvider == "Pexels") {
-                                        pdata.wallsPS = [];
-                                        _future = pdata.getWallsPbyQuery(tags[index]);
-                                      }
-                                    });
-                                  }),
-                            ),
+                            Icon(choice.icon as IconData?, color: Theme.of(context).colorScheme.secondary),
+                            const SizedBox(width: 10),
+                            Text(choice.title.toString()),
                           ],
                         ),
                       );
-                    }
+                    }).toList();
                   },
                 ),
+              )
+            ],
+          ),
+          bottom: PreferredSize(
+            preferredSize: const Size(double.infinity, 54),
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: 53,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: tags.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Container();
+                    // return IconButton(
+                    //   onPressed: () {
+                    //     context.router.push(const UserSearchRoute());
+                    //   },
+                    //   icon: const Icon(
+                    //     JamIcons.users,
+                    //   ),
+                    // );
+                  } else {
+                    index = index - 1;
+                    return Align(
+                      child: Stack(
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
+                            child: ActionChip(
+                                pressElevation: 5,
+                                padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                backgroundColor: searchController.text.toLowerCase() == tags[index].toLowerCase()
+                                    ? Theme.of(context).colorScheme.secondary
+                                    : Theme.of(context).hintColor,
+                                label: Text(tags[index],
+                                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                                        color: searchController.text.toLowerCase() == tags[index].toLowerCase()
+                                            ? Theme.of(context).primaryColor
+                                            : Theme.of(context).colorScheme.secondary)),
+                                onPressed: () {
+                                  setState(() {
+                                    searchController.text = tags[index];
+                                    isSubmitted = true;
+                                    if (selectedProvider == "WallHaven") {
+                                      wdata.wallsS = [];
+                                      _future = wdata.getWallsbyQuery(tags[index],
+                                          main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
+                                    } else if (selectedProvider == "Pexels") {
+                                      pdata.wallsPS = [];
+                                      _future = pdata.getWallsPbyQuery(tags[index]);
+                                    }
+                                  });
+                                }),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                },
               ),
             ),
           ),
-          body: BottomBar(
-            child: isSubmitted
-                ? SearchLoader(
-                    future: _future,
-                    query: searchController.text,
-                    selectedProvider: selectedProvider,
-                  )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        child: context.prismModeStyleForContext() == "Dark"
-                            ? SvgPicture.string(
-                                loaderDark
-                                    .replaceAll("181818",
-                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
-                                    .replaceAll(
-                                        "E57697",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .error
-                                            .toString()
-                                            .replaceAll("Color(0xff", "")
-                                            .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll("2F2F2F",
-                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
-                              )
-                            : SvgPicture.string(
-                                loaderLight
-                                    .replaceAll("181818",
-                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
-                                    .replaceAll(
-                                        "E57697",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .error
-                                            .toString()
-                                            .replaceAll("Color(0xff", "")
-                                            .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll("2F2F2F",
-                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
-                              ),
-                      ),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height * 0.1,
-                      )
-                    ],
-                  ),
-          )),
-    );
+        ),
+        body: BottomBar(
+          child: isSubmitted
+              ? SearchLoader(
+                  future: _future,
+                  query: searchController.text,
+                  selectedProvider: selectedProvider,
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: context.prismModeStyleForContext() == "Dark"
+                          ? SvgPicture.string(
+                              loaderDark
+                                  .replaceAll("181818",
+                                      Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll(
+                                      "E57697",
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .error
+                                          .toString()
+                                          .replaceAll("Color(0xff", "")
+                                          .replaceAll(")", ""))
+                                  .replaceAll("F0F0F0",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll("2F2E41",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll("3F3D56",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll(
+                                      "2F2F2F", Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
+                            )
+                          : SvgPicture.string(
+                              loaderLight
+                                  .replaceAll("181818",
+                                      Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll(
+                                      "E57697",
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .error
+                                          .toString()
+                                          .replaceAll("Color(0xff", "")
+                                          .replaceAll(")", ""))
+                                  .replaceAll("F0F0F0",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll("2F2E41",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll("3F3D56",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll(
+                                      "2F2F2F", Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
+                            ),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height * 0.1,
+                    )
+                  ],
+                ),
+        ));
   }
 }
 

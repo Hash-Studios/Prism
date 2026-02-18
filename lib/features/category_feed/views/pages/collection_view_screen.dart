@@ -15,29 +15,24 @@ class CollectionViewScreen extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return true;
-      },
-      child: Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: PreferredSize(
-          preferredSize: const Size(double.infinity, 55),
-          child: HeadingChipBar(
-            current: (arguments![0] as String).capitalize(),
-          ),
+    return Scaffold(
+      backgroundColor: Theme.of(context).primaryColor,
+      appBar: PreferredSize(
+        preferredSize: const Size(double.infinity, 55),
+        child: HeadingChipBar(
+          current: (arguments![0] as String).capitalize(),
         ),
-        body: FutureBuilder(
-          future: getCollectionWithName(arguments![0].toString()),
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            if (snapshot.hasData) {
-              return const BottomBar(
-                child: CollectionViewGrid(),
-              );
-            }
-            return const LoadingCards();
-          },
-        ),
+      ),
+      body: FutureBuilder(
+        future: getCollectionWithName(arguments![0].toString()),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (snapshot.hasData) {
+            return const BottomBar(
+              child: CollectionViewGrid(),
+            );
+          }
+          return const LoadingCards();
+        },
       ),
     );
   }

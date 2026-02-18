@@ -120,10 +120,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     super.dispose();
   }
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   Future<void> _setBothWallPaper(String url) async {
     bool? result;
     try {
@@ -212,184 +208,179 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            "Edit Wallpaper",
-            style: Theme.of(context).textTheme.displaySmall,
-          ),
-          leading: IconButton(
-              icon: const Icon(JamIcons.close),
-              onPressed: () {
-                Navigator.pop(context);
-              }),
-          backgroundColor: Theme.of(context).primaryColor,
-          actions: <Widget>[
-            if (loading)
-              Container()
-            else if (isLoading)
-              Center(
-                child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(color: Theme.of(context).colorScheme.error)),
-              )
-            else
-              IconButton(
-                icon: const Icon(JamIcons.download),
-                onPressed: () async {
-                  toasts.codeSend("Processing Wallpaper");
-                  final imageFile = await saveFilteredImage();
-                  final status = await Permission.storage.status;
-                  if (!status.isGranted) {
-                    await Permission.storage.request();
-                  }
-                  setState(() {
-                    isLoading = true;
-                  });
-                  final request = SaveMediaRequest(
-                    link: imageFile.path,
-                    isLocalFile: true,
-                    kind: SaveMediaKind.wallpaper,
-                  );
-                  try {
-                    final result = await PrismMediaHostApi().saveMedia(request);
-                    if (result.success) {
-                      analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
-                      toasts.codeSend("Wall Saved in Pictures!");
-                    } else {
-                      toasts.error("Couldn't save wallpaper. Please retry!");
-                    }
-                  } on PlatformException catch (e) {
-                    logger.e('saveMedia failed', error: e);
-                    toasts.error("Couldn't save wallpaper. Please retry!");
-                  } catch (e) {
-                    logger.e('Unexpected saveMedia failure', error: e);
-                    toasts.error("Something went wrong!");
-                  } finally {
-                    if (mounted) {
-                      setState(() {
-                        isLoading = false;
-                      });
-                    }
-                  }
-                },
-              ),
-            if (loading)
-              Container()
-            else
-              IconButton(
-                icon: const Icon(JamIcons.check),
-                onPressed: () async {
-                  toasts.codeSend("Processing Wallpaper");
-                  final imageFile = await saveFilteredImage();
-                  showModalBottomSheet(
-                    isScrollControlled: true,
-                    context: context,
-                    builder: (context) => SetOptionsPanel(
-                      onTap1: () {
-                        HapticFeedback.vibrate();
-                        Navigator.of(context).pop();
-                        _setHomeWallPaper(imageFile.path);
-                      },
-                      onTap2: () {
-                        HapticFeedback.vibrate();
-                        Navigator.of(context).pop();
-                        _setLockWallPaper(imageFile.path);
-                      },
-                      onTap3: () {
-                        HapticFeedback.vibrate();
-                        Navigator.of(context).pop();
-                        _setBothWallPaper(imageFile.path);
-                      },
-                    ),
-                  );
-                },
-              )
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "Edit Wallpaper",
+          style: Theme.of(context).textTheme.displaySmall,
         ),
+        leading: IconButton(
+            icon: const Icon(JamIcons.close),
+            onPressed: () {
+              Navigator.pop(context);
+            }),
         backgroundColor: Theme.of(context).primaryColor,
-        body: SizedBox(
-          width: double.infinity,
-          height: double.infinity,
-          child: loading
-              ? Center(child: Loader())
-              : Column(
-                  children: [
-                    Expanded(
-                      flex: 6,
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: double.infinity,
-                        child: _buildFilteredImage(
-                          _filter,
-                          finalImage,
-                          finalFilename,
-                        ),
+        actions: <Widget>[
+          if (loading)
+            Container()
+          else if (isLoading)
+            Center(
+              child: SizedBox(
+                  width: 20, height: 20, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.error)),
+            )
+          else
+            IconButton(
+              icon: const Icon(JamIcons.download),
+              onPressed: () async {
+                toasts.codeSend("Processing Wallpaper");
+                final imageFile = await saveFilteredImage();
+                final status = await Permission.storage.status;
+                if (!status.isGranted) {
+                  await Permission.storage.request();
+                }
+                setState(() {
+                  isLoading = true;
+                });
+                final request = SaveMediaRequest(
+                  link: imageFile.path,
+                  isLocalFile: true,
+                  kind: SaveMediaKind.wallpaper,
+                );
+                try {
+                  final result = await PrismMediaHostApi().saveMedia(request);
+                  if (result.success) {
+                    analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
+                    toasts.codeSend("Wall Saved in Pictures!");
+                  } else {
+                    toasts.error("Couldn't save wallpaper. Please retry!");
+                  }
+                } on PlatformException catch (e) {
+                  logger.e('saveMedia failed', error: e);
+                  toasts.error("Couldn't save wallpaper. Please retry!");
+                } catch (e) {
+                  logger.e('Unexpected saveMedia failure', error: e);
+                  toasts.error("Something went wrong!");
+                } finally {
+                  if (mounted) {
+                    setState(() {
+                      isLoading = false;
+                    });
+                  }
+                }
+              },
+            ),
+          if (loading)
+            Container()
+          else
+            IconButton(
+              icon: const Icon(JamIcons.check),
+              onPressed: () async {
+                toasts.codeSend("Processing Wallpaper");
+                final imageFile = await saveFilteredImage();
+                showModalBottomSheet(
+                  isScrollControlled: true,
+                  context: context,
+                  builder: (context) => SetOptionsPanel(
+                    onTap1: () {
+                      HapticFeedback.vibrate();
+                      Navigator.of(context).pop();
+                      _setHomeWallPaper(imageFile.path);
+                    },
+                    onTap2: () {
+                      HapticFeedback.vibrate();
+                      Navigator.of(context).pop();
+                      _setLockWallPaper(imageFile.path);
+                    },
+                    onTap3: () {
+                      HapticFeedback.vibrate();
+                      Navigator.of(context).pop();
+                      _setBothWallPaper(imageFile.path);
+                    },
+                  ),
+                );
+              },
+            )
+        ],
+      ),
+      backgroundColor: Theme.of(context).primaryColor,
+      body: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: loading
+            ? Center(child: Loader())
+            : Column(
+                children: [
+                  Expanded(
+                    flex: 6,
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: double.infinity,
+                      child: _buildFilteredImage(
+                        _filter,
+                        finalImage,
+                        finalFilename,
                       ),
                     ),
-                    const Divider(
-                      height: 1,
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: ColoredBox(
-                        color: Theme.of(context).primaryColor,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          scrollDirection: Axis.horizontal,
-                          itemCount: selectedFilters.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            return GestureDetector(
-                              onTap: () => setState(() {
-                                _filter = selectedFilters[index];
-                              }),
-                              child: Container(
-                                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: <Widget>[
-                                    Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        _buildFilterThumbnail(selectedFilters[index], image, filename),
-                                        if (_filter == selectedFilters[index])
-                                          Container(
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(500),
-                                                color: Colors.white,
-                                              ),
-                                              child: const Icon(
-                                                JamIcons.check,
-                                                color: Colors.black,
-                                              ))
-                                        else
-                                          Container(),
-                                      ],
-                                    ),
-                                    const SizedBox(
-                                      height: 10.0,
-                                    ),
-                                    Text(
-                                      selectedFilters[index].name,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                    )
-                                  ],
-                                ),
+                  ),
+                  const Divider(
+                    height: 1,
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: ColoredBox(
+                      color: Theme.of(context).primaryColor,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: selectedFilters.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          return GestureDetector(
+                            onTap: () => setState(() {
+                              _filter = selectedFilters[index];
+                            }),
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      _buildFilterThumbnail(selectedFilters[index], image, filename),
+                                      if (_filter == selectedFilters[index])
+                                        Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(500),
+                                              color: Colors.white,
+                                            ),
+                                            child: const Icon(
+                                              JamIcons.check,
+                                              color: Colors.black,
+                                            ))
+                                      else
+                                        Container(),
+                                    ],
+                                  ),
+                                  const SizedBox(
+                                    height: 10.0,
+                                  ),
+                                  Text(
+                                    selectedFilters[index].name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium!
+                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                  )
+                                ],
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  ],
-                ),
-        ),
+                  ),
+                ],
+              ),
       ),
     );
   }

@@ -13,23 +13,18 @@ class FavouriteWallpaperScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return true;
-      },
-      child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          appBar: const PreferredSize(
-            preferredSize: Size(double.infinity, 55),
-            child: HeadingChipBar(
-              current: "Favourites",
-            ),
+    return Scaffold(
+        backgroundColor: Theme.of(context).primaryColor,
+        appBar: const PreferredSize(
+          preferredSize: Size(double.infinity, 55),
+          child: HeadingChipBar(
+            current: "Favourites",
           ),
-          body: BottomBar(
-            child: FavLoader(
-              future: context.favouriteWallsAdapter(listen: false).getDataBase(),
-            ),
-          )),
-    );
+        ),
+        body: BottomBar(
+          child: FavLoader(
+            future: context.favouriteWallsAdapter(listen: false).getDataBase(),
+          ),
+        ));
   }
 }

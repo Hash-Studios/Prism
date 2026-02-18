@@ -26,15 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   LoadStatus? _lastLoggedStatus;
   int _lastLoggedItemCount = -1;
 
-  Future<bool> onWillPop() async {
-    final choice = categoryChoices[0];
-    if (context.categorySelectedChoice(listen: false).name != choice.name) {
-      await context.categoryChangeWallpaperFuture(choice, "r");
-      return false;
-    }
-    logger.d("Bye! Have a good day!");
-    return true;
-  }
+  bool get _isOnFirstCategory => context.categorySelectedChoice(listen: false).name == categoryChoices[0].name;
 
   late bool isNew;
   @override
@@ -73,8 +65,15 @@ class _HomeScreenState extends State<HomeScreen> {
     if (isNew) {
       Future.delayed(Duration.zero).then((value) => showChangelogCheck(context));
     }
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: _isOnFirstCategory,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          context.categoryChangeWallpaperFuture(categoryChoices[0], "r");
+        } else {
+          logger.d("Bye! Have a good day!");
+        }
+      },
       child: BlocBuilder<CategoryFeedBloc, CategoryFeedState>(
         builder: (context, state) {
           if (_lastLoggedStatus != state.status || _lastLoggedItemCount != state.items.length) {
