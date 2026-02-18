@@ -30,9 +30,6 @@ class FetchCategoryFeedUseCase implements UseCase<CategoryFeedPage, FetchCategor
 
   @override
   Future<Result<CategoryFeedPage>> call(FetchCategoryFeedParams params) {
-    return _repository.fetchCategoryFeed(
-      category: params.category,
-      refresh: params.refresh,
-    );
+    return _repository.fetchCategoryFeed(category: params.category, refresh: params.refresh);
   }
 }

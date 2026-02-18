@@ -63,101 +63,95 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
           child: Column(
             children: [
               Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 90, 0, 8),
-                  child: Column(
-                    children: [
-                      ShowUpTransition(
+                padding: const EdgeInsets.fromLTRB(0, 90, 0, 8),
+                child: Column(
+                  children: [
+                    ShowUpTransition(
+                      forward: true,
+                      slideSide: SlideFromSlide.bottom,
+                      delay: const Duration(milliseconds: 150),
+                      child: Text(
+                        widget.heading,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontFamily: "Roboto",
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: ShowUpTransition(
                         forward: true,
                         slideSide: SlideFromSlide.bottom,
-                        delay: const Duration(milliseconds: 150),
+                        delay: const Duration(milliseconds: 200),
                         child: Text(
-                          widget.heading,
+                          widget.subheading,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
+                            color: Colors.white70,
+                            fontSize: 15,
                             fontFamily: "Roboto",
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.normal,
                           ),
                         ),
                       ),
-                      const SizedBox(
-                        height: 7,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        child: ShowUpTransition(
-                          forward: true,
-                          slideSide: SlideFromSlide.bottom,
-                          delay: const Duration(milliseconds: 200),
-                          child: Text(
-                            widget.subheading,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 15,
-                              fontFamily: "Roboto",
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 17,
-                      ),
-                      const FollowHeaderCard(
-                        email: "hk3ToN_Prism@gmail.com",
-                        url: "https://pbs.twimg.com/profile_images/1278264820450680833/LKoAc7nh_400x400.jpg",
-                        name: "Hk3ToN",
-                        img1: Env.user3Image1,
-                        img2: Env.user3Image2,
-                        img3: Env.user3Image3,
-                      ),
-                      const FollowHeaderCard(
-                        email: "akshaymaurya3006@gmail.com",
-                        url:
-                            "https://lh3.googleusercontent.com/a-/AOh14Gh7a-JaBRpAI9SPmSBJQmOeggj6ic2mub3DKala_g=s96-c",
-                        name: "Akshay Maurya",
-                        img1: Env.user2Image1,
-                        img2: Env.user2Image2,
-                        img3: Env.user2Image3,
-                      ),
-                      const FollowHeaderCard(
-                        email: "maurya.abhay30@gmail.com",
-                        url:
-                            "https://lh3.googleusercontent.com/a-/AOh14GgTe5pUi3k-cdvxoCoJ2kKWafu0RXDN3sUVTp3Z58c=s96-c",
-                        name: "Abhay Maurya",
-                        img1: Env.user1Image1,
-                        img2: Env.user1Image2,
-                        img3: Env.user1Image3,
-                      ),
-                      const FollowHeaderCard(
-                        email: "inderpalsansoa.1993@gmail.com",
-                        url: "https://lh3.googleusercontent.com/a-/AOh14GjUOpZ14V9UdM58LCz1nx87N_3SDYSHQwTOec-I=s96-c",
-                        name: "ShankyGotThatArt",
-                        img1: Env.user4Image1,
-                        img2: Env.user4Image2,
-                        img3: Env.user4Image3,
-                      ),
-                      const FollowHeaderCard(
-                        email: "yyo17341@gmail.com",
-                        url: "https://lh3.googleusercontent.com/a-/AOh14GizSGAXOap5UIqWKX16JNSKe56y1X_mKNb0Snaf=s96-c",
-                        name: "Megh Dave",
-                        img1: Env.user5Image1,
-                        img2: Env.user5Image2,
-                        img3: Env.user5Image3,
-                      ),
-                      const FollowHeaderCard(
-                        email: "techpool007@gmail.com",
-                        url:
-                            "https://lh3.googleusercontent.com/a-/AOh14GhcT-AssZM3Kk6jz4OTbbAPz3gS-2tvPjLhkAj83w=s96-c",
-                        name: "Dennis Wilson",
-                        img1: Env.user6Image1,
-                        img2: Env.user6Image2,
-                        img3: Env.user6Image3,
-                      ),
-                    ],
-                  )),
+                    ),
+                    const SizedBox(height: 17),
+                    const FollowHeaderCard(
+                      email: "hk3ToN_Prism@gmail.com",
+                      url: "https://pbs.twimg.com/profile_images/1278264820450680833/LKoAc7nh_400x400.jpg",
+                      name: "Hk3ToN",
+                      img1: Env.user3Image1,
+                      img2: Env.user3Image2,
+                      img3: Env.user3Image3,
+                    ),
+                    const FollowHeaderCard(
+                      email: "akshaymaurya3006@gmail.com",
+                      url: "https://lh3.googleusercontent.com/a-/AOh14Gh7a-JaBRpAI9SPmSBJQmOeggj6ic2mub3DKala_g=s96-c",
+                      name: "Akshay Maurya",
+                      img1: Env.user2Image1,
+                      img2: Env.user2Image2,
+                      img3: Env.user2Image3,
+                    ),
+                    const FollowHeaderCard(
+                      email: "maurya.abhay30@gmail.com",
+                      url: "https://lh3.googleusercontent.com/a-/AOh14GgTe5pUi3k-cdvxoCoJ2kKWafu0RXDN3sUVTp3Z58c=s96-c",
+                      name: "Abhay Maurya",
+                      img1: Env.user1Image1,
+                      img2: Env.user1Image2,
+                      img3: Env.user1Image3,
+                    ),
+                    const FollowHeaderCard(
+                      email: "inderpalsansoa.1993@gmail.com",
+                      url: "https://lh3.googleusercontent.com/a-/AOh14GjUOpZ14V9UdM58LCz1nx87N_3SDYSHQwTOec-I=s96-c",
+                      name: "ShankyGotThatArt",
+                      img1: Env.user4Image1,
+                      img2: Env.user4Image2,
+                      img3: Env.user4Image3,
+                    ),
+                    const FollowHeaderCard(
+                      email: "yyo17341@gmail.com",
+                      url: "https://lh3.googleusercontent.com/a-/AOh14GizSGAXOap5UIqWKX16JNSKe56y1X_mKNb0Snaf=s96-c",
+                      name: "Megh Dave",
+                      img1: Env.user5Image1,
+                      img2: Env.user5Image2,
+                      img3: Env.user5Image3,
+                    ),
+                    const FollowHeaderCard(
+                      email: "techpool007@gmail.com",
+                      url: "https://lh3.googleusercontent.com/a-/AOh14GhcT-AssZM3Kk6jz4OTbbAPz3gS-2tvPjLhkAj83w=s96-c",
+                      name: "Dennis Wilson",
+                      img1: Env.user6Image1,
+                      img2: Env.user6Image2,
+                      img3: Env.user6Image3,
+                    ),
+                  ],
+                ),
+              ),
               if (widget.showSkip == true)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -165,7 +159,9 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                     TextButton(
                       onPressed: () {
                         Navigator.pushReplacement(
-                            context, MaterialPageRoute(builder: (context) => const SplashWidget()));
+                          context,
+                          MaterialPageRoute(builder: (context) => const SplashWidget()),
+                        );
                       },
                       style: ButtonStyle(overlayColor: WidgetStateColor.resolveWith((states) => Colors.white10)),
                       child: SizedBox(
@@ -185,11 +181,11 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pushReplacement(
-                            context, MaterialPageRoute(builder: (context) => const SplashWidget()));
+                          context,
+                          MaterialPageRoute(builder: (context) => const SplashWidget()),
+                        );
                       },
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
-                      ),
+                      style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
                       child: SizedBox(
                         width: 60,
                         child: Text(
@@ -213,11 +209,11 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pushReplacement(
-                            context, MaterialPageRoute(builder: (context) => const SplashWidget()));
+                          context,
+                          MaterialPageRoute(builder: (context) => const SplashWidget()),
+                        );
                       },
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
-                      ),
+                      style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
                       child: const SizedBox(
                         width: 60,
                         child: Text(
@@ -234,9 +230,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                     ),
                   ],
                 ),
-              const SizedBox(
-                height: 24,
-              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -250,10 +244,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
           onPressed: () {
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SplashWidget()));
           },
-          child: const Icon(
-            JamIcons.close,
-            color: Colors.white,
-          ),
+          child: const Icon(JamIcons.close, color: Colors.white),
         ),
       ),
     );
@@ -288,10 +279,7 @@ class FollowHeaderCard extends StatelessWidget {
         children: [
           Card(
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(10),
-                topRight: Radius.circular(10),
-              ),
+              borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
             ),
             color: Colors.white,
             elevation: 4,
@@ -302,17 +290,11 @@ class FollowHeaderCard extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: CircleAvatar(
-                      backgroundImage: CachedNetworkImageProvider(url),
-                    ),
+                    child: CircleAvatar(backgroundImage: CachedNetworkImageProvider(url)),
                   ),
                   Text(
                     name,
-                    style: const TextStyle(
-                      color: Color(0xFFE57697),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: const TextStyle(color: Color(0xFFE57697), fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   const Spacer(),
                   StreamBuilder<List<_FirestoreDoc>>(
@@ -322,7 +304,10 @@ class FollowHeaderCard extends StatelessWidget {
                         sourceTag: 'startup.follow.currentUser',
                         filters: <FirestoreFilter>[
                           FirestoreFilter(
-                              field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email),
+                            field: "email",
+                            op: FirestoreFilterOp.isEqualTo,
+                            value: globals.prismUser.email,
+                          ),
                         ],
                         isStream: true,
                         limit: 1,
@@ -343,16 +328,11 @@ class FollowHeaderCard extends StatelessWidget {
                               onPressed: () {},
                               style: ButtonStyle(
                                 shape: WidgetStateProperty.resolveWith(
-                                    (states) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                  (states) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
                                 backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
                               ),
-                              child: const SizedBox(
-                                width: 65,
-                                child: Icon(
-                                  JamIcons.check,
-                                  color: Color(0xFFE57697),
-                                ),
-                              ),
+                              child: const SizedBox(width: 65, child: Icon(JamIcons.check, color: Color(0xFFE57697))),
                             ),
                           );
                         } else {
@@ -380,8 +360,9 @@ class FollowHeaderCard extends StatelessWidget {
                                 );
                                 if (users.isNotEmpty) {
                                   final Map<String, dynamic> userData = users.first.data;
-                                  final List<dynamic> followers =
-                                      List<dynamic>.from(userData['followers'] as List? ?? []);
+                                  final List<dynamic> followers = List<dynamic>.from(
+                                    userData['followers'] as List? ?? [],
+                                  );
                                   followers.add(globals.prismUser.email);
                                   await firestoreClient.updateDoc(
                                     USER_NEW_COLLECTION,
@@ -391,39 +372,36 @@ class FollowHeaderCard extends StatelessWidget {
                                   );
                                 }
                                 http.post(
-                                  Uri.parse(
-                                    'https://fcm.googleapis.com/fcm/send',
-                                  ),
+                                  Uri.parse('https://fcm.googleapis.com/fcm/send'),
                                   headers: <String, String>{
                                     'Content-Type': 'application/json',
                                     'Authorization': 'key=${Env.fcmServerKey}',
                                   },
-                                  body: jsonEncode(
-                                    <String, dynamic>{
-                                      'notification': <String, dynamic>{
-                                        'title': '🎉 New Follower!',
-                                        'body': '${globals.prismUser.username} is now following you.',
-                                        'color': "#e57697",
-                                        'image': globals.prismUser.profilePhoto,
-                                        'android_channel_id': "followers",
-                                        'tag': '${globals.prismUser.username} Follow',
-                                        'icon': '@drawable/ic_follow',
-                                      },
-                                      'priority': 'high',
-                                      'data': <String, dynamic>{
-                                        'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-                                        'id': '1',
-                                        'status': 'done'
-                                      },
-                                      'to': "/topics/${email.split("@")[0]}"
+                                  body: jsonEncode(<String, dynamic>{
+                                    'notification': <String, dynamic>{
+                                      'title': '🎉 New Follower!',
+                                      'body': '${globals.prismUser.username} is now following you.',
+                                      'color': "#e57697",
+                                      'image': globals.prismUser.profilePhoto,
+                                      'android_channel_id': "followers",
+                                      'tag': '${globals.prismUser.username} Follow',
+                                      'icon': '@drawable/ic_follow',
                                     },
-                                  ),
+                                    'priority': 'high',
+                                    'data': <String, dynamic>{
+                                      'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+                                      'id': '1',
+                                      'status': 'done',
+                                    },
+                                    'to': "/topics/${email.split("@")[0]}",
+                                  }),
                                 );
                                 toasts.codeSend("Followed $name!");
                               },
                               style: ButtonStyle(
                                 shape: WidgetStateProperty.resolveWith(
-                                    (states) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                  (states) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
                                 backgroundColor: WidgetStateColor.resolveWith((states) => const Color(0xFFE57697)),
                               ),
                               child: const SizedBox(
@@ -451,10 +429,7 @@ class FollowHeaderCard extends StatelessWidget {
           ),
           Card(
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(10),
-                bottomRight: Radius.circular(10),
-              ),
+              borderRadius: BorderRadius.only(bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
             ),
             color: Colors.white,
             elevation: 4,
@@ -470,9 +445,7 @@ class FollowHeaderCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(
-            height: 17,
-          )
+          const SizedBox(height: 17),
         ],
       ),
     );
@@ -487,10 +460,7 @@ class _FirestoreDoc {
 }
 
 class FollowImage extends StatelessWidget {
-  const FollowImage({
-    super.key,
-    required this.img1,
-  });
+  const FollowImage({super.key, required this.img1});
 
   final String img1;
 
@@ -503,10 +473,7 @@ class FollowImage extends StatelessWidget {
         child: SizedBox(
           height: (MediaQuery.of(context).size.width * 0.8 - 48) / 3,
           width: (MediaQuery.of(context).size.width * 0.8 - 48) / 3,
-          child: CachedNetworkImage(
-            imageUrl: img1,
-            fit: BoxFit.cover,
-          ),
+          child: CachedNetworkImage(imageUrl: img1, fit: BoxFit.cover),
         ),
       ),
     );

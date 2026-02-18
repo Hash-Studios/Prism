@@ -20,12 +20,10 @@ void showChangelog(BuildContext context, Function func) {
             height: 150,
             width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-                color: Theme.of(context).hintColor),
-            child: const SafeRiveAsset(
-              assetName: "assets/animations/Changelog.flr",
-              animations: <String>["changelog"],
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+              color: Theme.of(context).hintColor,
             ),
+            child: const SafeRiveAsset(assetName: "assets/animations/Changelog.flr", animations: <String>["changelog"]),
           ),
           SizedBox(
             height: 300,
@@ -45,15 +43,18 @@ void showChangelog(BuildContext context, Function func) {
                     ChangeVersion(number: 'v2.6.8'),
                     Change(icon: JamIcons.user, text: "All-new beautiful profile."),
                     Change(
-                        icon: JamIcons.instant_picture, text: "Add icons with a single tap while submitting setups."),
+                      icon: JamIcons.instant_picture,
+                      text: "Add icons with a single tap while submitting setups.",
+                    ),
                     Change(icon: JamIcons.link, text: "Add upto 25 links in your profile."),
                     Change(icon: JamIcons.filter, text: "Added 23 new filters like Rise, Ashby, etc."),
                     Change(icon: JamIcons.bug, text: "Fixed first time app open stuck on splash screen bug."),
                     ChangeVersion(number: 'v2.6.7'),
                     Change(icon: JamIcons.user, text: "Add bio or change your username now!"),
                     Change(
-                        icon: JamIcons.log_in,
-                        text: "Fix log-in bug, which fixes follow, favourites and alot of other bugs."),
+                      icon: JamIcons.log_in,
+                      text: "Fix log-in bug, which fixes follow, favourites and alot of other bugs.",
+                    ),
                     ChangeVersion(number: 'v2.6.6'),
                     Change(icon: JamIcons.bug, text: "Minor bug fixes and improvements."),
                     ChangeVersion(number: 'v2.6.5'),
@@ -62,8 +63,9 @@ void showChangelog(BuildContext context, Function func) {
                     ChangeVersion(number: 'v2.6.4'),
                     Change(icon: JamIcons.bell, text: "Get notified when people you follow post."),
                     Change(
-                        icon: JamIcons.shuffle,
-                        text: "Quickly change wallpaper, with quick tile. Changes wallpaper from the downloaded ones."),
+                      icon: JamIcons.shuffle,
+                      text: "Quickly change wallpaper, with quick tile. Changes wallpaper from the downloaded ones.",
+                    ),
                     Change(icon: JamIcons.eye, text: "New Splash screen animation."),
                     Change(icon: JamIcons.users, text: "Added option to turn followers feed off."),
                     Change(icon: JamIcons.bug, text: "Minor bug fixes and improvements."),
@@ -82,13 +84,7 @@ void showChangelog(BuildContext context, Function func) {
           launch("https://bit.ly/prismchanges");
           func();
         },
-        child: Text(
-          'VIEW FULL',
-          style: TextStyle(
-            fontSize: 16.0,
-            color: Theme.of(context).colorScheme.error,
-          ),
-        ),
+        child: Text('VIEW FULL', style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.error)),
       ),
       MaterialButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -97,13 +93,7 @@ void showChangelog(BuildContext context, Function func) {
           Navigator.of(context).pop();
           func();
         },
-        child: const Text(
-          'CLOSE',
-          style: TextStyle(
-            fontSize: 16.0,
-            color: Colors.white,
-          ),
-        ),
+        child: const Text('CLOSE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
       ),
     ],
     contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
@@ -129,14 +119,15 @@ class ChangeVersion extends StatelessWidget {
               child: Text(
                 number,
                 style: TextStyle(
-                    fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(
-          height: 20,
-        ),
+        const SizedBox(height: 20),
       ],
     );
   }
@@ -154,21 +145,17 @@ class Change extends StatelessWidget {
       children: <Widget>[
         Row(
           children: [
-            const SizedBox(
-              width: 20,
-            ),
+            const SizedBox(width: 20),
             Icon(
               icon,
               size: 22,
               color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
                   ? Theme.of(context).colorScheme.error == Colors.black
-                      ? Theme.of(context).colorScheme.secondary
-                      : Theme.of(context).colorScheme.error
+                        ? Theme.of(context).colorScheme.secondary
+                        : Theme.of(context).colorScheme.error
                   : Theme.of(context).colorScheme.error,
             ),
-            const SizedBox(
-              width: 20,
-            ),
+            const SizedBox(width: 20),
             SizedBox(
               width: MediaQuery.of(context).size.width * 0.6,
               child: Text(
@@ -178,9 +165,7 @@ class Change extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(
-          height: 10,
-        ),
+        const SizedBox(height: 10),
       ],
     );
   }

@@ -7,9 +7,6 @@ class ThemeModeBuilder {
   const ThemeModeBuilder._();
 
   static Widget withBloc({required Widget child, ThemeModeBloc? bloc}) {
-    return BlocProvider<ThemeModeBloc>(
-      create: (_) => bloc ?? getIt<ThemeModeBloc>(),
-      child: child,
-    );
+    return BlocProvider<ThemeModeBloc>(create: (_) => bloc ?? getIt<ThemeModeBloc>(), child: child);
   }
 }

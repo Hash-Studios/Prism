@@ -15,10 +15,7 @@ class _FakeThemeRepository implements ThemeRepository {
 
   @override
   Future<Result<ThemeLightEntity>> setLightTheme(String themeId) async {
-    _light = ThemeLightEntity(
-      themeId: themeId,
-      accentColorValue: _light.accentColorValue,
-    );
+    _light = ThemeLightEntity(themeId: themeId, accentColorValue: _light.accentColorValue);
     return Result.success(_light);
   }
 
@@ -77,9 +74,7 @@ void main() {
 
     test('update theme + accent persists through repository', () async {
       await updateThemeUseCase(const UpdateThemeLightParams(themeId: 'kLCoffee'));
-      await updateAccentUseCase(
-        const UpdateThemeLightAccentParams(accentColorValue: 0xffabcdef),
-      );
+      await updateAccentUseCase(const UpdateThemeLightAccentParams(accentColorValue: 0xffabcdef));
 
       final result = await loadUseCase(const NoParams());
 

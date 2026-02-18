@@ -16,10 +16,7 @@ class ProfileWallsRepositoryImpl implements ProfileWallsRepository {
   final Map<String, String> _cursorByEmail = {};
 
   @override
-  Future<Result<ProfileWallsPage>> fetchProfileWalls({
-    required String email,
-    required bool refresh,
-  }) async {
+  Future<Result<ProfileWallsPage>> fetchProfileWalls({required String email, required bool refresh}) async {
     try {
       final cursor = _cursorByEmail[email];
       final rows = await _firestoreClient.query<Map<String, dynamic>>(
@@ -40,18 +37,16 @@ class ProfileWallsRepositoryImpl implements ProfileWallsRepository {
         _cursorByEmail[email] = rows.last['__docId']?.toString() ?? '';
       }
 
-      final items = rows.map((data) {
-        final payload = <String, dynamic>{...data};
-        payload.remove('__docId');
-        return ProfileWallEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
-      }).toList(growable: false);
+      final items = rows
+          .map((data) {
+            final payload = <String, dynamic>{...data};
+            payload.remove('__docId');
+            return ProfileWallEntity(id: (payload['id'] ?? data['__docId']).toString(), payload: payload);
+          })
+          .toList(growable: false);
 
       return Result.success(
-        ProfileWallsPage(
-          items: items,
-          hasMore: rows.length == 12,
-          nextCursor: _cursorByEmail[email],
-        ),
+        ProfileWallsPage(items: items, hasMore: rows.length == 12, nextCursor: _cursorByEmail[email]),
       );
     } catch (error) {
       return Result.error(ServerFailure('Unable to load profile walls: $error'));

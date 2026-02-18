@@ -82,44 +82,41 @@ class _EditWallScreenState extends State<EditWallScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
-          title: Text(
-            "Edit Wallpaper",
-            style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+        title: Text(
+          "Edit Wallpaper",
+          style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+        ),
+        leading: IconButton(
+          icon: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(JamIcons.history, color: Theme.of(context).colorScheme.secondary),
+            onPressed: () {
+              setState(() {
+                sat = 1;
+                bright = 0;
+                con = 1;
+              });
+            },
           ),
-          leading: IconButton(
-              icon: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
-              onPressed: () {
-                Navigator.pop(context);
-              }),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(JamIcons.history, color: Theme.of(context).colorScheme.secondary),
-              onPressed: () {
-                setState(() {
-                  sat = 1;
-                  bright = 0;
-                  con = 1;
-                });
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.check, color: Theme.of(context).colorScheme.secondary),
-              onPressed: () async {
-                await crop();
-              },
-            ),
-          ]),
+          IconButton(
+            icon: Icon(Icons.check, color: Theme.of(context).colorScheme.secondary),
+            onPressed: () async {
+              await crop();
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: <Widget>[
-          AspectRatio(
-            aspectRatio: 1,
-            child: buildImage(),
-          ),
+          AspectRatio(aspectRatio: 1, child: buildImage()),
           Expanded(
             child: SliderTheme(
-              data: const SliderThemeData(
-                showValueIndicator: ShowValueIndicator.never,
-              ),
+              data: const SliderThemeData(showValueIndicator: ShowValueIndicator.never),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -131,49 +128,37 @@ class _EditWallScreenState extends State<EditWallScreen> {
                         const Spacer(flex: 3),
                         Column(
                           children: <Widget>[
-                            Icon(
-                              JamIcons.brush,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                            Icon(JamIcons.brush, color: Theme.of(context).colorScheme.secondary),
                             Text(
                               "Saturation",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium!
-                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
-                            )
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            ),
                           ],
                         ),
                         const Spacer(),
                         Column(
                           children: <Widget>[
-                            Icon(
-                              JamIcons.brightness,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                            Icon(JamIcons.brightness, color: Theme.of(context).colorScheme.secondary),
                             Text(
                               "Brightness",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium!
-                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
-                            )
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            ),
                           ],
                         ),
                         const Spacer(),
                         Column(
                           children: <Widget>[
-                            Icon(
-                              JamIcons.background_color,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                            Icon(JamIcons.background_color, color: Theme.of(context).colorScheme.secondary),
                             Text(
                               "Contrast",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium!
-                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
-                            )
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            ),
                           ],
                         ),
                         const Spacer(flex: 3),
@@ -203,26 +188,23 @@ class _EditWallScreenState extends State<EditWallScreen> {
                         const Spacer(flex: 3),
                         Text(
                           sat.toStringAsFixed(2),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                         const Spacer(flex: 2),
                         Text(
                           bright.toStringAsFixed(2),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                         const Spacer(flex: 2),
                         Text(
                           con.toStringAsFixed(2),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                         const Spacer(flex: 3),
                       ],
@@ -253,10 +235,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
           mode: ExtendedImageMode.editor,
           fit: BoxFit.contain,
           initEditorConfigHandler: (ExtendedImageState? state) {
-            return EditorConfig(
-              maxScale: 8.0,
-              cropAspectRatio: cropRatio,
-            );
+            return EditorConfig(maxScale: 8.0, cropAspectRatio: cropRatio);
           },
         ),
       ),
@@ -270,40 +249,28 @@ class _EditWallScreenState extends State<EditWallScreen> {
       type: BottomNavigationBarType.fixed,
       items: <BottomNavigationBarItem>[
         BottomNavigationBarItem(
-          icon: Icon(
-            Icons.flip,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
+          icon: Icon(Icons.flip, color: Theme.of(context).colorScheme.secondary),
           label: 'Flip',
         ),
         BottomNavigationBarItem(
-          icon: Icon(
-            Icons.rotate_left,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
+          icon: Icon(Icons.rotate_left, color: Theme.of(context).colorScheme.secondary),
           label: 'Rotate Left',
         ),
         BottomNavigationBarItem(
-          icon: Icon(
-            Icons.rotate_right,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
+          icon: Icon(Icons.rotate_right, color: Theme.of(context).colorScheme.secondary),
           label: 'Rotate Right',
         ),
         BottomNavigationBarItem(
-          icon: Icon(
-            Icons.crop,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
+          icon: Icon(Icons.crop, color: Theme.of(context).colorScheme.secondary),
           label: cropRatio == 1 / 2
               ? "9:18"
               : cropRatio == 9 / 16
-                  ? "9:16"
-                  : cropRatio == 9 / 21
-                      ? "9:21"
-                      : cropRatio == 9 / 19.5
-                          ? "9:19.5"
-                          : "9:18",
+              ? "9:16"
+              : cropRatio == 9 / 21
+              ? "9:21"
+              : cropRatio == 9 / 19.5
+              ? "9:19.5"
+              : "9:18",
         ),
       ],
       onTap: (int index) {
@@ -355,10 +322,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     logger.d(const JsonEncoder.withIndent('  ').convert(option.toJson()));
 
     final DateTime start = DateTime.now();
-    final Uint8List? result = await ImageEditor.editImage(
-      image: img,
-      imageEditorOption: option,
-    );
+    final Uint8List? result = await ImageEditor.editImage(image: img, imageEditorOption: option);
     if (result == null) {
       return;
     }

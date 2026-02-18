@@ -8,26 +8,22 @@ import 'package:flutter/material.dart';
 @RoutePage()
 class ColorScreen extends StatelessWidget {
   final List? arguments;
-  const ColorScreen({
-    super.key,
-    required this.arguments,
-  });
+  const ColorScreen({super.key, required this.arguments});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: const PreferredSize(
-          preferredSize: Size(double.infinity, 55),
-          child: HeadingChipBar(
-            current: "Colors",
-          ),
+      backgroundColor: Theme.of(context).primaryColor,
+      appBar: const PreferredSize(
+        preferredSize: Size(double.infinity, 55),
+        child: HeadingChipBar(current: "Colors"),
+      ),
+      body: BottomBar(
+        child: ColorLoader(
+          future: pdata.getWallsPbyColor("color: ${arguments![0]}"),
+          provider: "Colors - color: ${arguments![0]}",
         ),
-        body: BottomBar(
-          child: ColorLoader(
-            future: pdata.getWallsPbyColor("color: ${arguments![0]}"),
-            provider: "Colors - color: ${arguments![0]}",
-          ),
-        ));
+      ),
+    );
   }
 }

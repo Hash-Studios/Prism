@@ -23,9 +23,7 @@ Future<List?> getPrismWalls() async {
       const FirestoreQuerySpec(
         collection: FirebaseCollections.walls,
         sourceTag: 'prism.getPrismWalls',
-        filters: <FirestoreFilter>[
-          FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
-        ],
+        filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true)],
         orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
         limit: 24,
         dedupeWindowMs: 1000,
@@ -46,18 +44,11 @@ Future<List?> getPrismWalls() async {
     subPrismWalls = prismWalls;
     logger.i(
       "[PrismFeed] getPrismWalls success",
-      fields: <String, Object?>{
-        "count": prismWalls!.length,
-        "docSnaps": prismWallsDocSnaps?.length ?? 0,
-      },
+      fields: <String, Object?>{"count": prismWalls!.length, "docSnaps": prismWallsDocSnaps?.length ?? 0},
     );
   } catch (error, stackTrace) {
     subPrismWalls = <Map<String, dynamic>>[];
-    logger.e(
-      "[PrismFeed] getPrismWalls failed",
-      error: error,
-      stackTrace: stackTrace,
-    );
+    logger.e("[PrismFeed] getPrismWalls failed", error: error, stackTrace: stackTrace);
     rethrow;
   }
   return subPrismWalls;
@@ -66,10 +57,7 @@ Future<List?> getPrismWalls() async {
 Future<List?> seeMorePrism() async {
   logger.d(
     "[PrismFeed] seeMorePrism start",
-    fields: <String, Object?>{
-      "existing": subPrismWalls?.length ?? 0,
-      "docSnaps": prismWallsDocSnaps?.length ?? 0,
-    },
+    fields: <String, Object?>{"existing": subPrismWalls?.length ?? 0, "docSnaps": prismWallsDocSnaps?.length ?? 0},
   );
   if (!(prismWallsDocSnaps?.isNotEmpty ?? false)) {
     logger.w("[PrismFeed] seeMorePrism skipped: no cursor snapshot available");
@@ -108,18 +96,11 @@ Future<List?> seeMorePrism() async {
     }
     logger.i(
       "[PrismFeed] seeMorePrism success",
-      fields: <String, Object?>{
-        "fetched": value.length,
-        "total": subPrismWalls!.length,
-      },
+      fields: <String, Object?>{"fetched": value.length, "total": subPrismWalls!.length},
     );
   } catch (error, stackTrace) {
     prismHasMore = false;
-    logger.e(
-      "[PrismFeed] seeMorePrism failed",
-      error: error,
-      stackTrace: stackTrace,
-    );
+    logger.e("[PrismFeed] seeMorePrism failed", error: error, stackTrace: stackTrace);
     rethrow;
   }
   return subPrismWalls;
@@ -131,9 +112,7 @@ Future<Map> getDataByID(String? id) async {
     FirestoreQuerySpec(
       collection: FirebaseCollections.walls,
       sourceTag: 'prism.getDataById',
-      filters: <FirestoreFilter>[
-        FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: id),
-      ],
+      filters: <FirestoreFilter>[FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: id)],
       limit: 1,
     ),
     (data, _) => data,

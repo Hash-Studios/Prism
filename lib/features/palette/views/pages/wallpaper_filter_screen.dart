@@ -35,10 +35,7 @@ import 'package:photofilters/filters/preset_filters.dart';
 class WallpaperFilterScreen extends StatefulWidget {
   final List<dynamic>? arguments;
 
-  const WallpaperFilterScreen({
-    super.key,
-    this.arguments,
-  });
+  const WallpaperFilterScreen({super.key, this.arguments});
 
   @override
   State<StatefulWidget> createState() => _WallpaperFilterScreenState();
@@ -136,10 +133,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<void> _setBothWallPaper(String url) async {
     bool? result;
     try {
-      result = await WallpaperService.setWallpaperFromSource(
-        url,
-        WallpaperTarget.both,
-      );
+      result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.both);
       if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
@@ -161,10 +155,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<void> _setLockWallPaper(String url) async {
     bool? result;
     try {
-      result = await WallpaperService.setWallpaperFromSource(
-        url,
-        WallpaperTarget.lock,
-      );
+      result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.lock);
       if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Success'});
@@ -186,10 +177,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<void> _setHomeWallPaper(String url) async {
     bool? result;
     try {
-      result = await WallpaperService.setWallpaperFromSource(
-        url,
-        WallpaperTarget.home,
-      );
+      result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.home);
       if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Success'});
@@ -523,15 +511,13 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "Edit Wallpaper",
-          style: Theme.of(context).textTheme.displaySmall,
-        ),
+        title: Text("Edit Wallpaper", style: Theme.of(context).textTheme.displaySmall),
         leading: IconButton(
-            icon: const Icon(JamIcons.close),
-            onPressed: () {
-              Navigator.pop(context);
-            }),
+          icon: const Icon(JamIcons.close),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         backgroundColor: Theme.of(context).primaryColor,
         actions: <Widget>[
           if (loading)
@@ -539,7 +525,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           else if (isLoading)
             Center(
               child: SizedBox(
-                  width: 20, height: 20, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.error)),
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(color: Theme.of(context).colorScheme.error),
+              ),
             )
           else
             IconButton(
@@ -578,16 +567,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                     child: SizedBox(
                       width: double.infinity,
                       height: double.infinity,
-                      child: _buildFilteredImage(
-                        _filter,
-                        finalImage,
-                        finalFilename,
-                      ),
+                      child: _buildFilteredImage(_filter, finalImage, finalFilename),
                     ),
                   ),
-                  const Divider(
-                    height: 1,
-                  ),
+                  const Divider(height: 1),
                   Expanded(
                     flex: 2,
                     child: ColoredBox(
@@ -612,28 +595,23 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                       _buildFilterThumbnail(selectedFilters[index], image, filename),
                                       if (_filter == selectedFilters[index])
                                         Container(
-                                            decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(500),
-                                              color: Colors.white,
-                                            ),
-                                            child: const Icon(
-                                              JamIcons.check,
-                                              color: Colors.black,
-                                            ))
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(500),
+                                            color: Colors.white,
+                                          ),
+                                          child: const Icon(JamIcons.check, color: Colors.black),
+                                        )
                                       else
                                         Container(),
                                     ],
                                   ),
-                                  const SizedBox(
-                                    height: 10.0,
-                                  ),
+                                  const SizedBox(height: 10.0),
                                   Text(
                                     selectedFilters[index].name,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium!
-                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                  )
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                  ),
                                 ],
                               ),
                             ),
@@ -652,11 +630,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     final String filterName = filter.name;
     if (cachedFilters[filterName] == null) {
       return FutureBuilder<List<int>>(
-        future: compute(applyFilter, <String, dynamic>{
-          "filter": filter,
-          "image": image,
-          "filename": filename,
-        }),
+        future: compute(applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
         builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.none:
@@ -668,9 +642,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   width: 90.0,
                   height: MediaQuery.of(context).size.height * 0.15,
                   color: Theme.of(context).primaryColor,
-                  child: Center(
-                    child: Loader(),
-                  ),
+                  child: Center(child: Loader()),
                 ),
               );
             case ConnectionState.done:
@@ -684,12 +656,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   width: 90.0,
                   height: MediaQuery.of(context).size.height * 0.15,
                   color: Theme.of(context).primaryColor,
-                  child: Image(
-                    image: MemoryImage(
-                      (snapshot.data as Uint8List?)!,
-                    ),
-                    fit: BoxFit.cover,
-                  ),
+                  child: Image(image: MemoryImage((snapshot.data as Uint8List?)!), fit: BoxFit.cover),
                 ),
               );
           }
@@ -702,12 +669,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           width: 90.0,
           height: MediaQuery.of(context).size.height * 0.15,
           color: Theme.of(context).primaryColor,
-          child: Image(
-            image: MemoryImage(
-              cachedFilters[filterName]! as Uint8List,
-            ),
-            fit: BoxFit.cover,
-          ),
+          child: Image(image: MemoryImage(cachedFilters[filterName]! as Uint8List), fit: BoxFit.cover),
         ),
       );
     }
@@ -737,11 +699,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Widget _buildFilteredImage(Filter? filter, imagelib.Image? image, String? filename) {
     return FutureBuilder<List<int>>(
-      future: compute(applyFilter, <String, dynamic>{
-        "filter": filter,
-        "image": image,
-        "filename": filename,
-      }),
+      future: compute(applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
       builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
         switch (snapshot.connectionState) {
           case ConnectionState.none:
@@ -750,12 +708,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                 : Stack(
                     children: [
                       PhotoView(
-                        imageProvider: MemoryImage(
-                          (cachedFilters[filter?.name ?? "_"] as Uint8List?)!,
-                        ),
-                        backgroundDecoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
-                        ),
+                        imageProvider: MemoryImage((cachedFilters[filter?.name ?? "_"] as Uint8List?)!),
+                        backgroundDecoration: BoxDecoration(color: Theme.of(context).primaryColor),
                       ),
                       Positioned(
                         right: 10,
@@ -789,12 +743,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                 : Stack(
                     children: [
                       PhotoView(
-                        imageProvider: MemoryImage(
-                          (cachedFilters[filter?.name ?? "_"] as Uint8List?)!,
-                        ),
-                        backgroundDecoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
-                        ),
+                        imageProvider: MemoryImage((cachedFilters[filter?.name ?? "_"] as Uint8List?)!),
+                        backgroundDecoration: BoxDecoration(color: Theme.of(context).primaryColor),
                       ),
                       Positioned(
                         right: 10,
@@ -827,12 +777,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
             }
             cachedFilters[filter?.name ?? "_"] = snapshot.data;
             return PhotoView(
-              imageProvider: MemoryImage(
-                (snapshot.data as Uint8List?)!,
-              ),
-              backgroundDecoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
+              imageProvider: MemoryImage((snapshot.data as Uint8List?)!),
+              backgroundDecoration: BoxDecoration(color: Theme.of(context).primaryColor),
             );
         }
       },

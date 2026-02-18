@@ -26,12 +26,9 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
     return Align(
       alignment: Alignment.bottomCenter,
       child: SlideTransition(
-        position: animationController.drive(Tween<Offset>(
-          begin: const Offset(0.0, 1.0),
-          end: Offset.zero,
-        ).chain(CurveTween(
-          curve: Curves.fastOutSlowIn,
-        ))),
+        position: animationController.drive(
+          Tween<Offset>(begin: const Offset(0.0, 1.0), end: Offset.zero).chain(CurveTween(curve: Curves.fastOutSlowIn)),
+        ),
         child: OfflineBanner(),
       ),
     );
@@ -47,12 +44,7 @@ class OfflineBanner extends StatelessWidget {
       color: Colors.red,
       child: const Text(
         "No Internet",
-        style: TextStyle(
-          fontSize: 10,
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'Proxima Nova',
-        ),
+        style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Proxima Nova'),
         textAlign: TextAlign.center,
       ),
     );

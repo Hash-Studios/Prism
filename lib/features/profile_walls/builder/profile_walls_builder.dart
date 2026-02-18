@@ -7,9 +7,6 @@ class ProfileWallsBuilder {
   const ProfileWallsBuilder._();
 
   static Widget withBloc({required Widget child, ProfileWallsBloc? bloc}) {
-    return BlocProvider<ProfileWallsBloc>(
-      create: (_) => bloc ?? getIt<ProfileWallsBloc>(),
-      child: child,
-    );
+    return BlocProvider<ProfileWallsBloc>(create: (_) => bloc ?? getIt<ProfileWallsBloc>(), child: child);
   }
 }

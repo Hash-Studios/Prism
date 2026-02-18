@@ -61,7 +61,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
           onboardingCarouselController.previousPage(
-              duration: const Duration(milliseconds: 150), curve: Curves.easeOutCubic);
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutCubic,
+          );
         }
       },
       child: Scaffold(
@@ -96,9 +98,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(
-                            height: 17,
-                          ),
+                          SizedBox(height: 17),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 24.0),
                             child: ShowUpTransition(
@@ -117,9 +117,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(
-                            height: 179,
-                          ),
+                          SizedBox(height: 179),
                         ],
                       ),
                     ],
@@ -146,9 +144,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(
-                            height: 17,
-                          ),
+                          const SizedBox(height: 17),
                           ShowUpTransition(
                             forward: true,
                             slideSide: SlideFromSlide.bottom,
@@ -190,10 +186,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                     padding: const EdgeInsets.all(4.0),
                                                     child: Text(
                                                       "Light",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .copyWith(color: Colors.black),
+                                                      style: Theme.of(
+                                                        context,
+                                                      ).textTheme.titleSmall!.copyWith(color: Colors.black),
                                                     ),
                                                   ),
                                                 ],
@@ -204,17 +199,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 width: MediaQuery.of(context).size.width * 0.27,
                                                 height: MediaQuery.of(context).size.height * 0.06,
                                                 decoration: BoxDecoration(
-                                                    color: Colors.black.withValues(alpha: 0.5),
-                                                    border: Border.all(color: Colors.black45),
-                                                    borderRadius: BorderRadius.circular(5)),
+                                                  color: Colors.black.withValues(alpha: 0.5),
+                                                  border: Border.all(color: Colors.black45),
+                                                  borderRadius: BorderRadius.circular(5),
+                                                ),
                                                 child: const Column(
                                                   mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      JamIcons.check,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ],
+                                                  children: [Icon(JamIcons.check, color: Colors.white)],
                                                 ),
                                               )
                                             else
@@ -243,9 +234,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                               width: MediaQuery.of(context).size.width * 0.27,
                                               height: MediaQuery.of(context).size.height * 0.06,
                                               decoration: BoxDecoration(
-                                                  border: Border.all(color: Colors.black12),
-                                                  borderRadius: BorderRadius.circular(5),
-                                                  color: Colors.black),
+                                                border: Border.all(color: Colors.black12),
+                                                borderRadius: BorderRadius.circular(5),
+                                                color: Colors.black,
+                                              ),
                                               child: Column(
                                                 mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
@@ -253,10 +245,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                     padding: const EdgeInsets.all(4.0),
                                                     child: Text(
                                                       "Dark",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .copyWith(color: Colors.white),
+                                                      style: Theme.of(
+                                                        context,
+                                                      ).textTheme.titleSmall!.copyWith(color: Colors.white),
                                                     ),
                                                   ),
                                                 ],
@@ -267,17 +258,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 width: MediaQuery.of(context).size.width * 0.27,
                                                 height: MediaQuery.of(context).size.height * 0.06,
                                                 decoration: BoxDecoration(
-                                                    color: Colors.white.withValues(alpha: 0.5),
-                                                    border: Border.all(color: Colors.black45),
-                                                    borderRadius: BorderRadius.circular(5)),
+                                                  color: Colors.white.withValues(alpha: 0.5),
+                                                  border: Border.all(color: Colors.black45),
+                                                  borderRadius: BorderRadius.circular(5),
+                                                ),
                                                 child: const Column(
                                                   mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      JamIcons.check,
-                                                      color: Colors.black,
-                                                    ),
-                                                  ],
+                                                  children: [Icon(JamIcons.check, color: Colors.black)],
                                                 ),
                                               )
                                             else
@@ -320,10 +307,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                     child: Text(
                                                       "System",
                                                       style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                                                          color: MediaQuery.of(context).platformBrightness ==
-                                                                  Brightness.dark
-                                                              ? Colors.white
-                                                              : Colors.black),
+                                                        color:
+                                                            MediaQuery.of(context).platformBrightness == Brightness.dark
+                                                            ? Colors.white
+                                                            : Colors.black,
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
@@ -334,11 +322,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 width: MediaQuery.of(context).size.width * 0.27,
                                                 height: MediaQuery.of(context).size.height * 0.06,
                                                 decoration: BoxDecoration(
-                                                    color: MediaQuery.of(context).platformBrightness == Brightness.dark
-                                                        ? Colors.white.withValues(alpha: 0.5)
-                                                        : Colors.black.withValues(alpha: 0.5),
-                                                    border: Border.all(color: Colors.black45),
-                                                    borderRadius: BorderRadius.circular(5)),
+                                                  color: MediaQuery.of(context).platformBrightness == Brightness.dark
+                                                      ? Colors.white.withValues(alpha: 0.5)
+                                                      : Colors.black.withValues(alpha: 0.5),
+                                                  border: Border.all(color: Colors.black45),
+                                                  borderRadius: BorderRadius.circular(5),
+                                                ),
                                                 child: Column(
                                                   mainAxisAlignment: MainAxisAlignment.center,
                                                   children: [
@@ -346,8 +335,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       JamIcons.check,
                                                       color:
                                                           MediaQuery.of(context).platformBrightness == Brightness.dark
-                                                              ? Colors.black
-                                                              : Colors.white,
+                                                          ? Colors.black
+                                                          : Colors.white,
                                                     ),
                                                   ],
                                                 ),
@@ -358,14 +347,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         ),
                                       ),
                                     ),
-                                  )
+                                  ),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(
-                            height: 17,
-                          ),
+                          const SizedBox(height: 17),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 24.0),
                             child: ShowUpTransition(
@@ -384,9 +371,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(
-                            height: 92,
-                          ),
+                          const SizedBox(height: 92),
                         ],
                       ),
                     ],
@@ -413,9 +398,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(
-                            height: 17,
-                          ),
+                          SizedBox(height: 17),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 24.0),
                             child: ShowUpTransition(
@@ -434,9 +417,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(
-                            height: 179,
-                          ),
+                          SizedBox(height: 179),
                         ],
                       ),
                     ],
@@ -452,13 +433,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       TextButton(
                         onPressed: _currentPage != 2
                             ? () {
-                                onboardingCarouselController.animateToPage(2,
-                                    duration: const Duration(milliseconds: 250), curve: Curves.easeOutCubic);
+                                onboardingCarouselController.animateToPage(
+                                  2,
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeOutCubic,
+                                );
                               }
                             : () {
                                 main.prefs.put('onboarded_new', true);
                                 Navigator.pushReplacement(
-                                    context, MaterialPageRoute(builder: (context) => const SplashWidget()));
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const SplashWidget()),
+                                );
                               },
                         style: ButtonStyle(overlayColor: WidgetStateColor.resolveWith((states) => Colors.white10)),
                         child: SizedBox(
@@ -480,66 +466,61 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         onPressed: _currentPage != 2
                             ? () {
                                 onboardingCarouselController.nextPage(
-                                    duration: const Duration(milliseconds: 250), curve: Curves.easeOutCubic);
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeOutCubic,
+                                );
                               }
                             : isSignedIn!
-                                ? () {
-                                    toasts.codeSend("Already signed-in!");
+                            ? () {
+                                toasts.codeSend("Already signed-in!");
+                              }
+                            : isLoading
+                            ? () {}
+                            : () async {
+                                logger.i('Sign in tapped', tag: 'Onboarding');
+                                setState(() {
+                                  isLoading = true;
+                                });
+                                try {
+                                  final String signInResult = await globals.gAuth.signInWithGoogle();
+                                  if (signInResult == GoogleAuth.signInCancelledResult) {
+                                    globals.prismUser.loggedIn = false;
+                                    main.prefs.put(main.userHiveKey, globals.prismUser);
+                                    toasts.codeSend("Sign in cancelled.");
+                                  } else {
+                                    toasts.codeSend("Login Successful!");
+                                    globals.prismUser.loggedIn = true;
+                                    main.prefs.put(main.userHiveKey, globals.prismUser);
+                                    await Future.delayed(const Duration(milliseconds: 500));
+                                    if (!context.mounted) {
+                                      return;
+                                    }
+                                    main.prefs.put('onboarded_new', true);
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const OptionalInfo3(
+                                          heading: 'Follow top creators',
+                                          subheading: 'Never miss the latest and greatest',
+                                          showSkip: false,
+                                          skipText: "Skip",
+                                          doneText: "DONE",
+                                        ),
+                                      ),
+                                    );
                                   }
-                                : isLoading
-                                    ? () {}
-                                    : () async {
-                                        logger.i('Sign in tapped', tag: 'Onboarding');
-                                        setState(() {
-                                          isLoading = true;
-                                        });
-                                        try {
-                                          final String signInResult = await globals.gAuth.signInWithGoogle();
-                                          if (signInResult == GoogleAuth.signInCancelledResult) {
-                                            globals.prismUser.loggedIn = false;
-                                            main.prefs.put(main.userHiveKey, globals.prismUser);
-                                            toasts.codeSend("Sign in cancelled.");
-                                          } else {
-                                            toasts.codeSend("Login Successful!");
-                                            globals.prismUser.loggedIn = true;
-                                            main.prefs.put(main.userHiveKey, globals.prismUser);
-                                            await Future.delayed(const Duration(milliseconds: 500));
-                                            if (!context.mounted) {
-                                              return;
-                                            }
-                                            main.prefs.put('onboarded_new', true);
-                                            Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => const OptionalInfo3(
-                                                  heading: 'Follow top creators',
-                                                  subheading: 'Never miss the latest and greatest',
-                                                  showSkip: false,
-                                                  skipText: "Skip",
-                                                  doneText: "DONE",
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        } catch (e, st) {
-                                          logger.e(
-                                            'Google sign-in failed',
-                                            tag: 'Onboarding',
-                                            error: e,
-                                            stackTrace: st,
-                                          );
-                                          globals.prismUser.loggedIn = false;
-                                          main.prefs.put(main.userHiveKey, globals.prismUser);
-                                          toasts.error("Something went wrong, please try again!");
-                                        }
-                                        setState(() {
-                                          isLoading = false;
-                                          isSignedIn = globals.prismUser.loggedIn;
-                                        });
-                                      },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
-                        ),
+                                } catch (e, st) {
+                                  logger.e('Google sign-in failed', tag: 'Onboarding', error: e, stackTrace: st);
+                                  globals.prismUser.loggedIn = false;
+                                  main.prefs.put(main.userHiveKey, globals.prismUser);
+                                  toasts.error("Something went wrong, please try again!");
+                                }
+                                setState(() {
+                                  isLoading = false;
+                                  isSignedIn = globals.prismUser.loggedIn;
+                                });
+                              },
+                        style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
                         child: SizedBox(
                           width: 60,
                           child: _currentPage != 2
@@ -547,8 +528,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   _currentPage == 0
                                       ? 'NEXT'
                                       : _currentPage == 1
-                                          ? 'NEXT'
-                                          : 'SIGN IN',
+                                      ? 'NEXT'
+                                      : 'SIGN IN',
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: Color(0xFFE57697),
@@ -558,41 +539,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   ),
                                 )
                               : isSignedIn!
-                                  ? const Icon(
-                                      JamIcons.check,
-                                      color: Color(0xFFE57697),
-                                    )
-                                  : isLoading
-                                      ? const Center(
-                                          child: SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE57697)),
-                                            ),
-                                          ),
-                                        )
-                                      : Text(
-                                          _currentPage == 0
-                                              ? 'NEXT'
-                                              : _currentPage == 1
-                                                  ? 'NEXT'
-                                                  : 'SIGN IN',
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            color: Color(0xFFE57697),
-                                            fontSize: 15,
-                                            fontFamily: "Roboto",
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
+                              ? const Icon(JamIcons.check, color: Color(0xFFE57697))
+                              : isLoading
+                              ? const Center(
+                                  child: SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE57697)),
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  _currentPage == 0
+                                      ? 'NEXT'
+                                      : _currentPage == 1
+                                      ? 'NEXT'
+                                      : 'SIGN IN',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Color(0xFFE57697),
+                                    fontSize: 15,
+                                    fontFamily: "Roboto",
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(
-                    height: 24,
-                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ],
@@ -604,10 +580,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class OBIndicator extends StatelessWidget {
-  const OBIndicator({
-    super.key,
-    required int? currentPage,
-  }) : _currentPage = currentPage;
+  const OBIndicator({super.key, required int? currentPage}) : _currentPage = currentPage;
 
   final int? _currentPage;
 

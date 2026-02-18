@@ -11,11 +11,7 @@ import 'package:hive_io/hive_io.dart';
 class FavIconButton extends StatefulWidget {
   final String? id;
   final Map? prism;
-  const FavIconButton({
-    required this.id,
-    this.prism,
-    super.key,
-  });
+  const FavIconButton({required this.id, this.prism, super.key});
 
   @override
   _FavIconButtonState createState() => _FavIconButtonState();

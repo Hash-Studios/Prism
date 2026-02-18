@@ -30,50 +30,38 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    animation = context.prismModeStyleForWindow(listen: false) == "Dark"
-        ? TweenSequence<Color?>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.white10,
-                  end: const Color(0x22FFFFFF),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: const Color(0x22FFFFFF),
-                  end: Colors.white10,
-                ),
-              ),
-            ],
-          ).animate(_controller!)
-        : TweenSequence<Color?>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withValues(alpha: .1),
-                  end: Colors.black.withValues(alpha: .14),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withValues(alpha: .14),
-                  end: Colors.black.withValues(alpha: .1),
-                ),
-              ),
-            ],
-          ).animate(_controller!)
-      ..addListener(() {
-        setState(() {});
-      });
+    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    animation =
+        context.prismModeStyleForWindow(listen: false) == "Dark"
+              ? TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
+                  ),
+                ]).animate(_controller!)
+              : TweenSequence<Color?>([
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .1),
+                      end: Colors.black.withValues(alpha: .14),
+                    ),
+                  ),
+                  TweenSequenceItem(
+                    weight: 1.0,
+                    tween: ColorTween(
+                      begin: Colors.black.withValues(alpha: .14),
+                      end: Colors.black.withValues(alpha: .1),
+                    ),
+                  ),
+                ]).animate(_controller!)
+          ..addListener(() {
+            setState(() {});
+          });
     _controller!.repeat();
   }
 
@@ -105,35 +93,9 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
       key: refreshHomeKey,
       onRefresh: refreshList,
       child: NotificationListener<ScrollNotification>(
-        onNotification: (ScrollNotification scrollInfo) {
-          if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
-            if (!seeMoreLoader) {
-              PData.getWallsPbyColorPage(widget.provider.substring(9));
-              setState(() {
-                seeMoreLoader = true;
-                Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
-              });
-            }
-          }
-        } as bool Function(ScrollNotification)?,
-        child: GridView.builder(
-          controller: controller,
-          padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-          itemCount: PData.wallsC.isEmpty ? 24 : PData.wallsC.length,
-          shrinkWrap: true,
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-              childAspectRatio: 0.6625,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8),
-          itemBuilder: (context, index) {
-            if (index == PData.wallsC.length - 1) {
-              return MaterialButton(
-                  color: context.prismModeStyleForContext() == "Dark"
-                      ? Colors.white10
-                      : Colors.black.withValues(alpha: .1),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  onPressed: () {
+        onNotification:
+            (ScrollNotification scrollInfo) {
+                  if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
                     if (!seeMoreLoader) {
                       PData.getWallsPbyColorPage(widget.provider.substring(9));
                       setState(() {
@@ -141,76 +103,109 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                         Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
                       });
                     }
-                  },
-                  child: !seeMoreLoader ? const Text("See more") : Loader());
+                  }
+                }
+                as bool Function(ScrollNotification)?,
+        child: GridView.builder(
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+          itemCount: PData.wallsC.isEmpty ? 24 : PData.wallsC.length,
+          shrinkWrap: true,
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+            childAspectRatio: 0.6625,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+          ),
+          itemBuilder: (context, index) {
+            if (index == PData.wallsC.length - 1) {
+              return MaterialButton(
+                color: context.prismModeStyleForContext() == "Dark"
+                    ? Colors.white10
+                    : Colors.black.withValues(alpha: .1),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                onPressed: () {
+                  if (!seeMoreLoader) {
+                    PData.getWallsPbyColorPage(widget.provider.substring(9));
+                    setState(() {
+                      seeMoreLoader = true;
+                      Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
+                    });
+                  }
+                },
+                child: !seeMoreLoader ? const Text("See more") : Loader(),
+              );
             }
 
             return FocusedMenuHolder(
-                provider: widget.provider,
-                index: index,
-                child: AnimatedBuilder(
-                    animation: offsetAnimation,
-                    builder: (buildContext, child) {
-                      if (offsetAnimation.value < 0.0) {
-                        logger.d('${offsetAnimation.value + 8.0}');
-                      }
-                      return Padding(
-                        padding: index == longTapIndex
-                            ? EdgeInsets.symmetric(
-                                vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
-                            : EdgeInsets.zero,
-                        child: Stack(
-                          children: [
-                            Container(
-                              decoration: PData.wallsC.isEmpty
-                                  ? BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                    )
-                                  : BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                          image:
-                                              CachedNetworkImageProvider(PData.wallsC[index].src!["medium"].toString()),
-                                          fit: BoxFit.cover)),
-                            ),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                  highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                                  onTap: () {
-                                    if (PData.wallsC == []) {
-                                    } else {
-                                      context.router.push(WallpaperRoute(
-                                          arguments: [widget.provider, index, PData.wallsC[index].src!["small"]]));
-                                    }
-                                  },
-                                  onLongPress: () {
-                                    setState(() {
-                                      longTapIndex = index;
-                                    });
-                                    shakeController.forward(from: 0.0);
-                                    if (PData.wallsC == []) {
-                                    } else {
-                                      HapticFeedback.vibrate();
-                                      createDynamicLink(
-                                          PData.wallsC[index].id!,
-                                          "Pexels",
-                                          PData.wallsC[index].src!["original"].toString(),
-                                          PData.wallsC[index].src!["medium"].toString());
-                                    }
-                                  },
+              provider: widget.provider,
+              index: index,
+              child: AnimatedBuilder(
+                animation: offsetAnimation,
+                builder: (buildContext, child) {
+                  if (offsetAnimation.value < 0.0) {
+                    logger.d('${offsetAnimation.value + 8.0}');
+                  }
+                  return Padding(
+                    padding: index == longTapIndex
+                        ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
+                        : EdgeInsets.zero,
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: PData.wallsC.isEmpty
+                              ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                              : BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                    image: CachedNetworkImageProvider(PData.wallsC[index].src!["medium"].toString()),
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ],
                         ),
-                      );
-                    }));
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                              onTap: () {
+                                if (PData.wallsC == []) {
+                                } else {
+                                  context.router.push(
+                                    WallpaperRoute(
+                                      arguments: [widget.provider, index, PData.wallsC[index].src!["small"]],
+                                    ),
+                                  );
+                                }
+                              },
+                              onLongPress: () {
+                                setState(() {
+                                  longTapIndex = index;
+                                });
+                                shakeController.forward(from: 0.0);
+                                if (PData.wallsC == []) {
+                                } else {
+                                  HapticFeedback.vibrate();
+                                  createDynamicLink(
+                                    PData.wallsC[index].id!,
+                                    "Pexels",
+                                    PData.wallsC[index].src!["original"].toString(),
+                                    PData.wallsC[index].src!["medium"].toString(),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            );
           },
         ),
       ),

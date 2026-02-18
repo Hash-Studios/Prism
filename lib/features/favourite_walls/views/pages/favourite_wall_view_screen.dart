@@ -73,10 +73,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
     });
     if (accent!.computeLuminance() > 0.5) {
       SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
+        SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
+      );
     } else {
       SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
+        SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light),
+      );
     }
   }
 
@@ -91,10 +93,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
       });
       if (accent!.computeLuminance() > 0.5) {
         SystemChrome.setSystemUIOverlayStyle(
-            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
+        );
       } else {
         SystemChrome.setSystemUIOverlayStyle(
-            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light),
+        );
       }
     }
   }
@@ -143,10 +147,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                   logger.d('Screenshot Starting');
                   if (colorChanged) {
                     screenshotController
-                        .capture(
-                      pixelRatio: 3,
-                      delay: const Duration(milliseconds: 10),
-                    )
+                        .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                         .then((Uint8List? image) async {
                       setState(() {
                         _imageFile = File.fromRawPath(image!);
@@ -160,10 +161,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                   } else {
                     (main.prefs.get('optimisedWallpapers') ?? true) == true
                         ? screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: const Duration(milliseconds: 10),
-                          )
+                            .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                             .then((Uint8List? image) async {
                             setState(() {
                               _imageFile = File.fromRawPath(image!);
@@ -188,15 +186,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                 });
               },
               backdropEnabled: true,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
               boxShadow: const [],
-              collapsed: CollapsedPanel(
-                panelCollapsed: panelCollapsed,
-                panelController: panelController,
-              ),
+              collapsed: CollapsedPanel(panelCollapsed: panelCollapsed, panelController: panelController),
               minHeight: MediaQuery.of(context).size.height / 20,
               parallaxEnabled: true,
               parallaxOffset: 0.0,
@@ -223,22 +215,20 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Center(
-                              child: Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: AnimatedOpacity(
-                              duration: Duration.zero,
-                              opacity: panelCollapsed ? 0.0 : 1.0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  panelController.close();
-                                },
-                                child: Icon(
-                                  JamIcons.chevron_down,
-                                  color: Theme.of(context).colorScheme.secondary,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: AnimatedOpacity(
+                                duration: Duration.zero,
+                                opacity: panelCollapsed ? 0.0 : 1.0,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    panelController.close();
+                                  },
+                                  child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ),
                             ),
-                          )),
+                          ),
                           ColorBar(colors: colors),
                           if (context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "WallHaven")
                             Expanded(
@@ -261,10 +251,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                 .liked![index]["id"]
                                                 .toString()
                                                 .toUpperCase(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyLarge!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                           ),
                                         ),
                                         Row(
@@ -277,10 +266,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             const SizedBox(width: 10),
                                             Text(
                                               "${context.favouriteWallsAdapter(listen: false).liked![index]["views"]}",
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium!
-                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
                                             ),
                                           ],
                                         ),
@@ -295,10 +283,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             const SizedBox(width: 10),
                                             Text(
                                               "${context.favouriteWallsAdapter(listen: false).liked![index]["fav"]}",
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium!
-                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
                                             ),
                                           ],
                                         ),
@@ -313,10 +300,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             const SizedBox(width: 10),
                                             Text(
                                               "${double.parse((double.parse(context.favouriteWallsAdapter(listen: false).liked![index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium!
-                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
                                             ),
                                           ],
                                         ),
@@ -341,10 +327,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                         .liked![index]["category"]
                                                         .toString()
                                                         .substring(1),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
                                               ),
                                               const SizedBox(width: 10),
                                               Icon(
@@ -360,10 +345,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                           children: [
                                             Text(
                                               "${context.favouriteWallsAdapter(listen: false).liked![index]["resolution"]}",
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium!
-                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
@@ -381,10 +365,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                   .favouriteWallsAdapter(listen: false)
                                                   .liked![index]["provider"]
                                                   .toString(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium!
-                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
@@ -426,10 +409,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                             .liked![index]["id"]
                                                             .toString()
                                                             .toUpperCase(),
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyLarge!
-                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                        style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                              color: Theme.of(context).colorScheme.secondary,
+                                                            ),
                                                       ),
                                                       Padding(
                                                         padding: const EdgeInsets.symmetric(horizontal: 6.0),
@@ -447,15 +429,17 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                               return Text(
                                                                 "",
                                                                 style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                    color: Theme.of(context).colorScheme.secondary,
-                                                                    fontSize: 16),
+                                                                      color: Theme.of(context).colorScheme.secondary,
+                                                                      fontSize: 16,
+                                                                    ),
                                                               );
                                                             case ConnectionState.none:
                                                               return Text(
                                                                 "",
                                                                 style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                    color: Theme.of(context).colorScheme.secondary,
-                                                                    fontSize: 16),
+                                                                      color: Theme.of(context).colorScheme.secondary,
+                                                                      fontSize: 16,
+                                                                    ),
                                                               );
                                                             default:
                                                               if (snapshot.hasError) {
@@ -465,9 +449,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                                       .textTheme
                                                                       .bodyLarge!
                                                                       .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).colorScheme.secondary,
-                                                                          fontSize: 16),
+                                                                        color: Theme.of(context).colorScheme.secondary,
+                                                                        fontSize: 16,
+                                                                      ),
                                                                 );
                                                               } else {
                                                                 return Text(
@@ -478,9 +462,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                                       .textTheme
                                                                       .bodyLarge!
                                                                       .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).colorScheme.secondary,
-                                                                          fontSize: 16),
+                                                                        color: Theme.of(context).colorScheme.secondary,
+                                                                        fontSize: 16,
+                                                                      ),
                                                                 );
                                                               }
                                                           }
@@ -494,16 +478,16 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                     Icon(
                                                       JamIcons.camera,
                                                       size: 20,
-                                                      color:
-                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.secondary.withValues(alpha: .7),
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Text(
                                                       "${context.favouriteWallsAdapter(listen: false).liked![index]["photographer"]}",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium!
-                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                          ),
                                                     ),
                                                   ],
                                                 ),
@@ -513,16 +497,16 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                     Icon(
                                                       JamIcons.arrow_circle_right,
                                                       size: 20,
-                                                      color:
-                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.secondary.withValues(alpha: .7),
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Text(
                                                       "${context.favouriteWallsAdapter(listen: false).liked![index]["category"]}",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium!
-                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                          ),
                                                     ),
                                                   ],
                                                 ),
@@ -532,16 +516,16 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                     Icon(
                                                       JamIcons.save,
                                                       size: 20,
-                                                      color:
-                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.secondary.withValues(alpha: .7),
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Text(
                                                       "${context.favouriteWallsAdapter(listen: false).liked![index]["size"]}",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium!
-                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                          ),
                                                     ),
                                                   ],
                                                 ),
@@ -555,17 +539,17 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                   children: [
                                                     Text(
                                                       "${context.favouriteWallsAdapter(listen: false).liked![index]["resolution"]}",
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium!
-                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                          ),
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Icon(
                                                       JamIcons.set_square,
                                                       size: 20,
-                                                      color:
-                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.secondary.withValues(alpha: .7),
                                                     ),
                                                   ],
                                                 ),
@@ -577,17 +561,17 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                           .favouriteWallsAdapter(listen: false)
                                                           .liked![index]["provider"]
                                                           .toString(),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium!
-                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                          ),
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Icon(
                                                       JamIcons.database,
                                                       size: 20,
-                                                      color:
-                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.secondary.withValues(alpha: .7),
                                                     ),
                                                   ],
                                                 ),
@@ -620,10 +604,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                           Icon(
                                                             JamIcons.camera,
                                                             size: 20,
-                                                            color: Theme.of(context)
-                                                                .colorScheme
-                                                                .secondary
-                                                                .withValues(alpha: .7),
+                                                            color: Theme.of(
+                                                              context,
+                                                            ).colorScheme.secondary.withValues(alpha: .7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           SizedBox(
@@ -635,7 +618,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                                   .toString(),
                                                               textAlign: TextAlign.left,
                                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                  color: Theme.of(context).colorScheme.secondary),
+                                                                    color: Theme.of(context).colorScheme.secondary,
+                                                                  ),
                                                             ),
                                                           ),
                                                         ],
@@ -646,10 +630,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                           Icon(
                                                             JamIcons.set_square,
                                                             size: 20,
-                                                            color: Theme.of(context)
-                                                                .colorScheme
-                                                                .secondary
-                                                                .withValues(alpha: .7),
+                                                            color: Theme.of(
+                                                              context,
+                                                            ).colorScheme.secondary.withValues(alpha: .7),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Text(
@@ -658,7 +641,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                                 .liked![index]["resolution"]
                                                                 .toString(),
                                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                color: Theme.of(context).colorScheme.secondary),
+                                                                  color: Theme.of(context).colorScheme.secondary,
+                                                                ),
                                                           ),
                                                         ],
                                                       ),
@@ -676,16 +660,16 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                                 .liked![index]["id"]
                                                                 .toString(),
                                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                color: Theme.of(context).colorScheme.secondary),
+                                                                  color: Theme.of(context).colorScheme.secondary,
+                                                                ),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Icon(
                                                             JamIcons.info,
                                                             size: 20,
-                                                            color: Theme.of(context)
-                                                                .colorScheme
-                                                                .secondary
-                                                                .withValues(alpha: .7),
+                                                            color: Theme.of(
+                                                              context,
+                                                            ).colorScheme.secondary.withValues(alpha: .7),
                                                           ),
                                                         ],
                                                       ),
@@ -698,16 +682,16 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                                 .liked![index]["provider"]
                                                                 .toString(),
                                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                color: Theme.of(context).colorScheme.secondary),
+                                                                  color: Theme.of(context).colorScheme.secondary,
+                                                                ),
                                                           ),
                                                           const SizedBox(width: 10),
                                                           Icon(
                                                             JamIcons.database,
                                                             size: 20,
-                                                            color: Theme.of(context)
-                                                                .colorScheme
-                                                                .secondary
-                                                                .withValues(alpha: .7),
+                                                            color: Theme.of(
+                                                              context,
+                                                            ).colorScheme.secondary.withValues(alpha: .7),
                                                           ),
                                                         ],
                                                       ),
@@ -753,14 +737,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                   trash: true,
                                 ),
                                 ShareButton(
-                                    id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
-                                    provider: context
-                                        .favouriteWallsAdapter(listen: false)
-                                        .liked![index]["provider"]
-                                        .toString(),
-                                    url: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                                    thumbUrl:
-                                        context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString()),
+                                  id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
+                                  provider:
+                                      context.favouriteWallsAdapter(listen: false).liked![index]["provider"].toString(),
+                                  url: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                                  thumbUrl:
+                                      context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString(),
+                                ),
                                 EditButton(
                                   url: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
                                 ),
@@ -776,72 +759,74 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
               body: Stack(
                 children: <Widget>[
                   AnimatedBuilder(
-                      animation: offsetAnimation,
-                      builder: (buildContext, child) {
-                        if (offsetAnimation.value < 0.0) {
-                          logger.d('${offsetAnimation.value + 8.0}');
-                        }
-                        return GestureDetector(
-                          onPanUpdate: (details) {
-                            if (details.delta.dy < -10) {
-                              panelController.open();
-                              // HapticFeedback.vibrate();
-                            }
-                          },
-                          onLongPress: () {
-                            setState(() {
-                              colorChanged = false;
-                            });
-                            HapticFeedback.vibrate();
-                            shakeController.forward(from: 0.0);
-                          },
-                          onTap: () {
-                            HapticFeedback.vibrate();
-                            !isLoading ? updateAccent() : logger.d("");
-                            shakeController.forward(from: 0.0);
-                          },
-                          child: CachedNetworkImage(
-                            imageUrl: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                            imageBuilder: (context, imageProvider) => Screenshot(
-                              controller: screenshotController,
-                              child: Container(
-                                margin: EdgeInsets.symmetric(
-                                    vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(offsetAnimation.value),
-                                  image: DecorationImage(
-                                    colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
-                                    image: imageProvider,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                    animation: offsetAnimation,
+                    builder: (buildContext, child) {
+                      if (offsetAnimation.value < 0.0) {
+                        logger.d('${offsetAnimation.value + 8.0}');
+                      }
+                      return GestureDetector(
+                        onPanUpdate: (details) {
+                          if (details.delta.dy < -10) {
+                            panelController.open();
+                            // HapticFeedback.vibrate();
+                          }
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            colorChanged = false;
+                          });
+                          HapticFeedback.vibrate();
+                          shakeController.forward(from: 0.0);
+                        },
+                        onTap: () {
+                          HapticFeedback.vibrate();
+                          !isLoading ? updateAccent() : logger.d("");
+                          shakeController.forward(from: 0.0);
+                        },
+                        child: CachedNetworkImage(
+                          imageUrl: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                          imageBuilder: (context, imageProvider) => Screenshot(
+                            controller: screenshotController,
+                            child: Container(
+                              margin: EdgeInsets.symmetric(
+                                vertical: offsetAnimation.value * 1.25,
+                                horizontal: offsetAnimation.value / 2,
                               ),
-                            ),
-                            progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-                              children: <Widget>[
-                                const SizedBox.expand(child: Text("")),
-                                Center(
-                                  child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation(
-                                        Theme.of(context).colorScheme.error,
-                                      ),
-                                      value: downloadProgress.progress),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(offsetAnimation.value),
+                                image: DecorationImage(
+                                  colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
                                 ),
-                              ],
-                            ),
-                            errorWidget: (context, url, error) => Center(
-                              child: Icon(
-                                JamIcons.close_circle_f,
-                                color: isLoading
-                                    ? Theme.of(context).colorScheme.secondary
-                                    : accent!.computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white,
                               ),
                             ),
                           ),
-                        );
-                      }),
+                          progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
+                            children: <Widget>[
+                              const SizedBox.expand(child: Text("")),
+                              Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                                  value: downloadProgress.progress,
+                                ),
+                              ),
+                            ],
+                          ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Icon(
+                              JamIcons.close_circle_f,
+                              color: isLoading
+                                  ? Theme.of(context).colorScheme.secondary
+                                  : accent!.computeLuminance() > 0.5
+                                      ? Colors.black
+                                      : Colors.white,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   Align(
                     alignment: Alignment.topLeft,
                     child: Padding(
@@ -855,9 +840,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                             : accent!.computeLuminance() > 0.5
                                 ? Colors.black
                                 : Colors.white,
-                        icon: const Icon(
-                          JamIcons.chevron_left,
-                        ),
+                        icon: const Icon(JamIcons.chevron_left),
                       ),
                     ),
                   ),
@@ -869,30 +852,31 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         onPressed: () {
                           final link = context.favouriteWallsAdapter(listen: false).liked![index]["url"];
                           Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) {
-                                    animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                                    return FadeTransition(
-                                        opacity: animation,
-                                        child: ClockOverlay(
-                                          colorChanged: colorChanged,
-                                          accent: accent,
-                                          link: link.toString(),
-                                          file: false,
-                                        ));
-                                  },
-                                  fullscreenDialog: true,
-                                  opaque: false));
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) {
+                                animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: ClockOverlay(
+                                    colorChanged: colorChanged,
+                                    accent: accent,
+                                    link: link.toString(),
+                                    file: false,
+                                  ),
+                                );
+                              },
+                              fullscreenDialog: true,
+                              opaque: false,
+                            ),
+                          );
                         },
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
                                 ? Colors.black
                                 : Colors.white,
-                        icon: const Icon(
-                          JamIcons.clock,
-                        ),
+                        icon: const Icon(JamIcons.clock),
                       ),
                     ),
                   ),
@@ -912,10 +896,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                   logger.d('Screenshot Starting');
                   if (colorChanged) {
                     screenshotController
-                        .capture(
-                      pixelRatio: 3,
-                      delay: const Duration(milliseconds: 10),
-                    )
+                        .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                         .then((Uint8List? image) async {
                       setState(() {
                         _imageFile = File.fromRawPath(image!);
@@ -929,10 +910,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                   } else {
                     (main.prefs.get('optimisedWallpapers') ?? true) == true
                         ? screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: const Duration(milliseconds: 10),
-                          )
+                            .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                             .then((Uint8List? image) async {
                             setState(() {
                               _imageFile = File.fromRawPath(image!);
@@ -957,15 +935,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                 });
               },
               backdropEnabled: true,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
               boxShadow: const [],
-              collapsed: CollapsedPanel(
-                panelCollapsed: panelCollapsed,
-                panelController: panelController,
-              ),
+              collapsed: CollapsedPanel(panelCollapsed: panelCollapsed, panelController: panelController),
               minHeight: MediaQuery.of(context).size.height / 20,
               parallaxEnabled: true,
               parallaxOffset: 0.0,
@@ -992,22 +964,20 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Center(
-                              child: Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: AnimatedOpacity(
-                              duration: Duration.zero,
-                              opacity: panelCollapsed ? 0.0 : 1.0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  panelController.close();
-                                },
-                                child: Icon(
-                                  JamIcons.chevron_down,
-                                  color: Theme.of(context).colorScheme.secondary,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: AnimatedOpacity(
+                                duration: Duration.zero,
+                                opacity: panelCollapsed ? 0.0 : 1.0,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    panelController.close();
+                                  },
+                                  child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ),
                             ),
-                          )),
+                          ),
                           ColorBar(colors: colors),
                           Expanded(
                             flex: 8,
@@ -1029,10 +999,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                               .liked![index]["id"]
                                               .toString()
                                               .toUpperCase(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyLarge!
-                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
                                         ),
                                       ),
                                       Row(
@@ -1045,10 +1014,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                           const SizedBox(width: 10),
                                           Text(
                                             "${context.favouriteWallsAdapter(listen: false).liked![index]["views"]}",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -1063,10 +1031,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                           const SizedBox(width: 10),
                                           Text(
                                             "${context.favouriteWallsAdapter(listen: false).liked![index]["fav"]}",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -1081,10 +1048,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                         children: [
                                           Text(
                                             "${context.favouriteWallsAdapter(listen: false).liked![index]["resolution"]}",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                           ),
                                           const SizedBox(width: 10),
                                           Icon(
@@ -1099,10 +1065,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                         children: [
                                           Text(
                                             "${double.parse((double.parse(context.favouriteWallsAdapter(listen: false).liked![index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                           ),
                                           const SizedBox(width: 10),
                                           Icon(
@@ -1214,22 +1179,23 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             trash: true,
                                           ),
                                           ShareButton(
-                                              id: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
-                                                  .toString(),
-                                              provider: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["provider"]
-                                                  .toString(),
-                                              url: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["url"]
-                                                  .toString(),
-                                              thumbUrl: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["thumb"]
-                                                  .toString())
+                                            id: context
+                                                .favouriteWallsAdapter(listen: false)
+                                                .liked![index]["id"]
+                                                .toString(),
+                                            provider: context
+                                                .favouriteWallsAdapter(listen: false)
+                                                .liked![index]["provider"]
+                                                .toString(),
+                                            url: context
+                                                .favouriteWallsAdapter(listen: false)
+                                                .liked![index]["url"]
+                                                .toString(),
+                                            thumbUrl: context
+                                                .favouriteWallsAdapter(listen: false)
+                                                .liked![index]["thumb"]
+                                                .toString(),
+                                          ),
                                         ]
                                   : <Widget>[
                                       DownloadButton(
@@ -1273,22 +1239,20 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                         trash: true,
                                       ),
                                       ShareButton(
-                                          id: context
-                                              .favouriteWallsAdapter(listen: false)
-                                              .liked![index]["id"]
-                                              .toString(),
-                                          provider: context
-                                              .favouriteWallsAdapter(listen: false)
-                                              .liked![index]["provider"]
-                                              .toString(),
-                                          url: context
-                                              .favouriteWallsAdapter(listen: false)
-                                              .liked![index]["url"]
-                                              .toString(),
-                                          thumbUrl: context
-                                              .favouriteWallsAdapter(listen: false)
-                                              .liked![index]["thumb"]
-                                              .toString())
+                                        id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
+                                        provider: context
+                                            .favouriteWallsAdapter(listen: false)
+                                            .liked![index]["provider"]
+                                            .toString(),
+                                        url: context
+                                            .favouriteWallsAdapter(listen: false)
+                                            .liked![index]["url"]
+                                            .toString(),
+                                        thumbUrl: context
+                                            .favouriteWallsAdapter(listen: false)
+                                            .liked![index]["thumb"]
+                                            .toString(),
+                                      ),
                                     ],
                             ),
                           ),
@@ -1301,41 +1265,78 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
               body: Stack(
                 children: <Widget>[
                   AnimatedBuilder(
-                      animation: offsetAnimation,
-                      builder: (buildContext, child) {
-                        if (offsetAnimation.value < 0.0) {
-                          logger.d('${offsetAnimation.value + 8.0}');
-                        }
-                        return GestureDetector(
-                          onPanUpdate: (details) {
-                            if (details.delta.dy < -10) {
-                              panelController.open();
-                              // HapticFeedback.vibrate();
-                            }
+                    animation: offsetAnimation,
+                    builder: (buildContext, child) {
+                      if (offsetAnimation.value < 0.0) {
+                        logger.d('${offsetAnimation.value + 8.0}');
+                      }
+                      return GestureDetector(
+                        onPanUpdate: (details) {
+                          if (details.delta.dy < -10) {
+                            panelController.open();
+                            // HapticFeedback.vibrate();
+                          }
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            colorChanged = false;
+                          });
+                          HapticFeedback.vibrate();
+                          shakeController.forward(from: 0.0);
+                        },
+                        onTap: () {
+                          HapticFeedback.vibrate();
+                          !isLoading ? updateAccent() : logger.d("");
+                          shakeController.forward(from: 0.0);
+                        },
+                        child: CachedNetworkImage(
+                          imageUrl:
+                              "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.jpg",
+                          imageBuilder: (context, imageProvider) {
+                            downloadLinkBackwards =
+                                "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.jpg";
+                            return Screenshot(
+                              controller: screenshotController,
+                              child: Container(
+                                margin: EdgeInsets.symmetric(
+                                  vertical: offsetAnimation.value * 1.25,
+                                  horizontal: offsetAnimation.value / 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(offsetAnimation.value),
+                                  image: DecorationImage(
+                                    colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
+                                    image: imageProvider,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            );
                           },
-                          onLongPress: () {
-                            setState(() {
-                              colorChanged = false;
-                            });
-                            HapticFeedback.vibrate();
-                            shakeController.forward(from: 0.0);
-                          },
-                          onTap: () {
-                            HapticFeedback.vibrate();
-                            !isLoading ? updateAccent() : logger.d("");
-                            shakeController.forward(from: 0.0);
-                          },
-                          child: CachedNetworkImage(
+                          progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
+                            children: <Widget>[
+                              const SizedBox.expand(child: Text("")),
+                              Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                                  value: downloadProgress.progress,
+                                ),
+                              ),
+                            ],
+                          ),
+                          errorWidget: (context, url, error) => CachedNetworkImage(
                             imageUrl:
-                                "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.jpg",
+                                "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png",
                             imageBuilder: (context, imageProvider) {
                               downloadLinkBackwards =
-                                  "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.jpg";
+                                  "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png";
                               return Screenshot(
                                 controller: screenshotController,
                                 child: Container(
                                   margin: EdgeInsets.symmetric(
-                                      vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
+                                    vertical: offsetAnimation.value * 1.25,
+                                    horizontal: offsetAnimation.value / 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(offsetAnimation.value),
                                     image: DecorationImage(
@@ -1347,61 +1348,27 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                 ),
                               );
                             },
-                            progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-                              children: <Widget>[
-                                const SizedBox.expand(child: Text("")),
-                                Center(
-                                  child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation(
-                                        Theme.of(context).colorScheme.error,
-                                      ),
-                                      value: downloadProgress.progress),
-                                ),
-                              ],
-                            ),
-                            errorWidget: (context, url, error) => CachedNetworkImage(
-                              imageUrl:
-                                  "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png",
-                              imageBuilder: (context, imageProvider) {
-                                downloadLinkBackwards =
-                                    "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png";
-                                return Screenshot(
-                                  controller: screenshotController,
-                                  child: Container(
-                                    margin: EdgeInsets.symmetric(
-                                        vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(offsetAnimation.value),
-                                      image: DecorationImage(
-                                        colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
-                                        image: imageProvider,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                              progressIndicatorBuilder: (context, url, downloadProgress) => Center(
-                                child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation(
-                                      Theme.of(context).colorScheme.error,
-                                    ),
-                                    value: downloadProgress.progress),
+                            progressIndicatorBuilder: (context, url, downloadProgress) => Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                                value: downloadProgress.progress,
                               ),
-                              errorWidget: (context, url, error) => Center(
-                                child: Icon(
-                                  JamIcons.close_circle_f,
-                                  color: isLoading
-                                      ? Theme.of(context).colorScheme.secondary
-                                      : accent!.computeLuminance() > 0.5
-                                          ? Colors.black
-                                          : Colors.white,
-                                ),
+                            ),
+                            errorWidget: (context, url, error) => Center(
+                              child: Icon(
+                                JamIcons.close_circle_f,
+                                color: isLoading
+                                    ? Theme.of(context).colorScheme.secondary
+                                    : accent!.computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
                               ),
                             ),
                           ),
-                        );
-                      }),
+                        ),
+                      );
+                    },
+                  ),
                   Align(
                     alignment: Alignment.topLeft,
                     child: Padding(
@@ -1415,9 +1382,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                             : accent!.computeLuminance() > 0.5
                                 ? Colors.black
                                 : Colors.white,
-                        icon: const Icon(
-                          JamIcons.chevron_left,
-                        ),
+                        icon: const Icon(JamIcons.chevron_left),
                       ),
                     ),
                   ),
@@ -1430,30 +1395,31 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                           final link =
                               "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.${context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().substring(context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().length - 3, context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().length)}";
                           Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) {
-                                    animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                                    return FadeTransition(
-                                        opacity: animation,
-                                        child: ClockOverlay(
-                                          colorChanged: colorChanged,
-                                          accent: accent,
-                                          link: link,
-                                          file: false,
-                                        ));
-                                  },
-                                  fullscreenDialog: true,
-                                  opaque: false));
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) {
+                                animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: ClockOverlay(
+                                    colorChanged: colorChanged,
+                                    accent: accent,
+                                    link: link,
+                                    file: false,
+                                  ),
+                                );
+                              },
+                              fullscreenDialog: true,
+                              opaque: false,
+                            ),
+                          );
                         },
                         color: isLoading
                             ? Theme.of(context).colorScheme.secondary
                             : accent!.computeLuminance() > 0.5
                                 ? Colors.black
                                 : Colors.white,
-                        icon: const Icon(
-                          JamIcons.clock,
-                        ),
+                        icon: const Icon(JamIcons.clock),
                       ),
                     ),
                   ),

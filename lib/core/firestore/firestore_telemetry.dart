@@ -69,11 +69,7 @@ class FirestoreConsoleTelemetrySink implements FirestoreTelemetrySink {
 
   @override
   Future<void> emit(FirestoreTelemetryEvent event) async {
-    logger.i(
-      '[Firestore]',
-      tag: 'Firestore',
-      fields: event.toJson(),
-    );
+    logger.i('[Firestore]', tag: 'Firestore', fields: event.toJson());
   }
 }
 

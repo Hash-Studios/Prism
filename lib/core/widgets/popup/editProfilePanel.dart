@@ -25,9 +25,7 @@ import 'package:path/path.dart' as Path;
 
 @RoutePage(name: 'EditProfilePanelRoute')
 class EditProfilePanel extends StatefulWidget {
-  const EditProfilePanel({
-    super.key,
-  });
+  const EditProfilePanel({super.key});
 
   @override
   _EditProfilePanelState createState() => _EditProfilePanelState();
@@ -88,13 +86,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       'value': '',
       'validator': 'instagram',
     },
-    {
-      'name': 'email',
-      'link': 'your@email.com',
-      'icon': JamIcons.inbox,
-      'value': '',
-      'validator': '@',
-    },
+    {'name': 'email', 'link': 'your@email.com', 'icon': JamIcons.inbox, 'value': '', 'validator': '@'},
     {
       'name': 'telegram',
       'link': 'https://t.me/username',
@@ -221,13 +213,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       'value': '',
       'validator': 'buymeacoff.ee',
     },
-    {
-      'name': 'custom link',
-      'link': '',
-      'icon': JamIcons.link,
-      'value': '',
-      'validator': '',
-    },
+    {'name': 'custom link', 'link': '', 'icon': JamIcons.link, 'value': '', 'validator': ''},
   ];
   Map<String, dynamic>? _link;
   @override
@@ -267,11 +253,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<Uint8List> compressFile(File file) async {
-    final result = await FlutterImageCompress.compressWithFile(
-      file.absolute.path,
-      minWidth: 400,
-      quality: 85,
-    );
+    final result = await FlutterImageCompress.compressWithFile(file.absolute.path, minWidth: 400, quality: 85);
     logger.d(file.lengthSync().toString());
     logger.d(result!.length.toString());
     return result;
@@ -292,19 +274,21 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       final String base64Image = base64Encode(_compressedPFP);
       final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
       await github.repositories
-          .createFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
-              CreateFile(message: Path.basename(_pfp!.path), content: base64Image, path: Path.basename(_pfp!.path)))
-          .then((value) => setState(() {
-                pfpUrl = value.content!.downloadUrl!;
-                pfpPath = value.content!.path!;
-                pfpSha = value.content!.sha!;
-              }));
+          .createFile(
+            RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+            CreateFile(message: Path.basename(_pfp!.path), content: base64Image, path: Path.basename(_pfp!.path)),
+          )
+          .then(
+            (value) => setState(() {
+              pfpUrl = value.content!.downloadUrl!;
+              pfpPath = value.content!.path!;
+              pfpSha = value.content!.sha!;
+            }),
+          );
       logger.d('File Uploaded');
       globals.prismUser.profilePhoto = pfpUrl;
       main.prefs.put(main.userHiveKey, globals.prismUser);
-      await _updateCurrentUser(<String, dynamic>{
-        "profilePhoto": pfpUrl,
-      }, 'profile.edit.profilePhoto');
+      await _updateCurrentUser(<String, dynamic>{"profilePhoto": pfpUrl}, 'profile.edit.profilePhoto');
     } catch (e) {
       logger.d(e.toString());
       toasts.error("Some uploading issue, please try again.");
@@ -316,19 +300,21 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       final String base64Image = base64Encode(_compressedCover);
       final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
       await github.repositories
-          .createFile(RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
-              CreateFile(message: Path.basename(_cover!.path), content: base64Image, path: Path.basename(_cover!.path)))
-          .then((value) => setState(() {
-                coverUrl = value.content!.downloadUrl!;
-                coverPath = value.content!.path!;
-                coverSha = value.content!.sha!;
-              }));
+          .createFile(
+            RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+            CreateFile(message: Path.basename(_cover!.path), content: base64Image, path: Path.basename(_cover!.path)),
+          )
+          .then(
+            (value) => setState(() {
+              coverUrl = value.content!.downloadUrl!;
+              coverPath = value.content!.path!;
+              coverSha = value.content!.sha!;
+            }),
+          );
       logger.d('Cover File Uploaded');
       globals.prismUser.coverPhoto = coverUrl;
       main.prefs.put(main.userHiveKey, globals.prismUser);
-      await _updateCurrentUser(<String, dynamic>{
-        "coverPhoto": coverUrl,
-      }, 'profile.edit.coverPhoto');
+      await _updateCurrentUser(<String, dynamic>{"coverPhoto": coverUrl}, 'profile.edit.coverPhoto');
     } catch (e) {
       logger.d(e.toString());
       toasts.error("Some uploading issue, please try again.");
@@ -345,10 +331,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       content: Text(
         "This is permanent, and this action can't be undone!",
         style: TextStyle(
-            fontFamily: "Proxima Nova",
-            fontWeight: FontWeight.normal,
-            fontSize: 14,
-            color: Theme.of(context).colorScheme.secondary),
+          fontFamily: "Proxima Nova",
+          fontWeight: FontWeight.normal,
+          fontSize: 14,
+          color: Theme.of(context).colorScheme.secondary,
+        ),
       ),
       actions: [
         MaterialButton(
@@ -358,13 +345,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             Navigator.pop(context);
             await remove();
           },
-          child: const Text(
-            'DELETE',
-            style: TextStyle(
-              fontSize: 16.0,
-              color: Colors.white,
-            ),
-          ),
+          child: const Text('DELETE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
         ),
         MaterialButton(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -372,13 +353,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: const Text(
-            'CANCEL',
-            style: TextStyle(
-              fontSize: 16.0,
-              color: Colors.white,
-            ),
-          ),
+          child: const Text('CANCEL', style: TextStyle(fontSize: 16.0, color: Colors.white)),
         ),
       ],
       backgroundColor: Theme.of(context).primaryColor,
@@ -389,12 +364,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<void> _updateCurrentUser(Map<String, dynamic> data, String sourceTag) {
-    return firestoreClient.updateDoc(
-      USER_NEW_COLLECTION,
-      globals.prismUser.id,
-      data,
-      sourceTag: sourceTag,
-    );
+    return firestoreClient.updateDoc(USER_NEW_COLLECTION, globals.prismUser.id, data, sourceTag: sourceTag);
   }
 
   Future<bool> _isUsernameAvailable(String username) async {
@@ -418,14 +388,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-            icon: const Icon(JamIcons.close),
-            onPressed: () {
-              Navigator.pop(context);
-            }),
-        title: Text(
-          "Edit Profile",
-          style: Theme.of(context).textTheme.displaySmall,
+          icon: const Icon(JamIcons.close),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
+        title: Text("Edit Profile", style: Theme.of(context).textTheme.displaySmall),
       ),
       backgroundColor: Theme.of(context).primaryColor,
       body: SingleChildScrollView(
@@ -434,10 +402,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           width: MediaQuery.of(context).size.width,
           decoration: BoxDecoration(
             color: Theme.of(context).primaryColor,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
+            borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
           ),
           child: Column(
             children: <Widget>[
@@ -447,16 +412,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                     height: MediaQuery.of(context).size.width * 508 / 1234,
                     width: MediaQuery.of(context).size.width,
                     decoration: const BoxDecoration(
-                      border: Border.fromBorderSide(
-                        BorderSide(color: Colors.white, width: 2),
-                      ),
+                      border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                     ),
                     child: (_cover == null)
                         ? (globals.prismUser.coverPhoto != null)
-                            ? CachedNetworkImage(
-                                imageUrl: globals.prismUser.coverPhoto!,
-                                fit: BoxFit.cover,
-                              )
+                            ? CachedNetworkImage(imageUrl: globals.prismUser.coverPhoto!, fit: BoxFit.cover)
                             : SvgPicture.string(
                                 defaultHeader
                                     .replaceAll(
@@ -469,10 +429,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                     ),
                                 fit: BoxFit.cover,
                               )
-                        : Image.file(
-                            _cover!,
-                            fit: BoxFit.cover,
-                          ),
+                        : Image.file(_cover!, fit: BoxFit.cover),
                   ),
                   Material(
                     child: InkWell(
@@ -483,15 +440,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                         height: MediaQuery.of(context).size.width * 508 / 1234,
                         width: MediaQuery.of(context).size.width,
                         decoration: BoxDecoration(
-                          border: const Border.fromBorderSide(
-                            BorderSide(color: Colors.white, width: 2),
-                          ),
+                          border: const Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                           color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
                         ),
-                        child: const Icon(
-                          JamIcons.pencil,
-                          color: Colors.white,
-                        ),
+                        child: const Icon(JamIcons.pencil, color: Colors.white),
                       ),
                     ),
                   ),
@@ -508,11 +460,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           }, 'profile.edit.removeCoverPhoto');
                         }, "Cover photo");
                       },
-                      icon: const Icon(
-                        JamIcons.close,
-                      ),
+                      icon: const Icon(JamIcons.close),
                     ),
-                  )
+                  ),
                 ],
               ),
               const Spacer(),
@@ -529,34 +479,21 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           width: 100,
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.fromBorderSide(
-                              BorderSide(color: Colors.white, width: 2),
-                            ),
+                            border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                           ),
                           child: (_pfp == null)
-                              ? CachedNetworkImage(
-                                  imageUrl: globals.prismUser.profilePhoto,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.file(
-                                  _pfp!,
-                                  fit: BoxFit.cover,
-                                ),
+                              ? CachedNetworkImage(imageUrl: globals.prismUser.profilePhoto, fit: BoxFit.cover)
+                              : Image.file(_pfp!, fit: BoxFit.cover),
                         ),
                         Container(
                           height: 100,
                           width: 100,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: const Border.fromBorderSide(
-                              BorderSide(color: Colors.white, width: 2),
-                            ),
+                            border: const Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                             color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
                           ),
-                          child: const Icon(
-                            JamIcons.pencil,
-                            color: Colors.white,
-                          ),
+                          child: const Icon(JamIcons.pencil, color: Colors.white),
                         ),
                       ],
                     ),
@@ -578,29 +515,30 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.only(left: 30, top: 15),
                           border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           disabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           labelText: "Name",
-                          labelStyle:
-                              Theme.of(context).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
+                          labelStyle: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
                           prefixIcon: const Padding(
                             padding: EdgeInsets.all(16.0),
                             child: Text(
                               "Name",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
@@ -629,29 +567,30 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.only(left: 30, top: 15),
                           border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           disabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           labelText: "username",
-                          labelStyle:
-                              Theme.of(context).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
+                          labelStyle: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
                           prefixIcon: const Padding(
                             padding: EdgeInsets.all(16.0),
                             child: Text(
                               "@",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                             ),
                           ),
                           suffixIcon: isCheckingUsername
@@ -660,9 +599,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   child: SizedBox(
                                     width: 16,
                                     height: 16,
-                                    child: CircularProgressIndicator(
-                                      color: Theme.of(context).colorScheme.error,
-                                    ),
+                                    child: CircularProgressIndicator(color: Theme.of(context).colorScheme.error),
                                   ),
                                 )
                               : Padding(
@@ -734,29 +671,30 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.only(left: 30, top: 15),
                           border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           disabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Colors.white, width: 2)),
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.white, width: 2),
+                          ),
                           labelText: "Bio",
-                          labelStyle:
-                              Theme.of(context).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
+                          labelStyle: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
                           prefixIcon: const Padding(
                             padding: EdgeInsets.all(16.0),
                             child: Text(
                               "bio",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                             ),
                           ),
                           suffixIcon: IconButton(
@@ -765,16 +703,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 bioController.text = "";
                                 globals.prismUser.bio = "";
                                 main.prefs.put(main.userHiveKey, globals.prismUser);
-                                await _updateCurrentUser(<String, dynamic>{
-                                  "bio": "",
-                                }, 'profile.edit.clearBio');
+                                await _updateCurrentUser(<String, dynamic>{"bio": ""}, 'profile.edit.clearBio');
                               }, "bio");
                             },
-                            icon: const Icon(
-                              JamIcons.close,
-                              color: Colors.red,
-                              size: 24,
-                            ),
+                            icon: const Icon(JamIcons.close, color: Colors.red, size: 24),
                           ),
                         ),
                         onChanged: (value) {
@@ -812,16 +744,13 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
                                         Icon(link["icon"] as IconData),
-                                        const SizedBox(
-                                          width: 16,
-                                        ),
+                                        const SizedBox(width: 16),
                                         Text(
                                           link["name"].toString().inCaps,
-                                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                                                color: Colors.white,
-                                                fontSize: 14,
-                                              ),
-                                        )
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.headlineSmall!.copyWith(color: Colors.white, fontSize: 14),
+                                        ),
                                       ],
                                     ),
                                   );
@@ -841,10 +770,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                       child: Row(
                                         children: [
                                           Icon(link["icon"] as IconData),
-                                          const Icon(
-                                            JamIcons.chevron_down,
-                                            size: 14,
-                                          ),
+                                          const Icon(JamIcons.chevron_down, size: 14),
                                         ],
                                       ),
                                     );
@@ -868,27 +794,29 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   enabled: _link?["name"] != "Edit links...",
                                   contentPadding: const EdgeInsets.only(left: 30, top: 15),
                                   border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(color: Colors.white, width: 2)),
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                                  ),
                                   disabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(color: Colors.white, width: 2)),
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                                  ),
                                   enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(color: Colors.white, width: 2)),
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                                  ),
                                   focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(color: Colors.white, width: 2)),
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                                  ),
                                   labelText: _link?["name"].toString().inCaps ?? "",
-                                  labelStyle: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall!
-                                      .copyWith(fontSize: 14, color: Colors.white),
+                                  labelStyle: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
                                   hintText: _link?["link"].toString() ?? "",
-                                  hintStyle: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall!
-                                      .copyWith(fontSize: 14, color: Colors.white),
+                                  hintStyle: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
                                   suffixIcon: IconButton(
                                     onPressed: () async {
                                       showRemoveAlertDialog(context, () async {
@@ -902,11 +830,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                         }, 'profile.edit.removeLink');
                                       }, "${_link?["name"].toString().inCaps}");
                                     },
-                                    icon: const Icon(
-                                      JamIcons.close,
-                                      color: Colors.red,
-                                      size: 24,
-                                    ),
+                                    icon: const Icon(JamIcons.close, color: Colors.red, size: 24),
                                   ),
                                 ),
                                 onChanged: (value) {
@@ -989,9 +913,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           if (bioEdit && bioController.text != "") {
                             globals.prismUser.bio = bioController.text;
                             main.prefs.put(main.userHiveKey, globals.prismUser);
-                            await _updateCurrentUser(<String, dynamic>{
-                              "bio": bioController.text,
-                            }, 'profile.edit.bio');
+                            await _updateCurrentUser(<String, dynamic>{"bio": bioController.text}, 'profile.edit.bio');
                           }
                           if (linkEdit) {
                             final Map links = globals.prismUser.links;
@@ -1002,9 +924,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             }
                             globals.prismUser.links = links;
                             main.prefs.put(main.userHiveKey, globals.prismUser);
-                            await _updateCurrentUser(<String, dynamic>{
-                              "links": links,
-                            }, 'profile.edit.links');
+                            await _updateCurrentUser(<String, dynamic>{"links": links}, 'profile.edit.links');
                           }
                           if (nameEdit && nameController.text != "") {
                             globals.prismUser.name = nameController.text;
@@ -1060,6 +980,45 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   if (linkIcons[p]["value"] != "") {
                                     links[linkIcons[p]["name"]] = linkIcons[p]["value"];
                                   }
+                                  if (_pfp != null && pfpEdit) {
+                                    await processImage();
+                                  }
+                                  if (_cover != null && coverEdit) {
+                                    await processImageCover();
+                                  }
+                                  if (bioEdit && bioController.text != "") {
+                                    globals.prismUser.bio = bioController.text;
+                                    main.prefs.put(main.userHiveKey, globals.prismUser);
+                                    await _updateCurrentUser(<String, dynamic>{
+                                      "bio": bioController.text,
+                                    }, 'profile.edit.bio.withUsername');
+                                  }
+                                  if (nameEdit && nameController.text != "") {
+                                    globals.prismUser.name = nameController.text;
+                                    main.prefs.put(main.userHiveKey, globals.prismUser);
+                                    await _updateCurrentUser(<String, dynamic>{
+                                      "name": nameController.text,
+                                    }, 'profile.edit.name.withUsername');
+                                  }
+                                  if (linkEdit) {
+                                    final Map links = globals.prismUser.links;
+                                    for (int p = 0; p < linkIcons.length; p++) {
+                                      if (linkIcons[p]["value"] != "") {
+                                        links[linkIcons[p]["name"]] = linkIcons[p]["value"];
+                                      }
+                                    }
+                                    globals.prismUser.links = links;
+                                    main.prefs.put(main.userHiveKey, globals.prismUser);
+                                    await _updateCurrentUser(<String, dynamic>{
+                                      "links": links,
+                                    }, 'profile.edit.links.withUsername');
+                                  }
+                                  await CoinsService.instance.maybeAwardProfileCompletion();
+                                  setState(() {
+                                    isLoading = false;
+                                  });
+                                  Navigator.pop(context);
+                                  toasts.codeSend("Details updated!");
                                 }
                                 globals.prismUser.links = links;
                                 main.prefs.put(main.userHiveKey, globals.prismUser);
@@ -1067,7 +1026,6 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   "links": links,
                                 }, 'profile.edit.links.withUsername');
                               }
-                              await CoinsService.instance.maybeAwardProfileCompletion();
                               setState(() {
                                 isLoading = false;
                               });
@@ -1087,11 +1045,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             ? Theme.of(context).primaryColor
                             : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
                         border: Border.all(
-                            color: !((!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
-                                    (usernameEdit && enabled))
-                                ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
-                                : Theme.of(context).colorScheme.error,
-                            width: 3),
+                          color: !((!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
+                                  (usernameEdit && enabled))
+                              ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
+                              : Theme.of(context).colorScheme.error,
+                          width: 3,
+                        ),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Center(
@@ -1100,13 +1059,14 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             : Text(
                                 "Update",
                                 style: TextStyle(
-                                    fontSize: 16,
-                                    color: !((!usernameEdit &&
-                                                (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
-                                            (usernameEdit && enabled))
-                                        ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
-                                        : Theme.of(context).colorScheme.secondary,
-                                    fontWeight: FontWeight.bold),
+                                  fontSize: 16,
+                                  color:
+                                      !((!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
+                                              (usernameEdit && enabled))
+                                          ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
+                                          : Theme.of(context).colorScheme.secondary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                       ),
                     ),
@@ -1121,16 +1081,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                   child: Text(
                     "Usernames are unique names through which fans can view your profile/search for you. They should be greater than 8 characters, and cannot contain any symbol except for underscore (_).",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.secondary),
                   ),
                 ),
               ),
-              const Spacer(
-                flex: 3,
-              ),
+              const Spacer(flex: 3),
             ],
           ),
         ),

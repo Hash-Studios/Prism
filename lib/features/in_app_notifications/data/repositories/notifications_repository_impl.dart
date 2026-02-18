@@ -9,32 +9,30 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: NotificationsRepository)
 class NotificationsRepositoryImpl implements NotificationsRepository {
-  NotificationsRepositoryImpl(
-    @Named('inAppNotificationsBox') this._box,
-  );
+  NotificationsRepositoryImpl(@Named('inAppNotificationsBox') this._box);
 
   final Box<InAppNotif> _box;
 
   List<InAppNotificationEntity> _readAll() {
     final values = _box.values.toList(growable: false);
-    return values.map((item) {
-      return InAppNotificationEntity(
-        title: item.title ?? '',
-        pageName: item.pageName ?? '',
-        body: item.body ?? '',
-        imageUrl: item.imageUrl ?? '',
-        arguments: item.arguments ?? const <dynamic>[],
-        url: item.url ?? '',
-        createdAt: item.createdAt ?? DateTime.now(),
-        read: item.read ?? false,
-      );
-    }).toList(growable: false);
+    return values
+        .map((item) {
+          return InAppNotificationEntity(
+            title: item.title ?? '',
+            pageName: item.pageName ?? '',
+            body: item.body ?? '',
+            imageUrl: item.imageUrl ?? '',
+            arguments: item.arguments ?? const <dynamic>[],
+            url: item.url ?? '',
+            createdAt: item.createdAt ?? DateTime.now(),
+            read: item.read ?? false,
+          );
+        })
+        .toList(growable: false);
   }
 
   @override
-  Future<Result<List<InAppNotificationEntity>>> fetchNotifications({
-    required bool syncRemote,
-  }) async {
+  Future<Result<List<InAppNotificationEntity>>> fetchNotifications({required bool syncRemote}) async {
     try {
       if (syncRemote) {
         await getNotifs();

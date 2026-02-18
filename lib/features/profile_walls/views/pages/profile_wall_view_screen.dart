@@ -73,10 +73,12 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
     });
     if (accent!.computeLuminance() > 0.5) {
       SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
+        SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
+      );
     } else {
       SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
+        SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light),
+      );
     }
   }
 
@@ -91,10 +93,12 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
       });
       if (accent!.computeLuminance() > 0.5) {
         SystemChrome.setSystemUIOverlayStyle(
-            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark));
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
+        );
       } else {
         SystemChrome.setSystemUIOverlayStyle(
-            SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light));
+          SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light),
+        );
       }
     }
   }
@@ -138,10 +142,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
             logger.d('Screenshot Starting');
             if (colorChanged) {
               screenshotController
-                  .capture(
-                pixelRatio: 3,
-                delay: const Duration(milliseconds: 10),
-              )
+                  .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                   .then((Uint8List? image) async {
                 setState(() {
                   _imageFile = File.fromRawPath(image!);
@@ -155,10 +156,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
             } else {
               main.prefs.get('optimisedWallpapers') as bool? ?? true
                   ? screenshotController
-                      .capture(
-                      pixelRatio: 3,
-                      delay: const Duration(milliseconds: 10),
-                    )
+                      .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                       .then((Uint8List? image) async {
                       setState(() {
                         _imageFile = File.fromRawPath(image!);
@@ -182,15 +180,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
           });
         },
         backdropEnabled: true,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
         boxShadow: const [],
-        collapsed: CollapsedPanel(
-          panelCollapsed: panelCollapsed,
-          panelController: panelController,
-        ),
+        collapsed: CollapsedPanel(panelCollapsed: panelCollapsed, panelController: panelController),
         minHeight: MediaQuery.of(context).size.height / 20,
         parallaxEnabled: true,
         parallaxOffset: 0.00,
@@ -217,22 +209,20 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Center(
-                        child: Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: AnimatedOpacity(
-                        duration: Duration.zero,
-                        opacity: panelCollapsed ? 0.0 : 1.0,
-                        child: GestureDetector(
-                          onTap: () {
-                            panelController.close();
-                          },
-                          child: Icon(
-                            JamIcons.chevron_down,
-                            color: Theme.of(context).colorScheme.secondary,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: AnimatedOpacity(
+                          duration: Duration.zero,
+                          opacity: panelCollapsed ? 0.0 : 1.0,
+                          child: GestureDetector(
+                            onTap: () {
+                              panelController.close();
+                            },
+                            child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
                           ),
                         ),
                       ),
-                    )),
+                    ),
                     ColorBar(colors: colors),
                     Expanded(
                       flex: 8,
@@ -258,10 +248,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                               .data()["id"]
                                               .toString()
                                               .toUpperCase(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyLarge!
-                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.symmetric(horizontal: 6.0),
@@ -279,20 +268,26 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                                 return Text(
                                                   "",
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                      color: Theme.of(context).colorScheme.secondary, fontSize: 16),
+                                                        color: Theme.of(context).colorScheme.secondary,
+                                                        fontSize: 16,
+                                                      ),
                                                 );
                                               case ConnectionState.none:
                                                 return Text(
                                                   "",
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                      color: Theme.of(context).colorScheme.secondary, fontSize: 16),
+                                                        color: Theme.of(context).colorScheme.secondary,
+                                                        fontSize: 16,
+                                                      ),
                                                 );
                                               default:
                                                 if (snapshot.hasError) {
                                                   return Text(
                                                     "",
                                                     style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                        color: Theme.of(context).colorScheme.secondary, fontSize: 16),
+                                                          color: Theme.of(context).colorScheme.secondary,
+                                                          fontSize: 16,
+                                                        ),
                                                   );
                                                 } else {
                                                   return Text(
@@ -300,7 +295,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                                     overflow: TextOverflow.fade,
                                                     softWrap: false,
                                                     style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                        color: Theme.of(context).colorScheme.secondary, fontSize: 16),
+                                                          color: Theme.of(context).colorScheme.secondary,
+                                                          fontSize: 16,
+                                                        ),
                                                   );
                                                 }
                                             }
@@ -320,10 +317,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                     const SizedBox(width: 10),
                                     Text(
                                       context.profileWallsSnapshots(listen: false)![index].data()["by"].toString(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ],
                                 ),
@@ -338,10 +334,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                     const SizedBox(width: 10),
                                     Text(
                                       context.profileWallsSnapshots(listen: false)![index].data()["desc"].toString(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ],
                                 ),
@@ -356,10 +351,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                     const SizedBox(width: 10),
                                     Text(
                                       context.profileWallsSnapshots(listen: false)![index].data()["size"].toString(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ],
                                 ),
@@ -376,10 +370,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                           .profileWallsSnapshots(listen: false)![index]
                                           .data()["resolution"]
                                           .toString(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                     const SizedBox(width: 10),
                                     Icon(
@@ -397,10 +390,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                           .profileWallsSnapshots(listen: false)![index]
                                           .data()["wallpaper_provider"]
                                           .toString(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                     const SizedBox(width: 10),
                                     Icon(
@@ -455,19 +447,18 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                             trash: false,
                           ),
                           ShareButton(
-                              id: context.profileWallsSnapshots(listen: false)![index].data()["id"].toString(),
-                              provider: context
-                                  .profileWallsSnapshots(listen: false)![index]
-                                  .data()["wallpaper_provider"]
-                                  .toString(),
-                              url: context
-                                  .profileWallsSnapshots(listen: false)![index]
-                                  .data()["wallpaper_url"]
-                                  .toString(),
-                              thumbUrl: context
-                                  .profileWallsSnapshots(listen: false)![index]
-                                  .data()["wallpaper_thumb"]
-                                  .toString()),
+                            id: context.profileWallsSnapshots(listen: false)![index].data()["id"].toString(),
+                            provider: context
+                                .profileWallsSnapshots(listen: false)![index]
+                                .data()["wallpaper_provider"]
+                                .toString(),
+                            url:
+                                context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_url"].toString(),
+                            thumbUrl: context
+                                .profileWallsSnapshots(listen: false)![index]
+                                .data()["wallpaper_thumb"]
+                                .toString(),
+                          ),
                           EditButton(
                             url:
                                 context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_url"].toString(),
@@ -484,69 +475,73 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
         body: Stack(
           children: <Widget>[
             AnimatedBuilder(
-                animation: offsetAnimation,
-                builder: (buildContext, child) {
-                  if (offsetAnimation.value < 0.0) {
-                    logger.d('${offsetAnimation.value + 8.0}');
-                  }
-                  return GestureDetector(
-                    onPanUpdate: (details) {
-                      if (details.delta.dy < -10) {
-                        panelController.open();
-                      }
-                    },
-                    onLongPress: () {
-                      setState(() {
-                        colorChanged = false;
-                      });
-                      HapticFeedback.vibrate();
-                      shakeController.forward(from: 0.0);
-                    },
-                    onTap: () {
-                      HapticFeedback.vibrate();
-                      !isLoading ? updateAccent() : logger.d("");
-                      shakeController.forward(from: 0.0);
-                    },
-                    child: CachedNetworkImage(
-                      imageUrl: context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_url"].toString(),
-                      imageBuilder: (context, imageProvider) => Screenshot(
-                        controller: screenshotController,
-                        child: Container(
-                          margin: EdgeInsets.symmetric(
-                              vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(offsetAnimation.value),
-                            image: DecorationImage(
-                              colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
-                              image: imageProvider,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
+              animation: offsetAnimation,
+              builder: (buildContext, child) {
+                if (offsetAnimation.value < 0.0) {
+                  logger.d('${offsetAnimation.value + 8.0}');
+                }
+                return GestureDetector(
+                  onPanUpdate: (details) {
+                    if (details.delta.dy < -10) {
+                      panelController.open();
+                    }
+                  },
+                  onLongPress: () {
+                    setState(() {
+                      colorChanged = false;
+                    });
+                    HapticFeedback.vibrate();
+                    shakeController.forward(from: 0.0);
+                  },
+                  onTap: () {
+                    HapticFeedback.vibrate();
+                    !isLoading ? updateAccent() : logger.d("");
+                    shakeController.forward(from: 0.0);
+                  },
+                  child: CachedNetworkImage(
+                    imageUrl: context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_url"].toString(),
+                    imageBuilder: (context, imageProvider) => Screenshot(
+                      controller: screenshotController,
+                      child: Container(
+                        margin: EdgeInsets.symmetric(
+                          vertical: offsetAnimation.value * 1.25,
+                          horizontal: offsetAnimation.value / 2,
                         ),
-                      ),
-                      progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-                        children: <Widget>[
-                          const SizedBox.expand(child: Text("")),
-                          Center(
-                            child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
-                                value: downloadProgress.progress),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(offsetAnimation.value),
+                          image: DecorationImage(
+                            colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
+                            image: imageProvider,
+                            fit: BoxFit.cover,
                           ),
-                        ],
-                      ),
-                      errorWidget: (context, url, error) => Center(
-                        child: Icon(
-                          JamIcons.close_circle_f,
-                          color: isLoading
-                              ? Theme.of(context).colorScheme.secondary
-                              : accent!.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
                         ),
                       ),
                     ),
-                  );
-                }),
+                    progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
+                      children: <Widget>[
+                        const SizedBox.expand(child: Text("")),
+                        Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                            value: downloadProgress.progress,
+                          ),
+                        ),
+                      ],
+                    ),
+                    errorWidget: (context, url, error) => Center(
+                      child: Icon(
+                        JamIcons.close_circle_f,
+                        color: isLoading
+                            ? Theme.of(context).colorScheme.secondary
+                            : accent!.computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
@@ -560,9 +555,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                       : accent!.computeLuminance() > 0.5
                           ? Colors.black
                           : Colors.white,
-                  icon: const Icon(
-                    JamIcons.chevron_left,
-                  ),
+                  icon: const Icon(JamIcons.chevron_left),
                 ),
               ),
             ),
@@ -574,33 +567,34 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                   onPressed: () {
                     final link = context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_url"];
                     Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) {
-                              animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                              return FadeTransition(
-                                  opacity: animation,
-                                  child: ClockOverlay(
-                                    colorChanged: colorChanged,
-                                    accent: accent,
-                                    link: link.toString(),
-                                    file: false,
-                                  ));
-                            },
-                            fullscreenDialog: true,
-                            opaque: false));
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) {
+                          animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                          return FadeTransition(
+                            opacity: animation,
+                            child: ClockOverlay(
+                              colorChanged: colorChanged,
+                              accent: accent,
+                              link: link.toString(),
+                              file: false,
+                            ),
+                          );
+                        },
+                        fullscreenDialog: true,
+                        opaque: false,
+                      ),
+                    );
                   },
                   color: isLoading
                       ? Theme.of(context).colorScheme.secondary
                       : accent!.computeLuminance() > 0.5
                           ? Colors.black
                           : Colors.white,
-                  icon: const Icon(
-                    JamIcons.clock,
-                  ),
+                  icon: const Icon(JamIcons.clock),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

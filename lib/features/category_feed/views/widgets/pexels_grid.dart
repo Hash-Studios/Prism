@@ -59,16 +59,17 @@ class _PexelsGridState extends State<PexelsGrid> {
                     carouselController: carouselController,
                     itemCount: 5,
                     options: CarouselOptions(
-                        height: 200,
-                        autoPlay: true,
-                        autoPlayInterval: const Duration(seconds: 3),
-                        onPageChanged: (index, reason) {
-                          if (mounted) {
-                            setState(() {
-                              _current = index;
-                            });
-                          }
-                        }),
+                      height: 200,
+                      autoPlay: true,
+                      autoPlayInterval: const Duration(seconds: 3),
+                      onPageChanged: (index, reason) {
+                        if (mounted) {
+                          setState(() {
+                            _current = index;
+                          });
+                        }
+                      },
+                    ),
                     itemBuilder: (BuildContext context, int i, int rI) => i == 4
                         ? Container(
                             width: MediaQuery.of(context).size.width,
@@ -79,12 +80,15 @@ class _PexelsGridState extends State<PexelsGrid> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: context.prismModeStyleForContext() == "Dark"
-                                        ? Colors.white10
-                                        : Colors.black.withValues(alpha: .1),
-                                    borderRadius: BorderRadius.circular(20),
-                                    image: DecorationImage(
-                                        image: CachedNetworkImageProvider(globals.topImageLink), fit: BoxFit.cover)),
+                                  color: context.prismModeStyleForContext() == "Dark"
+                                      ? Colors.white10
+                                      : Colors.black.withValues(alpha: .1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                    image: CachedNetworkImageProvider(globals.topImageLink),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                                 child: Center(
                                   child: Container(
                                     width: MediaQuery.of(context).size.width,
@@ -97,10 +101,11 @@ class _PexelsGridState extends State<PexelsGrid> {
                                         globals.bannerTextOn == "true" ? globals.bannerText.toUpperCase() : "",
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .displayMedium!
-                                            .copyWith(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
+                                        style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                                          fontSize: 20,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -116,7 +121,8 @@ class _PexelsGridState extends State<PexelsGrid> {
                                 if (PData.wallsP == []) {
                                 } else {
                                   context.router.push(
-                                      WallpaperRoute(arguments: [widget.provider, i, PData.wallsP[i].src!["small"]]));
+                                    WallpaperRoute(arguments: [widget.provider, i, PData.wallsP[i].src!["small"]]),
+                                  );
                                 }
                               },
                               child: PData.wallsP.isEmpty
@@ -130,14 +136,15 @@ class _PexelsGridState extends State<PexelsGrid> {
                                     )
                                   : Container(
                                       decoration: BoxDecoration(
-                                          color: context.prismModeStyleForContext() == "Dark"
-                                              ? Colors.white10
-                                              : Colors.black.withValues(alpha: .1),
-                                          borderRadius: BorderRadius.circular(20),
-                                          image: DecorationImage(
-                                              image:
-                                                  CachedNetworkImageProvider(PData.wallsP[i].src!["medium"].toString()),
-                                              fit: BoxFit.cover)),
+                                        color: context.prismModeStyleForContext() == "Dark"
+                                            ? Colors.white10
+                                            : Colors.black.withValues(alpha: .1),
+                                        borderRadius: BorderRadius.circular(20),
+                                        image: DecorationImage(
+                                          image: CachedNetworkImageProvider(PData.wallsP[i].src!["medium"].toString()),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
                                       child: Center(
                                         child: Container(
                                           width: MediaQuery.of(context).size.width,
@@ -149,7 +156,10 @@ class _PexelsGridState extends State<PexelsGrid> {
                                               textAlign: TextAlign.center,
                                               maxLines: 1,
                                               style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                                  color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                                                color: Colors.white,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -186,10 +196,11 @@ class _PexelsGridState extends State<PexelsGrid> {
               itemCount: PData.wallsP.isEmpty ? 20 : PData.wallsP.length - 4,
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                  childAspectRatio: 0.6625,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8),
+                maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+                childAspectRatio: 0.6625,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+              ),
               itemBuilder: (context, index) {
                 index = index + 4;
                 if (index == PData.wallsP.length - 1) {

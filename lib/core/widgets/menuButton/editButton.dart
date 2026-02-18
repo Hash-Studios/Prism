@@ -13,10 +13,7 @@ import 'package:path_provider/path_provider.dart';
 
 class EditButton extends StatefulWidget {
   final String? url;
-  const EditButton({
-    required this.url,
-    super.key,
-  });
+  const EditButton({required this.url, super.key});
 
   @override
   _EditButtonState createState() => _EditButtonState();
@@ -47,23 +44,20 @@ class _EditButtonState extends State<EditButton> {
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
+                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
               ],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
-            child: Icon(
-              JamIcons.pencil,
-              color: Theme.of(context).colorScheme.secondary,
-              size: 20,
-            ),
+            child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary, size: 20),
           ),
           Positioned(
-              top: 0,
-              left: 0,
-              height: 53,
-              width: 53,
-              child: isLoading ? const CircularProgressIndicator() : Container())
+            top: 0,
+            left: 0,
+            height: 53,
+            width: 53,
+            child: isLoading ? const CircularProgressIndicator() : Container(),
+          ),
         ],
       ),
     );
@@ -90,12 +84,16 @@ class _EditButtonState extends State<EditButton> {
       imageThumbData = filePathAndNameThumb;
       isLoading = false;
     });
-    context.router.push(WallpaperFilterRoute(arguments: [
-      imagelib.decodeImage(File(imageThumbData).readAsBytesSync()),
-      imagelib.decodeImage(File(imageData).readAsBytesSync()),
-      path.basename(File(imageThumbData).path),
-      path.basename(File(imageData).path),
-    ]));
+    context.router.push(
+      WallpaperFilterRoute(
+        arguments: [
+          imagelib.decodeImage(File(imageThumbData).readAsBytesSync()),
+          imagelib.decodeImage(File(imageData).readAsBytesSync()),
+          path.basename(File(imageThumbData).path),
+          path.basename(File(imageData).path),
+        ],
+      ),
+    );
   }
 
   static Future<List<int>> _resizeImage(File file) async {

@@ -113,25 +113,31 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
           fit: StackFit.expand,
           children: <Widget>[
             GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: Container(
+                color: context.prismModeStyleForContext(listen: false) == "Dark"
+                    ? Colors.black.withValues(alpha: 0.75)
+                    : Colors.white.withValues(alpha: 0.75),
+              ),
+            ),
+            Positioned(
+              top: widget.childOffset.dy,
+              left: widget.childOffset.dx,
+              child: GestureDetector(
                 onTap: () {
                   Navigator.pop(context);
                 },
-                child: Container(
-                  color: context.prismModeStyleForContext(listen: false) == "Dark"
-                      ? Colors.black.withValues(alpha: 0.75)
-                      : Colors.white.withValues(alpha: 0.75),
-                )),
-            Positioned(
-                top: widget.childOffset.dy,
-                left: widget.childOffset.dx,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: AbsorbPointer(
-                      child: SizedBox(
-                          width: widget.childSize!.width, height: widget.childSize!.height, child: widget.child)),
-                )),
+                child: AbsorbPointer(
+                  child: SizedBox(
+                    width: widget.childSize!.width,
+                    height: widget.childSize!.height,
+                    child: widget.child,
+                  ),
+                ),
+              ),
+            ),
             if (widget.provider == "WallHaven")
               Positioned(
                 top: widget.childOffset.dy + widget.childSize!.height * 4 / 10,
@@ -139,11 +145,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 child: TweenAnimationBuilder(
                   duration: const Duration(milliseconds: 150),
                   builder: (BuildContext context, double value, Widget? child) {
-                    return Transform.scale(
-                      scale: value,
-                      alignment: Alignment.bottomRight,
-                      child: child,
-                    );
+                    return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
                   },
                   tween: Tween(begin: 0.0, end: 1.0),
                   child: Container(
@@ -165,77 +167,70 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 ActionChip(
-                                    pressElevation: 5,
-                                    padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                    avatar: Icon(
-                                      JamIcons.ordered_list,
-                                      color: HexColor(WData.walls[widget.index]
-                                                      .colors![WData.walls[widget.index].colors!.length - 1]
-                                                      .toString())
-                                                  .computeLuminance() >
-                                              0.5
-                                          ? Colors.black
-                                          : Colors.white,
-                                      size: 20,
-                                    ),
-                                    backgroundColor: HexColor(WData
-                                        .walls[widget.index].colors![WData.walls[widget.index].colors!.length - 1]
-                                        .toString()),
-                                    label: Text(
-                                      WData.walls[widget.index].category.toString()[0].toUpperCase() +
-                                          WData.walls[widget.index].category.toString().substring(1),
-                                      style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                            color: HexColor(WData.walls[widget.index]
-                                                            .colors![WData.walls[widget.index].colors!.length - 1]
-                                                            .toString())
-                                                        .computeLuminance() >
-                                                    0.5
-                                                ? Colors.black
-                                                : Colors.white,
-                                          ),
-                                    ),
-                                    onPressed: () {}),
+                                  pressElevation: 5,
+                                  padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                  avatar: Icon(
+                                    JamIcons.ordered_list,
+                                    color: HexColor(
+                                              WData.walls[widget.index]
+                                                  .colors![WData.walls[widget.index].colors!.length - 1]
+                                                  .toString(),
+                                            ).computeLuminance() >
+                                            0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                    size: 20,
+                                  ),
+                                  backgroundColor: HexColor(
+                                    WData.walls[widget.index].colors![WData.walls[widget.index].colors!.length - 1]
+                                        .toString(),
+                                  ),
+                                  label: Text(
+                                    WData.walls[widget.index].category.toString()[0].toUpperCase() +
+                                        WData.walls[widget.index].category.toString().substring(1),
+                                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                                          color: HexColor(
+                                                    WData.walls[widget.index]
+                                                        .colors![WData.walls[widget.index].colors!.length - 1]
+                                                        .toString(),
+                                                  ).computeLuminance() >
+                                                  0.5
+                                              ? Colors.black
+                                              : Colors.white,
+                                        ),
+                                  ),
+                                  onPressed: () {},
+                                ),
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                   child: Text(
                                     WData.walls[widget.index].id.toString().toUpperCase(),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall!
-                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                   ),
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      JamIcons.eye,
-                                      size: 20,
-                                      color: Theme.of(context).colorScheme.secondary,
-                                    ),
+                                    Icon(JamIcons.eye, size: 20, color: Theme.of(context).colorScheme.secondary),
                                     const SizedBox(width: 10),
                                     Text(
                                       "Views: ${WData.walls[widget.index].views}",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ],
                                 ),
                                 Row(
                                   children: [
-                                    Icon(
-                                      JamIcons.set_square,
-                                      size: 20,
-                                      color: Theme.of(context).colorScheme.secondary,
-                                    ),
+                                    Icon(JamIcons.set_square, size: 20, color: Theme.of(context).colorScheme.secondary),
                                     const SizedBox(width: 10),
                                     Text(
                                       WData.walls[widget.index].resolution.toString(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                                     ),
                                   ],
                                 ),
@@ -250,20 +245,20 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Theme.of(context).hintColor,
-                                    borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
+                                  color: Theme.of(context).hintColor,
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(20),
+                                    bottomRight: Radius.circular(20),
+                                  ),
+                                ),
                                 padding: EdgeInsets.zero,
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                  child: Icon(
-                                    JamIcons.close,
-                                    color: Theme.of(context).colorScheme.secondary,
-                                  ),
+                                  child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ),
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -278,11 +273,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                       child: TweenAnimationBuilder(
                         duration: const Duration(milliseconds: 150),
                         builder: (BuildContext context, double value, Widget? child) {
-                          return Transform.scale(
-                            scale: value,
-                            alignment: Alignment.bottomRight,
-                            child: child,
-                          );
+                          return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
                         },
                         tween: Tween(begin: 0.0, end: 1.0),
                         child: Container(
@@ -304,75 +295,77 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: <Widget>[
                                       Stack(
-                                          alignment: globals.verifiedUsers
-                                                  .contains(Data.subPrismWalls![widget.index]["email"].toString())
-                                              ? Alignment.topRight
-                                              : Alignment.centerLeft,
-                                          children: [
-                                            ActionChip(
-                                                pressElevation: 5,
-                                                padding: const EdgeInsets.all(5),
-                                                avatar: CircleAvatar(
-                                                  backgroundImage: CachedNetworkImageProvider(
-                                                      Data.subPrismWalls![widget.index]["userPhoto"].toString()),
+                                        alignment: globals.verifiedUsers.contains(
+                                          Data.subPrismWalls![widget.index]["email"].toString(),
+                                        )
+                                            ? Alignment.topRight
+                                            : Alignment.centerLeft,
+                                        children: [
+                                          ActionChip(
+                                            pressElevation: 5,
+                                            padding: const EdgeInsets.all(5),
+                                            avatar: CircleAvatar(
+                                              backgroundImage: CachedNetworkImageProvider(
+                                                Data.subPrismWalls![widget.index]["userPhoto"].toString(),
+                                              ),
+                                            ),
+                                            backgroundColor: Colors.black,
+                                            labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
+                                            label: Text(
+                                              Data.subPrismWalls![widget.index]["by"].toString()[0].toUpperCase() +
+                                                  Data.subPrismWalls![widget.index]["by"].toString().substring(1),
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                            ),
+                                            onPressed: () {
+                                              context.router.push(
+                                                ProfileRoute(arguments: [Data.subPrismWalls![widget.index]["email"]]),
+                                              );
+                                            },
+                                          ),
+                                          if (globals.verifiedUsers.contains(
+                                            Data.subPrismWalls![widget.index]["email"].toString(),
+                                          ))
+                                            SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: SvgPicture.string(
+                                                verifiedIcon.replaceAll(
+                                                  "E57697",
+                                                  Theme.of(context).colorScheme.error == Colors.black
+                                                      ? "E57697"
+                                                      : Theme.of(context)
+                                                          .colorScheme
+                                                          .error
+                                                          .toString()
+                                                          .replaceAll("Color(0xff", "")
+                                                          .replaceAll(")", ""),
                                                 ),
-                                                backgroundColor: Colors.black,
-                                                labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
-                                                label: Text(
-                                                  Data.subPrismWalls![widget.index]["by"].toString()[0].toUpperCase() +
-                                                      Data.subPrismWalls![widget.index]["by"].toString().substring(1),
-                                                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                                        color: Colors.white,
-                                                      ),
-                                                ),
-                                                onPressed: () {
-                                                  context.router.push(ProfileRoute(arguments: [
-                                                    Data.subPrismWalls![widget.index]["email"],
-                                                  ]));
-                                                }),
-                                            if (globals.verifiedUsers
-                                                .contains(Data.subPrismWalls![widget.index]["email"].toString()))
-                                              SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child: SvgPicture.string(verifiedIcon.replaceAll(
-                                                    "E57697",
-                                                    Theme.of(context).colorScheme.error == Colors.black
-                                                        ? "E57697"
-                                                        : Theme.of(context)
-                                                            .colorScheme
-                                                            .error
-                                                            .toString()
-                                                            .replaceAll("Color(0xff", "")
-                                                            .replaceAll(")", ""))),
-                                              )
-                                            else
-                                              Container(),
-                                          ]),
+                                              ),
+                                            )
+                                          else
+                                            Container(),
+                                        ],
+                                      ),
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Text(
                                           Data.subPrismWalls![widget.index]["id"].toString().toUpperCase(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineSmall!
-                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
                                         ),
                                       ),
                                       Row(
                                         children: [
-                                          Icon(
-                                            JamIcons.save,
-                                            size: 20,
-                                            color: Theme.of(context).colorScheme.secondary,
-                                          ),
+                                          Icon(JamIcons.save, size: 20, color: Theme.of(context).colorScheme.secondary),
                                           const SizedBox(width: 10),
                                           Text(
                                             Data.subPrismWalls![widget.index]["size"].toString(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -386,10 +379,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           const SizedBox(width: 10),
                                           Text(
                                             Data.subPrismWalls![widget.index]["resolution"].toString(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium!
-                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -404,20 +396,20 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     },
                                     child: Container(
                                       decoration: BoxDecoration(
-                                          color: Theme.of(context).hintColor,
-                                          borderRadius: const BorderRadius.only(
-                                              topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
+                                        color: Theme.of(context).hintColor,
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(20),
+                                          bottomRight: Radius.circular(20),
+                                        ),
+                                      ),
                                       padding: EdgeInsets.zero,
                                       child: Padding(
                                         padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                        child: Icon(
-                                          JamIcons.close,
-                                          color: Theme.of(context).colorScheme.secondary,
-                                        ),
+                                        child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
                                       ),
                                     ),
                                   ),
-                                )
+                                ),
                               ],
                             ),
                           ),
@@ -431,11 +423,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                           child: TweenAnimationBuilder(
                             duration: const Duration(milliseconds: 150),
                             builder: (BuildContext context, double value, Widget? child) {
-                              return Transform.scale(
-                                scale: value,
-                                alignment: Alignment.bottomRight,
-                                child: child,
-                              );
+                              return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
                             },
                             tween: Tween(begin: 0.0, end: 1.0),
                             child: Container(
@@ -457,30 +445,27 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: <Widget>[
                                           ActionChip(
-                                              pressElevation: 5,
-                                              padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                              avatar: const Icon(
-                                                JamIcons.camera,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                              backgroundColor: Colors.black,
-                                              label: Text(
-                                                context
-                                                        .profileWallsSnapshots(listen: false)![widget.index]
-                                                        .data()["by"]
-                                                        .toString()[0]
-                                                        .toUpperCase() +
-                                                    context
-                                                        .profileWallsSnapshots(listen: false)![widget.index]
-                                                        .data()["by"]
-                                                        .toString()
-                                                        .substring(1),
-                                                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                                      color: Colors.white,
-                                                    ),
-                                              ),
-                                              onPressed: () {}),
+                                            pressElevation: 5,
+                                            padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                            avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                            backgroundColor: Colors.black,
+                                            label: Text(
+                                              context
+                                                      .profileWallsSnapshots(listen: false)![widget.index]
+                                                      .data()["by"]
+                                                      .toString()[0]
+                                                      .toUpperCase() +
+                                                  context
+                                                      .profileWallsSnapshots(listen: false)![widget.index]
+                                                      .data()["by"]
+                                                      .toString()
+                                                      .substring(1),
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                            ),
+                                            onPressed: () {},
+                                          ),
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                             child: Text(
@@ -489,29 +474,24 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   .data()["id"]
                                                   .toString()
                                                   .toUpperCase(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .headlineSmall!
-                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                              style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
                                             ),
                                           ),
                                           Row(
                                             children: [
-                                              Icon(
-                                                JamIcons.save,
-                                                size: 20,
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
+                                              Icon(JamIcons.save,
+                                                  size: 20, color: Theme.of(context).colorScheme.secondary),
                                               const SizedBox(width: 10),
                                               Text(
                                                 context
                                                     .profileWallsSnapshots(listen: false)![widget.index]
                                                     .data()["size"]
                                                     .toString(),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -528,10 +508,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     .profileWallsSnapshots(listen: false)![widget.index]
                                                     .data()["resolution"]
                                                     .toString(),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -546,20 +525,20 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         },
                                         child: Container(
                                           decoration: BoxDecoration(
-                                              color: Theme.of(context).hintColor,
-                                              borderRadius: const BorderRadius.only(
-                                                  topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
+                                            color: Theme.of(context).hintColor,
+                                            borderRadius: const BorderRadius.only(
+                                              topLeft: Radius.circular(20),
+                                              bottomRight: Radius.circular(20),
+                                            ),
+                                          ),
                                           padding: EdgeInsets.zero,
                                           child: Padding(
                                             padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                            child: Icon(
-                                              JamIcons.close,
-                                              color: Theme.of(context).colorScheme.secondary,
-                                            ),
+                                            child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
                                           ),
                                         ),
                                       ),
-                                    )
+                                    ),
                                   ],
                                 ),
                               ),
@@ -573,11 +552,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                               child: TweenAnimationBuilder(
                                 duration: const Duration(milliseconds: 150),
                                 builder: (BuildContext context, double value, Widget? child) {
-                                  return Transform.scale(
-                                    scale: value,
-                                    alignment: Alignment.bottomRight,
-                                    child: child,
-                                  );
+                                  return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
                                 },
                                 tween: Tween(begin: 0.0, end: 1.0),
                                 child: Container(
@@ -599,32 +574,29 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: <Widget>[
                                               ActionChip(
-                                                  pressElevation: 5,
-                                                  padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                  avatar: const Icon(
-                                                    JamIcons.camera,
-                                                    color: Colors.white,
-                                                    size: 20,
-                                                  ),
-                                                  backgroundColor: Colors.black,
-                                                  label: Text(
-                                                    context
-                                                            .publicProfileAdapter()
-                                                            .userProfileWalls![widget.index]
-                                                            .data()["by"]
-                                                            .toString()[0]
-                                                            .toUpperCase() +
-                                                        context
-                                                            .publicProfileAdapter()
-                                                            .userProfileWalls![widget.index]
-                                                            .data()["by"]
-                                                            .toString()
-                                                            .substring(1),
-                                                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                                          color: Colors.white,
-                                                        ),
-                                                  ),
-                                                  onPressed: () {}),
+                                                pressElevation: 5,
+                                                padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                                avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                                backgroundColor: Colors.black,
+                                                label: Text(
+                                                  context
+                                                          .publicProfileAdapter()
+                                                          .userProfileWalls![widget.index]
+                                                          .data()["by"]
+                                                          .toString()[0]
+                                                          .toUpperCase() +
+                                                      context
+                                                          .publicProfileAdapter()
+                                                          .userProfileWalls![widget.index]
+                                                          .data()["by"]
+                                                          .toString()
+                                                          .substring(1),
+                                                  style: Theme.of(
+                                                    context,
+                                                  ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                                ),
+                                                onPressed: () {},
+                                              ),
                                               Padding(
                                                 padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                 child: Text(
@@ -634,19 +606,15 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                       .data()["id"]
                                                       .toString()
                                                       .toUpperCase(),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .headlineSmall!
-                                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                  style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                                        color: Theme.of(context).colorScheme.secondary,
+                                                      ),
                                                 ),
                                               ),
                                               Row(
                                                 children: [
-                                                  Icon(
-                                                    JamIcons.save,
-                                                    size: 20,
-                                                    color: Theme.of(context).colorScheme.secondary,
-                                                  ),
+                                                  Icon(JamIcons.save,
+                                                      size: 20, color: Theme.of(context).colorScheme.secondary),
                                                   const SizedBox(width: 10),
                                                   Text(
                                                     context
@@ -654,10 +622,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         .userProfileWalls![widget.index]
                                                         .data()["size"]
                                                         .toString(),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyMedium!
-                                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                          color: Theme.of(context).colorScheme.secondary,
+                                                        ),
                                                   ),
                                                 ],
                                               ),
@@ -675,10 +642,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         .userProfileWalls![widget.index]
                                                         .data()["resolution"]
                                                         .toString(),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyMedium!
-                                                        .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                          color: Theme.of(context).colorScheme.secondary,
+                                                        ),
                                                   ),
                                                 ],
                                               ),
@@ -693,20 +659,21 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             },
                                             child: Container(
                                               decoration: BoxDecoration(
-                                                  color: Theme.of(context).hintColor,
-                                                  borderRadius: const BorderRadius.only(
-                                                      topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
+                                                color: Theme.of(context).hintColor,
+                                                borderRadius: const BorderRadius.only(
+                                                  topLeft: Radius.circular(20),
+                                                  bottomRight: Radius.circular(20),
+                                                ),
+                                              ),
                                               padding: EdgeInsets.zero,
                                               child: Padding(
                                                 padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                                child: Icon(
-                                                  JamIcons.close,
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
+                                                child: Icon(JamIcons.close,
+                                                    color: Theme.of(context).colorScheme.secondary),
                                               ),
                                             ),
                                           ),
-                                        )
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -721,10 +688,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     duration: const Duration(milliseconds: 200),
                                     builder: (BuildContext context, double value, Widget? child) {
                                       return Transform.scale(
-                                        scale: value,
-                                        alignment: Alignment.bottomRight,
-                                        child: child,
-                                      );
+                                          scale: value, alignment: Alignment.bottomRight, child: child);
                                     },
                                     tween: Tween(begin: 0.0, end: 1.0),
                                     child: Container(
@@ -746,20 +710,20 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: <Widget>[
                                                   ActionChip(
-                                                      pressElevation: 5,
-                                                      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                      backgroundColor: Colors.black,
-                                                      avatar:
-                                                          const Icon(JamIcons.camera, color: Colors.white, size: 20),
-                                                      label: Text(
-                                                        PData.wallsP[widget.index].photographer.toString(),
-                                                        style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                                              color: Colors.white,
-                                                            ),
-                                                      ),
-                                                      onPressed: () {
-                                                        launch(PData.wallsP[widget.index].url!);
-                                                      }),
+                                                    pressElevation: 5,
+                                                    padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                                    backgroundColor: Colors.black,
+                                                    avatar: const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                                    label: Text(
+                                                      PData.wallsP[widget.index].photographer.toString(),
+                                                      style: Theme.of(
+                                                        context,
+                                                      ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                                    ),
+                                                    onPressed: () {
+                                                      launch(PData.wallsP[widget.index].url!);
+                                                    },
+                                                  ),
                                                   Padding(
                                                     padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                     child: Text(
@@ -782,15 +746,16 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   .replaceAll("-", " ")
                                                                   .replaceAll("/", "")
                                                                   .substring(
-                                                                      1,
-                                                                      PData.wallsP[widget.index].url
-                                                                              .toString()
-                                                                              .replaceAll(
-                                                                                  "https://www.pexels.com/photo/", "")
-                                                                              .replaceAll("-", " ")
-                                                                              .replaceAll("/", "")
-                                                                              .length -
-                                                                          7)
+                                                                    1,
+                                                                    PData.wallsP[widget.index].url
+                                                                            .toString()
+                                                                            .replaceAll(
+                                                                                "https://www.pexels.com/photo/", "")
+                                                                            .replaceAll("-", " ")
+                                                                            .replaceAll("/", "")
+                                                                            .length -
+                                                                        7,
+                                                                  )
                                                           : PData.wallsP[widget.index].url
                                                                   .toString()
                                                                   .replaceAll("https://www.pexels.com/photo/", "")
@@ -803,10 +768,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   .replaceAll("-", " ")
                                                                   .replaceAll("/", "")
                                                                   .substring(1),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .headlineSmall!
-                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                          ),
                                                     ),
                                                   ),
                                                   Row(
@@ -819,10 +783,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                       const SizedBox(width: 5),
                                                       Text(
                                                         "${PData.wallsP[widget.index].width}x${PData.wallsP[widget.index].height}",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .titleLarge!
-                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                        style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                                              color: Theme.of(context).colorScheme.secondary,
+                                                            ),
                                                       ),
                                                     ],
                                                   ),
@@ -837,21 +800,21 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 },
                                                 child: Container(
                                                   decoration: BoxDecoration(
-                                                      color: Theme.of(context).hintColor,
-                                                      borderRadius: const BorderRadius.only(
-                                                          topLeft: Radius.circular(20),
-                                                          bottomRight: Radius.circular(20))),
+                                                    color: Theme.of(context).hintColor,
+                                                    borderRadius: const BorderRadius.only(
+                                                      topLeft: Radius.circular(20),
+                                                      bottomRight: Radius.circular(20),
+                                                    ),
+                                                  ),
                                                   padding: EdgeInsets.zero,
                                                   child: Padding(
                                                     padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                                    child: Icon(
-                                                      JamIcons.close,
-                                                      color: Theme.of(context).colorScheme.secondary,
-                                                    ),
+                                                    child: Icon(JamIcons.close,
+                                                        color: Theme.of(context).colorScheme.secondary),
                                                   ),
                                                 ),
                                               ),
-                                            )
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -868,10 +831,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             duration: const Duration(milliseconds: 200),
                                             builder: (BuildContext context, double value, Widget? child) {
                                               return Transform.scale(
-                                                scale: value,
-                                                alignment: Alignment.bottomRight,
-                                                child: child,
-                                              );
+                                                  scale: value, alignment: Alignment.bottomRight, child: child);
                                             },
                                             tween: Tween(begin: 0.0, end: 1.0),
                                             child: Container(
@@ -893,33 +853,28 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         crossAxisAlignment: CrossAxisAlignment.start,
                                                         children: <Widget>[
                                                           ActionChip(
-                                                              pressElevation: 5,
-                                                              padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                              avatar: const Icon(
-                                                                JamIcons.ordered_list,
-                                                                color: Colors.white,
-                                                                size: 20,
-                                                              ),
-                                                              backgroundColor: Colors.black,
-                                                              label: Text(
-                                                                context
-                                                                        .favouriteWallsAdapter(listen: false)
-                                                                        .liked![widget.index]["category"]
-                                                                        .toString()[0]
-                                                                        .toUpperCase() +
-                                                                    context
-                                                                        .favouriteWallsAdapter(listen: false)
-                                                                        .liked![widget.index]["category"]
-                                                                        .toString()
-                                                                        .substring(1),
-                                                                style: Theme.of(context)
-                                                                    .textTheme
-                                                                    .headlineMedium!
-                                                                    .copyWith(
-                                                                      color: Colors.white,
-                                                                    ),
-                                                              ),
-                                                              onPressed: () {}),
+                                                            pressElevation: 5,
+                                                            padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                                            avatar: const Icon(JamIcons.ordered_list,
+                                                                color: Colors.white, size: 20),
+                                                            backgroundColor: Colors.black,
+                                                            label: Text(
+                                                              context
+                                                                      .favouriteWallsAdapter(listen: false)
+                                                                      .liked![widget.index]["category"]
+                                                                      .toString()[0]
+                                                                      .toUpperCase() +
+                                                                  context
+                                                                      .favouriteWallsAdapter(listen: false)
+                                                                      .liked![widget.index]["category"]
+                                                                      .toString()
+                                                                      .substring(1),
+                                                              style: Theme.of(
+                                                                context,
+                                                              ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                                            ),
+                                                            onPressed: () {},
+                                                          ),
                                                           Padding(
                                                             padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                             child: Text(
@@ -928,35 +883,28 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   .liked![widget.index]["id"]
                                                                   .toString()
                                                                   .toUpperCase(),
-                                                              style: Theme.of(context)
-                                                                  .textTheme
-                                                                  .headlineSmall!
-                                                                  .copyWith(
-                                                                      color: Theme.of(context).colorScheme.secondary),
+                                                              style:
+                                                                  Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                                                        color: Theme.of(context).colorScheme.secondary,
+                                                                      ),
                                                             ),
                                                           ),
                                                           Row(
                                                             children: [
-                                                              const Icon(
-                                                                JamIcons.eye,
-                                                                size: 20,
-                                                                color: Colors.white70,
-                                                              ),
+                                                              const Icon(JamIcons.eye, size: 20, color: Colors.white70),
                                                               const SizedBox(width: 10),
                                                               Text(
                                                                 "Views: ${context.favouriteWallsAdapter(listen: false).liked![widget.index]["views"]}",
                                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                    color: Theme.of(context).colorScheme.secondary),
+                                                                      color: Theme.of(context).colorScheme.secondary,
+                                                                    ),
                                                               ),
                                                             ],
                                                           ),
                                                           Row(
                                                             children: [
-                                                              const Icon(
-                                                                JamIcons.set_square,
-                                                                size: 20,
-                                                                color: Colors.white70,
-                                                              ),
+                                                              const Icon(JamIcons.set_square,
+                                                                  size: 20, color: Colors.white70),
                                                               const SizedBox(width: 10),
                                                               Text(
                                                                 context
@@ -964,7 +912,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     .liked![widget.index]["resolution"]
                                                                     .toString(),
                                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                    color: Theme.of(context).colorScheme.secondary),
+                                                                      color: Theme.of(context).colorScheme.secondary,
+                                                                    ),
                                                               ),
                                                             ],
                                                           ),
@@ -979,10 +928,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         },
                                                         child: Container(
                                                           decoration: const BoxDecoration(
-                                                              color: Color(0xFF2F2F2F),
-                                                              borderRadius: BorderRadius.only(
-                                                                  topLeft: Radius.circular(20),
-                                                                  bottomRight: Radius.circular(20))),
+                                                            color: Color(0xFF2F2F2F),
+                                                            borderRadius: BorderRadius.only(
+                                                              topLeft: Radius.circular(20),
+                                                              bottomRight: Radius.circular(20),
+                                                            ),
+                                                          ),
                                                           padding: EdgeInsets.zero,
                                                           child: Padding(
                                                             padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
@@ -993,7 +944,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                           ),
                                                         ),
                                                       ),
-                                                    )
+                                                    ),
                                                   ],
                                                 ),
                                               ),
@@ -1009,10 +960,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 duration: const Duration(milliseconds: 200),
                                                 builder: (BuildContext context, double value, Widget? child) {
                                                   return Transform.scale(
-                                                    scale: value,
-                                                    alignment: Alignment.bottomRight,
-                                                    child: child,
-                                                  );
+                                                      scale: value, alignment: Alignment.bottomRight, child: child);
                                                 },
                                                 tween: Tween(begin: 0.0, end: 1.0),
                                                 child: Container(
@@ -1034,33 +982,31 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                             crossAxisAlignment: CrossAxisAlignment.start,
                                                             children: <Widget>[
                                                               ActionChip(
-                                                                  pressElevation: 5,
-                                                                  padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                                  avatar: const Icon(
-                                                                    JamIcons.camera,
-                                                                    color: Colors.white,
-                                                                    size: 20,
-                                                                  ),
-                                                                  backgroundColor: Colors.black,
-                                                                  label: Text(
-                                                                    context
-                                                                            .favouriteWallsAdapter(listen: false)
-                                                                            .liked![widget.index]["photographer"]
-                                                                            .toString()[0]
-                                                                            .toUpperCase() +
-                                                                        context
-                                                                            .favouriteWallsAdapter(listen: false)
-                                                                            .liked![widget.index]["photographer"]
-                                                                            .toString()
-                                                                            .substring(1),
-                                                                    style: Theme.of(context)
-                                                                        .textTheme
-                                                                        .headlineMedium!
-                                                                        .copyWith(
-                                                                          color: Colors.white,
-                                                                        ),
-                                                                  ),
-                                                                  onPressed: () {}),
+                                                                pressElevation: 5,
+                                                                padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                                                avatar: const Icon(JamIcons.camera,
+                                                                    color: Colors.white, size: 20),
+                                                                backgroundColor: Colors.black,
+                                                                label: Text(
+                                                                  context
+                                                                          .favouriteWallsAdapter(listen: false)
+                                                                          .liked![widget.index]["photographer"]
+                                                                          .toString()[0]
+                                                                          .toUpperCase() +
+                                                                      context
+                                                                          .favouriteWallsAdapter(listen: false)
+                                                                          .liked![widget.index]["photographer"]
+                                                                          .toString()
+                                                                          .substring(1),
+                                                                  style: Theme.of(
+                                                                    context,
+                                                                  )
+                                                                      .textTheme
+                                                                      .headlineMedium!
+                                                                      .copyWith(color: Colors.white),
+                                                                ),
+                                                                onPressed: () {},
+                                                              ),
                                                               Padding(
                                                                 padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                                 child: Text(
@@ -1073,17 +1019,14 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       .textTheme
                                                                       .headlineSmall!
                                                                       .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).colorScheme.secondary),
+                                                                        color: Theme.of(context).colorScheme.secondary,
+                                                                      ),
                                                                 ),
                                                               ),
                                                               Row(
                                                                 children: [
-                                                                  const Icon(
-                                                                    JamIcons.save,
-                                                                    size: 20,
-                                                                    color: Colors.white70,
-                                                                  ),
+                                                                  const Icon(JamIcons.save,
+                                                                      size: 20, color: Colors.white70),
                                                                   const SizedBox(width: 10),
                                                                   Text(
                                                                     context
@@ -1094,19 +1037,16 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                         .textTheme
                                                                         .bodyMedium!
                                                                         .copyWith(
-                                                                            color: Theme.of(context)
-                                                                                .colorScheme
-                                                                                .secondary),
+                                                                          color:
+                                                                              Theme.of(context).colorScheme.secondary,
+                                                                        ),
                                                                   ),
                                                                 ],
                                                               ),
                                                               Row(
                                                                 children: [
-                                                                  const Icon(
-                                                                    JamIcons.set_square,
-                                                                    size: 20,
-                                                                    color: Colors.white70,
-                                                                  ),
+                                                                  const Icon(JamIcons.set_square,
+                                                                      size: 20, color: Colors.white70),
                                                                   const SizedBox(width: 10),
                                                                   Text(
                                                                     context
@@ -1117,9 +1057,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                         .textTheme
                                                                         .bodyMedium!
                                                                         .copyWith(
-                                                                            color: Theme.of(context)
-                                                                                .colorScheme
-                                                                                .secondary),
+                                                                          color:
+                                                                              Theme.of(context).colorScheme.secondary,
+                                                                        ),
                                                                   ),
                                                                 ],
                                                               ),
@@ -1134,10 +1074,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                             },
                                                             child: Container(
                                                               decoration: const BoxDecoration(
-                                                                  color: Color(0xFF2F2F2F),
-                                                                  borderRadius: BorderRadius.only(
-                                                                      topLeft: Radius.circular(20),
-                                                                      bottomRight: Radius.circular(20))),
+                                                                color: Color(0xFF2F2F2F),
+                                                                borderRadius: BorderRadius.only(
+                                                                  topLeft: Radius.circular(20),
+                                                                  bottomRight: Radius.circular(20),
+                                                                ),
+                                                              ),
                                                               padding: EdgeInsets.zero,
                                                               child: Padding(
                                                                 padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
@@ -1148,7 +1090,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                               ),
                                                             ),
                                                           ),
-                                                        )
+                                                        ),
                                                       ],
                                                     ),
                                                   ),
@@ -1165,10 +1107,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     duration: const Duration(milliseconds: 200),
                                                     builder: (BuildContext context, double value, Widget? child) {
                                                       return Transform.scale(
-                                                        scale: value,
-                                                        alignment: Alignment.bottomRight,
-                                                        child: child,
-                                                      );
+                                                          scale: value, alignment: Alignment.bottomRight, child: child);
                                                     },
                                                     tween: Tween(begin: 0.0, end: 1.0),
                                                     child: Container(
@@ -1190,25 +1129,25 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                                 children: <Widget>[
                                                                   ActionChip(
-                                                                      pressElevation: 5,
-                                                                      padding:
-                                                                          const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                                      backgroundColor: Colors.black,
-                                                                      avatar: const Icon(JamIcons.camera,
-                                                                          color: Colors.white, size: 20),
-                                                                      label: Text(
-                                                                        context
-                                                                            .favouriteWallsAdapter(listen: false)
-                                                                            .liked![widget.index]["photographer"]
-                                                                            .toString(),
-                                                                        style: Theme.of(context)
-                                                                            .textTheme
-                                                                            .headlineMedium!
-                                                                            .copyWith(
-                                                                              color: Colors.white,
-                                                                            ),
-                                                                      ),
-                                                                      onPressed: () {}),
+                                                                    pressElevation: 5,
+                                                                    padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                                                    backgroundColor: Colors.black,
+                                                                    avatar: const Icon(JamIcons.camera,
+                                                                        color: Colors.white, size: 20),
+                                                                    label: Text(
+                                                                      context
+                                                                          .favouriteWallsAdapter(listen: false)
+                                                                          .liked![widget.index]["photographer"]
+                                                                          .toString(),
+                                                                      style: Theme.of(
+                                                                        context,
+                                                                      )
+                                                                          .textTheme
+                                                                          .headlineMedium!
+                                                                          .copyWith(color: Colors.white),
+                                                                    ),
+                                                                    onPressed: () {},
+                                                                  ),
                                                                   Row(
                                                                     children: [
                                                                       Icon(
@@ -1226,9 +1165,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             .textTheme
                                                                             .bodyMedium!
                                                                             .copyWith(
-                                                                                color: Theme.of(context)
-                                                                                    .colorScheme
-                                                                                    .secondary),
+                                                                              color: Theme.of(context)
+                                                                                  .colorScheme
+                                                                                  .secondary,
+                                                                            ),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -1243,10 +1183,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                 },
                                                                 child: Container(
                                                                   decoration: const BoxDecoration(
-                                                                      color: Color(0xFF2F2F2F),
-                                                                      borderRadius: BorderRadius.only(
-                                                                          topLeft: Radius.circular(20),
-                                                                          bottomRight: Radius.circular(20))),
+                                                                    color: Color(0xFF2F2F2F),
+                                                                    borderRadius: BorderRadius.only(
+                                                                      topLeft: Radius.circular(20),
+                                                                      bottomRight: Radius.circular(20),
+                                                                    ),
+                                                                  ),
                                                                   padding: EdgeInsets.zero,
                                                                   child: Padding(
                                                                     padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
@@ -1257,7 +1199,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   ),
                                                                 ),
                                                               ),
-                                                            )
+                                                            ),
                                                           ],
                                                         ),
                                                       ),
@@ -1271,10 +1213,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     duration: const Duration(milliseconds: 200),
                                                     builder: (BuildContext context, double value, Widget? child) {
                                                       return Transform.scale(
-                                                        scale: value,
-                                                        alignment: Alignment.bottomRight,
-                                                        child: child,
-                                                      );
+                                                          scale: value, alignment: Alignment.bottomRight, child: child);
                                                     },
                                                     tween: Tween(begin: 0.0, end: 1.0),
                                                     child: Container(
@@ -1309,9 +1248,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             .textTheme
                                                                             .titleLarge!
                                                                             .copyWith(
-                                                                                color: Theme.of(context)
-                                                                                    .colorScheme
-                                                                                    .secondary),
+                                                                              color: Theme.of(context)
+                                                                                  .colorScheme
+                                                                                  .secondary,
+                                                                            ),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -1329,9 +1269,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             .textTheme
                                                                             .titleLarge!
                                                                             .copyWith(
-                                                                                color: Theme.of(context)
-                                                                                    .colorScheme
-                                                                                    .secondary),
+                                                                              color: Theme.of(context)
+                                                                                  .colorScheme
+                                                                                  .secondary,
+                                                                            ),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -1352,9 +1293,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             .textTheme
                                                                             .titleLarge!
                                                                             .copyWith(
-                                                                                color: Theme.of(context)
-                                                                                    .colorScheme
-                                                                                    .secondary),
+                                                                              color: Theme.of(context)
+                                                                                  .colorScheme
+                                                                                  .secondary,
+                                                                            ),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -1369,10 +1311,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                 },
                                                                 child: Container(
                                                                   decoration: const BoxDecoration(
-                                                                      color: Color(0xFF2F2F2F),
-                                                                      borderRadius: BorderRadius.only(
-                                                                          topLeft: Radius.circular(20),
-                                                                          bottomRight: Radius.circular(20))),
+                                                                    color: Color(0xFF2F2F2F),
+                                                                    borderRadius: BorderRadius.only(
+                                                                      topLeft: Radius.circular(20),
+                                                                      bottomRight: Radius.circular(20),
+                                                                    ),
+                                                                  ),
                                                                   padding: EdgeInsets.zero,
                                                                   child: Padding(
                                                                     padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
@@ -1383,7 +1327,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   ),
                                                                 ),
                                                               ),
-                                                            )
+                                                            ),
                                                           ],
                                                         ),
                                                       ),
@@ -1397,10 +1341,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         duration: const Duration(milliseconds: 200),
                                         builder: (BuildContext context, double value, Widget? child) {
                                           return Transform.scale(
-                                            scale: value,
-                                            alignment: Alignment.bottomRight,
-                                            child: child,
-                                          );
+                                              scale: value, alignment: Alignment.bottomRight, child: child);
                                         },
                                         tween: Tween(begin: 0.0, end: 1.0),
                                         child: Container(
@@ -1422,18 +1363,19 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: <Widget>[
                                                       ActionChip(
-                                                          pressElevation: 5,
-                                                          padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                                          backgroundColor: Colors.black,
-                                                          avatar: const Icon(JamIcons.camera,
-                                                              color: Colors.white, size: 20),
-                                                          label: Text(
-                                                            PData.wallsC[widget.index].photographer.toString(),
-                                                            style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                                                  color: Colors.white,
-                                                                ),
-                                                          ),
-                                                          onPressed: () {}),
+                                                        pressElevation: 5,
+                                                        padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                                        backgroundColor: Colors.black,
+                                                        avatar:
+                                                            const Icon(JamIcons.camera, color: Colors.white, size: 20),
+                                                        label: Text(
+                                                          PData.wallsC[widget.index].photographer.toString(),
+                                                          style: Theme.of(
+                                                            context,
+                                                          ).textTheme.headlineMedium!.copyWith(color: Colors.white),
+                                                        ),
+                                                        onPressed: () {},
+                                                      ),
                                                       Padding(
                                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                         child: Text(
@@ -1456,16 +1398,16 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       .replaceAll("-", " ")
                                                                       .replaceAll("/", "")
                                                                       .substring(
-                                                                          1,
-                                                                          PData.wallsC[widget.index].url
-                                                                                  .toString()
-                                                                                  .replaceAll(
-                                                                                      "https://www.pexels.com/photo/",
-                                                                                      "")
-                                                                                  .replaceAll("-", " ")
-                                                                                  .replaceAll("/", "")
-                                                                                  .length -
-                                                                              7)
+                                                                        1,
+                                                                        PData.wallsC[widget.index].url
+                                                                                .toString()
+                                                                                .replaceAll(
+                                                                                    "https://www.pexels.com/photo/", "")
+                                                                                .replaceAll("-", " ")
+                                                                                .replaceAll("/", "")
+                                                                                .length -
+                                                                            7,
+                                                                      )
                                                               : PData.wallsC[widget.index].url
                                                                       .toString()
                                                                       .replaceAll("https://www.pexels.com/photo/", "")
@@ -1478,24 +1420,21 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       .replaceAll("-", " ")
                                                                       .replaceAll("/", "")
                                                                       .substring(1),
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .headlineSmall!
-                                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary,
+                                                              ),
                                                         ),
                                                       ),
                                                       Row(
                                                         children: [
-                                                          const Icon(
-                                                            JamIcons.set_square,
-                                                            color: Colors.white70,
-                                                            size: 20,
-                                                          ),
+                                                          const Icon(JamIcons.set_square,
+                                                              color: Colors.white70, size: 20),
                                                           const SizedBox(width: 5),
                                                           Text(
                                                             "${PData.wallsC[widget.index].width}x${PData.wallsC[widget.index].height}",
                                                             style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                                                                color: Theme.of(context).colorScheme.secondary),
+                                                                  color: Theme.of(context).colorScheme.secondary,
+                                                                ),
                                                           ),
                                                         ],
                                                       ),
@@ -1510,21 +1449,21 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     },
                                                     child: Container(
                                                       decoration: const BoxDecoration(
-                                                          color: Color(0xFF2F2F2F),
-                                                          borderRadius: BorderRadius.only(
-                                                              topLeft: Radius.circular(20),
-                                                              bottomRight: Radius.circular(20))),
+                                                        color: Color(0xFF2F2F2F),
+                                                        borderRadius: BorderRadius.only(
+                                                          topLeft: Radius.circular(20),
+                                                          bottomRight: Radius.circular(20),
+                                                        ),
+                                                      ),
                                                       padding: EdgeInsets.zero,
                                                       child: Padding(
                                                         padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                                        child: Icon(
-                                                          JamIcons.close,
-                                                          color: Theme.of(context).colorScheme.secondary,
-                                                        ),
+                                                        child: Icon(JamIcons.close,
+                                                            color: Theme.of(context).colorScheme.secondary),
                                                       ),
                                                     ),
                                                   ),
-                                                )
+                                                ),
                                               ],
                                             ),
                                           ),

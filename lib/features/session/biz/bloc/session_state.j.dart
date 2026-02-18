@@ -9,9 +9,6 @@ abstract class SessionState with _$SessionState {
     Failure? failure,
   }) = _SessionState;
 
-  factory SessionState.initial() => const SessionState(
-        status: LoadStatus.initial,
-        actionStatus: ActionStatus.idle,
-        session: SessionEntity.guest,
-      );
+  factory SessionState.initial() =>
+      const SessionState(status: LoadStatus.initial, actionStatus: ActionStatus.idle, session: SessionEntity.guest);
 }

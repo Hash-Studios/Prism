@@ -17,10 +17,11 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
       automaticallyImplyLeading: false,
       titleSpacing: 0,
       leading: IconButton(
-          icon: Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
-          onPressed: () {
-            Navigator.pop(context);
-          }),
+        icon: Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
       title: Text(
         widget.current,
         style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),

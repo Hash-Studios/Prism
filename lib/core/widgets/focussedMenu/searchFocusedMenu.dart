@@ -8,8 +8,12 @@ class SearchFocusedMenuHolder extends StatefulWidget {
   final Widget child;
   final int index;
 
-  const SearchFocusedMenuHolder(
-      {required this.selectedProvider, required this.query, required this.child, required this.index});
+  const SearchFocusedMenuHolder({
+    required this.selectedProvider,
+    required this.query,
+    required this.child,
+    required this.index,
+  });
 
   @override
   _SearchFocusedMenuHolderState createState() => _SearchFocusedMenuHolderState();
@@ -42,41 +46,41 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
             onTap: () async {
               getOffset();
               await Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                      transitionDuration: const Duration(milliseconds: 200),
-                      pageBuilder: (context, animation, secondaryAnimation) {
-                        animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                        return FadeTransition(
-                            opacity: animation,
-                            child: SearchFocusedMenuDetails(
-                              selectedProvider: widget.selectedProvider,
-                              query: widget.query,
-                              childOffset: childOffset,
-                              childSize: childSize,
-                              index: widget.index,
-                              child: widget.child,
-                            ));
-                      },
-                      fullscreenDialog: true,
-                      opaque: false));
+                context,
+                PageRouteBuilder(
+                  transitionDuration: const Duration(milliseconds: 200),
+                  pageBuilder: (context, animation, secondaryAnimation) {
+                    animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SearchFocusedMenuDetails(
+                        selectedProvider: widget.selectedProvider,
+                        query: widget.query,
+                        childOffset: childOffset,
+                        childSize: childSize,
+                        index: widget.index,
+                        child: widget.child,
+                      ),
+                    );
+                  },
+                  fullscreenDialog: true,
+                  opaque: false,
+                ),
+              );
             },
             child: Container(
               decoration: BoxDecoration(
-                  color: Theme.of(context).hintColor,
-                  borderRadius:
-                      const BorderRadius.only(topLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
+                color: Theme.of(context).hintColor,
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
+              ),
               padding: EdgeInsets.zero,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                child: Icon(
-                  JamIcons.more_horizontal,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
+                child: Icon(JamIcons.more_horizontal, color: Theme.of(context).colorScheme.secondary),
               ),
             ),
           ),
-        )
+        ),
       ],
     );
   }

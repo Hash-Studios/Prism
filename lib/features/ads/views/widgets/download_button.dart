@@ -72,16 +72,12 @@ class _DownloadButtonState extends State<DownloadButton> {
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4))
+                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
               ],
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
-            child: Icon(
-              JamIcons.download,
-              color: Theme.of(context).colorScheme.secondary,
-              size: 20,
-            ),
+            child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
           ),
           Positioned(
             top: 0,

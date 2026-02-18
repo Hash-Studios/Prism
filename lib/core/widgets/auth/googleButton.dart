@@ -7,11 +7,7 @@ final GoogleAuth gAuth = GoogleAuth();
 class GoogleButton extends StatefulWidget {
   final bool login;
   final String text;
-  const GoogleButton({
-    required this.login,
-    required this.text,
-    super.key,
-  });
+  const GoogleButton({required this.login, required this.text, super.key});
 
   @override
   _GoogleButtonState createState() => _GoogleButtonState();
@@ -32,17 +28,16 @@ class _GoogleButtonState extends State<GoogleButton> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                      color: const Color(0xFFEFF5FF).withValues(alpha: 0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4)),
+                    color: const Color(0xFFEFF5FF).withValues(alpha: 0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
                 borderRadius: BorderRadius.circular(500),
               )
             : BoxDecoration(
                 color: Colors.transparent,
-                border: Border.all(
-                  color: Colors.white,
-                ),
+                border: Border.all(color: Colors.white),
                 borderRadius: BorderRadius.circular(500),
               ),
         child: MaterialButton(
@@ -65,17 +60,16 @@ class _GoogleButtonState extends State<GoogleButton> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Image.asset(
-                    'assets/icons/google.png',
-                    width: 30,
-                  ),
+                  Image.asset('assets/icons/google.png', width: 30),
                   Padding(
                     padding: const EdgeInsets.only(left: 10.0),
-                    child: Text(widget.text,
-                        textAlign: TextAlign.center,
-                        style: widget.login
-                            ? Theme.of(context).textTheme.labelLarge!.copyWith(color: config.Colors().mainColor(1))
-                            : Theme.of(context).textTheme.labelLarge!.copyWith(color: Theme.of(context).primaryColor)),
+                    child: Text(
+                      widget.text,
+                      textAlign: TextAlign.center,
+                      style: widget.login
+                          ? Theme.of(context).textTheme.labelLarge!.copyWith(color: config.Colors().mainColor(1))
+                          : Theme.of(context).textTheme.labelLarge!.copyWith(color: Theme.of(context).primaryColor),
+                    ),
                   ),
                 ],
               ),
