@@ -5,7 +5,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-
 @RoutePage(name: 'AdsNotLoadingRoute')
 class AdsNotLoading extends StatelessWidget {
   const AdsNotLoading({super.key});
