@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios ci test
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios ci test update-goldens verify-goldens
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -146,3 +146,9 @@ test: ensure-fvm
 	else \
 		echo "No test files found, skipping."; \
 	fi
+
+update-goldens: ensure-fvm  ## Regenerate goldens only for changed Arsenal components
+	@./tool/update_goldens.sh
+
+verify-goldens: ensure-fvm  ## Fail if goldens don't match current renders
+	@$(FLUTTER) test test/core/arsenal/
