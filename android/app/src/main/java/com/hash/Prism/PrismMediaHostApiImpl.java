@@ -26,20 +26,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class PrismMediaHostApiImpl implements PrismMediaHostApi {
     private final Context context;
-    private final ExecutorService executor;
     private final Handler mainHandler;
 
     public PrismMediaHostApiImpl(Context context) {
         this.context = context;
-        this.executor = Executors.newCachedThreadPool();
         this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
@@ -111,10 +108,11 @@ public class PrismMediaHostApiImpl implements PrismMediaHostApi {
 
     private Bitmap loadBitmapFromFile(String path) {
         try {
-            if (path.startsWith("file://")) {
-                path = path.substring(7);
+            String resolvedPath = path;
+            if (resolvedPath.startsWith("file://")) {
+                resolvedPath = resolvedPath.substring(7);
             }
-            return BitmapFactory.decodeFile(path);
+            return BitmapFactory.decodeFile(resolvedPath);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -162,7 +160,7 @@ public class PrismMediaHostApiImpl implements PrismMediaHostApi {
                 if (imageUri == null) {
                     return false;
                 }
-                java.io.OutputStream fos = resolver.openOutputStream(Objects.requireNonNull(imageUri));
+                OutputStream fos = resolver.openOutputStream(Objects.requireNonNull(imageUri));
                 if (fos != null) {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
                     fos.close();
@@ -171,7 +169,7 @@ public class PrismMediaHostApiImpl implements PrismMediaHostApi {
             } else {
                 String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES + File.separator + folderName).toString();
                 File image = new File(imagesDir, filename + ".jpg");
-                java.io.FileOutputStream fos = new FileOutputStream(image);
+                FileOutputStream fos = new FileOutputStream(image);
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
                 fos.close();
                 return true;

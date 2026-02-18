@@ -254,16 +254,27 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                     isLocalFile: true,
                     kind: SaveMediaKind.wallpaper,
                   );
-                  final result = await PrismMediaHostApi().saveMedia(request);
-                  if (result.success) {
-                    analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
-                    toasts.codeSend("Wall Saved in Pictures!");
-                  } else {
+                  try {
+                    final result = await PrismMediaHostApi().saveMedia(request);
+                    if (result.success) {
+                      analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
+                      toasts.codeSend("Wall Saved in Pictures!");
+                    } else {
+                      toasts.error("Couldn't save wallpaper. Please retry!");
+                    }
+                  } on PlatformException catch (e) {
+                    logger.e('saveMedia failed', error: e);
                     toasts.error("Couldn't save wallpaper. Please retry!");
+                  } catch (e) {
+                    logger.e('Unexpected saveMedia failure', error: e);
+                    toasts.error("Something went wrong!");
+                  } finally {
+                    if (mounted) {
+                      setState(() {
+                        isLoading = false;
+                      });
+                    }
                   }
-                  setState(() {
-                    isLoading = false;
-                  });
                 },
               ),
             if (loading)

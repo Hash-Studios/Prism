@@ -1128,16 +1128,27 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                         isLocalFile: false,
                         kind: SaveMediaKind.setup,
                       );
-                      final result = await PrismMediaHostApi().saveMedia(request);
-                      if (result.success) {
-                        analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
-                        toasts.codeSend("Setup Downloaded in Pictures/Prism Setups!");
-                      } else {
+                      try {
+                        final result = await PrismMediaHostApi().saveMedia(request);
+                        if (result.success) {
+                          analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                          toasts.codeSend("Setup Downloaded in Pictures/Prism Setups!");
+                        } else {
+                          toasts.error("Couldn't download! Please Retry!");
+                        }
+                      } on PlatformException catch (e) {
+                        logger.e('saveMedia failed', error: e);
                         toasts.error("Couldn't download! Please Retry!");
+                      } catch (e) {
+                        logger.e('Unexpected saveMedia failure', error: e);
+                        toasts.error("Something went wrong!");
+                      } finally {
+                        if (mounted) {
+                          setState(() {
+                            isLoading = false;
+                          });
+                        }
                       }
-                      setState(() {
-                        isLoading = false;
-                      });
                     },
                     color: Theme.of(context).colorScheme.secondary,
                     icon: const Icon(

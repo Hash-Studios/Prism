@@ -115,40 +115,55 @@ class _DownloadButtonState extends State<DownloadButton> {
     logger.d('(SDK $sdkInt)');
     if (widget.link!.contains("com.hash.prism")) {
       debugPrint("Saving local file");
-      final request = SaveMediaRequest(
-        link: widget.link!,
-        isLocalFile: true,
-        kind: SaveMediaKind.wallpaper,
-      );
-      final result = await PrismMediaHostApi().saveMedia(request);
-      if (result.success) {
-        analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
-        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-      } else {
+      try {
+        final request = SaveMediaRequest(
+          link: widget.link!,
+          isLocalFile: true,
+          kind: SaveMediaKind.wallpaper,
+        );
+        final result = await PrismMediaHostApi().saveMedia(request);
+        if (result.success) {
+          analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
+          toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+        } else {
+          toasts.error("Couldn't download! Please Retry!");
+        }
+      } on PlatformException catch (e) {
+        logger.e('saveMedia failed', error: e);
         toasts.error("Couldn't download! Please Retry!");
-      }
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+      } catch (e) {
+        logger.e('Unexpected saveMedia failure', error: e);
+        toasts.error("Something went wrong!");
+      } finally {
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
       }
     } else {
       debugPrint("Downloading using DownloadManager");
-      Future.delayed(const Duration(seconds: 2)).then((value) {
-        if (!mounted) {
-          return;
+      try {
+        final request = DownloadRequest(
+          link: widget.link!,
+          filenameWithoutExtension: widget.link!.split('/').last.replaceAll(".jpg", "").replaceAll(".png", ""),
+        );
+        await PrismMediaHostApi().enqueueDownload(request);
+        toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+        analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
+      } on PlatformException catch (e) {
+        logger.e('enqueueDownload failed', error: e);
+        toasts.error("Couldn't download! Please Retry!");
+      } catch (e) {
+        logger.e('Unexpected enqueueDownload failure', error: e);
+        toasts.error("Something went wrong!");
+      } finally {
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
         }
-        setState(() {
-          isLoading = false;
-        });
-      });
-      final request = DownloadRequest(
-        link: widget.link!,
-        filenameWithoutExtension: widget.link!.split('/').last.replaceAll(".jpg", "").replaceAll(".png", ""),
-      );
-      await PrismMediaHostApi().enqueueDownload(request);
-      toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-      analytics.logEvent(name: 'download_wallpaper', parameters: {'link': widget.link ?? ''});
+      }
     }
   }
 }
