@@ -6,6 +6,7 @@ import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/public_profile/views/widgets/about_list.dart';
@@ -16,7 +17,6 @@ import 'package:Prism/features/public_profile/views/widgets/premium_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
-import 'package:Prism/env/env.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -37,11 +37,19 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String? email;
+  String? profileIdentifier;
+
+  bool get _isOwnProfile {
+    final String identifier = (profileIdentifier ?? '').trim();
+    if (identifier.isEmpty) {
+      return true;
+    }
+    return identifier == globals.prismUser.email || identifier == globals.prismUser.username;
+  }
 
   @override
   void initState() {
-    email = (widget.arguments != null && widget.arguments!.isNotEmpty)
+    profileIdentifier = (widget.arguments != null && widget.arguments!.isNotEmpty)
         ? widget.arguments![0].toString()
         : globals.prismUser.email;
     super.initState();
@@ -53,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {}
       },
-      child: (email == globals.prismUser.email)
+      child: _isOwnProfile
           ? Scaffold(
               key: _scaffoldKey,
               body: BottomBar(
@@ -80,7 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           : Scaffold(
               key: _scaffoldKey,
               body: StreamBuilder<List<Map<String, dynamic>>>(
-                stream: getUserProfile(email!),
+                stream: getUserProfile(profileIdentifier!),
                 builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
                   if (snapshot.hasData && snapshot.data != null) {
                     if (snapshot.data!.isEmpty) {

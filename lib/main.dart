@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/badgeModel.dart';
@@ -12,10 +13,12 @@ import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
+import 'package:Prism/features/deep_link/deep_link.dart';
+import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/palette/palette.dart';
@@ -42,7 +45,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_io/hive_io.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 String userHiveKey = "prismUserV2-1";
 late Box prefs;
@@ -55,6 +60,7 @@ late bool optimisedWallpapers;
 int? categories;
 int? purity;
 late LocalNotification localNotification;
+const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
 
 int _to8BitChannel(double value) {
   final channel = (value * 255).round();
@@ -250,6 +256,9 @@ Future<void> main() async {
               BlocProvider<ThemeModeBloc>(
                 create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
               ),
+              BlocProvider<DeepLinkBloc>(
+                create: (_) => getIt<DeepLinkBloc>()..add(const DeepLinkEvent.started()),
+              ),
             ],
             child: MyApp(),
           ),
@@ -434,6 +443,117 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  void _navigateForDeepLink(DeepLinkActionEntity action) {
+    if (action.type == DeepLinkActionType.share) {
+      _appRouter.push(ShareWallpaperViewRoute(arguments: action.arguments));
+    } else if (action.type == DeepLinkActionType.user) {
+      _appRouter.push(ProfileRoute(arguments: action.arguments));
+    } else if (action.type == DeepLinkActionType.setup) {
+      _appRouter.push(ShareSetupViewRoute(arguments: action.arguments));
+    } else if (action.type == DeepLinkActionType.refer) {
+      // TODO: add referral handling.
+    }
+  }
+
+  DeepLinkActionEntity? _parseCanonicalUriToAction(Uri uri) {
+    if (uri.pathSegments.isEmpty) {
+      return null;
+    }
+
+    final segment = uri.pathSegments.first;
+    if (segment == 'share') {
+      return DeepLinkActionEntity(
+        type: DeepLinkActionType.share,
+        route: '/share',
+        arguments: <dynamic>[
+          uri.queryParameters['id'],
+          uri.queryParameters['provider'],
+          uri.queryParameters['url'],
+          uri.queryParameters['thumb'],
+        ],
+        rawUri: uri.toString(),
+      );
+    }
+    if (segment == 'user') {
+      return DeepLinkActionEntity(
+        type: DeepLinkActionType.user,
+        route: '/follower-profile',
+        arguments: <dynamic>[uri.queryParameters['username'] ?? uri.queryParameters['email']],
+        rawUri: uri.toString(),
+      );
+    }
+    if (segment == 'setup') {
+      return DeepLinkActionEntity(
+        type: DeepLinkActionType.setup,
+        route: '/share-setup',
+        arguments: <dynamic>[
+          uri.queryParameters['name'],
+          uri.queryParameters['thumbUrl'],
+        ],
+        rawUri: uri.toString(),
+      );
+    }
+    if (segment == 'refer') {
+      return DeepLinkActionEntity(
+        type: DeepLinkActionType.refer,
+        route: '',
+        arguments: const <dynamic>[],
+        rawUri: uri.toString(),
+      );
+    }
+
+    return null;
+  }
+
+  Future<void> _resolveAndNavigateShortCode(String code) async {
+    if (code.trim().isEmpty) {
+      return;
+    }
+
+    final endpoint = Uri.parse('$_shortLinkResolveApiBase/$code');
+    try {
+      final response = await http.get(
+        endpoint,
+        headers: const <String, String>{'Accept': 'application/json'},
+      ).timeout(const Duration(seconds: 6));
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          final canonicalRaw = decoded['canonical_url'];
+          if (canonicalRaw is String && canonicalRaw.isNotEmpty) {
+            final canonicalUri = Uri.tryParse(canonicalRaw);
+            if (canonicalUri != null) {
+              final action = _parseCanonicalUriToAction(canonicalUri);
+              if (action != null) {
+                _navigateForDeepLink(action);
+                return;
+              }
+            }
+          }
+        }
+      } else {
+        logger.w(
+          'Short-link resolve returned non-success status.',
+          fields: <String, Object?>{
+            'status': response.statusCode,
+            'code': code,
+            'body': response.body,
+          },
+        );
+      }
+    } catch (error, stackTrace) {
+      logger.w(
+        'Failed to resolve short code.',
+        error: error,
+        stackTrace: stackTrace,
+        fields: <String, Object?>{'code': code},
+      );
+    }
+
+    await launcher_compat.launchUrl(Uri.https('prismwalls.com', '/l/$code'));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -446,20 +566,35 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: _appRouter.config(
-        navigatorObservers: () => [
-          FirebaseAnalyticsObserver(analytics: analytics),
-          if (MonitoringRuntime.reporter.isEnabled)
-            SentryNavigatorObserver(
-              enableAutoTransactions: false,
-              ignoreRoutes: <String>['/'],
-            ),
-        ],
+    return BlocListener<DeepLinkBloc, DeepLinkState>(
+      listenWhen: (previous, current) => previous.latestAction?.rawUri != current.latestAction?.rawUri,
+      listener: (context, state) {
+        final action = state.latestAction;
+        if (action == null) {
+          return;
+        }
+        if (action.type == DeepLinkActionType.shortCode) {
+          final code = action.arguments.isNotEmpty ? action.arguments.first?.toString() ?? '' : '';
+          unawaited(_resolveAndNavigateShortCode(code));
+          return;
+        }
+        _navigateForDeepLink(action);
+      },
+      child: MaterialApp.router(
+        routerConfig: _appRouter.config(
+          navigatorObservers: () => [
+            FirebaseAnalyticsObserver(analytics: analytics),
+            if (MonitoringRuntime.reporter.isEnabled)
+              SentryNavigatorObserver(
+                enableAutoTransactions: false,
+                ignoreRoutes: <String>['/'],
+              ),
+          ],
+        ),
+        theme: context.prismLightTheme(),
+        darkTheme: context.prismDarkTheme(),
+        themeMode: context.prismThemeMode(),
       ),
-      theme: context.prismLightTheme(),
-      darkTheme: context.prismDarkTheme(),
-      themeMode: context.prismThemeMode(),
     );
   }
 }
