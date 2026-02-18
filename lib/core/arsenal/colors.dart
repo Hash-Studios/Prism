@@ -12,4 +12,5 @@ abstract final class ArsenalColors {
   static const Color border = Color(0xFF2A2A2A);
   static const Color error = Color(0xFFFF4444);
   static const Color scrim = Color(0x99000000); // 60% opacity
+  static const Color gradientCenter = Color(0xFF3D0020); // radial bg glow
 }
