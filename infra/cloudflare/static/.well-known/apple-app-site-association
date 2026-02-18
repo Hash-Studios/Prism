@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "X2955Z4CKQ.com.hash.prism",
+        "paths": [
+          "/share/*",
+          "/user/*",
+          "/setup/*",
+          "/refer/*",
+          "/l/*"
+        ]
+      }
+    ]
+  }
+}

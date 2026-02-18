@@ -33,13 +33,15 @@
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
             android:windowSoftInputMode="adjustResize" >
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data
-                    android:host="prismwallpapers.page.link"
-                    android:scheme="https"/>
+                <data android:scheme="https" android:host="prismwalls.com" android:pathPrefix="/share" />
+                <data android:scheme="https" android:host="prismwalls.com" android:pathPrefix="/user" />
+                <data android:scheme="https" android:host="prismwalls.com" android:pathPrefix="/setup" />
+                <data android:scheme="https" android:host="prismwalls.com" android:pathPrefix="/refer" />
+                <data android:scheme="https" android:host="prismwalls.com" android:pathPrefix="/l" />
             </intent-filter>
             <!--
                  Specifies an Android theme to apply to this Activity as soon as

@@ -2,9 +2,9 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/firestore/firestore_tracked_client.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
@@ -35,7 +35,7 @@ abstract class AppModule {
   FirebaseAuth get firebaseAuth => FirebaseAuth.instance;
 
   @lazySingleton
-  FirebaseDynamicLinks get firebaseDynamicLinks => FirebaseDynamicLinks.instance;
+  AppLinks get appLinks => AppLinks();
 
   @lazySingleton
   FirebaseRemoteConfig get remoteConfig => FirebaseRemoteConfig.instance;

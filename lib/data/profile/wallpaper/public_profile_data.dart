@@ -6,14 +6,18 @@ import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
-Stream<List<Map<String, dynamic>>> getUserProfile(String email) {
+Stream<List<Map<String, dynamic>>> getUserProfile(String identifier) {
+  final String value = identifier.trim();
+  final bool isEmail = value.contains('@');
+  final String v2Field = isEmail ? 'email' : 'username';
+
   return firestoreClient
       .watchQuery<Map<String, dynamic>>(
     FirestoreQuerySpec(
       collection: USER_NEW_COLLECTION,
       sourceTag: 'profile.stream.v2',
       filters: <FirestoreFilter>[
-        FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
+        FirestoreFilter(field: v2Field, op: FirestoreFilterOp.isEqualTo, value: value),
       ],
       limit: 1,
       isStream: true,
@@ -24,12 +28,28 @@ Stream<List<Map<String, dynamic>>> getUserProfile(String email) {
     if (event.isNotEmpty) {
       return event;
     }
+    if (!isEmail) {
+      final byEmailFallback = await firestoreClient.query<Map<String, dynamic>>(
+        FirestoreQuerySpec(
+          collection: USER_NEW_COLLECTION,
+          sourceTag: 'profile.stream.v2_email_fallback',
+          filters: <FirestoreFilter>[
+            FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: value),
+          ],
+          limit: 1,
+        ),
+        (data, docId) => <String, dynamic>{...data, '__docId': docId},
+      );
+      if (byEmailFallback.isNotEmpty) {
+        return byEmailFallback;
+      }
+    }
     return firestoreClient.query<Map<String, dynamic>>(
       FirestoreQuerySpec(
         collection: USER_OLD_COLLECTION,
         sourceTag: 'profile.stream.legacy_fallback',
         filters: <FirestoreFilter>[
-          FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
+          FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: value),
         ],
         limit: 1,
       ),

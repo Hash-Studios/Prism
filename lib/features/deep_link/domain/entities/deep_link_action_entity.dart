@@ -3,6 +3,7 @@ enum DeepLinkActionType {
   user,
   setup,
   refer,
+  shortCode,
   unknown,
 }
 
