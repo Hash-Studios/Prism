@@ -16,10 +16,6 @@ class CollectionScreen extends StatefulWidget {
 class _CollectionScreenState extends State<CollectionScreen> {
   late Future<List?> _collectionsFuture;
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   @override
   void initState() {
     analytics.logEvent(
@@ -31,39 +27,36 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: FutureBuilder<List?>(
-        future: _collectionsFuture,
-        builder: (BuildContext context, AsyncSnapshot<List?> snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.waiting:
-              return Center(child: Loader());
-            case ConnectionState.none:
-              return Center(child: Loader());
-            default:
-              if (snapshot.hasError) {
-                return RefreshIndicator(
-                    onRefresh: () async {
-                      setState(() {
-                        _collectionsFuture = getCollections();
-                      });
-                      await _collectionsFuture;
-                    },
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Spacer(),
-                        Center(child: Text("Can't connect to the Servers!")),
-                        Spacer(),
-                      ],
-                    ));
-              } else {
-                return CollectionsGrid();
-              }
-          }
-        },
-      ),
+    return FutureBuilder<List?>(
+      future: _collectionsFuture,
+      builder: (BuildContext context, AsyncSnapshot<List?> snapshot) {
+        switch (snapshot.connectionState) {
+          case ConnectionState.waiting:
+            return Center(child: Loader());
+          case ConnectionState.none:
+            return Center(child: Loader());
+          default:
+            if (snapshot.hasError) {
+              return RefreshIndicator(
+                  onRefresh: () async {
+                    setState(() {
+                      _collectionsFuture = getCollections();
+                    });
+                    await _collectionsFuture;
+                  },
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Spacer(),
+                      Center(child: Text("Can't connect to the Servers!")),
+                      Spacer(),
+                    ],
+                  ));
+            } else {
+              return CollectionsGrid();
+            }
+        }
+      },
     );
   }
 }

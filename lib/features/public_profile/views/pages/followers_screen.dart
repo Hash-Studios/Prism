@@ -25,39 +25,33 @@ class _FollowersScreenState extends State<FollowersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-        onWillPop: () async {
-          return true;
-        },
-        child: Scaffold(
-            backgroundColor: Theme.of(context).primaryColor,
-            appBar: const PreferredSize(
-              preferredSize: Size(double.infinity, 55),
-              child: HeadingChipBar(
-                current: "Followers",
-              ),
-            ),
-            body: ListView.builder(
-                itemCount: followers!.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return ListTile(
-                    leading: CircleAvatar(
-                      child: ClipOval(
-                        child: SvgPicture.network(
-                            "https://avatars.dicebear.com/api/avataaars/$index.svg?background=transparent"),
-                      ),
-                    ),
-                    title: Text(
-                      followers![index].toString(),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium!
-                          .copyWith(color: Theme.of(context).colorScheme.secondary),
-                    ),
-                    onTap: () {
-                      context.router.push(ProfileRoute(arguments: [followers![index].toString()]));
-                    },
-                  );
-                })));
+    return Scaffold(
+        backgroundColor: Theme.of(context).primaryColor,
+        appBar: const PreferredSize(
+          preferredSize: Size(double.infinity, 55),
+          child: HeadingChipBar(
+            current: "Followers",
+          ),
+        ),
+        body: ListView.builder(
+            itemCount: followers!.length,
+            itemBuilder: (BuildContext context, int index) {
+              return ListTile(
+                leading: CircleAvatar(
+                  child: ClipOval(
+                    child: SvgPicture.network(
+                        "https://avatars.dicebear.com/api/avataaars/$index.svg?background=transparent"),
+                  ),
+                ),
+                title: Text(
+                  followers![index].toString(),
+                  style:
+                      Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                ),
+                onTap: () {
+                  context.router.push(ProfileRoute(arguments: [followers![index].toString()]));
+                },
+              );
+            }));
   }
 }

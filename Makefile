@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios ci test
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -20,29 +20,40 @@ SENTRY_DART_DEFINES = $(strip \
 ANDROID_JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17 2>/dev/null)
 GRADLE_USER_HOME_DIR ?= $(CURDIR)/.gradle-local
 
+# CI support: when CI=true, use plain flutter/dart instead of fvm-prefixed
+ifeq ($(CI),true)
+  FLUTTER := flutter
+  DART := dart
+  ANALYZE_FLAGS := --no-fatal-infos
+else
+  FLUTTER := fvm flutter
+  DART := fvm dart
+  ANALYZE_FLAGS :=
+endif
+
 setup: ensure-fvm
 	@echo "Installing Flutter SDK from .fvmrc..."
 	@fvm install
 	@echo "Linking project SDK..."
 	@fvm use --force
-	@fvm flutter --version
-	@fvm flutter pub get
+	@$(FLUTTER) --version
+	@$(FLUTTER) pub get
 	@if [ "$$(uname -s)" = "Darwin" ]; then $(MAKE) ios-setup; fi
 	@echo "Setup complete. Use 'fvm flutter <command>' for project commands."
 
 get: ensure-fvm
-	@fvm flutter pub get
+	@$(FLUTTER) pub get
 
 format: ensure-fvm
-	@fvm dart format --line-length $(DART_FORMAT_LINE_LENGTH) $(DART_FORMAT_PATHS)
+	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) $(DART_FORMAT_PATHS)
 
 fmt: format
 
 format-check: ensure-fvm
-	@fvm dart format --line-length $(DART_FORMAT_LINE_LENGTH) --set-exit-if-changed -o none $(DART_FORMAT_PATHS)
+	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) --set-exit-if-changed -o none $(DART_FORMAT_PATHS)
 
 analyze: ensure-fvm env-guard
-	@fvm flutter analyze
+	@$(FLUTTER) analyze --no-pub $(ANALYZE_FLAGS)
 
 firestore-guard:
 	@./tool/firestore_guard.sh
@@ -51,7 +62,8 @@ env-guard:
 	@./tool/env_define_guard.sh
 
 file-gen: ensure-fvm
-	@fvm dart run build_runner build --delete-conflicting-outputs
+	@$(DART) run build_runner build --delete-conflicting-outputs
+	make format
 
 pigeon-gen: ensure-fvm
 	@./tool/generate_pigeon.sh
@@ -60,31 +72,31 @@ run: ensure-fvm
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
 		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
 		export PATH="$$JAVA_HOME/bin:$$PATH"; \
-		fvm flutter config --jdk-dir "$$JAVA_HOME" >/dev/null; \
+		$(FLUTTER) config --jdk-dir "$$JAVA_HOME" >/dev/null; \
 	fi; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
 	if [ -n "$(DEVICE)" ]; then \
-		fvm flutter run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
+		$(FLUTTER) run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
 	else \
-		fvm flutter run $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
+		$(FLUTTER) run $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
 	fi
 
 build: ensure-fvm
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
 		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
 		export PATH="$$JAVA_HOME/bin:$$PATH"; \
-		fvm flutter config --jdk-dir "$$JAVA_HOME" >/dev/null; \
+		$(FLUTTER) config --jdk-dir "$$JAVA_HOME" >/dev/null; \
 	fi; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
-	fvm flutter build apk $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	$(FLUTTER) build apk $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 
 attach: ensure-fvm
 	@if [ -n "$(DEVICE)" ]; then \
-		fvm flutter attach -d "$(DEVICE)"; \
+		$(FLUTTER) attach -d "$(DEVICE)"; \
 	else \
-		fvm flutter attach; \
+		$(FLUTTER) attach; \
 	fi
 
 ios-setup: ensure-fvm
@@ -96,19 +108,24 @@ ios-setup: ensure-fvm
 		echo "CocoaPods is not installed. Install it first (example): sudo gem install cocoapods"; \
 		exit 1; \
 	}
-	@fvm flutter precache --ios
+	@$(FLUTTER) precache --ios
 	@cd ios && export LANG=en_US.UTF-8 && export LC_ALL=en_US.UTF-8 && pod deintegrate && pod install --repo-update
 	@echo "iOS pods setup complete."
 
 build-ios: ensure-fvm
-	@fvm flutter build ios $(ENV_DART_DEFINES) $(IOS_BUILD_ARGS)
+	@$(FLUTTER) build ios $(ENV_DART_DEFINES) $(IOS_BUILD_ARGS)
 
+ifeq ($(CI),true)
+ensure-fvm:
+	@true
+else
 ensure-fvm:
 	@command -v fvm >/dev/null 2>&1 || { \
 		echo "fvm is not installed."; \
 		echo "Install it first (example): dart pub global activate fvm"; \
 		exit 1; \
 	}
+endif
 
 update-flutter: ensure-fvm
 	@if [ -z "$(VERSION)" ]; then \
@@ -117,6 +134,15 @@ update-flutter: ensure-fvm
 	fi
 	@fvm use "$(VERSION)" --force
 	@fvm install "$(VERSION)"
-	@fvm flutter --version
-	@fvm flutter pub get
+	@$(FLUTTER) --version
+	@$(FLUTTER) pub get
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
+
+ci: get format-check env-guard analyze
+
+test: ensure-fvm
+	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
+		$(FLUTTER) test; \
+	else \
+		echo "No test files found, skipping."; \
+	fi
