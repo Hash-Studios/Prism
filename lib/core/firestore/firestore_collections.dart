@@ -14,6 +14,7 @@ class FirebaseCollections {
   static const String codes = 'codes';
   static const String favouritesWalls = 'favouritesWalls';
   static const String favouritesSetups = 'favouritesSetups';
+  static const String aiGenerations = 'aiGenerations';
 }
 
 @Deprecated('Use FirebaseCollections instead.')

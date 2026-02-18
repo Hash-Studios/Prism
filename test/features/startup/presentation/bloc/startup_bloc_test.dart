@@ -28,6 +28,10 @@ void main() {
           topTitleText: <String>['TOP'],
           categories: <Map<String, dynamic>>[],
           followersTab: true,
+          aiEnabled: true,
+          aiRolloutPercent: 100,
+          aiSubmitEnabled: true,
+          aiVariationsEnabled: true,
         ),
       ),
     );

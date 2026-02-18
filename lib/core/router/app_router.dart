@@ -75,11 +75,7 @@ class AppRouter extends RootStackRouter {
           ],
         ),
         // Setups tab
-        AutoRoute(
-          path: 'setups',
-          page: SetupsTabRoute.page,
-          children: [AutoRoute(path: '', page: SetupRoute.page)],
-        ),
+        AutoRoute(path: 'setups', page: SetupsTabRoute.page),
         // Profile tab
         AutoRoute(
           path: 'profile',

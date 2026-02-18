@@ -5,6 +5,7 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -41,6 +42,17 @@ class CoinMutationResult {
       reason: reason,
     );
   }
+}
+
+class AiGenerationReservationResult {
+  const AiGenerationReservationResult({required this.mode, required this.mutation});
+
+  final AiChargeMode mode;
+  final CoinMutationResult mutation;
+
+  bool get success => mode != AiChargeMode.insufficient && mutation.success;
+
+  int get coinsSpent => mode == AiChargeMode.coinSpend && mutation.changed ? -mutation.delta : 0;
 }
 
 class CoinsService {
@@ -252,6 +264,244 @@ class CoinsService {
       amountOverride: amountOverride ?? action.cost(),
       sourceTag: sourceTag,
       reason: reason ?? 'refund_${action.name}',
+    );
+  }
+
+  Future<AiGenerationReservationResult> reserveForAiGeneration({
+    String sourceTag = 'coins.reserve.ai_generation',
+  }) async {
+    if (!_canMutateCoins()) {
+      return AiGenerationReservationResult(
+        mode: AiChargeMode.insufficient,
+        mutation: CoinMutationResult.noChange(
+          balance: globals.prismUser.coins,
+          success: false,
+          reason: 'not_logged_in',
+        ),
+      );
+    }
+    final String userId = globals.prismUser.id;
+    final String today = _localDayKey(DateTime.now());
+    final AiGenerationReservationResult result = await firestoreClient.runTransaction<AiGenerationReservationResult>(
+      (tx) async {
+        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
+        if (data == null) {
+          return AiGenerationReservationResult(
+            mode: AiChargeMode.insufficient,
+            mutation: CoinMutationResult.noChange(
+              balance: globals.prismUser.coins,
+              success: false,
+              reason: 'user_missing',
+            ),
+          );
+        }
+        final int previous = _asInt(data['coins']);
+        final bool isPremium = _asBool(data['premium']) || globals.prismUser.premium;
+        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
+        _ensureCoinStateDefaults(coinState);
+
+        if (!isPremium) {
+          final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
+          if (freeUsed < 3) {
+            coinState['aiFreeUsedTotal'] = freeUsed + 1;
+            tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+              'coins': previous,
+              _coinStateField: coinState,
+            });
+            return AiGenerationReservationResult(
+              mode: AiChargeMode.freeTrial,
+              mutation: CoinMutationResult(
+                success: true,
+                changed: true,
+                previousBalance: previous,
+                currentBalance: previous,
+                delta: 0,
+                reason: 'ai_free_trial_reserved',
+              ),
+            );
+          }
+        } else {
+          final String includedDate = (coinState['aiIncludedUsageDate'] as String? ?? '').trim();
+          int includedUsed = _asInt(coinState['aiIncludedUsedToday']);
+          if (includedDate != today) {
+            includedUsed = 0;
+          }
+          if (includedUsed < 30) {
+            coinState['aiIncludedUsageDate'] = today;
+            coinState['aiIncludedUsedToday'] = includedUsed + 1;
+            tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+              'coins': previous,
+              _coinStateField: coinState,
+            });
+            return AiGenerationReservationResult(
+              mode: AiChargeMode.proIncluded,
+              mutation: CoinMutationResult(
+                success: true,
+                changed: true,
+                previousBalance: previous,
+                currentBalance: previous,
+                delta: 0,
+                reason: 'ai_pro_included_reserved',
+              ),
+            );
+          }
+        }
+
+        if (previous < CoinPolicy.aiGeneration) {
+          return AiGenerationReservationResult(
+            mode: AiChargeMode.insufficient,
+            mutation: CoinMutationResult(
+              success: false,
+              changed: false,
+              previousBalance: previous,
+              currentBalance: previous,
+              delta: 0,
+              insufficientBalance: true,
+              reason: 'ai_generation_insufficient_balance',
+            ),
+          );
+        }
+
+        final int current = previous - CoinPolicy.aiGeneration;
+        tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+          'coins': current,
+          _coinStateField: coinState,
+        });
+        return AiGenerationReservationResult(
+          mode: AiChargeMode.coinSpend,
+          mutation: CoinMutationResult(
+            success: true,
+            changed: true,
+            previousBalance: previous,
+            currentBalance: current,
+            delta: -CoinPolicy.aiGeneration,
+            reason: 'ai_coin_spend_reserved',
+          ),
+        );
+      },
+      sourceTag: sourceTag,
+      collection: FirebaseCollections.usersV2,
+      docId: userId,
+    );
+
+    _applyLocalBalance(result.mutation.currentBalance, delta: result.mutation.delta);
+    if (result.mode == AiChargeMode.coinSpend && result.mutation.changed) {
+      _logSpend(
+        action: CoinSpendAction.aiGeneration,
+        amount: CoinPolicy.aiGeneration,
+        sourceTag: sourceTag,
+        reason: 'ai_generation',
+      );
+    }
+    analytics.logEvent(
+      name: 'ai_charge_reserved',
+      parameters: <String, Object>{
+        'mode': result.mode.value,
+        'coinsSpent': result.coinsSpent,
+        'balance': globals.prismUser.coins,
+        'sourceTag': sourceTag,
+      },
+    );
+    return result;
+  }
+
+  Future<CoinMutationResult> rollbackAiGenerationReservation(
+    AiChargeMode mode, {
+    String sourceTag = 'coins.rollback.ai_generation',
+  }) async {
+    if (mode == AiChargeMode.insufficient) {
+      return CoinMutationResult.noChange(balance: globals.prismUser.coins, reason: 'no_reservation_to_rollback');
+    }
+
+    if (mode == AiChargeMode.coinSpend) {
+      final CoinMutationResult refund = await refundSpend(
+        CoinSpendAction.aiGeneration,
+        sourceTag: sourceTag,
+        reason: 'ai_generation_failed_refund',
+      );
+      analytics.logEvent(
+        name: 'ai_charge_rolled_back',
+        parameters: <String, Object>{
+          'mode': mode.value,
+          'coinsRefunded': CoinPolicy.aiGeneration,
+          'balance': globals.prismUser.coins,
+          'sourceTag': sourceTag,
+        },
+      );
+      return refund;
+    }
+
+    if (!_canMutateCoins()) {
+      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+    }
+    final String userId = globals.prismUser.id;
+    final String today = _localDayKey(DateTime.now());
+    final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
+      (tx) async {
+        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
+        if (data == null) {
+          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+        }
+        final int previous = _asInt(data['coins']);
+        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
+        _ensureCoinStateDefaults(coinState);
+        bool changed = false;
+
+        if (mode == AiChargeMode.freeTrial) {
+          final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
+          if (freeUsed > 0) {
+            coinState['aiFreeUsedTotal'] = freeUsed - 1;
+            changed = true;
+          }
+        } else if (mode == AiChargeMode.proIncluded) {
+          final String includedDate = (coinState['aiIncludedUsageDate'] as String? ?? '').trim();
+          final int includedUsed = _asInt(coinState['aiIncludedUsedToday']);
+          if (includedDate == today && includedUsed > 0) {
+            coinState['aiIncludedUsedToday'] = includedUsed - 1;
+            changed = true;
+          }
+        }
+
+        if (changed) {
+          tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+            'coins': previous,
+            _coinStateField: coinState,
+          });
+        }
+        return CoinMutationResult(
+          success: true,
+          changed: changed,
+          previousBalance: previous,
+          currentBalance: previous,
+          delta: 0,
+          reason: changed ? 'ai_${mode.value}_rollback' : 'ai_${mode.value}_rollback_noop',
+        );
+      },
+      sourceTag: sourceTag,
+      collection: FirebaseCollections.usersV2,
+      docId: userId,
+    );
+    _applyLocalBalance(result.currentBalance, delta: result.delta);
+    analytics.logEvent(
+      name: 'ai_charge_rolled_back',
+      parameters: <String, Object>{'mode': mode.value, 'balance': globals.prismUser.coins, 'sourceTag': sourceTag},
+    );
+    return result;
+  }
+
+  void commitAiGenerationReservation({
+    required AiChargeMode mode,
+    required int coinsSpent,
+    String sourceTag = 'coins.commit.ai_generation',
+  }) {
+    analytics.logEvent(
+      name: 'ai_charge_committed',
+      parameters: <String, Object>{
+        'mode': mode.value,
+        'coinsSpent': coinsSpent,
+        'balance': globals.prismUser.coins,
+        'sourceTag': sourceTag,
+      },
     );
   }
 
@@ -776,6 +1026,9 @@ class CoinsService {
     changed |= _putDefaultIfMissing(coinState, 'referredByUserId', '');
     changed |= _putDefaultIfMissing(coinState, 'referralRewarded', false);
     changed |= _putDefaultIfMissing(coinState, 'premiumPreviewUnlocks', <String, int>{});
+    changed |= _putDefaultIfMissing(coinState, 'aiFreeUsedTotal', 0);
+    changed |= _putDefaultIfMissing(coinState, 'aiIncludedUsageDate', '');
+    changed |= _putDefaultIfMissing(coinState, 'aiIncludedUsedToday', 0);
     final Map<String, int> normalizedPreviewUnlocks = _previewUnlocksFromState(coinState);
     if (!_previewUnlockStateEquals(coinState['premiumPreviewUnlocks'], normalizedPreviewUnlocks)) {
       coinState['premiumPreviewUnlocks'] = normalizedPreviewUnlocks;
