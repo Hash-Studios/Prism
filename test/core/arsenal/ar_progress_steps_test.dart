@@ -8,9 +8,6 @@ void main() {
 
   testWidgets('ar_progress_steps golden', (tester) async {
     await pumpArsenalWidget(tester, const ArProgressSteps(total: 4, current: 0));
-    await expectLater(
-      find.byType(ArProgressSteps),
-      matchesGoldenFile('goldens/ar_progress_steps.png'),
-    );
+    await expectLater(find.byType(ArProgressSteps), matchesGoldenFile('goldens/ar_progress_steps.png'));
   });
 }

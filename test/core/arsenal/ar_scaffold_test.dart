@@ -16,14 +16,7 @@ void main() {
         height: 844,
         child: ArScaffold(
           child: Center(
-            child: Text(
-              'ARSENAL',
-              style: TextStyle(
-                color: ArsenalColors.onBackground,
-                fontSize: 24,
-                letterSpacing: 4,
-              ),
-            ),
+            child: Text('ARSENAL', style: TextStyle(color: ArsenalColors.onBackground, fontSize: 24, letterSpacing: 4)),
           ),
         ),
       ),

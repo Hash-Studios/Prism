@@ -10,7 +10,10 @@ void main() {
   testWidgets('ar_button primary golden', (tester) async {
     await pumpArsenalWidget(
       tester,
-      SizedBox(width: 390, child: ArButton.primary(label: 'CONFIRM', onPressed: () {})),
+      SizedBox(
+        width: 390,
+        child: ArButton.primary(label: 'CONFIRM', onPressed: () {}),
+      ),
     );
     await expectLater(find.byType(ArButton), matchesGoldenFile('goldens/ar_button_primary.png'));
   });
@@ -18,7 +21,10 @@ void main() {
   testWidgets('ar_button secondary golden', (tester) async {
     await pumpArsenalWidget(
       tester,
-      SizedBox(width: 390, child: ArButton.secondary(label: 'CONFIRM', onPressed: () {})),
+      SizedBox(
+        width: 390,
+        child: ArButton.secondary(label: 'CONFIRM', onPressed: () {}),
+      ),
     );
     await expectLater(find.byType(ArButton), matchesGoldenFile('goldens/ar_button_secondary.png'));
   });
@@ -26,24 +32,21 @@ void main() {
   testWidgets('ar_button ghost golden', (tester) async {
     await pumpArsenalWidget(
       tester,
-      SizedBox(width: 390, child: ArButton.ghost(label: 'CONFIRM', onPressed: () {})),
+      SizedBox(
+        width: 390,
+        child: ArButton.ghost(label: 'CONFIRM', onPressed: () {}),
+      ),
     );
     await expectLater(find.byType(ArButton), matchesGoldenFile('goldens/ar_button_ghost.png'));
   });
 
   testWidgets('ar_button loading golden', (tester) async {
-    await pumpArsenalWidget(
-      tester,
-      SizedBox(width: 390, child: ArButton.primary(label: 'CONFIRM', isLoading: true)),
-    );
+    await pumpArsenalWidget(tester, SizedBox(width: 390, child: ArButton.primary(label: 'CONFIRM', isLoading: true)));
     await expectLater(find.byType(ArButton), matchesGoldenFile('goldens/ar_button_loading.png'));
   });
 
   testWidgets('ar_button disabled golden', (tester) async {
-    await pumpArsenalWidget(
-      tester,
-      SizedBox(width: 390, child: ArButton.primary(label: 'CONFIRM', isDisabled: true)),
-    );
+    await pumpArsenalWidget(tester, SizedBox(width: 390, child: ArButton.primary(label: 'CONFIRM', isDisabled: true)));
     await expectLater(find.byType(ArButton), matchesGoldenFile('goldens/ar_button_disabled.png'));
   });
 }
