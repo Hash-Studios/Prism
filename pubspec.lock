@@ -65,6 +65,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.0"
+  async_wallpaper:
+    dependency: "direct main"
+    description:
+      name: async_wallpaper
+      sha256: "377062765eb90a3601379bfe20a3672720d577c204f08142aefc40d33f7f483f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   auto_route:
     dependency: "direct main"
     description:
@@ -804,10 +812,10 @@ packages:
     dependency: "direct main"
     description:
       name: fluttertoast
-      sha256: "144ddd74d49c865eba47abe31cbc746c7b311c82d6c32e571fd73c4264b740e2"
+      sha256: "90778fe0497fe3a09166e8cf2e0867310ff434b794526589e77ec03cf08ba8e8"
       url: "https://pub.dev"
     source: hosted
-    version: "9.0.0"
+    version: "8.2.14"
   freezed:
     dependency: "direct dev"
     description:
@@ -1512,6 +1520,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.1"
+  pigeon:
+    dependency: "direct dev"
+    description:
+      name: pigeon
+      sha256: b12f739047654cd65338dc7e9c6c03cbd4a1de179364a45c9e8bbeccf23729c6
+      url: "https://pub.dev"
+    source: hosted
+    version: "26.1.7"
   pixel_perfect:
     dependency: "direct main"
     description:

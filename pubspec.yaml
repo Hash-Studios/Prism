@@ -18,6 +18,7 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
+  async_wallpaper: ^2.1.0
   bloc: ^8.1.4
   animations: ^2.0.0
   cached_network_image: ^3.0.0
@@ -46,7 +47,7 @@ dependencies:
   flutter_staggered_grid_view: ^0.7.0
   flutter_svg: ^2.2.3
   flutter_bloc: ^8.1.6
-  fluttertoast: ^9.0.0
+  fluttertoast: ^8.2.14
   freezed_annotation: ^3.1.0
   get_it: ^9.2.0
   github: ^9.25.0
@@ -88,7 +89,7 @@ dependencies:
 dev_dependencies:
   auto_route_generator: ^10.4.0
   bloc_test: ^9.1.7
-  build_runner: ^2.11.1
+  build_runner: ^2.4.14
   flutter_test:
     sdk: flutter
   freezed: ^3.2.3
@@ -97,6 +98,7 @@ dev_dependencies:
   injectable_generator: ^2.9.0
   lint: ^2.8.0
   mocktail: ^1.0.4
+  pigeon: ^26.1.7
   sentry_dart_plugin: ^3.2.1
 
 sentry:
