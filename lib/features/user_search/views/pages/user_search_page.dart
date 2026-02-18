@@ -25,10 +25,6 @@ class _UserSearchState extends State<UserSearch> {
   TextEditingController searchController = TextEditingController();
   late bool isSubmitted;
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   @override
   void initState() {
     isSubmitted = false;
@@ -47,65 +43,61 @@ class _UserSearchState extends State<UserSearch> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          titleSpacing: 0,
-          title: Padding(
-            padding: const EdgeInsets.only(top: 6.0),
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width,
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Container(
-                  decoration:
-                      BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                  child: TextField(
-                    cursorColor: Theme.of(context).colorScheme.error,
-                    style: Theme.of(context)
+    return Scaffold(
+      backgroundColor: Theme.of(context).primaryColor,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.only(top: 6.0),
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width,
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: Container(
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
+                child: TextField(
+                  cursorColor: Theme.of(context).colorScheme.error,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall!
+                      .copyWith(color: Theme.of(context).colorScheme.secondary),
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                    border: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    hintText: "Search",
+                    hintStyle: Theme.of(context)
                         .textTheme
                         .headlineSmall!
                         .copyWith(color: Theme.of(context).colorScheme.secondary),
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                      border: InputBorder.none,
-                      disabledBorder: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      hintText: "Search",
-                      hintStyle: Theme.of(context)
-                          .textTheme
-                          .headlineSmall!
-                          .copyWith(color: Theme.of(context).colorScheme.secondary),
-                      suffixIcon: Icon(
-                        JamIcons.search,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
+                    suffixIcon: Icon(
+                      JamIcons.search,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
-                    onSubmitted: (tex) {
-                      if (tex.trim().isNotEmpty) {
-                        setState(() {
-                          isSubmitted = true;
-                        });
-                        context.read<UserSearchBloc>().add(
-                              UserSearchEvent.searchRequested(query: tex.trim()),
-                            );
-                        return;
-                      }
-                      context.read<UserSearchBloc>().add(const UserSearchEvent.cleared());
-                    },
                   ),
+                  onSubmitted: (tex) {
+                    if (tex.trim().isNotEmpty) {
+                      setState(() {
+                        isSubmitted = true;
+                      });
+                      context.read<UserSearchBloc>().add(
+                            UserSearchEvent.searchRequested(query: tex.trim()),
+                          );
+                      return;
+                    }
+                    context.read<UserSearchBloc>().add(const UserSearchEvent.cleared());
+                  },
                 ),
               ),
             ),
           ),
         ),
-        body: const UserSearchLoader(),
       ),
+      body: const UserSearchLoader(),
     );
   }
 }

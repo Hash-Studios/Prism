@@ -37,10 +37,6 @@ class SetupViewScreen extends StatefulWidget {
 }
 
 class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProviderStateMixin {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int? index;
   String? thumb;
@@ -91,437 +87,595 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
               shakeController.reverse();
             }
           });
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: Theme.of(context).primaryColor,
-        body: SlidingUpPanel(
-          backdropEnabled: true,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-          boxShadow: const [],
-          collapsed: CollapsedPanel(
-            panelCollapsed: panelCollapsed,
-            panelController: panelController,
-          ),
-          minHeight: MediaQuery.of(context).size.height / 20,
-          parallaxEnabled: true,
-          parallaxOffset: 0.00,
-          color: Colors.transparent,
-          maxHeight: MediaQuery.of(context).size.height * .70 > 600 ? MediaQuery.of(context).size.height * .70 : 600,
-          controller: panelController,
-          onPanelOpened: () {
-            setState(() {
-              panelCollapsed = false;
-            });
-          },
-          onPanelClosed: () {
-            setState(() {
-              panelCollapsed = true;
-            });
-          },
-          panel: Container(
-            margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            height: MediaQuery.of(context).size.height * .70 > 600 ? MediaQuery.of(context).size.height * .70 : 600,
-            width: MediaQuery.of(context).size.width,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 750),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    color: panelCollapsed
-                        ? Theme.of(context).primaryColor.withValues(alpha: 1)
-                        : Theme.of(context).primaryColor.withValues(alpha: .5),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Center(
-                          child: Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: AnimatedOpacity(
-                          duration: Duration.zero,
-                          opacity: panelCollapsed ? 0.0 : 1.0,
-                          child: GestureDetector(
-                            onTap: () {
-                              panelController.close();
-                            },
-                            child: Icon(
-                              JamIcons.chevron_down,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: Theme.of(context).primaryColor,
+      body: SlidingUpPanel(
+        backdropEnabled: true,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        boxShadow: const [],
+        collapsed: CollapsedPanel(
+          panelCollapsed: panelCollapsed,
+          panelController: panelController,
+        ),
+        minHeight: MediaQuery.of(context).size.height / 20,
+        parallaxEnabled: true,
+        parallaxOffset: 0.00,
+        color: Colors.transparent,
+        maxHeight: MediaQuery.of(context).size.height * .70 > 600 ? MediaQuery.of(context).size.height * .70 : 600,
+        controller: panelController,
+        onPanelOpened: () {
+          setState(() {
+            panelCollapsed = false;
+          });
+        },
+        onPanelClosed: () {
+          setState(() {
+            panelCollapsed = true;
+          });
+        },
+        panel: Container(
+          margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+          height: MediaQuery.of(context).size.height * .70 > 600 ? MediaQuery.of(context).size.height * .70 : 600,
+          width: MediaQuery.of(context).size.width,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 750),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  color: panelCollapsed
+                      ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                      : Theme.of(context).primaryColor.withValues(alpha: .5),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Center(
+                        child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: AnimatedOpacity(
+                        duration: Duration.zero,
+                        opacity: panelCollapsed ? 0.0 : 1.0,
+                        child: GestureDetector(
+                          onTap: () {
+                            panelController.close();
+                          },
+                          child: Icon(
+                            JamIcons.chevron_down,
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                         ),
-                      )),
-                      Expanded(
-                        flex: 4,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(35, 0, 35, 5),
-                              child: panelCollapsed
-                                  ? Container()
-                                  : ShowUpTransition(
-                                      forward: true,
-                                      slideSide: SlideFromSlide.bottom,
-                                      child: Text(
-                                        context
-                                            .setupsAdapter(listen: false)
-                                            .setups![index!]["name"]
-                                            .toString()
-                                            .toUpperCase(),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.fade,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .displayLarge!
-                                            .copyWith(fontSize: 30, color: Theme.of(context).colorScheme.secondary),
-                                      ),
-                                    ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                              child: panelCollapsed
-                                  ? Container()
-                                  : ShowUpTransition(
-                                      forward: true,
-                                      slideSide: SlideFromSlide.bottom,
-                                      delay: const Duration(milliseconds: 50),
-                                      child: Text(
-                                        context.setupsAdapter(listen: false).setups![index!]["desc"].toString(),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.fade,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge!
-                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                      ),
-                                    ),
-                            ),
-                          ],
-                        ),
                       ),
-                      Expanded(
-                        flex: 3,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                          child: panelCollapsed
-                              ? Container()
-                              : ShowUpTransition(
-                                  forward: true,
-                                  delay: const Duration(milliseconds: 100),
-                                  slideSide: SlideFromSlide.bottom,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: <Widget>[
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: <Widget>[
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.36,
-                                            child: Padding(
-                                              padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
-                                              child: Row(
-                                                children: [
-                                                  Text(
-                                                    context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["id"]
-                                                        .toString()
-                                                        .toUpperCase(),
-                                                    overflow: TextOverflow.fade,
-                                                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                        color: Theme.of(context).colorScheme.secondary, fontSize: 16),
-                                                  ),
-                                                  Padding(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                                    child: Container(
-                                                      height: 16,
-                                                      color: Theme.of(context).colorScheme.secondary,
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                  FutureBuilder(
-                                                    future: _futureView,
-                                                    builder: (context, snapshot) {
-                                                      switch (snapshot.connectionState) {
-                                                        case ConnectionState.waiting:
-                                                          return Text(
-                                                            "",
-                                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                color: Theme.of(context).colorScheme.secondary,
-                                                                fontSize: 16),
-                                                          );
-                                                        case ConnectionState.none:
-                                                          return Text(
-                                                            "",
-                                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                color: Theme.of(context).colorScheme.secondary,
-                                                                fontSize: 16),
-                                                          );
-                                                        default:
-                                                          if (snapshot.hasError) {
-                                                            return Text(
-                                                              "",
-                                                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                  color: Theme.of(context).colorScheme.secondary,
-                                                                  fontSize: 16),
-                                                            );
-                                                          } else {
-                                                            return Text(
-                                                              "${snapshot.data} views",
-                                                              overflow: TextOverflow.fade,
-                                                              softWrap: false,
-                                                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                                  color: Theme.of(context).colorScheme.secondary,
-                                                                  fontSize: 16),
-                                                            );
-                                                          }
-                                                      }
-                                                    },
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              await createCopyrightLink(true, context,
-                                                  index: index.toString(),
-                                                  name: context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["name"]
-                                                      .toString(),
-                                                  thumbUrl: context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["image"]
-                                                      .toString());
-                                            },
+                    )),
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(35, 0, 35, 5),
+                            child: panelCollapsed
+                                ? Container()
+                                : ShowUpTransition(
+                                    forward: true,
+                                    slideSide: SlideFromSlide.bottom,
+                                    child: Text(
+                                      context
+                                          .setupsAdapter(listen: false)
+                                          .setups![index!]["name"]
+                                          .toString()
+                                          .toUpperCase(),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.fade,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .displayLarge!
+                                          .copyWith(fontSize: 30, color: Theme.of(context).colorScheme.secondary),
+                                    ),
+                                  ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
+                            child: panelCollapsed
+                                ? Container()
+                                : ShowUpTransition(
+                                    forward: true,
+                                    slideSide: SlideFromSlide.bottom,
+                                    delay: const Duration(milliseconds: 50),
+                                    child: Text(
+                                      context.setupsAdapter(listen: false).setups![index!]["desc"].toString(),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.fade,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge!
+                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                        child: panelCollapsed
+                            ? Container()
+                            : ShowUpTransition(
+                                forward: true,
+                                delay: const Duration(milliseconds: 100),
+                                slideSide: SlideFromSlide.bottom,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: <Widget>[
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        SizedBox(
+                                          width: MediaQuery.of(context).size.width * 0.36,
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
                                             child: Row(
                                               children: [
-                                                Icon(
-                                                  JamIcons.info,
-                                                  size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                                ),
-                                                const SizedBox(width: 10),
                                                 Text(
-                                                  "Report",
+                                                  context
+                                                      .setupsAdapter(listen: false)
+                                                      .setups![index!]["id"]
+                                                      .toString()
+                                                      .toUpperCase(),
                                                   overflow: TextOverflow.fade,
-                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                      decoration: TextDecoration.underline,
-                                                      color: Theme.of(context).colorScheme.secondary),
+                                                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary, fontSize: 16),
+                                                ),
+                                                Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                                                  child: Container(
+                                                    height: 16,
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                                FutureBuilder(
+                                                  future: _futureView,
+                                                  builder: (context, snapshot) {
+                                                    switch (snapshot.connectionState) {
+                                                      case ConnectionState.waiting:
+                                                        return Text(
+                                                          "",
+                                                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                              color: Theme.of(context).colorScheme.secondary,
+                                                              fontSize: 16),
+                                                        );
+                                                      case ConnectionState.none:
+                                                        return Text(
+                                                          "",
+                                                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                              color: Theme.of(context).colorScheme.secondary,
+                                                              fontSize: 16),
+                                                        );
+                                                      default:
+                                                        if (snapshot.hasError) {
+                                                          return Text(
+                                                            "",
+                                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary,
+                                                                fontSize: 16),
+                                                          );
+                                                        } else {
+                                                          return Text(
+                                                            "${snapshot.data} views",
+                                                            overflow: TextOverflow.fade,
+                                                            softWrap: false,
+                                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary,
+                                                                fontSize: 16),
+                                                          );
+                                                        }
+                                                    }
+                                                  },
                                                 ),
                                               ],
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: <Widget>[
-                                          SizedBox(
-                                            width: 150,
-                                            child: Align(
-                                              alignment: Alignment.centerRight,
-                                              child: Stack(
-                                                children: [
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            await createCopyrightLink(true, context,
+                                                index: index.toString(),
+                                                name: context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["name"]
+                                                    .toString(),
+                                                thumbUrl: context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["image"]
+                                                    .toString());
+                                          },
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.info,
+                                                size: 20,
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                "Report",
+                                                overflow: TextOverflow.fade,
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    decoration: TextDecoration.underline,
+                                                    color: Theme.of(context).colorScheme.secondary),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: <Widget>[
+                                        SizedBox(
+                                          width: 150,
+                                          child: Align(
+                                            alignment: Alignment.centerRight,
+                                            child: Stack(
+                                              children: [
+                                                Align(
+                                                  alignment: Alignment.topRight,
+                                                  child: ActionChip(
+                                                      label: Text(
+                                                        context
+                                                            .setupsAdapter(listen: false)
+                                                            .setups![index!]["by"]
+                                                            .toString(),
+                                                        overflow: TextOverflow.fade,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyMedium!
+                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                      ),
+                                                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                                      avatar: CircleAvatar(
+                                                        backgroundImage: CachedNetworkImageProvider(context
+                                                            .setupsAdapter(listen: false)
+                                                            .setups![index!]["userPhoto"]
+                                                            .toString()),
+                                                      ),
+                                                      labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
+                                                      onPressed: () {
+                                                        context.router.push(ProfileRoute(arguments: [
+                                                          context.setupsAdapter(listen: false).setups![index!]["email"],
+                                                        ]));
+                                                      }),
+                                                ),
+                                                if (globals.verifiedUsers.contains(context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["email"]
+                                                    .toString()))
                                                   Align(
                                                     alignment: Alignment.topRight,
-                                                    child: ActionChip(
-                                                        label: Text(
-                                                          context
-                                                              .setupsAdapter(listen: false)
-                                                              .setups![index!]["by"]
-                                                              .toString(),
-                                                          overflow: TextOverflow.fade,
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .bodyMedium!
-                                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                                        ),
-                                                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                                                        avatar: CircleAvatar(
-                                                          backgroundImage: CachedNetworkImageProvider(context
-                                                              .setupsAdapter(listen: false)
-                                                              .setups![index!]["userPhoto"]
-                                                              .toString()),
-                                                        ),
-                                                        labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
-                                                        onPressed: () {
-                                                          context.router.push(ProfileRoute(arguments: [
-                                                            context.setupsAdapter(listen: false).setups![index!]
-                                                                ["email"],
-                                                          ]));
-                                                        }),
-                                                  ),
-                                                  if (globals.verifiedUsers.contains(context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["email"]
-                                                      .toString()))
-                                                    Align(
-                                                      alignment: Alignment.topRight,
-                                                      child: SizedBox(
-                                                        width: 20,
-                                                        height: 20,
-                                                        child: SvgPicture.string(verifiedIcon.replaceAll(
-                                                            "E57697",
-                                                            Theme.of(context).colorScheme.error == Colors.black
-                                                                ? "E57697"
-                                                                : Theme.of(context)
-                                                                    .colorScheme
-                                                                    .error
-                                                                    .toString()
-                                                                    .replaceAll("Color(0xff", "")
-                                                                    .replaceAll(")", ""))),
-                                                      ),
-                                                    )
-                                                  else
-                                                    Container(),
-                                                ],
-                                              ),
+                                                    child: SizedBox(
+                                                      width: 20,
+                                                      height: 20,
+                                                      child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                          "E57697",
+                                                          Theme.of(context).colorScheme.error == Colors.black
+                                                              ? "E57697"
+                                                              : Theme.of(context)
+                                                                  .colorScheme
+                                                                  .error
+                                                                  .toString()
+                                                                  .replaceAll("Color(0xff", "")
+                                                                  .replaceAll(")", ""))),
+                                                    ),
+                                                  )
+                                                else
+                                                  Container(),
+                                              ],
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                        ),
+                              ),
                       ),
-                      Expanded(
-                        flex: 16,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                          child: context.setupsAdapter(listen: false).setups![index!]["widget"] == "" ||
-                                  context.setupsAdapter(listen: false).setups![index!]["widget"] == null
-                              ? Column(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SetupDetailsTile(
-                                      isInstalled: Future.value(false),
-                                      onTap: () async {
-                                        if (context
+                    ),
+                    Expanded(
+                      flex: 16,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
+                        child: context.setupsAdapter(listen: false).setups![index!]["widget"] == "" ||
+                                context.setupsAdapter(listen: false).setups![index!]["widget"] == null
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SetupDetailsTile(
+                                    isInstalled: Future.value(false),
+                                    onTap: () async {
+                                      if (context
+                                              .setupsAdapter(listen: false)
+                                              .setups![index!]["wallpaper_url"]
+                                              .toString()[0] !=
+                                          "[") {
+                                        if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
+                                            context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "") {
+                                          logger.d("Id Not Found!");
+                                          launch(context
+                                              .setupsAdapter(listen: false)
+                                              .setups![index!]["wallpaper_url"]
+                                              .toString());
+                                        } else {
+                                          context.router.push(ShareWallpaperViewRoute(arguments: [
+                                            context.setupsAdapter(listen: false).setups![index!]["wall_id"].toString(),
+                                            context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["wallpaper_provider"]
+                                                .toString(),
+                                            context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["wallpaper_url"]
+                                                .toString(),
+                                            context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["wallpaper_url"]
+                                                .toString(),
+                                          ]));
+                                        }
+                                      } else {
+                                        launch(context
+                                            .setupsAdapter(listen: false)
+                                            .setups![index!]["wallpaper_url"][1]
+                                            .toString());
+                                      }
+                                    },
+                                    tileText: context
                                                 .setupsAdapter(listen: false)
                                                 .setups![index!]["wallpaper_url"]
                                                 .toString()[0] !=
-                                            "[") {
-                                          if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
-                                              context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "") {
-                                            logger.d("Id Not Found!");
-                                            launch(context
-                                                .setupsAdapter(listen: false)
-                                                .setups![index!]["wallpaper_url"]
-                                                .toString());
-                                          } else {
-                                            context.router.push(ShareWallpaperViewRoute(arguments: [
-                                              context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]["wall_id"]
-                                                  .toString(),
-                                              context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]["wallpaper_provider"]
-                                                  .toString(),
-                                              context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]["wallpaper_url"]
-                                                  .toString(),
-                                              context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]["wallpaper_url"]
-                                                  .toString(),
-                                            ]));
-                                          }
-                                        } else {
-                                          launch(context
-                                              .setupsAdapter(listen: false)
-                                              .setups![index!]["wallpaper_url"][1]
-                                              .toString());
-                                        }
-                                      },
-                                      tileText: context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]["wallpaper_url"]
-                                                  .toString()[0] !=
-                                              "["
-                                          ? (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
-                                                  context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "")
-                                              ? "Wall Link"
-                                              : "Prism (${context.setupsAdapter(listen: false).setups![index!]["wall_id"]})"
-                                          : "${context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
-                                      tileType: "Wallpaper",
-                                      panelCollapsed: panelCollapsed,
-                                      delay: const Duration(milliseconds: 150),
-                                    ),
-                                    SetupDetailsTile(
-                                      isInstalled: context
-                                              .setupsAdapter(listen: false)
-                                              .setups![index!]["icon_url"]
-                                              .toString()
-                                              .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(context
-                                              .setupsAdapter(listen: false)
-                                              .setups![index!]["icon_url"]
-                                              .toString()
-                                              .split("details?id=")[1]
-                                              .split("&")[0])
-                                          : Future.value(false),
-                                      onTap: () async {
-                                        if (context
+                                            "["
+                                        ? (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
+                                                context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "")
+                                            ? "Wall Link"
+                                            : "Prism (${context.setupsAdapter(listen: false).setups![index!]["wall_id"]})"
+                                        : "${context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
+                                    tileType: "Wallpaper",
+                                    panelCollapsed: panelCollapsed,
+                                    delay: const Duration(milliseconds: 150),
+                                  ),
+                                  SetupDetailsTile(
+                                    isInstalled: context
                                             .setupsAdapter(listen: false)
                                             .setups![index!]["icon_url"]
                                             .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(context
+                                            .contains('play.google.com/store/apps/details?id=')
+                                        ? DeviceApps.isAppInstalled(context
+                                            .setupsAdapter(listen: false)
+                                            .setups![index!]["icon_url"]
+                                            .toString()
+                                            .split("details?id=")[1]
+                                            .split("&")[0])
+                                        : Future.value(false),
+                                    onTap: () async {
+                                      if (context
+                                          .setupsAdapter(listen: false)
+                                          .setups![index!]["icon_url"]
+                                          .toString()
+                                          .contains('play.google.com/store/apps/details?id=')) {
+                                        final isInstalled = await DeviceApps.isAppInstalled(context
+                                            .setupsAdapter(listen: false)
+                                            .setups![index!]["icon_url"]
+                                            .toString()
+                                            .split("details?id=")[1]
+                                            .split("&")[0]);
+                                        isInstalled
+                                            ? DeviceApps.openApp(context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["icon_url"]
+                                                .toString()
+                                                .split("details?id=")[1]
+                                                .split("&")[0])
+                                            : launch(context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["icon_url"]
+                                                .toString());
+                                      } else {
+                                        launch(context
+                                            .setupsAdapter(listen: false)
+                                            .setups![index!]["icon_url"]
+                                            .toString());
+                                      }
+                                    },
+                                    tileText: context.setupsAdapter(listen: false).setups![index!]["icon"].toString(),
+                                    tileType: "Icons",
+                                    panelCollapsed: panelCollapsed,
+                                    delay: const Duration(milliseconds: 200),
+                                  ),
+                                ],
+                              )
+                            : context.setupsAdapter(listen: false).setups![index!]["widget2"] == "" ||
+                                    context.setupsAdapter(listen: false).setups![index!]["widget2"] == null
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SetupDetailsTile(
+                                        isInstalled: Future.value(false),
+                                        onTap: () async {
+                                          if (context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wallpaper_url"]
+                                                  .toString()[0] !=
+                                              "[") {
+                                            if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
+                                                    null ||
+                                                context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "") {
+                                              logger.d("Id Not Found!");
+                                              launch(context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wallpaper_url"]
+                                                  .toString());
+                                            } else {
+                                              context.router.push(ShareWallpaperViewRoute(arguments: [
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wall_id"]
+                                                    .toString(),
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_provider"]
+                                                    .toString(),
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_url"]
+                                                    .toString(),
+                                                context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_url"]
+                                                    .toString(),
+                                              ]));
+                                            }
+                                          } else {
+                                            launch(context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["wallpaper_url"][1]
+                                                .toString());
+                                          }
+                                        },
+                                        tileText: context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_url"]
+                                                    .toString()[0] !=
+                                                "["
+                                            ? (context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
+                                                        null ||
+                                                    context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
+                                                        "")
+                                                ? "Wall Link"
+                                                : "Prism (${context.setupsAdapter(listen: false).setups![index!]["wall_id"]})"
+                                            : "${context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
+                                        tileType: "Wallpaper",
+                                        panelCollapsed: panelCollapsed,
+                                        delay: const Duration(milliseconds: 150),
+                                      ),
+                                      SetupDetailsTile(
+                                        isInstalled: context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["icon_url"]
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')
+                                            ? DeviceApps.isAppInstalled(context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["icon_url"]
+                                                .toString()
+                                                .split("details?id=")[1]
+                                                .split("&")[0])
+                                            : Future.value(false),
+                                        onTap: () async {
+                                          if (context
                                               .setupsAdapter(listen: false)
                                               .setups![index!]["icon_url"]
                                               .toString()
-                                              .split("details?id=")[1]
-                                              .split("&")[0]);
-                                          isInstalled
-                                              ? DeviceApps.openApp(context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]["icon_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0])
-                                              : launch(context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]["icon_url"]
-                                                  .toString());
-                                        } else {
-                                          launch(context
+                                              .contains('play.google.com/store/apps/details?id=')) {
+                                            final isInstalled = await DeviceApps.isAppInstalled(context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["icon_url"]
+                                                .toString()
+                                                .split("details?id=")[1]
+                                                .split("&")[0]);
+                                            isInstalled
+                                                ? DeviceApps.openApp(context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
+                                                : launch(context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["icon_url"]
+                                                    .toString());
+                                          } else {
+                                            launch(context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["icon_url"]
+                                                .toString());
+                                          }
+                                        },
+                                        tileText:
+                                            context.setupsAdapter(listen: false).setups![index!]["icon"].toString(),
+                                        tileType: "Icons",
+                                        panelCollapsed: panelCollapsed,
+                                        delay: const Duration(milliseconds: 200),
+                                      ),
+                                      SetupDetailsTile(
+                                        isInstalled: context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["widget_url"]
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')
+                                            ? DeviceApps.isAppInstalled(context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["widget_url"]
+                                                .toString()
+                                                .split("details?id=")[1]
+                                                .split("&")[0])
+                                            : Future.value(false),
+                                        onTap: () async {
+                                          if (context
                                               .setupsAdapter(listen: false)
-                                              .setups![index!]["icon_url"]
-                                              .toString());
-                                        }
-                                      },
-                                      tileText: context.setupsAdapter(listen: false).setups![index!]["icon"].toString(),
-                                      tileType: "Icons",
-                                      panelCollapsed: panelCollapsed,
-                                      delay: const Duration(milliseconds: 200),
-                                    ),
-                                  ],
-                                )
-                              : context.setupsAdapter(listen: false).setups![index!]["widget2"] == "" ||
-                                      context.setupsAdapter(listen: false).setups![index!]["widget2"] == null
-                                  ? Column(
-                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                      mainAxisSize: MainAxisSize.min,
+                                              .setups![index!]["widget_url"]
+                                              .toString()
+                                              .contains('play.google.com/store/apps/details?id=')) {
+                                            final isInstalled = await DeviceApps.isAppInstalled(context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["widget_url"]
+                                                .toString()
+                                                .split("details?id=")[1]
+                                                .split("&")[0]);
+                                            isInstalled
+                                                ? DeviceApps.openApp(context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["widget_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
+                                                : launch(context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["widget_url"]
+                                                    .toString());
+                                          } else {
+                                            launch(context
+                                                .setupsAdapter(listen: false)
+                                                .setups![index!]["widget_url"]
+                                                .toString());
+                                          }
+                                        },
+                                        tileText:
+                                            context.setupsAdapter(listen: false).setups![index!]["widget"].toString(),
+                                        tileType: "Widget",
+                                        panelCollapsed: panelCollapsed,
+                                        delay: const Duration(milliseconds: 250),
+                                      ),
+                                    ],
+                                  )
+                                : Scrollbar(
+                                    radius: const Radius.circular(500),
+                                    thickness: 5,
+                                    child: ListView(
                                       children: [
                                         SetupDetailsTile(
                                           isInstalled: Future.value(false),
@@ -681,238 +835,109 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                           panelCollapsed: panelCollapsed,
                                           delay: const Duration(milliseconds: 250),
                                         ),
-                                      ],
-                                    )
-                                  : Scrollbar(
-                                      radius: const Radius.circular(500),
-                                      thickness: 5,
-                                      child: ListView(
-                                        children: [
-                                          SetupDetailsTile(
-                                            isInstalled: Future.value(false),
-                                            onTap: () async {
-                                              if (context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["wallpaper_url"]
-                                                      .toString()[0] !=
-                                                  "[") {
-                                                if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
-                                                        null ||
-                                                    context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
-                                                        "") {
-                                                  logger.d("Id Not Found!");
-                                                  launch(context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["wallpaper_url"]
-                                                      .toString());
-                                                } else {
-                                                  context.router.push(ShareWallpaperViewRoute(arguments: [
-                                                    context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["wall_id"]
-                                                        .toString(),
-                                                    context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["wallpaper_provider"]
-                                                        .toString(),
-                                                    context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["wallpaper_url"]
-                                                        .toString(),
-                                                    context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["wallpaper_url"]
-                                                        .toString(),
-                                                  ]));
-                                                }
-                                              } else {
-                                                launch(context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wallpaper_url"][1]
-                                                    .toString());
-                                              }
-                                            },
-                                            tileText: context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["wallpaper_url"]
-                                                        .toString()[0] !=
-                                                    "["
-                                                ? (context.setupsAdapter(listen: false).setups![index!]["wall_id"] ==
-                                                            null ||
-                                                        context.setupsAdapter(listen: false).setups![index!]
-                                                                ["wall_id"] ==
-                                                            "")
-                                                    ? "Wall Link"
-                                                    : "Prism (${context.setupsAdapter(listen: false).setups![index!]["wall_id"]})"
-                                                : "${context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][0]} - ${(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
-                                            tileType: "Wallpaper",
-                                            panelCollapsed: panelCollapsed,
-                                            delay: const Duration(milliseconds: 150),
-                                          ),
-                                          SetupDetailsTile(
-                                            isInstalled: context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["icon_url"]
-                                                    .toString()
-                                                    .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["icon_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0])
-                                                : Future.value(false),
-                                            onTap: () async {
-                                              if (context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]["icon_url"]
-                                                  .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["icon_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["icon_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0])
-                                                    : launch(context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["icon_url"]
-                                                        .toString());
-                                              } else {
-                                                launch(context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["icon_url"]
-                                                    .toString());
-                                              }
-                                            },
-                                            tileText:
-                                                context.setupsAdapter(listen: false).setups![index!]["icon"].toString(),
-                                            tileType: "Icons",
-                                            panelCollapsed: panelCollapsed,
-                                            delay: const Duration(milliseconds: 200),
-                                          ),
-                                          SetupDetailsTile(
-                                            isInstalled: context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["widget_url"]
-                                                    .toString()
-                                                    .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["widget_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0])
-                                                : Future.value(false),
-                                            onTap: () async {
-                                              if (context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]["widget_url"]
-                                                  .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["widget_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["widget_url"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0])
-                                                    : launch(context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["widget_url"]
-                                                        .toString());
-                                              } else {
-                                                launch(context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["widget_url"]
-                                                    .toString());
-                                              }
-                                            },
-                                            tileText: context
-                                                .setupsAdapter(listen: false)
-                                                .setups![index!]["widget"]
-                                                .toString(),
-                                            tileType: "Widget",
-                                            panelCollapsed: panelCollapsed,
-                                            delay: const Duration(milliseconds: 250),
-                                          ),
-                                          SetupDetailsTile(
-                                            isInstalled: context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["widget_url2"]
-                                                    .toString()
-                                                    .contains('play.google.com/store/apps/details?id=')
-                                                ? DeviceApps.isAppInstalled(context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["widget_url2"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0])
-                                                : Future.value(false),
-                                            onTap: () async {
-                                              if (context
+                                        SetupDetailsTile(
+                                          isInstalled: context
                                                   .setupsAdapter(listen: false)
                                                   .setups![index!]["widget_url2"]
                                                   .toString()
-                                                  .contains('play.google.com/store/apps/details?id=')) {
-                                                final isInstalled = await DeviceApps.isAppInstalled(context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["widget_url2"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0]);
-                                                isInstalled
-                                                    ? DeviceApps.openApp(context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["widget_url2"]
-                                                        .toString()
-                                                        .split("details?id=")[1]
-                                                        .split("&")[0])
-                                                    : launch(context
-                                                        .setupsAdapter(listen: false)
-                                                        .setups![index!]["widget_url2"]
-                                                        .toString());
-                                              } else {
-                                                launch(context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["widget_url2"]
-                                                    .toString());
-                                              }
-                                            },
-                                            tileText: context
+                                                  .contains('play.google.com/store/apps/details?id=')
+                                              ? DeviceApps.isAppInstalled(context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["widget_url2"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0])
+                                              : Future.value(false),
+                                          onTap: () async {
+                                            if (context
                                                 .setupsAdapter(listen: false)
-                                                .setups![index!]["widget2"]
-                                                .toString(),
-                                            tileType: "Widget",
-                                            panelCollapsed: panelCollapsed,
-                                            delay: const Duration(milliseconds: 300),
-                                          ),
-                                        ],
-                                      ),
+                                                .setups![index!]["widget_url2"]
+                                                .toString()
+                                                .contains('play.google.com/store/apps/details?id=')) {
+                                              final isInstalled = await DeviceApps.isAppInstalled(context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["widget_url2"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(context
+                                                      .setupsAdapter(listen: false)
+                                                      .setups![index!]["widget_url2"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0])
+                                                  : launch(context
+                                                      .setupsAdapter(listen: false)
+                                                      .setups![index!]["widget_url2"]
+                                                      .toString());
+                                            } else {
+                                              launch(context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["widget_url2"]
+                                                  .toString());
+                                            }
+                                          },
+                                          tileText: context
+                                              .setupsAdapter(listen: false)
+                                              .setups![index!]["widget2"]
+                                              .toString(),
+                                          tileType: "Widget",
+                                          panelCollapsed: panelCollapsed,
+                                          delay: const Duration(milliseconds: 300),
+                                        ),
+                                      ],
                                     ),
-                        ),
+                                  ),
                       ),
-                      Expanded(
-                        flex: 5,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: <Widget>[
-                            ModifiedDownloadButton(index: index),
-                            ModifiedSetWallpaperButton(index: index),
-                            Container(
+                    ),
+                    Expanded(
+                      flex: 5,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: <Widget>[
+                          ModifiedDownloadButton(index: index),
+                          ModifiedSetWallpaperButton(index: index),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withValues(alpha: .25),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 4))
+                              ],
+                              borderRadius: BorderRadius.circular(500),
+                            ),
+                            padding: const EdgeInsets.all(17),
+                            child: FavoriteIcon(
+                              valueChanged: () {
+                                if (globals.prismUser.loggedIn == false) {
+                                  googleSignInPopUp(context, () {
+                                    onFavSetup(
+                                        context.setupsAdapter(listen: false).setups![index!].data()["id"].toString(),
+                                        context.setupsAdapter(listen: false).setups![index!].data());
+                                  });
+                                } else {
+                                  onFavSetup(
+                                      context.setupsAdapter(listen: false).setups![index!].data()["id"].toString(),
+                                      context.setupsAdapter(listen: false).setups![index!].data());
+                                }
+                              },
+                              iconColor: Theme.of(context).colorScheme.secondary,
+                              iconSize: 30,
+                              isFavorite: box.get(context.setupsAdapter(listen: false).setups![index!]["id"].toString(),
+                                  defaultValue: false) as bool,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              createSetupDynamicLink(
+                                  index.toString(),
+                                  context.setupsAdapter(listen: false).setups![index!]["name"].toString(),
+                                  context.setupsAdapter(listen: false).setups![index!]["image"].toString());
+                            },
+                            child: Container(
                               decoration: BoxDecoration(
                                 color: Theme.of(context).primaryColor,
                                 boxShadow: [
@@ -924,166 +949,125 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                 borderRadius: BorderRadius.circular(500),
                               ),
                               padding: const EdgeInsets.all(17),
-                              child: FavoriteIcon(
-                                valueChanged: () {
-                                  if (globals.prismUser.loggedIn == false) {
-                                    googleSignInPopUp(context, () {
-                                      onFavSetup(
-                                          context.setupsAdapter(listen: false).setups![index!].data()["id"].toString(),
-                                          context.setupsAdapter(listen: false).setups![index!].data());
-                                    });
-                                  } else {
-                                    onFavSetup(
-                                        context.setupsAdapter(listen: false).setups![index!].data()["id"].toString(),
-                                        context.setupsAdapter(listen: false).setups![index!].data());
-                                  }
-                                },
-                                iconColor: Theme.of(context).colorScheme.secondary,
-                                iconSize: 30,
-                                isFavorite: box.get(
-                                    context.setupsAdapter(listen: false).setups![index!]["id"].toString(),
-                                    defaultValue: false) as bool,
+                              child: Icon(
+                                JamIcons.share_alt,
+                                color: Theme.of(context).colorScheme.secondary,
+                                size: 20,
                               ),
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                createSetupDynamicLink(
-                                    index.toString(),
-                                    context.setupsAdapter(listen: false).setups![index!]["name"].toString(),
-                                    context.setupsAdapter(listen: false).setups![index!]["image"].toString());
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.black.withValues(alpha: .25),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 4))
-                                  ],
-                                  borderRadius: BorderRadius.circular(500),
-                                ),
-                                padding: const EdgeInsets.all(17),
-                                child: Icon(
-                                  JamIcons.share_alt,
-                                  color: Theme.of(context).colorScheme.secondary,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          body: Stack(
-            children: <Widget>[
-              AnimatedBuilder(
-                  animation: offsetAnimation,
-                  builder: (buildContext, child) {
-                    if (offsetAnimation.value < 0.0) {
-                      logger.d('${offsetAnimation.value + 8.0}');
-                    }
-                    return GestureDetector(
-                      onPanUpdate: (details) {
-                        if (details.delta.dy < -10) {
-                          panelController.open();
-                        }
-                      },
-                      onLongPress: () {
-                        HapticFeedback.vibrate();
-                        shakeController.forward(from: 0.0);
-                      },
-                      onTap: () {
-                        HapticFeedback.vibrate();
-                        shakeController.forward(from: 0.0);
-                      },
-                      child: CachedNetworkImage(
-                        imageUrl: context.setupsAdapter(listen: false).setups![index!]["image"].toString(),
-                        imageBuilder: (context, imageProvider) => Container(
-                          margin: EdgeInsets.symmetric(
-                              vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(offsetAnimation.value),
-                            image: DecorationImage(
-                              image: imageProvider,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-                          children: <Widget>[
-                            const SizedBox.expand(
-                                child: Text(
-                              "",
-                              overflow: TextOverflow.fade,
-                            )),
-                            Center(
-                              child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation(
-                                    Theme.of(context).colorScheme.error,
-                                  ),
-                                  value: downloadProgress.progress),
-                            ),
-                          ],
-                        ),
-                        errorWidget: (context, url, error) => Center(
-                          child: Icon(
-                            JamIcons.close_circle_f,
-                            color: Theme.of(context).colorScheme.secondary,
+        ),
+        body: Stack(
+          children: <Widget>[
+            AnimatedBuilder(
+                animation: offsetAnimation,
+                builder: (buildContext, child) {
+                  if (offsetAnimation.value < 0.0) {
+                    logger.d('${offsetAnimation.value + 8.0}');
+                  }
+                  return GestureDetector(
+                    onPanUpdate: (details) {
+                      if (details.delta.dy < -10) {
+                        panelController.open();
+                      }
+                    },
+                    onLongPress: () {
+                      HapticFeedback.vibrate();
+                      shakeController.forward(from: 0.0);
+                    },
+                    onTap: () {
+                      HapticFeedback.vibrate();
+                      shakeController.forward(from: 0.0);
+                    },
+                    child: CachedNetworkImage(
+                      imageUrl: context.setupsAdapter(listen: false).setups![index!]["image"].toString(),
+                      imageBuilder: (context, imageProvider) => Container(
+                        margin: EdgeInsets.symmetric(
+                            vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(offsetAnimation.value),
+                          image: DecorationImage(
+                            image: imageProvider,
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
-                    );
-                  }),
-              Align(
-                alignment: Alignment.topLeft,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
-                  child: IconButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    color: Theme.of(context).colorScheme.secondary,
-                    icon: const Icon(
-                      JamIcons.chevron_left,
+                      progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
+                        children: <Widget>[
+                          const SizedBox.expand(
+                              child: Text(
+                            "",
+                            overflow: TextOverflow.fade,
+                          )),
+                          Center(
+                            child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation(
+                                  Theme.of(context).colorScheme.error,
+                                ),
+                                value: downloadProgress.progress),
+                          ),
+                        ],
+                      ),
+                      errorWidget: (context, url, error) => Center(
+                        child: Icon(
+                          JamIcons.close_circle_f,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
                     ),
+                  );
+                }),
+            Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  color: Theme.of(context).colorScheme.secondary,
+                  icon: const Icon(
+                    JamIcons.chevron_left,
                   ),
                 ),
               ),
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
-                  child: IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) {
-                                animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                                return FadeTransition(
-                                    opacity: animation,
-                                    child: SetupOverlay(
-                                      link: context.setupsAdapter(listen: false).setups![index!]["image"].toString(),
-                                    ));
-                              },
-                              fullscreenDialog: true,
-                              opaque: false));
-                    },
-                    color: Theme.of(context).colorScheme.secondary,
-                    icon: const Icon(
-                      JamIcons.arrow_up_right,
-                    ),
+            ),
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) {
+                              animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                              return FadeTransition(
+                                  opacity: animation,
+                                  child: SetupOverlay(
+                                    link: context.setupsAdapter(listen: false).setups![index!]["image"].toString(),
+                                  ));
+                            },
+                            fullscreenDialog: true,
+                            opaque: false));
+                  },
+                  color: Theme.of(context).colorScheme.secondary,
+                  icon: const Icon(
+                    JamIcons.arrow_up_right,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

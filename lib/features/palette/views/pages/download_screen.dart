@@ -18,10 +18,6 @@ class DownloadScreen extends StatefulWidget {
 }
 
 class _DownloadScreenState extends State<DownloadScreen> {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   bool dataFetched = false;
   Map<dynamic, dynamic> allImageInfo = HashMap();
   List<FileSystemEntity> files = [];
@@ -92,154 +88,115 @@ class _DownloadScreenState extends State<DownloadScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
-        appBar: const PreferredSize(
-          preferredSize: Size(double.infinity, 55),
-          child: HeadingChipBar(
-            current: "Downloads",
-          ),
+    return Scaffold(
+      appBar: const PreferredSize(
+        preferredSize: Size(double.infinity, 55),
+        child: HeadingChipBar(
+          current: "Downloads",
         ),
-        backgroundColor: Theme.of(context).primaryColor,
-        body: SafeArea(
-          child: RefreshIndicator(
-            backgroundColor: Theme.of(context).primaryColor,
-            key: refreshDownloadKey,
-            onRefresh: refreshList,
-            child: dataFetched
-                ? GridView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                    itemCount: files.length,
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                        childAspectRatio: 0.6625,
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8),
-                    itemBuilder: (BuildContext context, int index) {
-                      return Stack(
-                        children: [
-                          Container(
-                            decoration: files.isEmpty
-                                ? BoxDecoration(
-                                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(20),
-                                  )
-                                : BoxDecoration(
-                                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(20),
-                                    image: DecorationImage(image: FileImage(files[index] as File), fit: BoxFit.cover)),
-                          ),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                                onTap: () {
-                                  context.router.push(DownloadWallpaperRoute(arguments: ["Downloads", files[index]]));
-                                },
-                              ),
+      ),
+      backgroundColor: Theme.of(context).primaryColor,
+      body: SafeArea(
+        child: RefreshIndicator(
+          backgroundColor: Theme.of(context).primaryColor,
+          key: refreshDownloadKey,
+          onRefresh: refreshList,
+          child: dataFetched
+              ? GridView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+                  itemCount: files.length,
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+                      childAspectRatio: 0.6625,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8),
+                  itemBuilder: (BuildContext context, int index) {
+                    return Stack(
+                      children: [
+                        Container(
+                          decoration: files.isEmpty
+                              ? BoxDecoration(
+                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                )
+                              : BoxDecoration(
+                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(image: FileImage(files[index] as File), fit: BoxFit.cover)),
+                        ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                              onTap: () {
+                                context.router.push(DownloadWallpaperRoute(arguments: ["Downloads", files[index]]));
+                              },
                             ),
                           ),
-                        ],
-                      );
-                    },
-                  )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        child: context.prismModeStyleForContext() == "Dark"
-                            ? SvgPicture.string(
-                                downloadsDark
-                                    .replaceAll("181818",
-                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
-                                    .replaceAll(
-                                        "E57697",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .error
-                                            .toString()
-                                            .replaceAll("Color(0xff", "")
-                                            .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll("2F2F2F",
-                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
-                              )
-                            : SvgPicture.string(
-                                downloadsLight
-                                    .replaceAll("181818",
-                                        Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
-                                    .replaceAll(
-                                        "E57697",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .error
-                                            .toString()
-                                            .replaceAll("Color(0xff", "")
-                                            .replaceAll(")", ""))
-                                    .replaceAll(
-                                        "F0F0F0",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll(
-                                        "2F2E41",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll(
-                                        "3F3D56",
-                                        Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .toARGB32()
-                                            .toRadixString(16)
-                                            .substring(2))
-                                    .replaceAll("2F2F2F",
-                                        Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
-                              ),
-                      ),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height * 0.1,
-                      )
-                    ],
-                  ),
-          ),
+                        ),
+                      ],
+                    );
+                  },
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: context.prismModeStyleForContext() == "Dark"
+                          ? SvgPicture.string(
+                              downloadsDark
+                                  .replaceAll("181818",
+                                      Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll(
+                                      "E57697",
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .error
+                                          .toString()
+                                          .replaceAll("Color(0xff", "")
+                                          .replaceAll(")", ""))
+                                  .replaceAll("F0F0F0",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll("2F2E41",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll("3F3D56",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll(
+                                      "2F2F2F", Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
+                            )
+                          : SvgPicture.string(
+                              downloadsLight
+                                  .replaceAll("181818",
+                                      Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll(
+                                      "E57697",
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .error
+                                          .toString()
+                                          .replaceAll("Color(0xff", "")
+                                          .replaceAll(")", ""))
+                                  .replaceAll("F0F0F0",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll("2F2E41",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll("3F3D56",
+                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2))
+                                  .replaceAll(
+                                      "2F2F2F", Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
+                            ),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height * 0.1,
+                    )
+                  ],
+                ),
         ),
       ),
     );

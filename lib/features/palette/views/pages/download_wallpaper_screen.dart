@@ -18,10 +18,6 @@ class DownloadWallpaperScreen extends StatefulWidget {
 }
 
 class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with SingleTickerProviderStateMixin {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   late AnimationController shakeController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? provider;
@@ -50,98 +46,95 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
               shakeController.reverse();
             }
           });
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: Theme.of(context).primaryColor,
-        body: Stack(
-          children: <Widget>[
-            AnimatedBuilder(
-                animation: offsetAnimation,
-                builder: (buildContext, child) {
-                  if (offsetAnimation.value < 0.0) {
-                    logger.d('${offsetAnimation.value + 8.0}');
-                  }
-                  return GestureDetector(
-                    onLongPress: () {
-                      HapticFeedback.vibrate();
-                      shakeController.forward(from: 0.0);
-                    },
-                    onTap: () {
-                      HapticFeedback.vibrate();
-                      shakeController.forward(from: 0.0);
-                    },
-                    child: Container(
-                      margin: EdgeInsets.symmetric(
-                          vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(offsetAnimation.value),
-                        image: DecorationImage(
-                          image: FileImage(file),
-                          fit: BoxFit.cover,
-                        ),
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: Theme.of(context).primaryColor,
+      body: Stack(
+        children: <Widget>[
+          AnimatedBuilder(
+              animation: offsetAnimation,
+              builder: (buildContext, child) {
+                if (offsetAnimation.value < 0.0) {
+                  logger.d('${offsetAnimation.value + 8.0}');
+                }
+                return GestureDetector(
+                  onLongPress: () {
+                    HapticFeedback.vibrate();
+                    shakeController.forward(from: 0.0);
+                  },
+                  onTap: () {
+                    HapticFeedback.vibrate();
+                    shakeController.forward(from: 0.0);
+                  },
+                  child: Container(
+                    margin: EdgeInsets.symmetric(
+                        vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(offsetAnimation.value),
+                      image: DecorationImage(
+                        image: FileImage(file),
+                        fit: BoxFit.cover,
                       ),
-                      height: MediaQuery.of(context).size.height,
-                      width: MediaQuery.of(context).size.width,
                     ),
-                  );
-                }),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: SetWallpaperButton(colorChanged: false, url: file.path),
-              ),
-            ),
-            Align(
-              alignment: Alignment.topLeft,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
-                child: IconButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  color: Theme.of(context).colorScheme.secondary,
-                  icon: const Icon(
-                    JamIcons.chevron_left,
+                    height: MediaQuery.of(context).size.height,
+                    width: MediaQuery.of(context).size.width,
                   ),
+                );
+              }),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: SetWallpaperButton(colorChanged: false, url: file.path),
+            ),
+          ),
+          Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+              child: IconButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                color: Theme.of(context).colorScheme.secondary,
+                icon: const Icon(
+                  JamIcons.chevron_left,
                 ),
               ),
             ),
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
-                child: IconButton(
-                  onPressed: () {
-                    final link = file.path;
-                    Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) {
-                              animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                              return FadeTransition(
-                                  opacity: animation,
-                                  child: ClockOverlay(
-                                    colorChanged: false,
-                                    accent: null,
-                                    link: link,
-                                    file: true,
-                                  ));
-                            },
-                            fullscreenDialog: true,
-                            opaque: false));
-                  },
-                  color: Theme.of(context).colorScheme.secondary,
-                  icon: const Icon(
-                    JamIcons.clock,
-                  ),
+          ),
+          Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+              child: IconButton(
+                onPressed: () {
+                  final link = file.path;
+                  Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) {
+                            animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                            return FadeTransition(
+                                opacity: animation,
+                                child: ClockOverlay(
+                                  colorChanged: false,
+                                  accent: null,
+                                  link: link,
+                                  file: true,
+                                ));
+                          },
+                          fullscreenDialog: true,
+                          opaque: false));
+                },
+                color: Theme.of(context).colorScheme.secondary,
+                icon: const Icon(
+                  JamIcons.clock,
                 ),
               ),
-            )
-          ],
-        ),
+            ),
+          )
+        ],
       ),
     );
   }

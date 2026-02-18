@@ -56,14 +56,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (_currentPage != 0) {
+    return PopScope(
+      canPop: _currentPage == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
           onboardingCarouselController.previousPage(
               duration: const Duration(milliseconds: 150), curve: Curves.easeOutCubic);
-          return false;
         }
-        return true;
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFE57697),

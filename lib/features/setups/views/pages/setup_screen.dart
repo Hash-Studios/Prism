@@ -25,10 +25,6 @@ class SetupScreen extends StatefulWidget {
 }
 
 class _SetupScreenState extends State<SetupScreen> {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   final PageController controller = PageController(
     viewportFraction: 0.78,
   );
@@ -42,15 +38,12 @@ class _SetupScreenState extends State<SetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        body: BottomBar(
-          child: SafeArea(
-            top: false,
-            child: SetupPage(future: future, controller: controller),
-          ),
+    return Scaffold(
+      backgroundColor: Theme.of(context).primaryColor,
+      body: BottomBar(
+        child: SafeArea(
+          top: false,
+          child: SetupPage(future: future, controller: controller),
         ),
       ),
     );
