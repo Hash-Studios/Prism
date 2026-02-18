@@ -23,11 +23,10 @@ class SentryConfig {
     String fallbackDist = '',
   }) {
     const String rawDsn = Env.sentryDsn;
-    // const String rawDsn = String.fromEnvironment('SENTRY_DSN');
-    const String rawEnvironment = String.fromEnvironment('SENTRY_ENV');
-    const String rawRelease = String.fromEnvironment('SENTRY_RELEASE');
-    const String rawDist = String.fromEnvironment('SENTRY_DIST');
-    const String rawEnabled = String.fromEnvironment('SENTRY_ENABLED', defaultValue: _autoEnabledValue);
+    const String rawEnvironment = Env.sentryEnvironment;
+    const String rawRelease = Env.sentryRelease;
+    const String rawDist = Env.sentryDist;
+    const String rawEnabled = Env.sentryEnabled;
 
     return SentryConfig.fromRaw(
       dsn: rawDsn,

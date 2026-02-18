@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
@@ -53,7 +54,6 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
   Future<String>? _futureView;
   late Box box;
 
-  static const platform = MethodChannel('flutter.prism.set_wallpaper');
   @override
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
@@ -1123,39 +1123,31 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                       logger.d('(SDK $sdkInt)');
                       toasts.codeSend("Starting Download");
 
-                      if (sdkInt >= 30) {
-                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
-                          if (value as bool) {
-                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
-                            toasts.codeSend("Setup Downloaded in Pictures/Prism Setups!");
-                          } else {
-                            toasts.error("Couldn't download! Please Retry!");
-                          }
+                      final request = SaveMediaRequest(
+                        link: link,
+                        isLocalFile: false,
+                        kind: SaveMediaKind.setup,
+                      );
+                      try {
+                        final result = await PrismMediaHostApi().saveMedia(request);
+                        if (result.success) {
+                          analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                          toasts.codeSend("Setup Downloaded in Pictures/Prism Setups!");
+                        } else {
+                          toasts.error("Couldn't download! Please Retry!");
+                        }
+                      } on PlatformException catch (e) {
+                        logger.e('saveMedia failed', error: e);
+                        toasts.error("Couldn't download! Please Retry!");
+                      } catch (e) {
+                        logger.e('Unexpected saveMedia failure', error: e);
+                        toasts.error("Something went wrong!");
+                      } finally {
+                        if (mounted) {
                           setState(() {
                             isLoading = false;
                           });
-                        }).catchError((e) {
-                          logger.d(e.toString());
-                          setState(() {
-                            isLoading = false;
-                          });
-                        });
-                      } else {
-                        await platform.invokeMethod('save_setup', {"link": link}).then((value) {
-                          if (value as bool) {
-                            analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
-                            toasts.codeSend("Setup Downloaded in Internal Storage/Prism Setups!");
-                          } else {
-                            toasts.error("Couldn't download! Please Retry!");
-                          }
-                          setState(() {
-                            isLoading = false;
-                          });
-                        }).catchError((e) {
-                          setState(() {
-                            isLoading = false;
-                          });
-                        });
+                        }
                       }
                     },
                     color: Theme.of(context).colorScheme.secondary,

@@ -19,13 +19,11 @@ class PurchasesService {
   bool _configured = false;
   String _configuredUserId = '';
 
-  static const String _rcAndroidApiKey = String.fromEnvironment('RC_ANDROID_API_KEY', defaultValue: Env.rcApiKey);
-  static const String _rcIosApiKey = String.fromEnvironment('RC_IOS_API_KEY', defaultValue: Env.rcApiKey);
-
   static String _resolveApiKey() {
-    if (Platform.isIOS) return _rcIosApiKey;
-    if (Platform.isAndroid) return _rcAndroidApiKey;
-    return _rcAndroidApiKey;
+    const String fallbackApiKey = Env.rcApiKey;
+    if (Platform.isIOS) return Env.rcIosApiKey.isNotEmpty ? Env.rcIosApiKey : fallbackApiKey;
+    if (Platform.isAndroid) return Env.rcAndroidApiKey.isNotEmpty ? Env.rcAndroidApiKey : fallbackApiKey;
+    return Env.rcAndroidApiKey.isNotEmpty ? Env.rcAndroidApiKey : fallbackApiKey;
   }
 
   /// Ensures RevenueCat is configured and logged in as the given user.

@@ -1,10 +1,8 @@
-import 'dart:io' show Platform;
-
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -22,26 +20,16 @@ class SetWallpaperButton extends StatefulWidget {
 }
 
 class _SetWallpaperButtonState extends State<SetWallpaperButton> {
-  static const platform = MethodChannel("flutter.prism.set_wallpaper");
   bool isLoading = false;
 
   Future<void> _setWallPaper() async {
     bool? result;
     try {
-      if (widget.url!.contains("com.hash.prism")) {
-        result = await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
-          'url': widget.url,
-        });
-      } else if (widget.url!.contains("/0/")) {
-        result = await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
-          'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result = await platform.invokeMethod("set_wallpaper", <String, dynamic>{
-          'url': widget.url,
-        });
-      }
-      if (result!) {
+      result = await WallpaperService.setWallpaperFromSource(
+        widget.url!,
+        WallpaperTarget.both,
+      );
+      if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
       } else {
@@ -56,26 +44,23 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       logger.d(e.toString());
+      toasts.error("Something went wrong!");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _setBothWallPaper() async {
     bool? result;
     try {
-      if (widget.url!.contains("com.hash.prism")) {
-        result = await platform.invokeMethod("set_both_wallpaper_file", <String, dynamic>{
-          'url': widget.url,
-        });
-      } else if (widget.url!.contains("/0/")) {
-        result = await platform.invokeMethod("set_both_wallpaper_file", <String, dynamic>{
-          'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result = await platform.invokeMethod("set_both_wallpaper", <String, dynamic>{
-          'url': widget.url,
-        });
-      }
-      if (result!) {
+      result = await WallpaperService.setWallpaperFromSource(
+        widget.url!,
+        WallpaperTarget.both,
+      );
+      if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
@@ -91,26 +76,23 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       logger.d(e.toString());
+      toasts.error("Something went wrong!");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _setLockWallPaper() async {
     bool? result;
     try {
-      if (widget.url!.contains("com.hash.prism")) {
-        result = await platform.invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
-          'url': widget.url,
-        });
-      } else if (widget.url!.contains("/0/")) {
-        result = await platform.invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
-          'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result = await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
-          'url': widget.url,
-        });
-      }
-      if (result!) {
+      result = await WallpaperService.setWallpaperFromSource(
+        widget.url!,
+        WallpaperTarget.lock,
+      );
+      if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
@@ -126,26 +108,23 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       logger.d(e.toString());
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
+      toasts.error("Something went wrong!");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _setHomeWallPaper() async {
     bool? result;
     try {
-      if (widget.url!.contains("com.hash.prism")) {
-        result = await platform.invokeMethod("set_home_wallpaper_file", <String, dynamic>{
-          'url': widget.url,
-        });
-      } else if (widget.url!.contains("/0/")) {
-        result = await platform.invokeMethod("set_home_wallpaper_file", <String, dynamic>{
-          'url': "/${widget.url!.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result = await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
-          'url': widget.url,
-        });
-      }
-      if (result!) {
+      result = await WallpaperService.setWallpaperFromSource(
+        widget.url!,
+        WallpaperTarget.home,
+      );
+      if (result) {
         logger.d("Success");
         analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
@@ -161,6 +140,12 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       logger.d(e.toString());
       analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
+      toasts.error("Something went wrong!");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -182,20 +167,6 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: () async {
-        if (Platform.isAndroid) {
-          final androidInfo = await DeviceInfoPlugin().androidInfo;
-          final sdkInt = androidInfo.version.sdkInt;
-          logger.d('(SDK $sdkInt)');
-          isLoading
-              ? logger.d("")
-              : sdkInt >= 24
-                  ? onPaint()
-                  : toasts.error("Crop is supported for Android 7.0 and above!");
-        } else {
-          toasts.error("Sorry crop is supported for Android 7.0 and above!");
-        }
-      },
       onTap: () {
         isLoading
             ? logger.d("")
