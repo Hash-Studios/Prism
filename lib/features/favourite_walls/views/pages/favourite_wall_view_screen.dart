@@ -730,6 +730,15 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                   link: screenshotTaken
                                       ? _imageFile.path
                                       : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                                  isPremiumContent: globals.isPremiumWall(
+                                    globals.premiumCollections,
+                                    context.favouriteWallsAdapter(listen: false).liked![index]["collections"]
+                                            as List? ??
+                                        [],
+                                  ),
+                                  contentId:
+                                      context.favouriteWallsAdapter(listen: false).liked![index]["id"]?.toString(),
+                                  sourceContext: 'favourite_wall_view',
                                 ),
                                 SetWallpaperButton(
                                   colorChanged: colorChanged,
@@ -1168,6 +1177,17 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                           DownloadButton(
                                             colorChanged: colorChanged,
                                             link: screenshotTaken ? _imageFile.path : downloadLinkBackwards,
+                                            isPremiumContent: globals.isPremiumWall(
+                                              globals.premiumCollections,
+                                              context.favouriteWallsAdapter(listen: false).liked![index]["collections"]
+                                                      as List? ??
+                                                  [],
+                                            ),
+                                            contentId: context
+                                                .favouriteWallsAdapter(listen: false)
+                                                .liked![index]["id"]
+                                                ?.toString(),
+                                            sourceContext: 'favourite_wall_view',
                                           ),
                                           SetWallpaperButton(
                                             colorChanged: colorChanged,
@@ -1220,6 +1240,17 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                 .favouriteWallsAdapter(listen: false)
                                                 .liked![index]["url"]
                                                 .toString(),
+                                        isPremiumContent: globals.isPremiumWall(
+                                          globals.premiumCollections,
+                                          context.favouriteWallsAdapter(listen: false).liked![index]["collections"]
+                                                  as List? ??
+                                              [],
+                                        ),
+                                        contentId: context
+                                            .favouriteWallsAdapter(listen: false)
+                                            .liked![index]["id"]
+                                            ?.toString(),
+                                        sourceContext: 'favourite_wall_view',
                                       ),
                                       SetWallpaperButton(
                                         colorChanged: colorChanged,

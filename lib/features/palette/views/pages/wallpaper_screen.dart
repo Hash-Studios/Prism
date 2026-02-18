@@ -899,10 +899,17 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                     children: <Widget>[
                                       DownloadButton(
-                                          colorChanged: colorChanged,
-                                          link: screenshotTaken
-                                              ? _imageFile.path
-                                              : data.subPrismWalls![index]["wallpaper_url"].toString()),
+                                        colorChanged: colorChanged,
+                                        link: screenshotTaken
+                                            ? _imageFile.path
+                                            : data.subPrismWalls![index]["wallpaper_url"].toString(),
+                                        isPremiumContent: globals.isPremiumWall(
+                                          globals.premiumCollections,
+                                          data.subPrismWalls![index]["collections"] as List? ?? [],
+                                        ),
+                                        contentId: data.subPrismWalls![index]["id"]?.toString(),
+                                        sourceContext: 'wallpaper_screen.prism',
+                                      ),
                                       SetWallpaperButton(
                                           colorChanged: colorChanged,
                                           url: screenshotTaken

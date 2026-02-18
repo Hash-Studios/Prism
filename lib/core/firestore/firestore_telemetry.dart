@@ -12,6 +12,7 @@ enum FirestoreOperation {
   update,
   delete,
   add,
+  transaction,
 }
 
 class FirestoreTelemetryEvent {

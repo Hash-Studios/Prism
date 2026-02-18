@@ -6,7 +6,6 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
 import 'package:Prism/core/widgets/premiumBanners/wallsCarousel.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
@@ -45,15 +44,6 @@ class _WallpaperGridState extends State<WallpaperGrid> {
     Data.prismWalls = [];
     Data.subPrismWalls = [];
     await Data.getPrismWalls();
-  }
-
-  void showGooglePopUp(BuildContext context, VoidCallback func) {
-    logger.d(globals.prismUser.loggedIn.toString());
-    if (globals.prismUser.loggedIn == false) {
-      googleSignInPopUp(context, func);
-    } else {
-      func();
-    }
   }
 
   Future<void> _triggerSeeMore(List<dynamic> subWalls) async {
@@ -195,17 +185,11 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             if (wall == null) {
                               return;
                             }
-                            globals.isPremiumWall(globals.premiumCollections, wall["collections"] as List? ?? []) ==
-                                        true &&
-                                    globals.prismUser.premium != true
-                                ? showGooglePopUp(context, () {
-                                    context.router.push(const UpgradeRoute());
-                                  })
-                                : context.router.push(WallpaperRoute(arguments: [
-                                    widget.provider,
-                                    i,
-                                    wall["wallpaper_thumb"],
-                                  ]));
+                            context.router.push(WallpaperRoute(arguments: [
+                              widget.provider,
+                              i,
+                              wall["wallpaper_thumb"],
+                            ]));
                           },
                           child: wall == null
                               ? Container(

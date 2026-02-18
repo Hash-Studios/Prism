@@ -20,6 +20,47 @@ class _QueryCacheEntry {
   final DateTime cachedAt;
 }
 
+class _FirestoreTransactionBridge implements FirestoreTransaction {
+  _FirestoreTransactionBridge(this._firestore, this._transaction);
+
+  final FirebaseFirestore _firestore;
+  final Transaction _transaction;
+
+  @override
+  Future<Map<String, dynamic>?> getDoc(String collection, String id) async {
+    final DocumentReference<Map<String, dynamic>> ref = _firestore.collection(collection).doc(id);
+    final DocumentSnapshot<Map<String, dynamic>> snapshot = await _transaction.get(ref);
+    return snapshot.data();
+  }
+
+  @override
+  void setDoc(
+    String collection,
+    String id,
+    Map<String, dynamic> data, {
+    bool merge = false,
+  }) {
+    final DocumentReference<Map<String, dynamic>> ref = _firestore.collection(collection).doc(id);
+    _transaction.set(ref, data, SetOptions(merge: merge));
+  }
+
+  @override
+  void updateDoc(
+    String collection,
+    String id,
+    Map<String, dynamic> data,
+  ) {
+    final DocumentReference<Map<String, dynamic>> ref = _firestore.collection(collection).doc(id);
+    _transaction.update(ref, data);
+  }
+
+  @override
+  void deleteDoc(String collection, String id) {
+    final DocumentReference<Map<String, dynamic>> ref = _firestore.collection(collection).doc(id);
+    _transaction.delete(ref);
+  }
+}
+
 class FirestoreTrackedClient implements FirestoreClient {
   FirestoreTrackedClient(
     this._firestore,
@@ -457,6 +498,51 @@ class FirestoreTrackedClient implements FirestoreClient {
           filtersHash: '$collection:$id',
           durationMs: sw.elapsedMilliseconds,
           docId: id,
+          success: false,
+          errorCode: mapped.code,
+        ),
+      );
+      throw mapped;
+    }
+  }
+
+  @override
+  Future<T> runTransaction<T>(
+    Future<T> Function(FirestoreTransaction transaction) action, {
+    required String sourceTag,
+    required String collection,
+    String? docId,
+  }) async {
+    final Stopwatch sw = Stopwatch()..start();
+    try {
+      final T result = await _firestore.runTransaction<T>((Transaction transaction) async {
+        final _FirestoreTransactionBridge bridge = _FirestoreTransactionBridge(_firestore, transaction);
+        return action(bridge);
+      });
+      await _emitTelemetry(
+        FirestoreTelemetryEvent(
+          timestamp: DateTime.now(),
+          sourceTag: sourceTag,
+          operation: FirestoreOperation.transaction,
+          collection: collection,
+          filtersHash: docId == null ? collection : '$collection:$docId',
+          durationMs: sw.elapsedMilliseconds,
+          docId: docId,
+          success: true,
+        ),
+      );
+      return result;
+    } catch (error) {
+      final FirestoreError mapped = mapFirestoreError(error);
+      await _emitTelemetry(
+        FirestoreTelemetryEvent(
+          timestamp: DateTime.now(),
+          sourceTag: sourceTag,
+          operation: FirestoreOperation.transaction,
+          collection: collection,
+          filtersHash: docId == null ? collection : '$collection:$docId',
+          durationMs: sw.elapsedMilliseconds,
+          docId: docId,
           success: false,
           errorCode: mapped.code,
         ),

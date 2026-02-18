@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/popups/category_popup.dart';
@@ -183,6 +184,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
         ),
       ),
       actions: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 10),
+          child: CoinBalanceChip(sourceTag: 'coins.chip.categories_bar'),
+        ),
         IconButton(
           icon: Icon(
             JamIcons.grid,

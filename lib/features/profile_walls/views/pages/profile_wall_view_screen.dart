@@ -429,6 +429,12 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                     .profileWallsSnapshots(listen: false)![index]
                                     .data()["wallpaper_url"]
                                     .toString(),
+                            isPremiumContent: globals.isPremiumWall(
+                              globals.premiumCollections,
+                              context.profileWallsSnapshots(listen: false)![index].data()["collections"] as List? ?? [],
+                            ),
+                            contentId: context.profileWallsSnapshots(listen: false)![index].data()["id"]?.toString(),
+                            sourceContext: 'profile_wall_view',
                           ),
                           SetWallpaperButton(
                             colorChanged: colorChanged,

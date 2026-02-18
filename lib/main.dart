@@ -6,6 +6,7 @@ import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
@@ -335,8 +336,9 @@ class MyApp extends StatefulWidget {
   _MyAppState createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
+  bool _coinSyncInFlight = false;
 
   Future<bool> getLoginStatus() async {
     bool value = await globals.gAuth.isSignedIn();
@@ -375,6 +377,7 @@ class _MyAppState extends State<MyApp> {
     }
     if (value) {
       await PurchasesService.instance.checkAndPersistPremium();
+      unawaited(_syncCoinEconomy(sourceTag: 'startup_login_status'));
     }
     globals.prismUser.loggedIn = value;
     prefs.put(userHiveKey, globals.prismUser);
@@ -385,6 +388,38 @@ class _MyAppState extends State<MyApp> {
       username: globals.prismUser.username,
     );
     return value;
+  }
+
+  Future<void> _syncCoinEconomy({required String sourceTag}) async {
+    if (_coinSyncInFlight) {
+      return;
+    }
+    if (!globals.prismUser.loggedIn || globals.prismUser.id.trim().isEmpty) {
+      return;
+    }
+    _coinSyncInFlight = true;
+    try {
+      await CoinsService.instance.bootstrapForCurrentUser();
+      await CoinsService.instance.refreshBalance();
+      await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
+      await CoinsService.instance.maybeAwardProDailyBonus();
+      await CoinsService.instance.processPendingReferralIfEligible();
+    } catch (error, stackTrace) {
+      CoinsService.instance.logCoinError(
+        sourceTag: 'coins.main.$sourceTag',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _coinSyncInFlight = false;
+    }
+  }
+
+  String _referralInviterFromAction(DeepLinkActionEntity action) {
+    if (action.arguments.isEmpty) {
+      return '';
+    }
+    return action.arguments.first?.toString().trim() ?? '';
   }
 
   Future<void> _configureDisplayMode() async {
@@ -451,7 +486,16 @@ class _MyAppState extends State<MyApp> {
     } else if (action.type == DeepLinkActionType.setup) {
       _appRouter.push(ShareSetupViewRoute(arguments: action.arguments));
     } else if (action.type == DeepLinkActionType.refer) {
-      // TODO: add referral handling.
+      final String inviterUserId = _referralInviterFromAction(action);
+      if (inviterUserId.isEmpty) {
+        return;
+      }
+      unawaited(CoinsService.instance.setPendingReferralInviterId(inviterUserId));
+      if (globals.prismUser.loggedIn) {
+        unawaited(CoinsService.instance.processPendingReferralIfEligible(inviterUserId: inviterUserId));
+      } else {
+        toasts.codeSend('Referral saved. Sign in to claim +100 coins.');
+      }
     }
   }
 
@@ -494,10 +538,14 @@ class _MyAppState extends State<MyApp> {
       );
     }
     if (segment == 'refer') {
+      final String? inviterId = uri.queryParameters['userID'] ??
+          uri.queryParameters['userId'] ??
+          uri.queryParameters['userid'] ??
+          uri.queryParameters['id'];
       return DeepLinkActionEntity(
         type: DeepLinkActionType.refer,
         route: '',
-        arguments: const <dynamic>[],
+        arguments: <dynamic>[inviterId],
         rawUri: uri.toString(),
       );
     }
@@ -557,11 +605,25 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _appRouter = AppRouter();
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
     unawaited(getLoginStatus());
     unawaited(localNotification.fetchNotificationData(context));
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override

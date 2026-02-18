@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/env/env.dart';
@@ -56,6 +57,7 @@ Future<void> createRecord(
         'collections': ["community"],
       },
       sourceTag: 'upload.createWall');
+  await CoinsService.instance.maybeAwardFirstWallpaperUpload();
   if (globals.prismUser.premium == true) {
     http.post(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),

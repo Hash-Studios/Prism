@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
@@ -242,96 +243,98 @@ class _ProfileChildState extends State<ProfileChild> {
                                       context.router.push(const EditProfilePanelRoute());
                                     }),
                               ),
-                        actions: !widget.ownProfile! || globals.prismUser.loggedIn == false
-                            ? [
-                                if (globals.prismUser.loggedIn == false)
-                                  Container()
-                                else
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: ((widget.followers ?? []).contains(globals.prismUser.email))
-                                        ? IconButton(
-                                            alignment: Alignment.centerRight,
-                                            padding: const EdgeInsets.all(2),
-                                            icon: Container(
-                                              padding: const EdgeInsets.all(6.0),
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                              ),
-                                              child: Icon(JamIcons.user_remove,
-                                                  color: Theme.of(context).colorScheme.secondary),
-                                            ),
-                                            onPressed: () {
-                                              unfollow(widget.email!, widget.id!);
-                                              toasts.error("Unfollowed ${widget.name}!");
-                                            })
-                                        : IconButton(
-                                            alignment: Alignment.centerRight,
-                                            padding: const EdgeInsets.all(2),
-                                            icon: Container(
-                                              padding: const EdgeInsets.all(6.0),
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                              ),
-                                              child: Icon(JamIcons.user_plus,
-                                                  color: Theme.of(context).colorScheme.secondary),
-                                            ),
-                                            onPressed: () {
-                                              follow(widget.email!, widget.id!);
-                                              http.post(
-                                                Uri.parse(
-                                                  'https://fcm.googleapis.com/fcm/send',
-                                                ),
-                                                headers: <String, String>{
-                                                  'Content-Type': 'application/json',
-                                                  'Authorization': 'key=${Env.fcmServerKey}',
-                                                },
-                                                body: jsonEncode(
-                                                  <String, dynamic>{
-                                                    'notification': <String, dynamic>{
-                                                      'title': '🎉 New Follower!',
-                                                      'body': '${globals.prismUser.username} is now following you.',
-                                                      'color': "#e57697",
-                                                      'tag': '${globals.prismUser.username} Follow',
-                                                      'image': globals.prismUser.profilePhoto,
-                                                      'android_channel_id': "followers",
-                                                      'icon': '@drawable/ic_follow'
-                                                    },
-                                                    'priority': 'high',
-                                                    'data': <String, dynamic>{
-                                                      'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-                                                      'id': '1',
-                                                      'status': 'done'
-                                                    },
-                                                    'to': "/topics/${widget.email!.split("@")[0]}"
-                                                  },
-                                                ),
-                                              );
-                                              toasts.codeSend("Followed ${widget.name}!");
-                                            }),
-                                  )
-                              ]
-                            : [
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: IconButton(
-                                      alignment: Alignment.centerRight,
-                                      padding: const EdgeInsets.all(2),
-                                      icon: Container(
-                                        padding: const EdgeInsets.all(6.0),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                        actions: [
+                          if (globals.prismUser.loggedIn)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: CoinBalanceChip(sourceTag: 'coins.chip.profile_screen'),
+                            ),
+                          if (!widget.ownProfile! || globals.prismUser.loggedIn == false)
+                            if (globals.prismUser.loggedIn)
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: ((widget.followers ?? []).contains(globals.prismUser.email))
+                                    ? IconButton(
+                                        alignment: Alignment.centerRight,
+                                        padding: const EdgeInsets.all(2),
+                                        icon: Container(
+                                          padding: const EdgeInsets.all(6.0),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                          ),
+                                          child: Icon(JamIcons.user_remove,
+                                              color: Theme.of(context).colorScheme.secondary),
                                         ),
-                                        child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
-                                      ),
-                                      onPressed: () {
-                                        widget.parentScaffoldKey?.currentState?.openEndDrawer();
-                                      }),
-                                )
-                              ],
+                                        onPressed: () {
+                                          unfollow(widget.email!, widget.id!);
+                                          toasts.error("Unfollowed ${widget.name}!");
+                                        })
+                                    : IconButton(
+                                        alignment: Alignment.centerRight,
+                                        padding: const EdgeInsets.all(2),
+                                        icon: Container(
+                                          padding: const EdgeInsets.all(6.0),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                          ),
+                                          child:
+                                              Icon(JamIcons.user_plus, color: Theme.of(context).colorScheme.secondary),
+                                        ),
+                                        onPressed: () {
+                                          follow(widget.email!, widget.id!);
+                                          http.post(
+                                            Uri.parse(
+                                              'https://fcm.googleapis.com/fcm/send',
+                                            ),
+                                            headers: <String, String>{
+                                              'Content-Type': 'application/json',
+                                              'Authorization': 'key=${Env.fcmServerKey}',
+                                            },
+                                            body: jsonEncode(
+                                              <String, dynamic>{
+                                                'notification': <String, dynamic>{
+                                                  'title': '🎉 New Follower!',
+                                                  'body': '${globals.prismUser.username} is now following you.',
+                                                  'color': "#e57697",
+                                                  'tag': '${globals.prismUser.username} Follow',
+                                                  'image': globals.prismUser.profilePhoto,
+                                                  'android_channel_id': "followers",
+                                                  'icon': '@drawable/ic_follow'
+                                                },
+                                                'priority': 'high',
+                                                'data': <String, dynamic>{
+                                                  'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+                                                  'id': '1',
+                                                  'status': 'done'
+                                                },
+                                                'to': "/topics/${widget.email!.split("@")[0]}"
+                                              },
+                                            ),
+                                          );
+                                          toasts.codeSend("Followed ${widget.name}!");
+                                        }),
+                              ),
+                          if (widget.ownProfile! && globals.prismUser.loggedIn)
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.all(2),
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(6.0),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                    ),
+                                    child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
+                                  ),
+                                  onPressed: () {
+                                    widget.parentScaffoldKey?.currentState?.openEndDrawer();
+                                  }),
+                            ),
+                        ],
                         backgroundColor: Theme.of(context).primaryColor,
                         automaticallyImplyLeading: false,
                         expandedHeight: (widget.links ?? {}).keys.toList().isEmpty

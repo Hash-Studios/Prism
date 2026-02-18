@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/env/env.dart';
@@ -1012,6 +1013,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               "name": nameController.text,
                             }, 'profile.edit.name');
                           }
+                          await CoinsService.instance.maybeAwardProfileCompletion();
                           setState(() {
                             isLoading = false;
                           });
@@ -1065,6 +1067,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   "links": links,
                                 }, 'profile.edit.links.withUsername');
                               }
+                              await CoinsService.instance.maybeAwardProfileCompletion();
                               setState(() {
                                 isLoading = false;
                               });

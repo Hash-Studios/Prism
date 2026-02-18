@@ -1640,6 +1640,43 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             .liked![widget.index]["url"]
                                             .toString()
                                         : PData.wallsC[widget.index].src!["original"].toString(),
+                isPremiumContent: widget.provider == "Prism"
+                    ? globals.isPremiumWall(
+                        globals.premiumCollections,
+                        Data.subPrismWalls![widget.index]["collections"] as List? ?? [],
+                      )
+                    : widget.provider == "ProfileWall"
+                        ? globals.isPremiumWall(
+                            globals.premiumCollections,
+                            context.profileWallsSnapshots(listen: false)![widget.index].data()["collections"]
+                                    as List? ??
+                                [],
+                          )
+                        : widget.provider == "UserProfileWall"
+                            ? globals.isPremiumWall(
+                                globals.premiumCollections,
+                                context.publicProfileAdapter().userProfileWalls![widget.index].data()["collections"]
+                                        as List? ??
+                                    [],
+                              )
+                            : widget.provider == "Liked"
+                                ? globals.isPremiumWall(
+                                    globals.premiumCollections,
+                                    context.favouriteWallsAdapter(listen: false).liked![widget.index]["collections"]
+                                            as List? ??
+                                        [],
+                                  )
+                                : false,
+                contentId: widget.provider == "Prism"
+                    ? Data.subPrismWalls![widget.index]["id"]?.toString()
+                    : widget.provider == "ProfileWall"
+                        ? context.profileWallsSnapshots(listen: false)![widget.index].data()["id"]?.toString()
+                        : widget.provider == "UserProfileWall"
+                            ? context.publicProfileAdapter().userProfileWalls![widget.index].data()["id"]?.toString()
+                            : widget.provider == "Liked"
+                                ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["id"]?.toString()
+                                : null,
+                sourceContext: 'focused_menu.${widget.provider ?? "unknown"}',
               ),
             ),
           ],

@@ -91,7 +91,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.6,
                 child: Text(
-                  "Get 50 coins when your friend launches the app from the link!",
+                  "Get 100 coins when your friend signs up from the link!",
                   textAlign: TextAlign.center,
                   style: Theme.of(context)
                       .textTheme
@@ -102,7 +102,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.6,
                 child: Text(
-                  "They also get 50 coins, which you can spend on exclusives.",
+                  "They also get 100 coins for joining Prism.",
                   textAlign: TextAlign.center,
                   style: Theme.of(context)
                       .textTheme

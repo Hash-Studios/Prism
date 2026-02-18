@@ -437,6 +437,13 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                     .userProfileWalls![index]
                                     .data()["wallpaper_url"]
                                     .toString(),
+                            isPremiumContent: globals.isPremiumWall(
+                              globals.premiumCollections,
+                              context.publicProfileAdapter().userProfileWalls![index].data()["collections"] as List? ??
+                                  [],
+                            ),
+                            contentId: context.publicProfileAdapter().userProfileWalls![index].data()["id"]?.toString(),
+                            sourceContext: 'user_profile_wall_view',
                           ),
                           SetWallpaperButton(
                             colorChanged: colorChanged,

@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
@@ -121,14 +122,12 @@ class _SearchScreenState extends State<SearchScreen> {
           automaticallyImplyLeading: false,
           titleSpacing: 0,
           title: Row(
-            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(top: 6.0),
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.9,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
                   child: Padding(
-                    padding: const EdgeInsets.all(4.0),
+                    padding: const EdgeInsets.all(4),
                     child: Column(
                       children: [
                         Container(
@@ -178,7 +177,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
               SizedBox(
-                width: MediaQuery.of(context).size.width * 0.1,
+                width: 40,
                 child: PopupMenuButton(
                   offset: const Offset(5, 30),
                   icon: Icon(JamIcons.more_vertical, color: Theme.of(context).colorScheme.secondary),
@@ -226,7 +225,10 @@ class _SearchScreenState extends State<SearchScreen> {
                     }).toList();
                   },
                 ),
-              )
+              ),
+              const SizedBox(width: 6),
+              const CoinBalanceChip(sourceTag: 'coins.chip.search_screen'),
+              const SizedBox(width: 4),
             ],
           ),
           bottom: PreferredSize(

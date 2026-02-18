@@ -1,13 +1,9 @@
 import 'package:auto_route/auto_route.dart';
-import 'dart:developer';
 
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_grid.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -20,15 +16,6 @@ class WallpaperTile extends StatelessWidget {
 
   final WallpaperGrid widget;
   final int index;
-
-  void showGooglePopUp(BuildContext context, VoidCallback func) {
-    logger.d(globals.prismUser.loggedIn.toString());
-    if (globals.prismUser.loggedIn == false) {
-      googleSignInPopUp(context, func);
-    } else {
-      func();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,19 +64,11 @@ class WallpaperTile extends StatelessWidget {
                 if (!hasWall || wallData == null) {
                   return;
                 }
-                final List<dynamic> collections = wallData["collections"] as List? ?? <dynamic>[];
-                log((globals.isPremiumWall(globals.premiumCollections, collections) == true).toString());
-                log(globals.prismUser.premium.toString());
-                globals.isPremiumWall(globals.premiumCollections, collections) == true &&
-                        globals.prismUser.premium != true
-                    ? showGooglePopUp(context, () {
-                        context.router.push(const UpgradeRoute());
-                      })
-                    : context.router.push(WallpaperRoute(arguments: [
-                        widget.provider,
-                        index,
-                        wallData["wallpaper_thumb"],
-                      ]));
+                context.router.push(WallpaperRoute(arguments: [
+                  widget.provider,
+                  index,
+                  wallData["wallpaper_thumb"],
+                ]));
               },
             ),
           ),

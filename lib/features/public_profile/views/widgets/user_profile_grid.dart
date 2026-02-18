@@ -3,13 +3,11 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -261,15 +259,6 @@ class PhotographerWallTile extends StatelessWidget {
   final Animation<Color?>? animation;
   final int index;
 
-  void showGooglePopUp(BuildContext context, VoidCallback func) {
-    logger.d(globals.prismUser.loggedIn.toString());
-    if (globals.prismUser.loggedIn == false) {
-      googleSignInPopUp(context, func);
-    } else {
-      func();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final String imageUrl = context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_thumb"] == null
@@ -300,25 +289,10 @@ class PhotographerWallTile extends StatelessWidget {
               onTap: () {
                 if (context.publicProfileAdapter(listen: false).userProfileWalls == []) {
                 } else {
-                  globals.isPremiumWall(
-                                  globals.premiumCollections,
-                                  context
-                                          .publicProfileAdapter(listen: false)
-                                          .userProfileWalls![index]
-                                          .data()["collections"] as List? ??
-                                      []) ==
-                              true &&
-                          globals.prismUser.premium != true
-                      ? showGooglePopUp(context, () {
-                          context.router.push(const UpgradeRoute());
-                        })
-                      : context.router.push(UserProfileWallViewRoute(arguments: [
-                          index,
-                          context
-                              .publicProfileAdapter(listen: false)
-                              .userProfileWalls![index]
-                              .data()["wallpaper_thumb"],
-                        ]));
+                  context.router.push(UserProfileWallViewRoute(arguments: [
+                    index,
+                    context.publicProfileAdapter(listen: false).userProfileWalls![index].data()["wallpaper_thumb"],
+                  ]));
                 }
               },
             ),
