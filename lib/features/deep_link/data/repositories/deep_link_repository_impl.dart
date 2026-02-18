@@ -4,15 +4,16 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:Prism/features/deep_link/domain/repositories/deep_link_repository.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:app_links/app_links.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: DeepLinkRepository)
 class DeepLinkRepositoryImpl implements DeepLinkRepository {
-  DeepLinkRepositoryImpl(this._dynamicLinks);
+  DeepLinkRepositoryImpl(this._appLinks);
 
-  final FirebaseDynamicLinks _dynamicLinks;
+  final AppLinks _appLinks;
   final StreamController<DeepLinkActionEntity> _controller = StreamController<DeepLinkActionEntity>.broadcast();
+  StreamSubscription<Uri>? _appLinksSubscription;
   bool _isInitialized = false;
 
   DeepLinkActionEntity _parseUri(Uri uri) {
@@ -80,9 +81,8 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
       return;
     }
     _isInitialized = true;
-    _dynamicLinks.onLink.listen(
-      (dynamicLinkData) {
-        final uri = dynamicLinkData.link;
+    _appLinksSubscription = _appLinks.uriLinkStream.listen(
+      (Uri uri) {
         _controller.add(_parseUri(uri));
       },
       onError: (Object error) {
@@ -102,8 +102,7 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
   Future<Result<DeepLinkActionEntity?>> getInitialAction() async {
     try {
       _ensureWatcher();
-      final data = await _dynamicLinks.getInitialLink();
-      final uri = data?.link;
+      final uri = await _appLinks.getInitialLink();
       if (uri == null) {
         return Result.success(null);
       }
@@ -117,5 +116,11 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
   Stream<DeepLinkActionEntity> watchActions() {
     _ensureWatcher();
     return _controller.stream;
+  }
+
+  @disposeMethod
+  Future<void> dispose() async {
+    await _appLinksSubscription?.cancel();
+    await _controller.close();
   }
 }

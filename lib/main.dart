@@ -12,10 +12,11 @@ import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
+import 'package:Prism/features/deep_link/deep_link.dart';
+import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/palette/palette.dart';
@@ -43,6 +44,7 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_io/hive_io.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 String userHiveKey = "prismUserV2-1";
 late Box prefs;
@@ -250,6 +252,9 @@ Future<void> main() async {
               BlocProvider<ThemeModeBloc>(
                 create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
               ),
+              BlocProvider<DeepLinkBloc>(
+                create: (_) => getIt<DeepLinkBloc>()..add(const DeepLinkEvent.started()),
+              ),
             ],
             child: MyApp(),
           ),
@@ -446,20 +451,38 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: _appRouter.config(
-        navigatorObservers: () => [
-          FirebaseAnalyticsObserver(analytics: analytics),
-          if (MonitoringRuntime.reporter.isEnabled)
-            SentryNavigatorObserver(
-              enableAutoTransactions: false,
-              ignoreRoutes: <String>['/'],
-            ),
-        ],
+    return BlocListener<DeepLinkBloc, DeepLinkState>(
+      listenWhen: (previous, current) => previous.latestAction?.rawUri != current.latestAction?.rawUri,
+      listener: (context, state) {
+        final action = state.latestAction;
+        if (action == null) {
+          return;
+        }
+        if (action.type == DeepLinkActionType.share) {
+          _appRouter.push(ShareWallpaperViewRoute(arguments: action.arguments));
+        } else if (action.type == DeepLinkActionType.user) {
+          _appRouter.push(ProfileRoute(arguments: action.arguments));
+        } else if (action.type == DeepLinkActionType.setup) {
+          _appRouter.push(ShareSetupViewRoute(arguments: action.arguments));
+        } else if (action.type == DeepLinkActionType.refer) {
+          // TODO: add referral handling.
+        }
+      },
+      child: MaterialApp.router(
+        routerConfig: _appRouter.config(
+          navigatorObservers: () => [
+            FirebaseAnalyticsObserver(analytics: analytics),
+            if (MonitoringRuntime.reporter.isEnabled)
+              SentryNavigatorObserver(
+                enableAutoTransactions: false,
+                ignoreRoutes: <String>['/'],
+              ),
+          ],
+        ),
+        theme: context.prismLightTheme(),
+        darkTheme: context.prismDarkTheme(),
+        themeMode: context.prismThemeMode(),
       ),
-      theme: context.prismLightTheme(),
-      darkTheme: context.prismDarkTheme(),
-      themeMode: context.prismThemeMode(),
     );
   }
 }

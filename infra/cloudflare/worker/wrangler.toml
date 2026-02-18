@@ -1,0 +1,21 @@
+name = "prismwalls-links"
+main = "src/index.ts"
+compatibility_date = "2026-02-18"
+
+routes = [
+  { pattern = "prismwalls.com/api/*", zone_name = "prismwalls.com" },
+  { pattern = "prismwalls.com/l/*", zone_name = "prismwalls.com" },
+  { pattern = "prismwalls.com/share*", zone_name = "prismwalls.com" },
+  { pattern = "prismwalls.com/user*", zone_name = "prismwalls.com" },
+  { pattern = "prismwalls.com/setup*", zone_name = "prismwalls.com" },
+  { pattern = "prismwalls.com/refer*", zone_name = "prismwalls.com" }
+]
+
+[vars]
+PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.hash.prism"
+APP_STORE_URL = "https://apps.apple.com/app/id1405860595"
+
+[[kv_namespaces]]
+binding = "LINKS_KV"
+id = "REPLACE_WITH_PROD_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
