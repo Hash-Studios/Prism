@@ -199,13 +199,6 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
       listenWhen: (previous, current) =>
           previous.ads != current.ads || previous.shouldUnlockDownload != current.shouldUnlockDownload,
       listener: (context, state) {
-        if (state.ads.adFailed) {
-          context.read<AdsBloc>().add(const AdsEvent.transientStateCleared());
-          context.router.replace(const AdsNotLoadingRoute());
-          widget.rewardFunc();
-          return;
-        }
-
         if (state.shouldUnlockDownload) {
           widget.rewardFunc();
           context.read<AdsBloc>().add(const AdsEvent.transientStateCleared());
@@ -214,7 +207,8 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
       },
       builder: (context, state) {
         final ads = state.ads;
-        final canWatchAd = !ads.loadingAd && ads.adLoaded;
+        final adFailed = ads.adFailed;
+        final canWatchAd = !ads.loadingAd && ads.adLoaded && !adFailed;
 
         return Container(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: Theme.of(context).primaryColor),
@@ -279,13 +273,21 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                     shape: const StadiumBorder(),
                     color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                     onPressed: () {
-                      if (canWatchAd) {
+                      if (adFailed) {
+                        context.read<AdsBloc>().add(const AdsEvent.transientStateCleared());
+                        context.read<AdsBloc>().add(const AdsEvent.started());
+                      } else if (canWatchAd) {
                         context.read<AdsBloc>().add(const AdsEvent.watchAdRequested());
                       } else {
                         toasts.error("Loading ads");
                       }
                     },
-                    child: canWatchAd
+                    child: adFailed
+                        ? Text(
+                            'WATCH AD',
+                            style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
+                          )
+                        : canWatchAd
                         ? Text(
                             'WATCH AD',
                             style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),

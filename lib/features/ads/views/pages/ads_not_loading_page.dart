@@ -1,7 +1,6 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -90,7 +89,7 @@ class AdsNotLoading extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    "Please check your network settings and try again. We have although downloaded the wall for you, because we get it, that it's frustating when the ads don't laod.",
+                    "Please check your network settings and try again, or upgrade to Pro to download without ads.",
                     textAlign: TextAlign.left,
                     style: Theme.of(
                       context,
@@ -127,12 +126,12 @@ class AdsNotLoading extends StatelessWidget {
                 ),
                 MaterialButton(
                   shape: const StadiumBorder(),
-                  color: Theme.of(context).colorScheme.error,
+                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                   onPressed: () {
-                    main.RestartWidget.restartApp(context);
+                    Navigator.pop(context);
                   },
                   child: Text(
-                    'RESTART APP',
+                    'GO BACK',
                     style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
                   ),
                 ),
