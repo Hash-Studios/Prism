@@ -62,492 +62,491 @@ class _ThemeViewState extends State<ThemeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          actions: <Widget>[
-            IconButton(
-                icon: Icon(
-                  JamIcons.check,
-                  size: 30,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-                onPressed: () {
-                  final accentColor = int.parse(selectedAccentColor
-                      .toString()
-                      .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                      .replaceAll("Color(", "")
-                      .replaceAll(")", ""));
-                  final hexString = selectedAccentColor
-                      .toString()
-                      .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                      .replaceAll("Color(0xff", "")
-                      .replaceAll(")", "");
-                  main.prefs.put("systemOverlayColor", accentColor);
-                  analytics.logEvent(name: "accent_changed", parameters: {'color': hexString});
-                  Navigator.pop(context);
-                })
-          ],
-          elevation: 0,
-          title: Row(
-            children: [
-              Text(
-                "Theme Manager",
-                style:
-                    Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        actions: <Widget>[
+          IconButton(
+              icon: Icon(
+                JamIcons.check,
+                size: 30,
+                color: Theme.of(context).colorScheme.secondary,
               ),
-              Container(
-                margin: const EdgeInsets.only(left: 3, bottom: 5),
-                decoration:
-                    BoxDecoration(color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(500)),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
-                  child: Text(
-                    "BETA",
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        backgroundColor: Theme.of(context).primaryColor,
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            ListTile(
-              onTap: () {
-                showModalBottomSheet(
-                  isScrollControlled: true,
-                  context: context,
-                  builder: (context) => PreferencePanel(
-                    selectedValue: context.prismThemeMode(listen: false) == ThemeMode.light
-                        ? 1
-                        : context.prismThemeMode(listen: false) == ThemeMode.dark
-                            ? 2
-                            : 0,
-                    func: (bool value) {
-                      setState(() {
-                        changingLight = value;
-                      });
-                    },
-                  ),
-                );
-              },
-              leading: const Icon(JamIcons.brightness),
-              title: Text(
-                "Theme Preference",
-                style: TextStyle(
+              onPressed: () {
+                final accentColor = int.parse(selectedAccentColor
+                    .toString()
+                    .replaceAll("MaterialColor(primary value: Color(0xff", "")
+                    .replaceAll("Color(", "")
+                    .replaceAll(")", ""));
+                final hexString = selectedAccentColor
+                    .toString()
+                    .replaceAll("MaterialColor(primary value: Color(0xff", "")
+                    .replaceAll("Color(0xff", "")
+                    .replaceAll(")", "");
+                main.prefs.put("systemOverlayColor", accentColor);
+                analytics.logEvent(name: "accent_changed", parameters: {'color': hexString});
+                Navigator.pop(context);
+              })
+        ],
+        elevation: 0,
+        title: Row(
+          children: [
+            Text(
+              "Theme Manager",
+              style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+            ),
+            Container(
+              margin: const EdgeInsets.only(left: 3, bottom: 5),
+              decoration:
+                  BoxDecoration(color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(500)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
+                child: Text(
+                  "BETA",
+                  style: TextStyle(
+                    fontSize: 9,
                     color: Theme.of(context).colorScheme.secondary,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
-              ),
-              subtitle: Text(
-                context.prismModeAbs(),
-                style: const TextStyle(fontSize: 12),
-              ),
-            ),
-            Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(17),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: .15),
-                      blurRadius: 38,
-                      offset: const Offset(0, 19),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: .10),
-                      blurRadius: 12,
-                      offset: const Offset(0, 15),
-                    )
-                  ],
-                ),
-                width: context.prismThemeMode() == ThemeMode.system
-                    ? MediaQuery.of(context).size.height * 0.35 * 0.4993924666
-                    : MediaQuery.of(context).size.height * 0.45 * 0.4993924666,
-                height: context.prismThemeMode() == ThemeMode.system
-                    ? MediaQuery.of(context).size.height * 0.35
-                    : MediaQuery.of(context).size.height * 0.45,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(17),
-                  child: changingLight
-                      ? SvgPicture.string(
-                          themePicture
-                              .replaceAll("181818",
-                                  context.prismLightTheme().primaryColor.toARGB32().toRadixString(16).substring(2))
-                              .replaceAll("E57697", selectedAccentColor!.toARGB32().toRadixString(16).substring(2))
-                              .replaceAll(
-                                  "F0F0F0",
-                                  context
-                                      .prismLightTheme()
-                                      .colorScheme
-                                      .secondary
-                                      .toARGB32()
-                                      .toRadixString(16)
-                                      .substring(2))
-                              .replaceAll("2F2F2F",
-                                  context.prismLightTheme().hintColor.toARGB32().toRadixString(16).substring(2)),
-                          fit: BoxFit.cover,
-                        )
-                      : SvgPicture.string(
-                          themePicture
-                              .replaceAll("181818",
-                                  context.prismDarkTheme().primaryColor.toARGB32().toRadixString(16).substring(2))
-                              .replaceAll("E57697", selectedDarkAccentColor!.toARGB32().toRadixString(16).substring(2))
-                              .replaceAll(
-                                  "F0F0F0",
-                                  context
-                                      .prismDarkTheme()
-                                      .colorScheme
-                                      .secondary
-                                      .toARGB32()
-                                      .toRadixString(16)
-                                      .substring(2))
-                              .replaceAll("2F2F2F",
-                                  context.prismDarkTheme().hintColor.toARGB32().toRadixString(16).substring(2)),
-                          fit: BoxFit.cover,
-                        ),
+                  ),
                 ),
               ),
             ),
-            const Divider(),
-            if (context.prismThemeMode() != ThemeMode.dark)
-              Container(
-                width: MediaQuery.of(context).size.width,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  "Light Themes",
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-              )
-            else
-              Container(),
-            if (context.prismThemeMode() != ThemeMode.dark)
-              SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height * 0.07,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: prismLightThemes.length,
-                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: MaterialButton(
-                          color: Theme.of(context).hintColor,
-                          padding: EdgeInsets.zero,
-                          onPressed: () {
-                            context.setPrismLightTheme(prismLightThemes.keys.toList()[index]);
-                            logger.d(selectedAccentColor.toString());
-                            setState(() {
-                              changingLight = true;
-                              selectedTheme = index;
-                              selectedAccentColor = Color(context.prismLightAccentValue(listen: false));
-                            });
-                            logger.d(selectedAccentColor.toString());
-                          },
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: MediaQuery.of(context).size.width * 0.3,
-                                height: MediaQuery.of(context).size.height * 0.06,
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.black12),
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: prismLightThemes[prismLightThemes.keys.toList()[index]]!.hintColor,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Text(
-                                        prismLightThemes.keys.toList()[index].substring(2),
-                                        style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                                              color: prismLightThemes[prismLightThemes.keys.toList()[index]]!
-                                                  .colorScheme
-                                                  .secondary,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (index == selectedTheme)
-                                Container(
-                                  width: MediaQuery.of(context).size.width * 0.3,
-                                  height: MediaQuery.of(context).size.height * 0.06,
-                                  decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                                      border: Border.all(color: Colors.black45),
-                                      borderRadius: BorderRadius.circular(10)),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        JamIcons.check,
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              else
-                                Container(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              )
-            else
-              Container(),
-            if (context.prismThemeMode() != ThemeMode.light)
-              Container(
-                width: MediaQuery.of(context).size.width,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  "Dark Themes",
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-              )
-            else
-              Container(),
-            if (context.prismThemeMode() != ThemeMode.light)
-              SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height * 0.07,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: prismDarkThemes.length,
-                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: MaterialButton(
-                          color: Theme.of(context).hintColor,
-                          padding: EdgeInsets.zero,
-                          onPressed: () {
-                            context.setPrismDarkTheme(prismDarkThemes.keys.toList()[index]);
-                            logger.d(selectedDarkAccentColor.toString());
-                            setState(() {
-                              changingLight = false;
-                              selectedDarkTheme = index;
-                              selectedDarkAccentColor = Color(context.prismDarkAccentValue(listen: false));
-                            });
-                            logger.d(selectedDarkAccentColor.toString());
-                          },
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: MediaQuery.of(context).size.width * 0.3,
-                                height: MediaQuery.of(context).size.height * 0.06,
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.black12),
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!.hintColor,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Text(
-                                        prismDarkThemes.keys.toList()[index].substring(2),
-                                        style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                                              color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!
-                                                  .colorScheme
-                                                  .secondary,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (index == selectedDarkTheme)
-                                Container(
-                                  width: MediaQuery.of(context).size.width * 0.3,
-                                  height: MediaQuery.of(context).size.height * 0.06,
-                                  decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                                      border: Border.all(color: Colors.black45),
-                                      borderRadius: BorderRadius.circular(10)),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        JamIcons.check,
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              else
-                                Container(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              )
-            else
-              Container(),
-            const Divider(),
-            if (context.prismThemeMode() != ThemeMode.dark)
-              Container(
-                width: MediaQuery.of(context).size.width,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  "Light Accent Color",
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-              )
-            else
-              Container(),
-            if (context.prismThemeMode() != ThemeMode.dark)
-              SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height * 0.055,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: accentColors.length,
-                  padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          changingLight = true;
-                          selectedAccentColor = accentColors[index];
-                        });
-                        context.setPrismLightAccent(selectedAccentColor);
-                      },
-                      child: Stack(
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: selectedAccentColor == accentColors[index] ? Colors.white : Colors.white38,
-                              ),
-                              color: accentColors[index],
-                              shape: BoxShape.circle,
-                            ),
-                            child: const SizedBox(
-                              width: 41,
-                              height: 41,
-                            ),
-                          ),
-                          if (selectedAccentColor == accentColors[index])
-                            Container(
-                              margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                                shape: BoxShape.circle,
-                              ),
-                              child: SizedBox(
-                                width: 41,
-                                height: 41,
-                                child: Icon(
-                                  JamIcons.check,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            )
-                          else
-                            Container(),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              )
-            else
-              Container(),
-            if (context.prismThemeMode() != ThemeMode.light)
-              Container(
-                width: MediaQuery.of(context).size.width,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  "Dark Accent Color",
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-              )
-            else
-              Container(),
-            if (context.prismThemeMode() != ThemeMode.light)
-              SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height * 0.055,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: accentColors.length,
-                  padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          changingLight = false;
-                          selectedDarkAccentColor = accentColors[index];
-                        });
-                        context.setPrismDarkAccent(selectedDarkAccentColor);
-                      },
-                      child: Stack(
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: selectedDarkAccentColor == accentColors[index] ? Colors.white : Colors.white38,
-                              ),
-                              color: accentColors[index],
-                              shape: BoxShape.circle,
-                            ),
-                            child: const SizedBox(
-                              width: 41,
-                              height: 41,
-                            ),
-                          ),
-                          if (selectedDarkAccentColor == accentColors[index])
-                            Container(
-                              margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                                shape: BoxShape.circle,
-                              ),
-                              child: SizedBox(
-                                width: 41,
-                                height: 41,
-                                child: Icon(
-                                  JamIcons.check,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            )
-                          else
-                            Container(),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              )
-            else
-              Container(),
           ],
         ),
-      );
+      ),
+      backgroundColor: Theme.of(context).primaryColor,
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: <Widget>[
+          ListTile(
+            onTap: () {
+              showModalBottomSheet(
+                isScrollControlled: true,
+                context: context,
+                builder: (context) => PreferencePanel(
+                  selectedValue: context.prismThemeMode(listen: false) == ThemeMode.light
+                      ? 1
+                      : context.prismThemeMode(listen: false) == ThemeMode.dark
+                          ? 2
+                          : 0,
+                  func: (bool value) {
+                    setState(() {
+                      changingLight = value;
+                    });
+                  },
+                ),
+              );
+            },
+            leading: const Icon(JamIcons.brightness),
+            title: Text(
+              "Theme Preference",
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
+            ),
+            subtitle: Text(
+              context.prismModeAbs(),
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+          Center(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(17),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: .15),
+                    blurRadius: 38,
+                    offset: const Offset(0, 19),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: .10),
+                    blurRadius: 12,
+                    offset: const Offset(0, 15),
+                  )
+                ],
+              ),
+              width: context.prismThemeMode() == ThemeMode.system
+                  ? MediaQuery.of(context).size.height * 0.35 * 0.4993924666
+                  : MediaQuery.of(context).size.height * 0.45 * 0.4993924666,
+              height: context.prismThemeMode() == ThemeMode.system
+                  ? MediaQuery.of(context).size.height * 0.35
+                  : MediaQuery.of(context).size.height * 0.45,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(17),
+                child: changingLight
+                    ? SvgPicture.string(
+                        themePicture
+                            .replaceAll("181818",
+                                context.prismLightTheme().primaryColor.toARGB32().toRadixString(16).substring(2))
+                            .replaceAll("E57697", selectedAccentColor!.toARGB32().toRadixString(16).substring(2))
+                            .replaceAll(
+                                "F0F0F0",
+                                context
+                                    .prismLightTheme()
+                                    .colorScheme
+                                    .secondary
+                                    .toARGB32()
+                                    .toRadixString(16)
+                                    .substring(2))
+                            .replaceAll("2F2F2F",
+                                context.prismLightTheme().hintColor.toARGB32().toRadixString(16).substring(2)),
+                        fit: BoxFit.cover,
+                      )
+                    : SvgPicture.string(
+                        themePicture
+                            .replaceAll("181818",
+                                context.prismDarkTheme().primaryColor.toARGB32().toRadixString(16).substring(2))
+                            .replaceAll("E57697", selectedDarkAccentColor!.toARGB32().toRadixString(16).substring(2))
+                            .replaceAll(
+                                "F0F0F0",
+                                context
+                                    .prismDarkTheme()
+                                    .colorScheme
+                                    .secondary
+                                    .toARGB32()
+                                    .toRadixString(16)
+                                    .substring(2))
+                            .replaceAll(
+                                "2F2F2F", context.prismDarkTheme().hintColor.toARGB32().toRadixString(16).substring(2)),
+                        fit: BoxFit.cover,
+                      ),
+              ),
+            ),
+          ),
+          const Divider(),
+          if (context.prismThemeMode() != ThemeMode.dark)
+            Container(
+              width: MediaQuery.of(context).size.width,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Light Themes",
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            )
+          else
+            Container(),
+          if (context.prismThemeMode() != ThemeMode.dark)
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height * 0.07,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: prismLightThemes.length,
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: MaterialButton(
+                        color: Theme.of(context).hintColor,
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          context.setPrismLightTheme(prismLightThemes.keys.toList()[index]);
+                          logger.d(selectedAccentColor.toString());
+                          setState(() {
+                            changingLight = true;
+                            selectedTheme = index;
+                            selectedAccentColor = Color(context.prismLightAccentValue(listen: false));
+                          });
+                          logger.d(selectedAccentColor.toString());
+                        },
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: MediaQuery.of(context).size.height * 0.06,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.black12),
+                                borderRadius: BorderRadius.circular(10),
+                                color: prismLightThemes[prismLightThemes.keys.toList()[index]]!.hintColor,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Text(
+                                      prismLightThemes.keys.toList()[index].substring(2),
+                                      style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                                            color: prismLightThemes[prismLightThemes.keys.toList()[index]]!
+                                                .colorScheme
+                                                .secondary,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (index == selectedTheme)
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.3,
+                                height: MediaQuery.of(context).size.height * 0.06,
+                                decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                                    border: Border.all(color: Colors.black45),
+                                    borderRadius: BorderRadius.circular(10)),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      JamIcons.check,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              Container(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Container(),
+          if (context.prismThemeMode() != ThemeMode.light)
+            Container(
+              width: MediaQuery.of(context).size.width,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Dark Themes",
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            )
+          else
+            Container(),
+          if (context.prismThemeMode() != ThemeMode.light)
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height * 0.07,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: prismDarkThemes.length,
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: MaterialButton(
+                        color: Theme.of(context).hintColor,
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          context.setPrismDarkTheme(prismDarkThemes.keys.toList()[index]);
+                          logger.d(selectedDarkAccentColor.toString());
+                          setState(() {
+                            changingLight = false;
+                            selectedDarkTheme = index;
+                            selectedDarkAccentColor = Color(context.prismDarkAccentValue(listen: false));
+                          });
+                          logger.d(selectedDarkAccentColor.toString());
+                        },
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: MediaQuery.of(context).size.height * 0.06,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.black12),
+                                borderRadius: BorderRadius.circular(10),
+                                color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!.hintColor,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Text(
+                                      prismDarkThemes.keys.toList()[index].substring(2),
+                                      style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                                            color: prismDarkThemes[prismDarkThemes.keys.toList()[index]]!
+                                                .colorScheme
+                                                .secondary,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (index == selectedDarkTheme)
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.3,
+                                height: MediaQuery.of(context).size.height * 0.06,
+                                decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                                    border: Border.all(color: Colors.black45),
+                                    borderRadius: BorderRadius.circular(10)),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      JamIcons.check,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              Container(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Container(),
+          const Divider(),
+          if (context.prismThemeMode() != ThemeMode.dark)
+            Container(
+              width: MediaQuery.of(context).size.width,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Light Accent Color",
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            )
+          else
+            Container(),
+          if (context.prismThemeMode() != ThemeMode.dark)
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height * 0.055,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: accentColors.length,
+                padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        changingLight = true;
+                        selectedAccentColor = accentColors[index];
+                      });
+                      context.setPrismLightAccent(selectedAccentColor);
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: selectedAccentColor == accentColors[index] ? Colors.white : Colors.white38,
+                            ),
+                            color: accentColors[index],
+                            shape: BoxShape.circle,
+                          ),
+                          child: const SizedBox(
+                            width: 41,
+                            height: 41,
+                          ),
+                        ),
+                        if (selectedAccentColor == accentColors[index])
+                          Container(
+                            margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: SizedBox(
+                              width: 41,
+                              height: 41,
+                              child: Icon(
+                                JamIcons.check,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          )
+                        else
+                          Container(),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Container(),
+          if (context.prismThemeMode() != ThemeMode.light)
+            Container(
+              width: MediaQuery.of(context).size.width,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Dark Accent Color",
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            )
+          else
+            Container(),
+          if (context.prismThemeMode() != ThemeMode.light)
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height * 0.055,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: accentColors.length,
+                padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        changingLight = false;
+                        selectedDarkAccentColor = accentColors[index];
+                      });
+                      context.setPrismDarkAccent(selectedDarkAccentColor);
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: selectedDarkAccentColor == accentColors[index] ? Colors.white : Colors.white38,
+                            ),
+                            color: accentColors[index],
+                            shape: BoxShape.circle,
+                          ),
+                          child: const SizedBox(
+                            width: 41,
+                            height: 41,
+                          ),
+                        ),
+                        if (selectedDarkAccentColor == accentColors[index])
+                          Container(
+                            margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: SizedBox(
+                              width: 41,
+                              height: 41,
+                              child: Icon(
+                                JamIcons.check,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          )
+                        else
+                          Container(),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Container(),
+        ],
+      ),
+    );
   }
 }
 

@@ -26,8 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   LoadStatus? _lastLoggedStatus;
   int _lastLoggedItemCount = -1;
 
-  bool get _isOnFirstCategory =>
-      context.categorySelectedChoice(listen: false).name == categoryChoices[0].name;
+  bool get _isOnFirstCategory => context.categorySelectedChoice(listen: false).name == categoryChoices[0].name;
 
   late bool isNew;
   @override

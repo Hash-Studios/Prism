@@ -32,134 +32,133 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: const Text("Notifications"),
-          leading: IconButton(
-            icon: const Icon(JamIcons.close),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          actions: <Widget>[
-            IconButton(
-                tooltip: "Notification Settings",
-                icon: const Icon(JamIcons.settings_alt),
-                onPressed: () {
-                  showModalBottomSheet(
-                      isScrollControlled: true, context: context, builder: (context) => NotificationSettingsSheet());
-                })
-          ],
+      backgroundColor: Theme.of(context).primaryColor,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text("Notifications"),
+        leading: IconButton(
+          icon: const Icon(JamIcons.close),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
-        body: Container(
-          child: notifications.isNotEmpty
-              ? ListView.builder(
-                  itemCount: notifications.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    box.put(
-                        box.keys.toList()[index],
-                        InAppNotif(
-                            pageName: notifications[index].pageName,
-                            title: notifications[index].title,
-                            body: notifications[index].body,
-                            imageUrl: notifications[index].imageUrl,
-                            arguments: notifications[index].arguments,
-                            url: notifications[index].url,
-                            createdAt: notifications[index].createdAt,
-                            read: true));
-                    return Dismissible(
-                      onDismissed: (DismissDirection direction) {
+        actions: <Widget>[
+          IconButton(
+              tooltip: "Notification Settings",
+              icon: const Icon(JamIcons.settings_alt),
+              onPressed: () {
+                showModalBottomSheet(
+                    isScrollControlled: true, context: context, builder: (context) => NotificationSettingsSheet());
+              })
+        ],
+      ),
+      body: Container(
+        child: notifications.isNotEmpty
+            ? ListView.builder(
+                itemCount: notifications.length,
+                itemBuilder: (BuildContext context, int index) {
+                  box.put(
+                      box.keys.toList()[index],
+                      InAppNotif(
+                          pageName: notifications[index].pageName,
+                          title: notifications[index].title,
+                          body: notifications[index].body,
+                          imageUrl: notifications[index].imageUrl,
+                          arguments: notifications[index].arguments,
+                          url: notifications[index].url,
+                          createdAt: notifications[index].createdAt,
+                          read: true));
+                  return Dismissible(
+                    onDismissed: (DismissDirection direction) {
+                      setState(() {
+                        notifications.removeAt(index);
+                        box.deleteAt(index);
+                      });
+                    },
+                    dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
+                    secondaryBackground: const ColoredBox(
+                      color: Colors.red,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(JamIcons.trash),
+                        ),
+                      ),
+                    ),
+                    background: const ColoredBox(
+                      color: Colors.red,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(JamIcons.trash),
+                        ),
+                      ),
+                    ),
+                    key: UniqueKey(),
+                    child: NotificationCard(notification: notifications[index]),
+                  );
+                },
+              )
+            : Center(
+                child: Text('No new notifications', style: TextStyle(color: Theme.of(context).colorScheme.secondary))),
+      ),
+      floatingActionButton: notifications.isNotEmpty
+          ? FloatingActionButton(
+              mini: true,
+              tooltip: "Clear Notifications",
+              onPressed: () {
+                final AlertDialog deleteNotificationsPopUp = AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  title: Text(
+                    'Clear all notifications?',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
+                  ),
+                  actions: [
+                    MaterialButton(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                      color: Theme.of(context).hintColor,
+                      onPressed: () {
+                        Navigator.of(context).pop();
                         setState(() {
-                          notifications.removeAt(index);
-                          box.deleteAt(index);
+                          notifications.clear();
+                          box.clear();
                         });
                       },
-                      dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
-                      secondaryBackground: const ColoredBox(
-                        color: Colors.red,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Icon(JamIcons.trash),
-                          ),
+                      child: const Text(
+                        'YES',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.white,
                         ),
                       ),
-                      background: const ColoredBox(
-                        color: Colors.red,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Icon(JamIcons.trash),
-                          ),
-                        ),
-                      ),
-                      key: UniqueKey(),
-                      child: NotificationCard(notification: notifications[index]),
-                    );
-                  },
-                )
-              : Center(
-                  child:
-                      Text('No new notifications', style: TextStyle(color: Theme.of(context).colorScheme.secondary))),
-        ),
-        floatingActionButton: notifications.isNotEmpty
-            ? FloatingActionButton(
-                mini: true,
-                tooltip: "Clear Notifications",
-                onPressed: () {
-                  final AlertDialog deleteNotificationsPopUp = AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    title: Text(
-                      'Clear all notifications?',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                     ),
-                    actions: [
-                      MaterialButton(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                        color: Theme.of(context).hintColor,
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          setState(() {
-                            notifications.clear();
-                            box.clear();
-                          });
-                        },
-                        child: const Text(
-                          'YES',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            color: Colors.white,
-                          ),
+                    MaterialButton(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                      color: Theme.of(context).colorScheme.error,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text(
+                        'NO',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.white,
                         ),
                       ),
-                      MaterialButton(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                        color: Theme.of(context).colorScheme.error,
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text(
-                          'NO',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                    backgroundColor: Theme.of(context).primaryColor,
-                    actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                  );
+                    ),
+                  ],
+                  backgroundColor: Theme.of(context).primaryColor,
+                  actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                );
 
-                  showModal(context: context, builder: (BuildContext context) => deleteNotificationsPopUp);
-                },
-                child: const Icon(JamIcons.trash),
-              )
-            : Container(),
+                showModal(context: context, builder: (BuildContext context) => deleteNotificationsPopUp);
+              },
+              child: const Icon(JamIcons.trash),
+            )
+          : Container(),
     );
   }
 }

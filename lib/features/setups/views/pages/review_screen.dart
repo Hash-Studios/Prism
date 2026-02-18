@@ -41,73 +41,69 @@ class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          flexibleSpace: AppBar(
-            title: Row(
-              children: [
-                Text(
-                  "Review Status",
-                  style: Theme.of(context).textTheme.displaySmall,
-                ),
-                Container(
-                  margin: const EdgeInsets.only(left: 3, bottom: 5),
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(500)),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
-                    child: Text(
-                      "BETA",
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        flexibleSpace: AppBar(
+          title: Row(
+            children: [
+              Text(
+                "Review Status",
+                style: Theme.of(context).textTheme.displaySmall,
+              ),
+              Container(
+                margin: const EdgeInsets.only(left: 3, bottom: 5),
+                decoration:
+                    BoxDecoration(color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(500)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
+                  child: Text(
+                    "BETA",
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                 ),
-              ],
-            ),
-            leading: IconButton(
-                icon: const Icon(JamIcons.chevron_left),
-                onPressed: () {
-                  Navigator.pop(context);
-                }),
-            backgroundColor: Theme.of(context).primaryColor,
+              ),
+            ],
           ),
-          bottom: TabBar(
-              controller: tabController,
-              indicatorColor: Theme.of(context).colorScheme.secondary,
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: [
-                Tab(
-                  child: Text(
-                    "Wallpapers",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium!
-                        .copyWith(color: Theme.of(context).colorScheme.secondary),
-                  ),
+          leading: IconButton(
+              icon: const Icon(JamIcons.chevron_left),
+              onPressed: () {
+                Navigator.pop(context);
+              }),
+          backgroundColor: Theme.of(context).primaryColor,
+        ),
+        bottom: TabBar(
+            controller: tabController,
+            indicatorColor: Theme.of(context).colorScheme.secondary,
+            indicatorSize: TabBarIndicatorSize.label,
+            tabs: [
+              Tab(
+                child: Text(
+                  "Wallpapers",
+                  style:
+                      Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                 ),
-                Tab(
-                  child: Text(
-                    "Setups",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium!
-                        .copyWith(color: Theme.of(context).colorScheme.secondary),
-                  ),
-                )
-              ]),
-        ),
-        backgroundColor: Theme.of(context).primaryColor,
-        body: TabBarView(
-          controller: tabController,
-          children: [
-            WallReview(),
-            SetupReview(),
-          ],
-        ),
-      );
+              ),
+              Tab(
+                child: Text(
+                  "Setups",
+                  style:
+                      Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                ),
+              )
+            ]),
+      ),
+      backgroundColor: Theme.of(context).primaryColor,
+      body: TabBarView(
+        controller: tabController,
+        children: [
+          WallReview(),
+          SetupReview(),
+        ],
+      ),
+    );
   }
 }
 

@@ -129,899 +129,118 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
             }
           });
     return context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "WallHaven" ||
-              context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Pexels" ||
-              context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Prism"
-          ? Scaffold(
-              key: _scaffoldKey,
-              backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
-              body: SlidingUpPanel(
-                onPanelOpened: () {
-                  setState(() {
-                    panelCollapsed = false;
-                  });
-                  if (panelClosed) {
-                    logger.d('Screenshot Starting');
-                    if (colorChanged) {
-                      screenshotController
-                          .capture(
-                        pixelRatio: 3,
-                        delay: const Duration(milliseconds: 10),
-                      )
-                          .then((Uint8List? image) async {
-                        setState(() {
-                          _imageFile = File.fromRawPath(image!);
-                          screenshotTaken = true;
-                          panelClosed = false;
-                        });
-                        logger.d('Screenshot Taken');
-                      }).catchError((onError) {
-                        logger.d(onError.toString());
+            context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Pexels" ||
+            context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Prism"
+        ? Scaffold(
+            key: _scaffoldKey,
+            backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
+            body: SlidingUpPanel(
+              onPanelOpened: () {
+                setState(() {
+                  panelCollapsed = false;
+                });
+                if (panelClosed) {
+                  logger.d('Screenshot Starting');
+                  if (colorChanged) {
+                    screenshotController
+                        .capture(
+                      pixelRatio: 3,
+                      delay: const Duration(milliseconds: 10),
+                    )
+                        .then((Uint8List? image) async {
+                      setState(() {
+                        _imageFile = File.fromRawPath(image!);
+                        screenshotTaken = true;
+                        panelClosed = false;
                       });
-                    } else {
-                      (main.prefs.get('optimisedWallpapers') ?? true) == true
-                          ? screenshotController
-                              .capture(
-                              pixelRatio: 3,
-                              delay: const Duration(milliseconds: 10),
-                            )
-                              .then((Uint8List? image) async {
-                              setState(() {
-                                _imageFile = File.fromRawPath(image!);
-                                screenshotTaken = true;
-                                panelClosed = false;
-                              });
-                              logger.d('Screenshot Taken');
-                            }).catchError((onError) {
-                              logger.d(onError.toString());
-                            })
-                          : logger.d("Wallpaper Optimisation is disabled!");
-                    }
+                      logger.d('Screenshot Taken');
+                    }).catchError((onError) {
+                      logger.d(onError.toString());
+                    });
+                  } else {
+                    (main.prefs.get('optimisedWallpapers') ?? true) == true
+                        ? screenshotController
+                            .capture(
+                            pixelRatio: 3,
+                            delay: const Duration(milliseconds: 10),
+                          )
+                            .then((Uint8List? image) async {
+                            setState(() {
+                              _imageFile = File.fromRawPath(image!);
+                              screenshotTaken = true;
+                              panelClosed = false;
+                            });
+                            logger.d('Screenshot Taken');
+                          }).catchError((onError) {
+                            logger.d(onError.toString());
+                          })
+                        : logger.d("Wallpaper Optimisation is disabled!");
                   }
-                },
-                onPanelClosed: () {
-                  setState(() {
-                    panelCollapsed = true;
-                  });
+                }
+              },
+              onPanelClosed: () {
+                setState(() {
+                  panelCollapsed = true;
+                });
 
-                  setState(() {
-                    panelClosed = true;
-                  });
-                },
-                backdropEnabled: true,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                boxShadow: const [],
-                collapsed: CollapsedPanel(
-                  panelCollapsed: panelCollapsed,
-                  panelController: panelController,
-                ),
-                minHeight: MediaQuery.of(context).size.height / 20,
-                parallaxEnabled: true,
-                parallaxOffset: 0.0,
-                color: Colors.transparent,
-                maxHeight: MediaQuery.of(context).size.height * .43,
-                controller: panelController,
-                panel: Container(
-                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                  height: MediaQuery.of(context).size.height * .43,
-                  width: MediaQuery.of(context).size.width,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 750),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(30),
-                          color: panelCollapsed
-                              ? Theme.of(context).primaryColor.withValues(alpha: 1)
-                              : Theme.of(context).primaryColor.withValues(alpha: .5),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Center(
-                                child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: AnimatedOpacity(
-                                duration: Duration.zero,
-                                opacity: panelCollapsed ? 0.0 : 1.0,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    panelController.close();
-                                  },
-                                  child: Icon(
-                                    JamIcons.chevron_down,
-                                    color: Theme.of(context).colorScheme.secondary,
-                                  ),
-                                ),
-                              ),
-                            )),
-                            ColorBar(colors: colors),
-                            if (context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "WallHaven")
-                              Expanded(
-                                flex: 8,
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: <Widget>[
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: <Widget>[
-                                          Padding(
-                                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                            child: Text(
-                                              context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
-                                                  .toString()
-                                                  .toUpperCase(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyLarge!
-                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                            ),
-                                          ),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                JamIcons.eye,
-                                                size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                "${context.favouriteWallsAdapter(listen: false).liked![index]["views"]}",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                JamIcons.heart_f,
-                                                size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                "${context.favouriteWallsAdapter(listen: false).liked![index]["fav"]}",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                JamIcons.save,
-                                                size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                "${double.parse((double.parse(context.favouriteWallsAdapter(listen: false).liked![index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: <Widget>[
-                                          Padding(
-                                            padding: EdgeInsets.zero,
-                                            child: Row(
-                                              children: [
-                                                Text(
-                                                  context
-                                                          .favouriteWallsAdapter(listen: false)
-                                                          .liked![index]["category"]
-                                                          .toString()[0]
-                                                          .toUpperCase() +
-                                                      context
-                                                          .favouriteWallsAdapter(listen: false)
-                                                          .liked![index]["category"]
-                                                          .toString()
-                                                          .substring(1),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium!
-                                                      .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Icon(
-                                                  JamIcons.unordered_list,
-                                                  size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                "${context.favouriteWallsAdapter(listen: false).liked![index]["resolution"]}",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Icon(
-                                                JamIcons.set_square,
-                                                size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                context
-                                                    .favouriteWallsAdapter(listen: false)
-                                                    .liked![index]["provider"]
-                                                    .toString(),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Icon(
-                                                JamIcons.database,
-                                                size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            else
-                              context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Prism"
-                                  ? Expanded(
-                                      flex: 8,
-                                      child: SizedBox(
-                                        width: MediaQuery.of(context).size.width * 0.36,
-                                        child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment: CrossAxisAlignment.end,
-                                            children: <Widget>[
-                                              Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: <Widget>[
-                                                  Padding(
-                                                    padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                                    child: Row(
-                                                      children: [
-                                                        Text(
-                                                          context
-                                                              .favouriteWallsAdapter(listen: false)
-                                                              .liked![index]["id"]
-                                                              .toString()
-                                                              .toUpperCase(),
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .bodyLarge!
-                                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                                        ),
-                                                        Padding(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                                          child: Container(
-                                                            height: 20,
-                                                            color: Theme.of(context).colorScheme.secondary,
-                                                            width: 2,
-                                                          ),
-                                                        ),
-                                                        FutureBuilder(
-                                                          future: _futureView,
-                                                          builder: (context, snapshot) {
-                                                            switch (snapshot.connectionState) {
-                                                              case ConnectionState.waiting:
-                                                                return Text(
-                                                                  "",
-                                                                  style: Theme.of(context)
-                                                                      .textTheme
-                                                                      .bodyLarge!
-                                                                      .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).colorScheme.secondary,
-                                                                          fontSize: 16),
-                                                                );
-                                                              case ConnectionState.none:
-                                                                return Text(
-                                                                  "",
-                                                                  style: Theme.of(context)
-                                                                      .textTheme
-                                                                      .bodyLarge!
-                                                                      .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).colorScheme.secondary,
-                                                                          fontSize: 16),
-                                                                );
-                                                              default:
-                                                                if (snapshot.hasError) {
-                                                                  return Text(
-                                                                    "",
-                                                                    style: Theme.of(context)
-                                                                        .textTheme
-                                                                        .bodyLarge!
-                                                                        .copyWith(
-                                                                            color:
-                                                                                Theme.of(context).colorScheme.secondary,
-                                                                            fontSize: 16),
-                                                                  );
-                                                                } else {
-                                                                  return Text(
-                                                                    "${snapshot.data} views",
-                                                                    overflow: TextOverflow.fade,
-                                                                    softWrap: false,
-                                                                    style: Theme.of(context)
-                                                                        .textTheme
-                                                                        .bodyLarge!
-                                                                        .copyWith(
-                                                                            color:
-                                                                                Theme.of(context).colorScheme.secondary,
-                                                                            fontSize: 16),
-                                                                  );
-                                                                }
-                                                            }
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        JamIcons.camera,
-                                                        size: 20,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .secondary
-                                                            .withValues(alpha: .7),
-                                                      ),
-                                                      const SizedBox(width: 10),
-                                                      Text(
-                                                        "${context.favouriteWallsAdapter(listen: false).liked![index]["photographer"]}",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyMedium!
-                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 5),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        JamIcons.arrow_circle_right,
-                                                        size: 20,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .secondary
-                                                            .withValues(alpha: .7),
-                                                      ),
-                                                      const SizedBox(width: 10),
-                                                      Text(
-                                                        "${context.favouriteWallsAdapter(listen: false).liked![index]["category"]}",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyMedium!
-                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 5),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        JamIcons.save,
-                                                        size: 20,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .secondary
-                                                            .withValues(alpha: .7),
-                                                      ),
-                                                      const SizedBox(width: 10),
-                                                      Text(
-                                                        "${context.favouriteWallsAdapter(listen: false).liked![index]["size"]}",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyMedium!
-                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                              Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: <Widget>[
-                                                  Row(
-                                                    children: [
-                                                      Text(
-                                                        "${context.favouriteWallsAdapter(listen: false).liked![index]["resolution"]}",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyMedium!
-                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                                      ),
-                                                      const SizedBox(width: 10),
-                                                      Icon(
-                                                        JamIcons.set_square,
-                                                        size: 20,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .secondary
-                                                            .withValues(alpha: .7),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 5),
-                                                  Row(
-                                                    children: [
-                                                      Text(
-                                                        context
-                                                            .favouriteWallsAdapter(listen: false)
-                                                            .liked![index]["provider"]
-                                                            .toString(),
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyMedium!
-                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
-                                                      ),
-                                                      const SizedBox(width: 10),
-                                                      Icon(
-                                                        JamIcons.database,
-                                                        size: 20,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .secondary
-                                                            .withValues(alpha: .7),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  : context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Pexels"
-                                      ? Expanded(
-                                          flex: 8,
-                                          child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                                  children: <Widget>[
-                                                    Column(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: <Widget>[
-                                                        Row(
-                                                          children: [
-                                                            Icon(
-                                                              JamIcons.camera,
-                                                              size: 20,
-                                                              color: Theme.of(context)
-                                                                  .colorScheme
-                                                                  .secondary
-                                                                  .withValues(alpha: .7),
-                                                            ),
-                                                            const SizedBox(width: 10),
-                                                            SizedBox(
-                                                              width: MediaQuery.of(context).size.width * .4,
-                                                              child: Text(
-                                                                context
-                                                                    .favouriteWallsAdapter(listen: false)
-                                                                    .liked![index]["photographer"]
-                                                                    .toString(),
-                                                                textAlign: TextAlign.left,
-                                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                    color: Theme.of(context).colorScheme.secondary),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        const SizedBox(height: 5),
-                                                        Row(
-                                                          children: [
-                                                            Icon(
-                                                              JamIcons.set_square,
-                                                              size: 20,
-                                                              color: Theme.of(context)
-                                                                  .colorScheme
-                                                                  .secondary
-                                                                  .withValues(alpha: .7),
-                                                            ),
-                                                            const SizedBox(width: 10),
-                                                            Text(
-                                                              context
-                                                                  .favouriteWallsAdapter(listen: false)
-                                                                  .liked![index]["resolution"]
-                                                                  .toString(),
-                                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                  color: Theme.of(context).colorScheme.secondary),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    Column(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                                      children: <Widget>[
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              context
-                                                                  .favouriteWallsAdapter(listen: false)
-                                                                  .liked![index]["id"]
-                                                                  .toString(),
-                                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                  color: Theme.of(context).colorScheme.secondary),
-                                                            ),
-                                                            const SizedBox(width: 10),
-                                                            Icon(
-                                                              JamIcons.info,
-                                                              size: 20,
-                                                              color: Theme.of(context)
-                                                                  .colorScheme
-                                                                  .secondary
-                                                                  .withValues(alpha: .7),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        const SizedBox(height: 5),
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              context
-                                                                  .favouriteWallsAdapter(listen: false)
-                                                                  .liked![index]["provider"]
-                                                                  .toString(),
-                                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                                  color: Theme.of(context).colorScheme.secondary),
-                                                            ),
-                                                            const SizedBox(width: 10),
-                                                            Icon(
-                                                              JamIcons.database,
-                                                              size: 20,
-                                                              color: Theme.of(context)
-                                                                  .colorScheme
-                                                                  .secondary
-                                                                  .withValues(alpha: .7),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        )
-                                      : Expanded(flex: 8, child: Container()),
-                            Expanded(
-                              flex: 5,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: <Widget>[
-                                  DownloadButton(
-                                    colorChanged: colorChanged,
-                                    link: screenshotTaken
-                                        ? _imageFile.path
-                                        : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                                  ),
-                                  SetWallpaperButton(
-                                    colorChanged: colorChanged,
-                                    url: screenshotTaken
-                                        ? _imageFile.path
-                                        : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                                  ),
-                                  FavouriteWallpaperButton(
-                                    id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
-                                    provider: context
-                                        .favouriteWallsAdapter(listen: false)
-                                        .liked![index]["provider"]
-                                        .toString(),
-                                    trash: true,
-                                  ),
-                                  ShareButton(
-                                      id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
-                                      provider: context
-                                          .favouriteWallsAdapter(listen: false)
-                                          .liked![index]["provider"]
-                                          .toString(),
-                                      url: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                                      thumbUrl: context
-                                          .favouriteWallsAdapter(listen: false)
-                                          .liked![index]["thumb"]
-                                          .toString()),
-                                  EditButton(
-                                    url: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                body: Stack(
-                  children: <Widget>[
-                    AnimatedBuilder(
-                        animation: offsetAnimation,
-                        builder: (buildContext, child) {
-                          if (offsetAnimation.value < 0.0) {
-                            logger.d('${offsetAnimation.value + 8.0}');
-                          }
-                          return GestureDetector(
-                            onPanUpdate: (details) {
-                              if (details.delta.dy < -10) {
-                                panelController.open();
-                                // HapticFeedback.vibrate();
-                              }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                colorChanged = false;
-                              });
-                              HapticFeedback.vibrate();
-                              shakeController.forward(from: 0.0);
-                            },
-                            onTap: () {
-                              HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : logger.d("");
-                              shakeController.forward(from: 0.0);
-                            },
-                            child: CachedNetworkImage(
-                              imageUrl: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                              imageBuilder: (context, imageProvider) => Screenshot(
-                                controller: screenshotController,
-                                child: Container(
-                                  margin: EdgeInsets.symmetric(
-                                      vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(offsetAnimation.value),
-                                    image: DecorationImage(
-                                      colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
-                                      image: imageProvider,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-                                children: <Widget>[
-                                  const SizedBox.expand(child: Text("")),
-                                  Center(
-                                    child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation(
-                                          Theme.of(context).colorScheme.error,
-                                        ),
-                                        value: downloadProgress.progress),
-                                  ),
-                                ],
-                              ),
-                              errorWidget: (context, url, error) => Center(
-                                child: Icon(
-                                  JamIcons.close_circle_f,
-                                  color: isLoading
-                                      ? Theme.of(context).colorScheme.secondary
-                                      : accent!.computeLuminance() > 0.5
-                                          ? Colors.black
-                                          : Colors.white,
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
-                        child: IconButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          color: isLoading
-                              ? Theme.of(context).colorScheme.secondary
-                              : accent!.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                          icon: const Icon(
-                            JamIcons.chevron_left,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
-                        child: IconButton(
-                          onPressed: () {
-                            final link = context.favouriteWallsAdapter(listen: false).liked![index]["url"];
-                            Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                    pageBuilder: (context, animation, secondaryAnimation) {
-                                      animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                                      return FadeTransition(
-                                          opacity: animation,
-                                          child: ClockOverlay(
-                                            colorChanged: colorChanged,
-                                            accent: accent,
-                                            link: link.toString(),
-                                            file: false,
-                                          ));
-                                    },
-                                    fullscreenDialog: true,
-                                    opaque: false));
-                          },
-                          color: isLoading
-                              ? Theme.of(context).colorScheme.secondary
-                              : accent!.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                          icon: const Icon(
-                            JamIcons.clock,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                setState(() {
+                  panelClosed = true;
+                });
+              },
+              backdropEnabled: true,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
-            )
-          : Scaffold(
-              key: _scaffoldKey,
-              backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
-              body: SlidingUpPanel(
-                onPanelOpened: () {
-                  setState(() {
-                    panelCollapsed = false;
-                  });
-                  if (panelClosed) {
-                    logger.d('Screenshot Starting');
-                    if (colorChanged) {
-                      screenshotController
-                          .capture(
-                        pixelRatio: 3,
-                        delay: const Duration(milliseconds: 10),
-                      )
-                          .then((Uint8List? image) async {
-                        setState(() {
-                          _imageFile = File.fromRawPath(image!);
-                          screenshotTaken = true;
-                          panelClosed = false;
-                        });
-                        logger.d('Screenshot Taken');
-                      }).catchError((onError) {
-                        logger.d(onError.toString());
-                      });
-                    } else {
-                      (main.prefs.get('optimisedWallpapers') ?? true) == true
-                          ? screenshotController
-                              .capture(
-                              pixelRatio: 3,
-                              delay: const Duration(milliseconds: 10),
-                            )
-                              .then((Uint8List? image) async {
-                              setState(() {
-                                _imageFile = File.fromRawPath(image!);
-                                screenshotTaken = true;
-                                panelClosed = false;
-                              });
-                              logger.d('Screenshot Taken');
-                            }).catchError((onError) {
-                              logger.d(onError.toString());
-                            })
-                          : logger.d("Wallpaper Optimisation is disabled!");
-                    }
-                  }
-                },
-                onPanelClosed: () {
-                  setState(() {
-                    panelCollapsed = true;
-                  });
-
-                  setState(() {
-                    panelClosed = true;
-                  });
-                },
-                backdropEnabled: true,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                boxShadow: const [],
-                collapsed: CollapsedPanel(
-                  panelCollapsed: panelCollapsed,
-                  panelController: panelController,
-                ),
-                minHeight: MediaQuery.of(context).size.height / 20,
-                parallaxEnabled: true,
-                parallaxOffset: 0.0,
-                color: Colors.transparent,
-                maxHeight: MediaQuery.of(context).size.height * .43,
-                controller: panelController,
-                panel: Container(
-                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                  height: MediaQuery.of(context).size.height * .43,
-                  width: MediaQuery.of(context).size.width,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 750),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(30),
-                          color: panelCollapsed
-                              ? Theme.of(context).primaryColor.withValues(alpha: 1)
-                              : Theme.of(context).primaryColor.withValues(alpha: .5),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Center(
-                                child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: AnimatedOpacity(
-                                duration: Duration.zero,
-                                opacity: panelCollapsed ? 0.0 : 1.0,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    panelController.close();
-                                  },
-                                  child: Icon(
-                                    JamIcons.chevron_down,
-                                    color: Theme.of(context).colorScheme.secondary,
-                                  ),
+              boxShadow: const [],
+              collapsed: CollapsedPanel(
+                panelCollapsed: panelCollapsed,
+                panelController: panelController,
+              ),
+              minHeight: MediaQuery.of(context).size.height / 20,
+              parallaxEnabled: true,
+              parallaxOffset: 0.0,
+              color: Colors.transparent,
+              maxHeight: MediaQuery.of(context).size.height * .43,
+              controller: panelController,
+              panel: Container(
+                margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                height: MediaQuery.of(context).size.height * .43,
+                width: MediaQuery.of(context).size.width,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 750),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: panelCollapsed
+                            ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                            : Theme.of(context).primaryColor.withValues(alpha: .5),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Center(
+                              child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: AnimatedOpacity(
+                              duration: Duration.zero,
+                              opacity: panelCollapsed ? 0.0 : 1.0,
+                              child: GestureDetector(
+                                onTap: () {
+                                  panelController.close();
+                                },
+                                child: Icon(
+                                  JamIcons.chevron_down,
+                                  color: Theme.of(context).colorScheme.secondary,
                                 ),
                               ),
-                            )),
-                            ColorBar(colors: colors),
+                            ),
+                          )),
+                          ColorBar(colors: colors),
+                          if (context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "WallHaven")
                             Expanded(
                               flex: 8,
                               child: Padding(
@@ -1083,12 +302,59 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             ),
                                           ],
                                         ),
+                                        const SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.save,
+                                              size: 20,
+                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              "${double.parse((double.parse(context.favouriteWallsAdapter(listen: false).liked![index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium!
+                                                  .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                     Column(
                                       mainAxisSize: MainAxisSize.min,
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: <Widget>[
+                                        Padding(
+                                          padding: EdgeInsets.zero,
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                context
+                                                        .favouriteWallsAdapter(listen: false)
+                                                        .liked![index]["category"]
+                                                        .toString()[0]
+                                                        .toUpperCase() +
+                                                    context
+                                                        .favouriteWallsAdapter(listen: false)
+                                                        .liked![index]["category"]
+                                                        .toString()
+                                                        .substring(1),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium!
+                                                    .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.unordered_list,
+                                                size: 20,
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                         const SizedBox(height: 5),
                                         Row(
                                           children: [
@@ -1111,7 +377,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                         Row(
                                           children: [
                                             Text(
-                                              "${double.parse((double.parse(context.favouriteWallsAdapter(listen: false).liked![index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                              context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["provider"]
+                                                  .toString(),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyMedium!
@@ -1119,7 +388,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             ),
                                             const SizedBox(width: 10),
                                             Icon(
-                                              JamIcons.save,
+                                              JamIcons.database,
                                               size: 20,
                                               color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                             ),
@@ -1130,144 +399,737 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                   ],
                                 ),
                               ),
+                            )
+                          else
+                            context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Prism"
+                                ? Expanded(
+                                    flex: 8,
+                                    child: SizedBox(
+                                      width: MediaQuery.of(context).size.width * 0.36,
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: <Widget>[
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: <Widget>[
+                                                Padding(
+                                                  padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                                  child: Row(
+                                                    children: [
+                                                      Text(
+                                                        context
+                                                            .favouriteWallsAdapter(listen: false)
+                                                            .liked![index]["id"]
+                                                            .toString()
+                                                            .toUpperCase(),
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyLarge!
+                                                            .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                      ),
+                                                      Padding(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                                                        child: Container(
+                                                          height: 20,
+                                                          color: Theme.of(context).colorScheme.secondary,
+                                                          width: 2,
+                                                        ),
+                                                      ),
+                                                      FutureBuilder(
+                                                        future: _futureView,
+                                                        builder: (context, snapshot) {
+                                                          switch (snapshot.connectionState) {
+                                                            case ConnectionState.waiting:
+                                                              return Text(
+                                                                "",
+                                                                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                    color: Theme.of(context).colorScheme.secondary,
+                                                                    fontSize: 16),
+                                                              );
+                                                            case ConnectionState.none:
+                                                              return Text(
+                                                                "",
+                                                                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                    color: Theme.of(context).colorScheme.secondary,
+                                                                    fontSize: 16),
+                                                              );
+                                                            default:
+                                                              if (snapshot.hasError) {
+                                                                return Text(
+                                                                  "",
+                                                                  style: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodyLarge!
+                                                                      .copyWith(
+                                                                          color:
+                                                                              Theme.of(context).colorScheme.secondary,
+                                                                          fontSize: 16),
+                                                                );
+                                                              } else {
+                                                                return Text(
+                                                                  "${snapshot.data} views",
+                                                                  overflow: TextOverflow.fade,
+                                                                  softWrap: false,
+                                                                  style: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodyLarge!
+                                                                      .copyWith(
+                                                                          color:
+                                                                              Theme.of(context).colorScheme.secondary,
+                                                                          fontSize: 16),
+                                                                );
+                                                              }
+                                                          }
+                                                        },
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      JamIcons.camera,
+                                                      size: 20,
+                                                      color:
+                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      "${context.favouriteWallsAdapter(listen: false).liked![index]["photographer"]}",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium!
+                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 5),
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      JamIcons.arrow_circle_right,
+                                                      size: 20,
+                                                      color:
+                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      "${context.favouriteWallsAdapter(listen: false).liked![index]["category"]}",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium!
+                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 5),
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      JamIcons.save,
+                                                      size: 20,
+                                                      color:
+                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      "${context.favouriteWallsAdapter(listen: false).liked![index]["size"]}",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium!
+                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: <Widget>[
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      "${context.favouriteWallsAdapter(listen: false).liked![index]["resolution"]}",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium!
+                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Icon(
+                                                      JamIcons.set_square,
+                                                      size: 20,
+                                                      color:
+                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 5),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      context
+                                                          .favouriteWallsAdapter(listen: false)
+                                                          .liked![index]["provider"]
+                                                          .toString(),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium!
+                                                          .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Icon(
+                                                      JamIcons.database,
+                                                      size: 20,
+                                                      color:
+                                                          Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Pexels"
+                                    ? Expanded(
+                                        flex: 8,
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                children: <Widget>[
+                                                  Column(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: <Widget>[
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            JamIcons.camera,
+                                                            size: 20,
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
+                                                          ),
+                                                          const SizedBox(width: 10),
+                                                          SizedBox(
+                                                            width: MediaQuery.of(context).size.width * .4,
+                                                            child: Text(
+                                                              context
+                                                                  .favouriteWallsAdapter(listen: false)
+                                                                  .liked![index]["photographer"]
+                                                                  .toString(),
+                                                              textAlign: TextAlign.left,
+                                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                                  color: Theme.of(context).colorScheme.secondary),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 5),
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            JamIcons.set_square,
+                                                            size: 20,
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
+                                                          ),
+                                                          const SizedBox(width: 10),
+                                                          Text(
+                                                            context
+                                                                .favouriteWallsAdapter(listen: false)
+                                                                .liked![index]["resolution"]
+                                                                .toString(),
+                                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Column(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                                    children: <Widget>[
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            context
+                                                                .favouriteWallsAdapter(listen: false)
+                                                                .liked![index]["id"]
+                                                                .toString(),
+                                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary),
+                                                          ),
+                                                          const SizedBox(width: 10),
+                                                          Icon(
+                                                            JamIcons.info,
+                                                            size: 20,
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 5),
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            context
+                                                                .favouriteWallsAdapter(listen: false)
+                                                                .liked![index]["provider"]
+                                                                .toString(),
+                                                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary),
+                                                          ),
+                                                          const SizedBox(width: 10),
+                                                          Icon(
+                                                            JamIcons.database,
+                                                            size: 20,
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .secondary
+                                                                .withValues(alpha: .7),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      )
+                                    : Expanded(flex: 8, child: Container()),
+                          Expanded(
+                            flex: 5,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: <Widget>[
+                                DownloadButton(
+                                  colorChanged: colorChanged,
+                                  link: screenshotTaken
+                                      ? _imageFile.path
+                                      : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                                ),
+                                SetWallpaperButton(
+                                  colorChanged: colorChanged,
+                                  url: screenshotTaken
+                                      ? _imageFile.path
+                                      : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                                ),
+                                FavouriteWallpaperButton(
+                                  id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
+                                  provider:
+                                      context.favouriteWallsAdapter(listen: false).liked![index]["provider"].toString(),
+                                  trash: true,
+                                ),
+                                ShareButton(
+                                    id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
+                                    provider: context
+                                        .favouriteWallsAdapter(listen: false)
+                                        .liked![index]["provider"]
+                                        .toString(),
+                                    url: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                                    thumbUrl:
+                                        context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString()),
+                                EditButton(
+                                  url: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                                ),
+                              ],
                             ),
-                            Expanded(
-                              flex: 5,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              body: Stack(
+                children: <Widget>[
+                  AnimatedBuilder(
+                      animation: offsetAnimation,
+                      builder: (buildContext, child) {
+                        if (offsetAnimation.value < 0.0) {
+                          logger.d('${offsetAnimation.value + 8.0}');
+                        }
+                        return GestureDetector(
+                          onPanUpdate: (details) {
+                            if (details.delta.dy < -10) {
+                              panelController.open();
+                              // HapticFeedback.vibrate();
+                            }
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              colorChanged = false;
+                            });
+                            HapticFeedback.vibrate();
+                            shakeController.forward(from: 0.0);
+                          },
+                          onTap: () {
+                            HapticFeedback.vibrate();
+                            !isLoading ? updateAccent() : logger.d("");
+                            shakeController.forward(from: 0.0);
+                          },
+                          child: CachedNetworkImage(
+                            imageUrl: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                            imageBuilder: (context, imageProvider) => Screenshot(
+                              controller: screenshotController,
+                              child: Container(
+                                margin: EdgeInsets.symmetric(
+                                    vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(offsetAnimation.value),
+                                  image: DecorationImage(
+                                    colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
+                                    image: imageProvider,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
+                              children: <Widget>[
+                                const SizedBox.expand(child: Text("")),
+                                Center(
+                                  child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation(
+                                        Theme.of(context).colorScheme.error,
+                                      ),
+                                      value: downloadProgress.progress),
+                                ),
+                              ],
+                            ),
+                            errorWidget: (context, url, error) => Center(
+                              child: Icon(
+                                JamIcons.close_circle_f,
+                                color: isLoading
+                                    ? Theme.of(context).colorScheme.secondary
+                                    : accent!.computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      child: IconButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        color: isLoading
+                            ? Theme.of(context).colorScheme.secondary
+                            : accent!.computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                        icon: const Icon(
+                          JamIcons.chevron_left,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      child: IconButton(
+                        onPressed: () {
+                          final link = context.favouriteWallsAdapter(listen: false).liked![index]["url"];
+                          Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                  pageBuilder: (context, animation, secondaryAnimation) {
+                                    animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                                    return FadeTransition(
+                                        opacity: animation,
+                                        child: ClockOverlay(
+                                          colorChanged: colorChanged,
+                                          accent: accent,
+                                          link: link.toString(),
+                                          file: false,
+                                        ));
+                                  },
+                                  fullscreenDialog: true,
+                                  opaque: false));
+                        },
+                        color: isLoading
+                            ? Theme.of(context).colorScheme.secondary
+                            : accent!.computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                        icon: const Icon(
+                          JamIcons.clock,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : Scaffold(
+            key: _scaffoldKey,
+            backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
+            body: SlidingUpPanel(
+              onPanelOpened: () {
+                setState(() {
+                  panelCollapsed = false;
+                });
+                if (panelClosed) {
+                  logger.d('Screenshot Starting');
+                  if (colorChanged) {
+                    screenshotController
+                        .capture(
+                      pixelRatio: 3,
+                      delay: const Duration(milliseconds: 10),
+                    )
+                        .then((Uint8List? image) async {
+                      setState(() {
+                        _imageFile = File.fromRawPath(image!);
+                        screenshotTaken = true;
+                        panelClosed = false;
+                      });
+                      logger.d('Screenshot Taken');
+                    }).catchError((onError) {
+                      logger.d(onError.toString());
+                    });
+                  } else {
+                    (main.prefs.get('optimisedWallpapers') ?? true) == true
+                        ? screenshotController
+                            .capture(
+                            pixelRatio: 3,
+                            delay: const Duration(milliseconds: 10),
+                          )
+                            .then((Uint8List? image) async {
+                            setState(() {
+                              _imageFile = File.fromRawPath(image!);
+                              screenshotTaken = true;
+                              panelClosed = false;
+                            });
+                            logger.d('Screenshot Taken');
+                          }).catchError((onError) {
+                            logger.d(onError.toString());
+                          })
+                        : logger.d("Wallpaper Optimisation is disabled!");
+                  }
+                }
+              },
+              onPanelClosed: () {
+                setState(() {
+                  panelCollapsed = true;
+                });
+
+                setState(() {
+                  panelClosed = true;
+                });
+              },
+              backdropEnabled: true,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+              boxShadow: const [],
+              collapsed: CollapsedPanel(
+                panelCollapsed: panelCollapsed,
+                panelController: panelController,
+              ),
+              minHeight: MediaQuery.of(context).size.height / 20,
+              parallaxEnabled: true,
+              parallaxOffset: 0.0,
+              color: Colors.transparent,
+              maxHeight: MediaQuery.of(context).size.height * .43,
+              controller: panelController,
+              panel: Container(
+                margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                height: MediaQuery.of(context).size.height * .43,
+                width: MediaQuery.of(context).size.width,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 750),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: panelCollapsed
+                            ? Theme.of(context).primaryColor.withValues(alpha: 1)
+                            : Theme.of(context).primaryColor.withValues(alpha: .5),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Center(
+                              child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: AnimatedOpacity(
+                              duration: Duration.zero,
+                              opacity: panelCollapsed ? 0.0 : 1.0,
+                              child: GestureDetector(
+                                onTap: () {
+                                  panelController.close();
+                                },
+                                child: Icon(
+                                  JamIcons.chevron_down,
+                                  color: Theme.of(context).colorScheme.secondary,
+                                ),
+                              ),
+                            ),
+                          )),
+                          ColorBar(colors: colors),
+                          Expanded(
+                            flex: 8,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == null
-                                    ? downloadLinkBackwards == null
-                                        ? <Widget>[
-                                            SetWallpaperButton(
-                                              colorChanged: colorChanged,
-                                              url: screenshotTaken
-                                                  ? _imageFile.path
-                                                  : context.favouriteWallsAdapter(listen: false).liked![index]
-                                                              ["provider"] ==
-                                                          null
-                                                      ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
-                                                      : context
-                                                          .favouriteWallsAdapter(listen: false)
-                                                          .liked![index]["url"]
-                                                          .toString(),
-                                            ),
-                                            FavouriteWallpaperButton(
-                                              id: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
-                                                  .toString(),
-                                              provider: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["provider"]
-                                                  .toString(),
-                                              trash: true,
-                                            ),
-                                            ShareButton(
-                                                id: context
-                                                    .favouriteWallsAdapter(listen: false)
-                                                    .liked![index]["id"]
-                                                    .toString(),
-                                                provider: context
-                                                    .favouriteWallsAdapter(listen: false)
-                                                    .liked![index]["provider"]
-                                                    .toString(),
-                                                url: context
-                                                    .favouriteWallsAdapter(listen: false)
-                                                    .liked![index]["url"]
-                                                    .toString(),
-                                                thumbUrl: context
-                                                    .favouriteWallsAdapter(listen: false)
-                                                    .liked![index]["thumb"]
-                                                    .toString()),
-                                            EditButton(
-                                              url: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["url"]
-                                                  .toString(),
-                                            ),
-                                          ]
-                                        : <Widget>[
-                                            DownloadButton(
-                                              colorChanged: colorChanged,
-                                              link: screenshotTaken ? _imageFile.path : downloadLinkBackwards,
-                                            ),
-                                            SetWallpaperButton(
-                                              colorChanged: colorChanged,
-                                              url: screenshotTaken
-                                                  ? _imageFile.path
-                                                  : context.favouriteWallsAdapter(listen: false).liked![index]
-                                                              ["provider"] ==
-                                                          null
-                                                      ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
-                                                      : context
-                                                          .favouriteWallsAdapter(listen: false)
-                                                          .liked![index]["url"]
-                                                          .toString(),
-                                            ),
-                                            FavouriteWallpaperButton(
-                                              id: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
-                                                  .toString(),
-                                              provider: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["provider"]
-                                                  .toString(),
-                                              trash: true,
-                                            ),
-                                            ShareButton(
-                                                id: context
-                                                    .favouriteWallsAdapter(listen: false)
-                                                    .liked![index]["id"]
-                                                    .toString(),
-                                                provider: context
-                                                    .favouriteWallsAdapter(listen: false)
-                                                    .liked![index]["provider"]
-                                                    .toString(),
-                                                url: context
-                                                    .favouriteWallsAdapter(listen: false)
-                                                    .liked![index]["url"]
-                                                    .toString(),
-                                                thumbUrl: context
-                                                    .favouriteWallsAdapter(listen: false)
-                                                    .liked![index]["thumb"]
-                                                    .toString())
-                                          ]
-                                    : <Widget>[
-                                        DownloadButton(
-                                          colorChanged: colorChanged,
-                                          link: screenshotTaken
-                                              ? _imageFile.path
-                                              : context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["url"]
-                                                  .toString(),
-                                        ),
-                                        SetWallpaperButton(
-                                          colorChanged: colorChanged,
-                                          url: screenshotTaken
-                                              ? _imageFile.path
-                                              : context.favouriteWallsAdapter(listen: false).liked![index]
-                                                          ["provider"] ==
-                                                      null
-                                                  ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
-                                                  : context
-                                                      .favouriteWallsAdapter(listen: false)
-                                                      .liked![index]["url"]
-                                                      .toString(),
-                                        ),
-                                        FavouriteWallpaperButton(
-                                          id: context
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: <Widget>[
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                        child: Text(
+                                          context
                                               .favouriteWallsAdapter(listen: false)
                                               .liked![index]["id"]
-                                              .toString(),
-                                          provider: context
-                                              .favouriteWallsAdapter(listen: false)
-                                              .liked![index]["provider"]
-                                              .toString(),
-                                          trash: true,
+                                              .toString()
+                                              .toUpperCase(),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge!
+                                              .copyWith(color: Theme.of(context).colorScheme.secondary),
                                         ),
-                                        ShareButton(
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            JamIcons.eye,
+                                            size: 20,
+                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            "${context.favouriteWallsAdapter(listen: false).liked![index]["views"]}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium!
+                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            JamIcons.heart_f,
+                                            size: 20,
+                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            "${context.favouriteWallsAdapter(listen: false).liked![index]["fav"]}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium!
+                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: <Widget>[
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "${context.favouriteWallsAdapter(listen: false).liked![index]["resolution"]}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium!
+                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Icon(
+                                            JamIcons.set_square,
+                                            size: 20,
+                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "${double.parse((double.parse(context.favouriteWallsAdapter(listen: false).liked![index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium!
+                                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Icon(
+                                            JamIcons.save,
+                                            size: 20,
+                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 5,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == null
+                                  ? downloadLinkBackwards == null
+                                      ? <Widget>[
+                                          SetWallpaperButton(
+                                            colorChanged: colorChanged,
+                                            url: screenshotTaken
+                                                ? _imageFile.path
+                                                : context.favouriteWallsAdapter(listen: false).liked![index]
+                                                            ["provider"] ==
+                                                        null
+                                                    ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
+                                                    : context
+                                                        .favouriteWallsAdapter(listen: false)
+                                                        .liked![index]["url"]
+                                                        .toString(),
+                                          ),
+                                          FavouriteWallpaperButton(
                                             id: context
                                                 .favouriteWallsAdapter(listen: false)
                                                 .liked![index]["id"]
@@ -1276,56 +1138,202 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                 .favouriteWallsAdapter(listen: false)
                                                 .liked![index]["provider"]
                                                 .toString(),
+                                            trash: true,
+                                          ),
+                                          ShareButton(
+                                              id: context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["provider"]
+                                                  .toString(),
+                                              url: context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["url"]
+                                                  .toString(),
+                                              thumbUrl: context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["thumb"]
+                                                  .toString()),
+                                          EditButton(
                                             url: context
                                                 .favouriteWallsAdapter(listen: false)
                                                 .liked![index]["url"]
                                                 .toString(),
-                                            thumbUrl: context
+                                          ),
+                                        ]
+                                      : <Widget>[
+                                          DownloadButton(
+                                            colorChanged: colorChanged,
+                                            link: screenshotTaken ? _imageFile.path : downloadLinkBackwards,
+                                          ),
+                                          SetWallpaperButton(
+                                            colorChanged: colorChanged,
+                                            url: screenshotTaken
+                                                ? _imageFile.path
+                                                : context.favouriteWallsAdapter(listen: false).liked![index]
+                                                            ["provider"] ==
+                                                        null
+                                                    ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
+                                                    : context
+                                                        .favouriteWallsAdapter(listen: false)
+                                                        .liked![index]["url"]
+                                                        .toString(),
+                                          ),
+                                          FavouriteWallpaperButton(
+                                            id: context
                                                 .favouriteWallsAdapter(listen: false)
-                                                .liked![index]["thumb"]
-                                                .toString())
-                                      ],
-                              ),
+                                                .liked![index]["id"]
+                                                .toString(),
+                                            provider: context
+                                                .favouriteWallsAdapter(listen: false)
+                                                .liked![index]["provider"]
+                                                .toString(),
+                                            trash: true,
+                                          ),
+                                          ShareButton(
+                                              id: context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["provider"]
+                                                  .toString(),
+                                              url: context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["url"]
+                                                  .toString(),
+                                              thumbUrl: context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["thumb"]
+                                                  .toString())
+                                        ]
+                                  : <Widget>[
+                                      DownloadButton(
+                                        colorChanged: colorChanged,
+                                        link: screenshotTaken
+                                            ? _imageFile.path
+                                            : context
+                                                .favouriteWallsAdapter(listen: false)
+                                                .liked![index]["url"]
+                                                .toString(),
+                                      ),
+                                      SetWallpaperButton(
+                                        colorChanged: colorChanged,
+                                        url: screenshotTaken
+                                            ? _imageFile.path
+                                            : context.favouriteWallsAdapter(listen: false).liked![index]["provider"] ==
+                                                    null
+                                                ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
+                                                : context
+                                                    .favouriteWallsAdapter(listen: false)
+                                                    .liked![index]["url"]
+                                                    .toString(),
+                                      ),
+                                      FavouriteWallpaperButton(
+                                        id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
+                                        provider: context
+                                            .favouriteWallsAdapter(listen: false)
+                                            .liked![index]["provider"]
+                                            .toString(),
+                                        trash: true,
+                                      ),
+                                      ShareButton(
+                                          id: context
+                                              .favouriteWallsAdapter(listen: false)
+                                              .liked![index]["id"]
+                                              .toString(),
+                                          provider: context
+                                              .favouriteWallsAdapter(listen: false)
+                                              .liked![index]["provider"]
+                                              .toString(),
+                                          url: context
+                                              .favouriteWallsAdapter(listen: false)
+                                              .liked![index]["url"]
+                                              .toString(),
+                                          thumbUrl: context
+                                              .favouriteWallsAdapter(listen: false)
+                                              .liked![index]["thumb"]
+                                              .toString())
+                                    ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                body: Stack(
-                  children: <Widget>[
-                    AnimatedBuilder(
-                        animation: offsetAnimation,
-                        builder: (buildContext, child) {
-                          if (offsetAnimation.value < 0.0) {
-                            logger.d('${offsetAnimation.value + 8.0}');
-                          }
-                          return GestureDetector(
-                            onPanUpdate: (details) {
-                              if (details.delta.dy < -10) {
-                                panelController.open();
-                                // HapticFeedback.vibrate();
-                              }
+              ),
+              body: Stack(
+                children: <Widget>[
+                  AnimatedBuilder(
+                      animation: offsetAnimation,
+                      builder: (buildContext, child) {
+                        if (offsetAnimation.value < 0.0) {
+                          logger.d('${offsetAnimation.value + 8.0}');
+                        }
+                        return GestureDetector(
+                          onPanUpdate: (details) {
+                            if (details.delta.dy < -10) {
+                              panelController.open();
+                              // HapticFeedback.vibrate();
+                            }
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              colorChanged = false;
+                            });
+                            HapticFeedback.vibrate();
+                            shakeController.forward(from: 0.0);
+                          },
+                          onTap: () {
+                            HapticFeedback.vibrate();
+                            !isLoading ? updateAccent() : logger.d("");
+                            shakeController.forward(from: 0.0);
+                          },
+                          child: CachedNetworkImage(
+                            imageUrl:
+                                "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.jpg",
+                            imageBuilder: (context, imageProvider) {
+                              downloadLinkBackwards =
+                                  "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.jpg";
+                              return Screenshot(
+                                controller: screenshotController,
+                                child: Container(
+                                  margin: EdgeInsets.symmetric(
+                                      vertical: offsetAnimation.value * 1.25, horizontal: offsetAnimation.value / 2),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(offsetAnimation.value),
+                                    image: DecorationImage(
+                                      colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
+                                      image: imageProvider,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              );
                             },
-                            onLongPress: () {
-                              setState(() {
-                                colorChanged = false;
-                              });
-                              HapticFeedback.vibrate();
-                              shakeController.forward(from: 0.0);
-                            },
-                            onTap: () {
-                              HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : logger.d("");
-                              shakeController.forward(from: 0.0);
-                            },
-                            child: CachedNetworkImage(
+                            progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
+                              children: <Widget>[
+                                const SizedBox.expand(child: Text("")),
+                                Center(
+                                  child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation(
+                                        Theme.of(context).colorScheme.error,
+                                      ),
+                                      value: downloadProgress.progress),
+                                ),
+                              ],
+                            ),
+                            errorWidget: (context, url, error) => CachedNetworkImage(
                               imageUrl:
-                                  "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.jpg",
+                                  "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png",
                               imageBuilder: (context, imageProvider) {
                                 downloadLinkBackwards =
-                                    "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.jpg";
+                                    "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png";
                                 return Screenshot(
                                   controller: screenshotController,
                                   child: Container(
@@ -1342,120 +1350,85 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                   ),
                                 );
                               },
-                              progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-                                children: <Widget>[
-                                  const SizedBox.expand(child: Text("")),
-                                  Center(
-                                    child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation(
-                                          Theme.of(context).colorScheme.error,
-                                        ),
-                                        value: downloadProgress.progress),
-                                  ),
-                                ],
-                              ),
-                              errorWidget: (context, url, error) => CachedNetworkImage(
-                                imageUrl:
-                                    "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png",
-                                imageBuilder: (context, imageProvider) {
-                                  downloadLinkBackwards =
-                                      "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png";
-                                  return Screenshot(
-                                    controller: screenshotController,
-                                    child: Container(
-                                      margin: EdgeInsets.symmetric(
-                                          vertical: offsetAnimation.value * 1.25,
-                                          horizontal: offsetAnimation.value / 2),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(offsetAnimation.value),
-                                        image: DecorationImage(
-                                          colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
-                                          image: imageProvider,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
+                              progressIndicatorBuilder: (context, url, downloadProgress) => Center(
+                                child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Theme.of(context).colorScheme.error,
                                     ),
-                                  );
-                                },
-                                progressIndicatorBuilder: (context, url, downloadProgress) => Center(
-                                  child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation(
-                                        Theme.of(context).colorScheme.error,
-                                      ),
-                                      value: downloadProgress.progress),
-                                ),
-                                errorWidget: (context, url, error) => Center(
-                                  child: Icon(
-                                    JamIcons.close_circle_f,
-                                    color: isLoading
-                                        ? Theme.of(context).colorScheme.secondary
-                                        : accent!.computeLuminance() > 0.5
-                                            ? Colors.black
-                                            : Colors.white,
-                                  ),
+                                    value: downloadProgress.progress),
+                              ),
+                              errorWidget: (context, url, error) => Center(
+                                child: Icon(
+                                  JamIcons.close_circle_f,
+                                  color: isLoading
+                                      ? Theme.of(context).colorScheme.secondary
+                                      : accent!.computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
                                 ),
                               ),
                             ),
-                          );
-                        }),
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
-                        child: IconButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          color: isLoading
-                              ? Theme.of(context).colorScheme.secondary
-                              : accent!.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                          icon: const Icon(
-                            JamIcons.chevron_left,
                           ),
+                        );
+                      }),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      child: IconButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        color: isLoading
+                            ? Theme.of(context).colorScheme.secondary
+                            : accent!.computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                        icon: const Icon(
+                          JamIcons.chevron_left,
                         ),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
-                        child: IconButton(
-                          onPressed: () {
-                            final link =
-                                "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.${context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().substring(context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().length - 3, context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().length)}";
-                            Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                    pageBuilder: (context, animation, secondaryAnimation) {
-                                      animation = Tween(begin: 0.0, end: 1.0).animate(animation);
-                                      return FadeTransition(
-                                          opacity: animation,
-                                          child: ClockOverlay(
-                                            colorChanged: colorChanged,
-                                            accent: accent,
-                                            link: link,
-                                            file: false,
-                                          ));
-                                    },
-                                    fullscreenDialog: true,
-                                    opaque: false));
-                          },
-                          color: isLoading
-                              ? Theme.of(context).colorScheme.secondary
-                              : accent!.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                          icon: const Icon(
-                            JamIcons.clock,
-                          ),
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      child: IconButton(
+                        onPressed: () {
+                          final link =
+                              "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.${context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().substring(context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().length - 3, context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().length)}";
+                          Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                  pageBuilder: (context, animation, secondaryAnimation) {
+                                    animation = Tween(begin: 0.0, end: 1.0).animate(animation);
+                                    return FadeTransition(
+                                        opacity: animation,
+                                        child: ClockOverlay(
+                                          colorChanged: colorChanged,
+                                          accent: accent,
+                                          link: link,
+                                          file: false,
+                                        ));
+                                  },
+                                  fullscreenDialog: true,
+                                  opaque: false));
+                        },
+                        color: isLoading
+                            ? Theme.of(context).colorScheme.secondary
+                            : accent!.computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                        icon: const Icon(
+                          JamIcons.clock,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            );
+            ),
+          );
   }
 }
