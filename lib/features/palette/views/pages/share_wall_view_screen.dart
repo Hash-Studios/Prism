@@ -11,7 +11,6 @@ import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/shareButton.dart';
 import 'package:Prism/core/widgets/popup/copyrightPopUp.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
@@ -25,8 +24,8 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -34,7 +33,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:auto_route/auto_route.dart';
 
 @RoutePage()
 class ShareWallpaperViewScreen extends StatefulWidget {
@@ -929,95 +927,45 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                       ),
                                     ),
                                   ),
-                                  if (globals.prismUser.premium == false &&
-                                      globals.isPremiumWall(
+                                  Expanded(
+                                    flex: 5,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      children: <Widget>[
+                                        DownloadButton(
+                                          colorChanged: colorChanged,
+                                          link: screenshotTaken
+                                              ? _imageFile.path
+                                              : Data.wall["wallpaper_url"].toString(),
+                                          isPremiumContent: globals.isPremiumWall(
                                             globals.premiumCollections,
                                             Data.wall["collections"] as List? ?? [],
-                                          ) ==
-                                          true)
-                                    Expanded(
-                                      flex: 5,
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () async {
-                                              if (globals.prismUser.loggedIn == true) {
-                                                context.router.push(const UpgradeRoute());
-                                              } else {
-                                                googleSignInPopUp(context, () {
-                                                  context.router.push(const UpgradeRoute());
-                                                });
-                                              }
-                                              toasts.codeSend("This is a premium wallpaper.");
-                                            },
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context).primaryColor,
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black.withValues(alpha: .25),
-                                                    blurRadius: 4,
-                                                    offset: const Offset(0, 4),
-                                                  ),
-                                                ],
-                                                borderRadius: BorderRadius.circular(500),
-                                              ),
-                                              padding: const EdgeInsets.all(17),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.stop_sign,
-                                                    color: Theme.of(context).colorScheme.secondary,
-                                                    size: 30,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    "Premium Required",
-                                                    style: Theme.of(context).textTheme.headlineMedium,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
                                           ),
-                                        ],
-                                      ),
-                                    )
-                                  else
-                                    Expanded(
-                                      flex: 5,
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                        children: <Widget>[
-                                          DownloadButton(
-                                            colorChanged: colorChanged,
-                                            link: screenshotTaken
-                                                ? _imageFile.path
-                                                : Data.wall["wallpaper_url"].toString(),
-                                          ),
-                                          SetWallpaperButton(
-                                            colorChanged: colorChanged,
-                                            url: screenshotTaken
-                                                ? _imageFile.path
-                                                : Data.wall["wallpaper_url"].toString(),
-                                          ),
-                                          FavouriteWallpaperButton(
-                                            id: Data.wall["id"].toString(),
-                                            provider: "Prism",
-                                            prism: Data.wall,
-                                            trash: false,
-                                          ),
-                                          ShareButton(
-                                            id: Data.wall["id"].toString(),
-                                            provider: provider,
-                                            url: Data.wall["wallpaper_url"].toString(),
-                                            thumbUrl: Data.wall["wallpaper_thumb"].toString(),
-                                          ),
-                                          EditButton(url: Data.wall["wallpaper_url"].toString()),
-                                        ],
-                                      ),
+                                          contentId: Data.wall["id"]?.toString(),
+                                          sourceContext: 'share_wall_view.prism',
+                                        ),
+                                        SetWallpaperButton(
+                                          colorChanged: colorChanged,
+                                          url: screenshotTaken
+                                              ? _imageFile.path
+                                              : Data.wall["wallpaper_url"].toString(),
+                                        ),
+                                        FavouriteWallpaperButton(
+                                          id: Data.wall["id"].toString(),
+                                          provider: "Prism",
+                                          prism: Data.wall,
+                                          trash: false,
+                                        ),
+                                        ShareButton(
+                                          id: Data.wall["id"].toString(),
+                                          provider: provider,
+                                          url: Data.wall["wallpaper_url"].toString(),
+                                          thumbUrl: Data.wall["wallpaper_thumb"].toString(),
+                                        ),
+                                        EditButton(url: Data.wall["wallpaper_url"].toString()),
+                                      ],
                                     ),
+                                  ),
                                 ],
                               );
                             }

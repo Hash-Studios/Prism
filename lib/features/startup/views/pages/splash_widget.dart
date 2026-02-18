@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:Prism/core/router/app_router.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
@@ -9,6 +8,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
+import 'package:auto_route/auto_route.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 

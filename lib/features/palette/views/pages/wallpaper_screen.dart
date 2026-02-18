@@ -23,6 +23,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,7 +31,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:auto_route/auto_route.dart';
 
 @RoutePage()
 class WallpaperScreen extends StatefulWidget {
@@ -883,6 +883,12 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                     link: screenshotTaken
                                         ? _imageFile.path
                                         : data.subPrismWalls![index]["wallpaper_url"].toString(),
+                                    isPremiumContent: globals.isPremiumWall(
+                                      globals.premiumCollections,
+                                      data.subPrismWalls![index]["collections"] as List? ?? [],
+                                    ),
+                                    contentId: data.subPrismWalls![index]["id"]?.toString(),
+                                    sourceContext: 'wallpaper_screen.prism',
                                   ),
                                   SetWallpaperButton(
                                     colorChanged: colorChanged,

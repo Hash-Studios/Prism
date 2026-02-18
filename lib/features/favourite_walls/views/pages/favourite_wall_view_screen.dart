@@ -15,13 +15,13 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:auto_route/auto_route.dart';
 
 @RoutePage()
 class FavWallpaperViewScreen extends StatefulWidget {
@@ -712,6 +712,17 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                   link: screenshotTaken
                                       ? _imageFile.path
                                       : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                                  isPremiumContent: globals.isPremiumWall(
+                                    globals.premiumCollections,
+                                    context.favouriteWallsAdapter(listen: false).liked![index]["collections"]
+                                            as List? ??
+                                        [],
+                                  ),
+                                  contentId: context
+                                      .favouriteWallsAdapter(listen: false)
+                                      .liked![index]["id"]
+                                      ?.toString(),
+                                  sourceContext: 'favourite_wall_view',
                                 ),
                                 SetWallpaperButton(
                                   colorChanged: colorChanged,
@@ -1141,6 +1152,19 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             DownloadButton(
                                               colorChanged: colorChanged,
                                               link: screenshotTaken ? _imageFile.path : downloadLinkBackwards,
+                                              isPremiumContent: globals.isPremiumWall(
+                                                globals.premiumCollections,
+                                                context
+                                                            .favouriteWallsAdapter(listen: false)
+                                                            .liked![index]["collections"]
+                                                        as List? ??
+                                                    [],
+                                              ),
+                                              contentId: context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["id"]
+                                                  ?.toString(),
+                                              sourceContext: 'favourite_wall_view',
                                             ),
                                             SetWallpaperButton(
                                               colorChanged: colorChanged,
@@ -1195,6 +1219,17 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                   .favouriteWallsAdapter(listen: false)
                                                   .liked![index]["url"]
                                                   .toString(),
+                                        isPremiumContent: globals.isPremiumWall(
+                                          globals.premiumCollections,
+                                          context.favouriteWallsAdapter(listen: false).liked![index]["collections"]
+                                                  as List? ??
+                                              [],
+                                        ),
+                                        contentId: context
+                                            .favouriteWallsAdapter(listen: false)
+                                            .liked![index]["id"]
+                                            ?.toString(),
+                                        sourceContext: 'favourite_wall_view',
                                       ),
                                       SetWallpaperButton(
                                         colorChanged: colorChanged,
