@@ -41,10 +41,11 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
       );
     }
     if (path == 'user') {
+      final usernameOrEmail = uri.queryParameters['username'] ?? uri.queryParameters['email'];
       return DeepLinkActionEntity(
         type: DeepLinkActionType.user,
         route: '/follower-profile',
-        arguments: <dynamic>[uri.queryParameters['email']],
+        arguments: <dynamic>[usernameOrEmail],
         rawUri: uri.toString(),
       );
     }
@@ -64,6 +65,14 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
         type: DeepLinkActionType.refer,
         route: '',
         arguments: const <dynamic>[],
+        rawUri: uri.toString(),
+      );
+    }
+    if (path == 'l' && uri.pathSegments.length >= 2) {
+      return DeepLinkActionEntity(
+        type: DeepLinkActionType.shortCode,
+        route: '/l',
+        arguments: <dynamic>[uri.pathSegments[1]],
         rawUri: uri.toString(),
       );
     }

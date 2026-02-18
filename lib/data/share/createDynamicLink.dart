@@ -25,8 +25,8 @@ class CanonicalLinkBuilder {
     });
   }
 
-  Uri user({required String email}) {
-    return Uri.https(_shareDomain, '/user', <String, String>{'email': email});
+  Uri user({required String username}) {
+    return Uri.https(_shareDomain, '/user', <String, String>{'username': username});
   }
 
   Uri setup({required String index, required String name, required String thumbUrl}) {
@@ -45,7 +45,12 @@ class CanonicalLinkBuilder {
 class ShortLinkService {
   const ShortLinkService();
 
-  Future<Uri> createShortLink({required String type, required Uri canonicalUri, Map<String, dynamic>? payload}) async {
+  Future<Uri> createShortLink({
+    required String type,
+    required Uri canonicalUri,
+    Map<String, dynamic>? payload,
+    Map<String, dynamic>? preview,
+  }) async {
     final Uri endpoint = Uri.parse(_shortLinkApiUrl);
     try {
       final response = await http
@@ -59,6 +64,7 @@ class ShortLinkService {
               'type': type,
               'payload': payload ?? const <String, dynamic>{},
               'canonical_url': canonicalUri.toString(),
+              'preview': preview ?? const <String, dynamic>{},
             }),
           )
           .timeout(const Duration(seconds: 6));
@@ -99,9 +105,16 @@ const CanonicalLinkBuilder _canonicalLinkBuilder = CanonicalLinkBuilder();
 const ShortLinkService _shortLinkService = ShortLinkService();
 
 Future<String> _buildShareableLink(
-    {required String type, required Uri canonicalUri, Map<String, dynamic>? payload}) async {
-  final Uri resolved =
-      await _shortLinkService.createShortLink(type: type, canonicalUri: canonicalUri, payload: payload);
+    {required String type,
+    required Uri canonicalUri,
+    Map<String, dynamic>? payload,
+    Map<String, dynamic>? preview}) async {
+  final Uri resolved = await _shortLinkService.createShortLink(
+    type: type,
+    canonicalUri: canonicalUri,
+    payload: payload,
+    preview: preview,
+  );
   logger.d(resolved.toString());
   return resolved.toString();
 }
@@ -122,6 +135,13 @@ Future<String> createDynamicLink(String id, String provider, String? url, String
       if (url != null) 'url': url,
       'thumb': thumbUrl,
     },
+    preview: <String, dynamic>{
+      'title': '$id - Prism',
+      'description': 'Check out this amazing wallpaper from Prism.',
+      'image_source_url': thumbUrl,
+      'provider': provider,
+      'wall_id': id,
+    },
   );
 
   await Clipboard.setData(ClipboardData(text: 'Hey check this out ➜ $link'));
@@ -131,11 +151,18 @@ Future<String> createDynamicLink(String id, String provider, String? url, String
 }
 
 Future<void> createUserDynamicLink(String name, String username, String email, String bio, String userPhoto) async {
-  final Uri canonical = _canonicalLinkBuilder.user(email: email);
+  final String userIdentifier = username.isNotEmpty ? username : email;
+  final Uri canonical = _canonicalLinkBuilder.user(username: userIdentifier);
   final String link = await _buildShareableLink(
     type: 'user',
     canonicalUri: canonical,
-    payload: <String, dynamic>{'email': email, 'username': username},
+    payload: <String, dynamic>{'username': userIdentifier},
+    preview: <String, dynamic>{
+      'title': '$name (@$userIdentifier)',
+      'description': bio.isNotEmpty ? bio : 'Check out this creator profile on Prism.',
+      'image_source_url': userPhoto,
+      'username': userIdentifier,
+    },
   );
 
   await Clipboard.setData(ClipboardData(text: link));
@@ -145,7 +172,7 @@ Future<void> createUserDynamicLink(String name, String username, String email, S
       sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
     ),
   );
-  analytics.logShare(contentType: 'userShare', itemId: username, method: 'link');
+  analytics.logShare(contentType: 'userShare', itemId: userIdentifier, method: 'link');
 }
 
 Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) async {
@@ -154,6 +181,12 @@ Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) 
     type: 'setup',
     canonicalUri: canonical,
     payload: <String, dynamic>{'index': index, 'name': name, 'thumbUrl': thumbUrl},
+    preview: <String, dynamic>{
+      'title': '$name - Prism',
+      'description': 'Check out this setup shared from Prism.',
+      'image_source_url': thumbUrl,
+      'setup_name': name,
+    },
   );
 
   await Clipboard.setData(ClipboardData(text: link));
@@ -172,6 +205,10 @@ Future<String> createSharingPrismLink(String userID) async {
     type: 'refer',
     canonicalUri: canonical,
     payload: <String, dynamic>{'userID': userID},
+    preview: <String, dynamic>{
+      'title': 'Join Prism',
+      'description': 'Download Prism to discover beautiful wallpapers and setups.',
+    },
   );
 
   analytics.logShare(contentType: 'prismShare', itemId: userID, method: 'link');
@@ -191,11 +228,18 @@ Future<String> createCopyrightLink(
   late final Uri canonical;
   late final String type;
   late final Map<String, dynamic> payload;
+  late final Map<String, dynamic> preview;
 
   if (setup) {
     type = 'setup';
     canonical = _canonicalLinkBuilder.setup(index: index!, name: name!, thumbUrl: thumbUrl!);
     payload = <String, dynamic>{'index': index, 'name': name, 'thumbUrl': thumbUrl};
+    preview = <String, dynamic>{
+      'title': '$name - Prism',
+      'description': 'Check out this setup shared from Prism.',
+      'image_source_url': thumbUrl,
+      'setup_name': name,
+    };
     analytics.logEvent(name: 'reportSetup');
   } else {
     type = 'share';
@@ -211,10 +255,22 @@ Future<String> createCopyrightLink(
       if (url != null) 'url': url,
       'thumb': thumbUrl,
     };
+    preview = <String, dynamic>{
+      'title': '$id - Prism',
+      'description': 'Check out this amazing wallpaper from Prism.',
+      'image_source_url': thumbUrl,
+      'provider': provider,
+      'wall_id': id,
+    };
     analytics.logEvent(name: 'reportWall');
   }
 
-  final String link = await _buildShareableLink(type: type, canonicalUri: canonical, payload: payload);
+  final String link = await _buildShareableLink(
+    type: type,
+    canonicalUri: canonical,
+    payload: payload,
+    preview: preview,
+  );
   if (!context.mounted) {
     return '';
   }
