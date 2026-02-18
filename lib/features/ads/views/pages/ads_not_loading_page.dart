@@ -10,15 +10,9 @@ import 'package:flutter/material.dart';
 class AdsNotLoading extends StatelessWidget {
   const AdsNotLoading({super.key});
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           leading: IconButton(
               icon: const Icon(JamIcons.close),
@@ -188,7 +182,6 @@ class AdsNotLoading extends StatelessWidget {
         //     ),
         //   ),
         // ),
-      ),
-    );
+      );
   }
 }

@@ -334,10 +334,6 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     }
   }
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   Future<void> showRemoveAlertDialog(BuildContext context, Function() remove, String removeWhat) async {
     final AlertDialog deletePopUp = AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -418,9 +414,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width * 0.85;
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           leading: IconButton(
               icon: const Icon(JamIcons.close),
@@ -1140,7 +1134,6 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

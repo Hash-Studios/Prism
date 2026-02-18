@@ -22,10 +22,6 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
 
   final picker2 = ImagePicker();
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   Future getSetup() async {
     final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -39,9 +35,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: AppBar(
             title: Text(
@@ -177,7 +171,6 @@ Guidelines for uploading setups -""",
                   ),
                 )
               : Container(),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat),
-    );
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat);
   }
 }

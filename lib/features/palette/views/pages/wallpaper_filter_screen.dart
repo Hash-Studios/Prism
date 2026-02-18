@@ -120,10 +120,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     super.dispose();
   }
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   Future<void> _setBothWallPaper(String url) async {
     bool? result;
     try {
@@ -212,9 +208,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Text(
             "Edit Wallpaper",
@@ -390,8 +384,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   ],
                 ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildFilterThumbnail(Filter filter, imagelib.Image? image, String? filename) {

@@ -39,11 +39,6 @@ class _FollowingScreenState extends State<FollowingScreen> {
   List<_FirestoreDoc> finalDocs = <_FirestoreDoc>[];
   List<String> following = <String>[];
 
-  Future<bool> onWillPop() async {
-    logger.d("Bye! Have a good day!");
-    return true;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -188,35 +183,32 @@ class _FollowingScreenState extends State<FollowingScreen> {
   @override
   Widget build(BuildContext context) {
     final ScrollController controller = InheritedDataProvider.of(context)!.scrollController!;
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-        child: MasonryGridView.builder(
-          gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          itemCount: finalDocs.length + 1,
-          controller: controller,
-          itemBuilder: (context, index) {
-            if (index == finalDocs.length) {
-              return Container(
-                width: MediaQuery.of(context).size.width * 0.7,
-                height: finalDocs.isEmpty ? MediaQuery.of(context).size.height * 0.8 : 100,
-                padding: EdgeInsets.symmetric(horizontal: finalDocs.isEmpty ? 0 : 20),
-                child: Center(
-                  child: Text(
-                    finalDocs.isEmpty
-                        ? "Follow creators to see their latest posts here!"
-                        : "You have caught up with the latest posts of the people you follow. Follow more people to see their posts.",
-                    textAlign: TextAlign.center,
-                  ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+      child: MasonryGridView.builder(
+        gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        itemCount: finalDocs.length + 1,
+        controller: controller,
+        itemBuilder: (context, index) {
+          if (index == finalDocs.length) {
+            return Container(
+              width: MediaQuery.of(context).size.width * 0.7,
+              height: finalDocs.isEmpty ? MediaQuery.of(context).size.height * 0.8 : 100,
+              padding: EdgeInsets.symmetric(horizontal: finalDocs.isEmpty ? 0 : 20),
+              child: Center(
+                child: Text(
+                  finalDocs.isEmpty
+                      ? "Follow creators to see their latest posts here!"
+                      : "You have caught up with the latest posts of the people you follow. Follow more people to see their posts.",
+                  textAlign: TextAlign.center,
                 ),
-              );
-            }
-            return FollowingTile(index, finalDocs);
-          },
-        ),
+              ),
+            );
+          }
+          return FollowingTile(index, finalDocs);
+        },
       ),
     );
   }

@@ -18,10 +18,6 @@ class DownloadWallpaperScreen extends StatefulWidget {
 }
 
 class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with SingleTickerProviderStateMixin {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   late AnimationController shakeController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? provider;
@@ -50,9 +46,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
               shakeController.reverse();
             }
           });
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         key: _scaffoldKey,
         backgroundColor: Theme.of(context).primaryColor,
         body: Stack(
@@ -142,7 +136,6 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
             )
           ],
         ),
-      ),
     );
   }
 }

@@ -25,11 +25,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-        onWillPop: () async {
-          return true;
-        },
-        child: Scaffold(
+    return Scaffold(
             backgroundColor: Theme.of(context).primaryColor,
             appBar: const PreferredSize(
               preferredSize: Size(double.infinity, 55),
@@ -58,6 +54,6 @@ class _FollowersScreenState extends State<FollowersScreen> {
                       context.router.push(ProfileRoute(arguments: [followers![index].toString()]));
                     },
                   );
-                })));
+                }));
   }
 }

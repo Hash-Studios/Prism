@@ -37,10 +37,6 @@ class SetupViewScreen extends StatefulWidget {
 }
 
 class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProviderStateMixin {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int? index;
   String? thumb;
@@ -91,9 +87,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
               shakeController.reverse();
             }
           });
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         key: _scaffoldKey,
         backgroundColor: Theme.of(context).primaryColor,
         body: SlidingUpPanel(
@@ -1085,7 +1079,6 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
             ],
           ),
         ),
-      ),
     );
   }
 }

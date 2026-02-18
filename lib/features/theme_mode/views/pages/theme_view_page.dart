@@ -59,15 +59,9 @@ class _ThemeViewState extends State<ThemeView> {
     super.initState();
   }
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
           actions: <Widget>[
@@ -553,8 +547,7 @@ class _ThemeViewState extends State<ThemeView> {
               Container(),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 

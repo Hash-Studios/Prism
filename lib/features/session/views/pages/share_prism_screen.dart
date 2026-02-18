@@ -29,15 +29,9 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
     }
   }
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Text(
             "Share",
@@ -155,7 +149,6 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                 ),
               ],
             )),
-      ),
     );
   }
 }

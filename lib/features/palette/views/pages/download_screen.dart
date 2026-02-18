@@ -18,10 +18,6 @@ class DownloadScreen extends StatefulWidget {
 }
 
 class _DownloadScreenState extends State<DownloadScreen> {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   bool dataFetched = false;
   Map<dynamic, dynamic> allImageInfo = HashMap();
   List<FileSystemEntity> files = [];
@@ -92,9 +88,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         appBar: const PreferredSize(
           preferredSize: Size(double.infinity, 55),
           child: HeadingChipBar(
@@ -241,7 +235,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
                   ),
           ),
         ),
-      ),
     );
   }
 }

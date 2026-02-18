@@ -31,9 +31,6 @@ class ReviewScreen extends StatefulWidget {
 
 class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderStateMixin {
   TabController? tabController;
-  Future<bool> onWillPop() async {
-    return true;
-  }
 
   @override
   void initState() {
@@ -43,9 +40,7 @@ class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
           flexibleSpace: AppBar(
@@ -112,8 +107,7 @@ class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderSt
             SetupReview(),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 

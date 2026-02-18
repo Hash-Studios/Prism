@@ -165,15 +165,16 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     }
   }
 
-  Future<bool> onWillPop() async {
+  void _onPop() {
     deleteFile();
-    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) _onPop();
+      },
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(

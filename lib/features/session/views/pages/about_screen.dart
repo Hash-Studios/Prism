@@ -23,15 +23,9 @@ class AboutScreen extends StatelessWidget {
     return listContri;
   }
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           leading: IconButton(
               icon: const Icon(JamIcons.close),
@@ -225,7 +219,6 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }

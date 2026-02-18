@@ -20,10 +20,6 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   String? selectedProvider;
   SearchProviderMenuItem? selectedProviders;
   final List providers = [
@@ -119,9 +115,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: AppBar(
             automaticallyImplyLeading: false,
@@ -394,8 +388,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       )
                     ],
                   ),
-          )),
-    );
+          ));
   }
 }
 

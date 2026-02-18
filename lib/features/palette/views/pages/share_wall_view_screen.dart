@@ -140,10 +140,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
     super.dispose();
   }
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
     final paletteState = context.watch<PaletteBloc>().state;
@@ -158,9 +154,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
     return BlocListener<PaletteBloc, PaletteState>(
       listenWhen: (previous, current) => previous.status != current.status || previous.palette != current.palette,
       listener: (context, state) => _applyPaletteState(state),
-      child: WillPopScope(
-        onWillPop: onWillPop,
-        child: provider == "WallHaven"
+      child: provider == "WallHaven"
             ? Scaffold(
                 key: _scaffoldKey,
                 backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -1662,7 +1656,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                         ),
                       )
                     : Container(),
-      ),
     );
   }
 }

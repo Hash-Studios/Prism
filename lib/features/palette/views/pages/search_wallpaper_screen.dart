@@ -33,10 +33,6 @@ class SearchWallpaperScreen extends StatefulWidget {
 }
 
 class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with SingleTickerProviderStateMixin {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? selectedProvider;
   String? query;
@@ -130,9 +126,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
               shakeController.reverse();
             }
           });
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: selectedProvider == "WallHaven"
+    return selectedProvider == "WallHaven"
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
@@ -980,7 +974,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                   ],
                 ),
               ),
-            ),
-    );
+            );
   }
 }

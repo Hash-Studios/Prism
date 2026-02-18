@@ -40,10 +40,6 @@ class ShareSetupViewScreen extends StatefulWidget {
 }
 
 class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with SingleTickerProviderStateMixin {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? name;
   String? image;
@@ -98,9 +94,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
               shakeController.reverse();
             }
           });
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         key: _scaffoldKey,
         backgroundColor: Theme.of(context).primaryColor,
         body: FutureBuilder(
@@ -967,7 +961,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
             }
           },
         ),
-      ),
     );
   }
 }

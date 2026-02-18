@@ -29,15 +29,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
     super.initState();
   }
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -166,7 +160,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 child: const Icon(JamIcons.trash),
               )
             : Container(),
-      ),
     );
   }
 }

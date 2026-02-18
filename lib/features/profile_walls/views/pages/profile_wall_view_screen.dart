@@ -33,10 +33,6 @@ class ProfileWallViewScreen extends StatefulWidget {
 }
 
 class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with SingleTickerProviderStateMixin {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late int index;
   late String thumb;
@@ -130,9 +126,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
               shakeController.reverse();
             }
           });
-    return WillPopScope(
-        onWillPop: onWillPop,
-        child: Scaffold(
+    return Scaffold(
           key: _scaffoldKey,
           backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
           body: SlidingUpPanel(
@@ -615,6 +609,6 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
               ],
             ),
           ),
-        ));
+        );
   }
 }

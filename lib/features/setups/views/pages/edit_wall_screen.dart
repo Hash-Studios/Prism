@@ -61,10 +61,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
     image = widget.arguments![0] as File;
   }
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   void changeCropRatio() {
     setState(() {
       if (cropRatio == 1 / 2) {
@@ -83,9 +79,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
             title: Text(
@@ -241,7 +235,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
           ],
         ),
         bottomNavigationBar: _buildFunctions(),
-      ),
     );
   }
 

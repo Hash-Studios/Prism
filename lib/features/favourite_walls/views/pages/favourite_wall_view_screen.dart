@@ -33,10 +33,6 @@ class FavWallpaperViewScreen extends StatefulWidget {
 }
 
 class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with SingleTickerProviderStateMixin {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late int index;
   late String thumb;
@@ -132,9 +128,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
               shakeController.reverse();
             }
           });
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "WallHaven" ||
+    return context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "WallHaven" ||
               context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Pexels" ||
               context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Prism"
           ? Scaffold(
@@ -1462,7 +1456,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                   ],
                 ),
               ),
-            ),
-    );
+            );
   }
 }

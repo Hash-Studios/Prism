@@ -25,10 +25,6 @@ class _UserSearchState extends State<UserSearch> {
   TextEditingController searchController = TextEditingController();
   late bool isSubmitted;
 
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   @override
   void initState() {
     isSubmitted = false;
@@ -47,9 +43,7 @@ class _UserSearchState extends State<UserSearch> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -105,8 +99,7 @@ class _UserSearchState extends State<UserSearch> {
           ),
         ),
         body: const UserSearchLoader(),
-      ),
-    );
+      );
   }
 }
 

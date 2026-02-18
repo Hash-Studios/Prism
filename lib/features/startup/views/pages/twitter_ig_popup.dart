@@ -31,9 +31,8 @@ class OptionalInfo3 extends StatefulWidget {
 
 class _OptionalInfo3State extends State<OptionalInfo3> {
   Image? image1;
-  Future<bool> onWillPop(BuildContext ctx) async {
+  void _navigateToSplash(BuildContext ctx) {
     Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (context) => const SplashWidget()));
-    return false;
   }
 
   bool? isFollow1;
@@ -54,7 +53,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
-          onWillPop(context);
+          _navigateToSplash(context);
         }
       },
       child: Scaffold(

@@ -41,10 +41,6 @@ class WallpaperScreen extends StatefulWidget {
 }
 
 class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProviderStateMixin {
-  Future<bool> onWillPop() async {
-    return true;
-  }
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? provider;
   late int index;
@@ -147,9 +143,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
     return BlocListener<PaletteBloc, PaletteState>(
       listenWhen: (previous, current) => previous.status != current.status || previous.palette != current.palette,
       listener: (context, state) => _applyPaletteState(state),
-      child: WillPopScope(
-        onWillPop: onWillPop,
-        child: provider == "WallHaven"
+      child: provider == "WallHaven"
             ? Scaffold(
                 key: _scaffoldKey,
                 backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -2387,7 +2381,6 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                               ),
                             ),
                           ),
-      ),
     );
   }
 }
