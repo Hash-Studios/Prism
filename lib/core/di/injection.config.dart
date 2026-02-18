@@ -218,7 +218,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i226.DeepLinkRepository>(
     () => _i857.DeepLinkRepositoryImpl(gh<_i327.AppLinks>()),
-    dispose: (i) => i.dispose(),
   );
   gh.lazySingleton<_i349.FirestoreClient>(
     () => appModule.firestoreClient(
