@@ -1,5 +1,5 @@
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
@@ -74,11 +74,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (globals.prismUser.premium == true) {
                             main.RestartWidget.restartApp(context);
                           } else {
-                            context.router.push(const UpgradeRoute());
+                            PaywallOrchestrator.instance.present(
+                              context,
+                              placement: PaywallPlacement.mainUpsell,
+                              source: 'settings_buy_premium',
+                            );
                           }
                         });
                       } else {
-                        context.router.push(const UpgradeRoute());
+                        PaywallOrchestrator.instance.present(
+                          context,
+                          placement: PaywallPlacement.mainUpsell,
+                          source: 'settings_buy_premium',
+                        );
                       }
                     },
                     leading: const Icon(JamIcons.instant_picture_f),

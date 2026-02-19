@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/apps/appsData.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
@@ -109,6 +110,20 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   @override
   void initState() {
     super.initState();
+    if (!globals.prismUser.premium) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await PaywallOrchestrator.instance.present(
+          context,
+          placement: PaywallPlacement.blockedSetupCreate,
+          source: 'upload_setup_blocked_create',
+        );
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      });
+      return;
+    }
     image = widget.arguments![0] as File;
     isUploading = false;
     isProcessing = true;

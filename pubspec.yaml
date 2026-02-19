@@ -75,6 +75,7 @@ dependencies:
   provider: ^6.1.5+1
   injectable: ^2.5.1
   purchases_flutter: ^9.12.0
+  purchases_ui_flutter: ^9.12.0
   quick_actions: ^1.1.0
   rive: ^0.13.20
   rxdart: ^0.28.0

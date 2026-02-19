@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/enterCodePanel.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
@@ -129,7 +130,11 @@ class ProfileDrawer extends StatelessWidget {
                 text: 'Buy Premium',
                 onTap: () {
                   Navigator.pop(context);
-                  context.router.push(const UpgradeRoute());
+                  PaywallOrchestrator.instance.present(
+                    context,
+                    placement: PaywallPlacement.mainUpsell,
+                    source: 'drawer_buy_premium',
+                  );
                 },
                 context: context,
               ),

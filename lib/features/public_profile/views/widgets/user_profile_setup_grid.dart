@@ -1,14 +1,10 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/setupPhotographer.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/loading_setup_cards.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
-import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -27,23 +23,6 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
   late Animation<Color?> animation;
   GlobalKey<RefreshIndicatorState> refreshProfileKey = GlobalKey<RefreshIndicatorState>();
   bool seeMoreLoader = false;
-
-  void showPremiumPopUp(Function func) {
-    if (globals.prismUser.premium == false) {
-      context.router.push(const UpgradeRoute());
-    } else {
-      func();
-    }
-  }
-
-  void showGooglePopUp(VoidCallback func) {
-    logger.d(globals.prismUser.loggedIn.toString());
-    if (globals.prismUser.loggedIn == false) {
-      googleSignInPopUp(context, func);
-    } else {
-      func();
-    }
-  }
 
   @override
   void initState() {
@@ -232,15 +211,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                                   onTap: () {
                                     if (context.publicProfileAdapter(listen: false).userProfileSetups == []) {
                                     } else {
-                                      if (globals.prismUser.premium == true) {
-                                        context.router.push(UserProfileSetupViewRoute(arguments: [index]));
-                                      } else {
-                                        showGooglePopUp(() {
-                                          showPremiumPopUp(() {
-                                            main.RestartWidget.restartApp(context);
-                                          });
-                                        });
-                                      }
+                                      context.router.push(UserProfileSetupViewRoute(arguments: [index]));
                                     }
                                   },
                                 ),

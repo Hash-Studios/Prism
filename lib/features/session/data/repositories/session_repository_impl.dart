@@ -17,6 +17,7 @@ class SessionRepositoryImpl implements SessionRepository {
       profilePhoto: user.profilePhoto,
       loggedIn: user.loggedIn,
       premium: user.premium,
+      subscriptionTier: user.subscriptionTier,
     );
   }
 

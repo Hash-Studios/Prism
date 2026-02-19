@@ -33,13 +33,16 @@ class PrismUsersV2Adapter extends TypeAdapter<PrismUsersV2> {
       transactions: (fields[15] as List).cast<PrismTransaction>(),
       name: fields[16] as String,
       coverPhoto: fields[17] as String?,
+      subscriptionTier: fields[18] as String? ?? 'free',
+      uploadsWeekStart: fields[19] as String? ?? '',
+      uploadsThisWeek: (fields[20] as num?)?.toInt() ?? 0,
     );
   }
 
   @override
   void write(BinaryWriter writer, PrismUsersV2 obj) {
     writer
-      ..writeByte(18)
+      ..writeByte(21)
       ..writeByte(0)
       ..write(obj.username)
       ..writeByte(1)
@@ -75,7 +78,13 @@ class PrismUsersV2Adapter extends TypeAdapter<PrismUsersV2> {
       ..writeByte(16)
       ..write(obj.name)
       ..writeByte(17)
-      ..write(obj.coverPhoto);
+      ..write(obj.coverPhoto)
+      ..writeByte(18)
+      ..write(obj.subscriptionTier)
+      ..writeByte(19)
+      ..write(obj.uploadsWeekStart)
+      ..writeByte(20)
+      ..write(obj.uploadsThisWeek);
   }
 
   @override
@@ -112,6 +121,9 @@ PrismUsersV2 _$PrismUsersV2FromJson(Map<String, dynamic> json) => PrismUsersV2(
       .toList(),
   name: json['name'] as String,
   coverPhoto: json['coverPhoto'] as String?,
+  subscriptionTier: json['subscriptionTier'] as String? ?? 'free',
+  uploadsWeekStart: json['uploadsWeekStart'] as String? ?? '',
+  uploadsThisWeek: (json['uploadsThisWeek'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) => <String, dynamic>{
@@ -133,4 +145,7 @@ Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) => <String, dyn
   'transactions': instance.transactions.map((e) => e.toJson()).toList(),
   'name': instance.name,
   'coverPhoto': instance.coverPhoto,
+  'subscriptionTier': instance.subscriptionTier,
+  'uploadsWeekStart': instance.uploadsWeekStart,
+  'uploadsThisWeek': instance.uploadsThisWeek,
 };

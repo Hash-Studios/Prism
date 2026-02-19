@@ -5,9 +5,9 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
@@ -318,7 +318,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         return;
       case _PremiumFilterLowBalanceAction.upgrade:
         if (mounted) {
-          context.router.push(const UpgradeRoute());
+          await PaywallOrchestrator.instance.present(
+            context,
+            placement: PaywallPlacement.lowBalance,
+            source: 'premium_filter_low_balance',
+          );
         }
         return;
       case _PremiumFilterLowBalanceAction.none:
@@ -338,6 +342,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
     try {
       await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: '$sourceTag.rewarded_ad');
+      if (mounted) {
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
+          context,
+          source: 'premium_filter_watch_ad',
+        );
+      }
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(sourceTag: '$sourceTag.rewarded_ad', error: error, stackTrace: stackTrace);
       toasts.error('Unable to credit coins right now.');

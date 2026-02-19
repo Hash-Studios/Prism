@@ -289,12 +289,20 @@ PODS:
   - purchases_flutter (9.12.0):
     - Flutter
     - PurchasesHybridCommon (= 17.36.0)
+  - purchases_ui_flutter (9.12.0):
+    - Flutter
+    - PurchasesHybridCommonUI (= 17.36.0)
   - PurchasesHybridCommon (17.36.0):
     - RevenueCat (= 5.58.0)
+  - PurchasesHybridCommonUI (17.36.0):
+    - PurchasesHybridCommon (= 17.36.0)
+    - RevenueCatUI (= 5.58.0)
   - quick_actions_ios (0.0.1):
     - Flutter
   - RecaptchaInterop (101.0.0)
   - RevenueCat (5.58.0)
+  - RevenueCatUI (5.58.0):
+    - RevenueCat (= 5.58.0)
   - rive_common (0.0.1):
     - Flutter
   - SDWebImage (5.21.6):
@@ -347,6 +355,7 @@ DEPENDENCIES:
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
+  - purchases_ui_flutter (from `.symlinks/plugins/purchases_ui_flutter/ios`)
   - quick_actions_ios (from `.symlinks/plugins/quick_actions_ios/ios`)
   - rive_common (from `.symlinks/plugins/rive_common/ios`)
   - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
@@ -395,8 +404,10 @@ SPEC REPOS:
     - nanopb
     - PromisesObjC
     - PurchasesHybridCommon
+    - PurchasesHybridCommonUI
     - RecaptchaInterop
     - RevenueCat
+    - RevenueCatUI
     - SDWebImage
     - SDWebImageWebPCoder
     - Sentry
@@ -456,6 +467,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   purchases_flutter:
     :path: ".symlinks/plugins/purchases_flutter/ios"
+  purchases_ui_flutter:
+    :path: ".symlinks/plugins/purchases_ui_flutter/ios"
   quick_actions_ios:
     :path: ".symlinks/plugins/quick_actions_ios/ios"
   rive_common:
@@ -540,10 +553,13 @@ SPEC CHECKSUMS:
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   purchases_flutter: d0a83d9dac58e2a808778274ebf189606d41a17a
+  purchases_ui_flutter: d2649e54308e624ba33a9fd65342decc02cd5b28
   PurchasesHybridCommon: 4767776bf65153d7a43f284439e7560c42d0c80a
+  PurchasesHybridCommonUI: c2af36a73327e7b2371b1bcba024372864476020
   quick_actions_ios: b49ed09d6362da1bf520dacc204661978a8fc5c2
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   RevenueCat: 88bb4229115b2badcce0e5a97f3dd8cc952b38c8
+  RevenueCatUI: 127bebf87cab78e245b36eaca04e371d4f120ca3
   rive_common: 4743dbfd2911c99066547a3c6454681e0fa907df
   SDWebImage: 1bb6a1b84b6fe87b972a102bdc77dd589df33477
   SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
