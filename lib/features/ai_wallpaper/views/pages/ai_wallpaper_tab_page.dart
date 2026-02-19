@@ -29,6 +29,7 @@ class AiWallpaperTabPage extends StatefulWidget {
 
 class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   final AiGenerationRepositoryImpl _repository = AiGenerationRepositoryImpl();
+  final Random _random = Random();
   final TextEditingController _promptController = TextEditingController();
   final TextEditingController _variationController = TextEditingController();
   final FocusNode _promptFocus = FocusNode();
@@ -42,9 +43,80 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   bool _loadingGeneration = false;
   bool _submitting = false;
 
+  static const Map<AiStylePreset, List<String>> _scenePoolByStyle = <AiStylePreset, List<String>>{
+    AiStylePreset.anime: <String>[
+      'an anime skyline above floating islands',
+      'a lone samurai on a neon-lit rainy street',
+      'a futuristic shrine with cherry blossoms and holograms',
+      'a dreamy anime night market with lantern glow',
+      'a cyber-anime city horizon at blue hour',
+    ],
+    AiStylePreset.minimal: <String>[
+      'minimal dunes and a single sun disk',
+      'clean geometric mountain layers',
+      'a serene monochrome ocean horizon',
+      'simple abstract lines with balanced spacing',
+      'a soft gradient sky over flat hills',
+    ],
+    AiStylePreset.cyberpunk: <String>[
+      'a neon megacity street with wet reflections',
+      'a futuristic alley with holographic billboards',
+      'a high-tech skyline with flying traffic lanes',
+      'a cyberpunk rooftop overlooking glowing towers',
+      'a midnight city crossing with teal-magenta lights',
+    ],
+    AiStylePreset.watercolor: <String>[
+      'a watercolor forest valley at dawn',
+      'a hand-painted mountain lake scene',
+      'soft watercolor clouds above rolling hills',
+      'a tranquil riverbank with pastel tones',
+      'an artistic watercolor coastline at sunset',
+    ],
+    AiStylePreset.meshGradient: <String>[
+      'a smooth mesh gradient flow with layered blobs',
+      'vibrant fluid gradient waves with depth',
+      'soft multi-color mesh forms and gentle curves',
+      'high-contrast mesh gradient ribbons',
+      'pastel mesh gradient bloom with subtle texture',
+    ],
+    AiStylePreset.abstract: <String>[
+      'an abstract fractal composition with dynamic curves',
+      'layered liquid forms with modern depth',
+      'bold abstract shapes with soft edges',
+      'a surreal abstract field of floating geometry',
+      'organic abstract waves with cinematic contrast',
+    ],
+    AiStylePreset.nature: <String>[
+      'a misty mountain range at sunrise',
+      'a dense evergreen forest with sun rays',
+      'a dramatic coastal cliff with crashing waves',
+      'a calm alpine lake under twilight sky',
+      'a desert canyon with warm golden light',
+    ],
+  };
+
+  static const List<String> _lightingPool = <String>[
+    'soft ambient',
+    'cinematic rim',
+    'golden hour',
+    'moonlit',
+    'volumetric',
+  ];
+
+  static const List<String> _moodPool = <String>['calm', 'dreamy', 'epic', 'moody', 'uplifting'];
+
+  static const List<String> _qualityPool = <String>[
+    'high detail',
+    'ultra clean composition',
+    'crisp textures',
+    'balanced contrast',
+    'vibrant but natural colors',
+  ];
+
   @override
   void initState() {
     super.initState();
+    _seedDefaultPromptIfEmpty();
     _loadHistory();
   }
 
@@ -57,6 +129,37 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   bool get _isLoggedIn => globals.prismUser.loggedIn && globals.prismUser.id.trim().isNotEmpty;
+
+  void _seedDefaultPromptIfEmpty() {
+    if (_promptController.text.trim().isNotEmpty) {
+      return;
+    }
+    final prompt = _buildRandomPrompt();
+    _promptController.text = prompt;
+    _promptController.selection = TextSelection.fromPosition(TextPosition(offset: prompt.length));
+  }
+
+  String _pickRandom(List<String> values) {
+    return values[_random.nextInt(values.length)];
+  }
+
+  String _buildRandomPrompt() {
+    final scenes = _scenePoolByStyle[_selectedStyle] ?? _scenePoolByStyle[AiStylePreset.abstract]!;
+    final scene = _pickRandom(scenes);
+    final lighting = _pickRandom(_lightingPool);
+    final mood = _pickRandom(_moodPool);
+    final quality = _pickRandom(_qualityPool);
+    return '$scene, $lighting lighting, $mood mood, $quality, vertical phone wallpaper, no text';
+  }
+
+  void _shufflePrompt() {
+    final prompt = _buildRandomPrompt();
+    setState(() {
+      _promptController.text = prompt;
+      _promptController.selection = TextSelection.fromPosition(TextPosition(offset: prompt.length));
+    });
+    analytics.logEvent(name: 'ai_prompt_shuffled', parameters: <String, Object>{'style': _selectedStyle.apiValue});
+  }
 
   bool get _isRolloutEligible {
     if (!globals.aiEnabled) {
@@ -453,6 +556,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                         textInputAction: TextInputAction.done,
                         decoration: const InputDecoration(
                           hintText: 'A minimalist mountain wallpaper with sunrise glow and soft fog...',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: OutlinedButton.icon(
+                          onPressed: _loadingGeneration ? null : _shufflePrompt,
+                          icon: const Icon(Icons.shuffle),
+                          label: const Text('Shuffle Prompt'),
                         ),
                       ),
                       const SizedBox(height: 12),
