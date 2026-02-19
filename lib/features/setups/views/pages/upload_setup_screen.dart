@@ -194,10 +194,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isPremiumBlocked) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        body: const SizedBox.shrink(),
-      );
+      return Scaffold(backgroundColor: Theme.of(context).primaryColor, body: const SizedBox.shrink());
     }
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
