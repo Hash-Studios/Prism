@@ -5,7 +5,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/env/env.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:http/http.dart' as http;
@@ -30,27 +30,27 @@ Future<void> createRecord(
   String? aiPrompt,
   String? aiStylePreset,
 }) async {
-  if (!globals.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
+  if (!app_state.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
     toasts.codeSend("Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.");
     return;
   }
-  if (!globals.prismUser.premium) {
+  if (!app_state.prismUser.premium) {
     UploadQuota.incrementWeeklyUploads();
-    globals.prismUser.uploadsWeekStart =
+    app_state.prismUser.uploadsWeekStart =
         (main.prefs.get('uploadsWeekStart', defaultValue: '') as String?)?.trim() ?? '';
-    globals.prismUser.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
-    main.prefs.put(main.userHiveKey, globals.prismUser);
-    if (globals.prismUser.id.trim().isNotEmpty) {
-      firestoreClient.updateDoc(FirebaseCollections.usersV2, globals.prismUser.id, {
-        'uploadsWeekStart': globals.prismUser.uploadsWeekStart,
-        'uploadsThisWeek': globals.prismUser.uploadsThisWeek,
+    app_state.prismUser.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
+    app_state.persistPrismUser();
+    if (app_state.prismUser.id.trim().isNotEmpty) {
+      firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
+        'uploadsWeekStart': app_state.prismUser.uploadsWeekStart,
+        'uploadsThisWeek': app_state.prismUser.uploadsThisWeek,
       }, sourceTag: 'upload.weekly_quota_sync');
     }
   }
   await firestoreClient.addDoc(FirebaseCollections.walls, {
-    'by': globals.prismUser.name,
-    'email': globals.prismUser.email,
-    'userPhoto': globals.prismUser.profilePhoto,
+    'by': app_state.prismUser.name,
+    'email': app_state.prismUser.email,
+    'userPhoto': app_state.prismUser.profilePhoto,
     'id': id,
     'wallpaper_provider': wallpaperProvider,
     'wallpaper_thumb': wallpaperThumb,
@@ -73,14 +73,14 @@ Future<void> createRecord(
     if (aiStylePreset != null && aiStylePreset.trim().isNotEmpty) 'aiStylePreset': aiStylePreset,
   }, sourceTag: 'upload.createWall');
   await CoinsService.instance.maybeAwardFirstWallpaperUpload();
-  if (globals.prismUser.premium == true) {
+  if (app_state.prismUser.premium == true) {
     http.post(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
       headers: <String, String>{'Content-Type': 'application/json', 'Authorization': 'key=${Env.fcmServerKey}'},
       body: jsonEncode(<String, dynamic>{
         'notification': <String, dynamic>{
           'title': '🎉 New Premium Wall for review!',
-          'body': 'New Post by ${globals.prismUser.username} is up for review.',
+          'body': 'New Post by ${app_state.prismUser.username} is up for review.',
           'color': "#e57697",
           'image': wallpaperThumb,
           'android_channel_id': "posts",
@@ -96,7 +96,7 @@ Future<void> createRecord(
       body: jsonEncode(<String, dynamic>{
         'notification': <String, dynamic>{
           'title': '🎉 New Premium Wall for review!',
-          'body': 'New Post by ${globals.prismUser.username} is up for review.',
+          'body': 'New Post by ${app_state.prismUser.username} is up for review.',
           'color': "#e57697",
           'image': wallpaperThumb,
           'android_channel_id': "posts",
@@ -131,9 +131,9 @@ Future<void> createSetup(
   bool? review,
 ) async {
   await firestoreClient.addDoc(FirebaseCollections.setups, {
-    'by': globals.prismUser.name,
-    'email': globals.prismUser.email,
-    'userPhoto': globals.prismUser.profilePhoto,
+    'by': app_state.prismUser.name,
+    'email': app_state.prismUser.email,
+    'userPhoto': app_state.prismUser.profilePhoto,
     'id': id,
     'image': imageURL,
     'wallpaper_provider': wallpaperProvider,
@@ -151,14 +151,14 @@ Future<void> createSetup(
     'created_at': DateTime.now().toUtc(),
     'wall_id': wallId,
   }, sourceTag: 'upload.createSetup');
-  if (globals.prismUser.loggedIn == true && globals.prismUser.premium == true) {
+  if (app_state.prismUser.loggedIn == true && app_state.prismUser.premium == true) {
     http.post(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
       headers: <String, String>{'Content-Type': 'application/json', 'Authorization': 'key=${Env.fcmServerKey}'},
       body: jsonEncode(<String, dynamic>{
         'notification': <String, dynamic>{
           'title': '🎉 New Premium Setup for review!',
-          'body': 'New Post by ${globals.prismUser.username} is up for review.',
+          'body': 'New Post by ${app_state.prismUser.username} is up for review.',
           'color': "#e57697",
           'image': imageURL,
           'android_channel_id': "posts",
@@ -174,7 +174,7 @@ Future<void> createSetup(
       body: jsonEncode(<String, dynamic>{
         'notification': <String, dynamic>{
           'title': '🎉 New Premium Setup for review!',
-          'body': 'New Post by ${globals.prismUser.username} is up for review.',
+          'body': 'New Post by ${app_state.prismUser.username} is up for review.',
           'color': "#e57697",
           'image': imageURL,
           'android_channel_id': "posts",
@@ -210,9 +210,9 @@ Future<void> updateSetup(
     FirebaseCollections.setups,
     setupDocId,
     {
-      'by': globals.prismUser.name,
-      'email': globals.prismUser.email,
-      'userPhoto': globals.prismUser.profilePhoto,
+      'by': app_state.prismUser.name,
+      'email': app_state.prismUser.email,
+      'userPhoto': app_state.prismUser.profilePhoto,
       'id': id,
       'image': imageURL,
       'wallpaper_provider': wallpaperProvider,
@@ -253,9 +253,9 @@ Future<void> createDraftSetup(
   String? wallId,
 ) async {
   await firestoreClient.setDoc(FirebaseCollections.draftSetups, id!, {
-    'by': globals.prismUser.name,
-    'email': globals.prismUser.email,
-    'userPhoto': globals.prismUser.profilePhoto,
+    'by': app_state.prismUser.name,
+    'email': app_state.prismUser.email,
+    'userPhoto': app_state.prismUser.profilePhoto,
     'id': id,
     'image': imageURL,
     'wallpaper_provider': wallpaperProvider,

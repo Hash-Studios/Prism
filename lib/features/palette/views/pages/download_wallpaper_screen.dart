@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -91,7 +91,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
           Align(
             alignment: Alignment.topLeft,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+              padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
               child: IconButton(
                 onPressed: () {
                   Navigator.pop(context);
@@ -104,7 +104,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
           Align(
             alignment: Alignment.topRight,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+              padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
               child: IconButton(
                 onPressed: () {
                   final link = file.path;

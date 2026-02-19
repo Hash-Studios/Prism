@@ -3,7 +3,7 @@ import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/contriPopUp.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -50,7 +50,7 @@ class AboutScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
             ),
             Text(
-              "Version ${globals.currentAppVersion}+${globals.currentAppVersionCode}",
+              "Version ${app_state.currentAppVersion}+${app_state.currentAppVersionCode}",
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,

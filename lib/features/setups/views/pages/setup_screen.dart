@@ -6,7 +6,7 @@ import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/arrow_animation.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -85,7 +85,7 @@ class _SetupPageState extends State<SetupPage> {
               alignment: Alignment.topLeft,
               child: Container(
                 width: MediaQuery.of(context).size.width - 25,
-                padding: EdgeInsets.only(left: 25, top: 5 + globals.notchSize!),
+                padding: EdgeInsets.only(left: 25, top: 5 + app_state.notchSize!),
                 child: Row(
                   children: <Widget>[
                     Expanded(

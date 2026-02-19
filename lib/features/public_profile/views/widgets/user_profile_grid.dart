@@ -5,7 +5,7 @@ import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -185,10 +185,10 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                           context.publicProfileAdapter(listen: false).hasMoreWalls) {
                         return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _loadMoreWalls);
                       }
-                      return globals.prismUser.premium != true
+                      return app_state.prismUser.premium != true
                           ? PremiumBannerWalls(
-                              comparator: !globals.isPremiumWall(
-                                globals.premiumCollections,
+                              comparator: !app_state.isPremiumWall(
+                                app_state.premiumCollections,
                                 context.publicProfileAdapter().userProfileWalls![index].data()["collections"]
                                         as List? ??
                                     [],

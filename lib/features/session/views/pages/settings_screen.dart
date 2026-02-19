@@ -5,7 +5,7 @@ import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -43,7 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         body: ListView(
           children: <Widget>[
-            if (globals.prismUser.premium == true)
+            if (app_state.prismUser.premium == true)
               Container()
             else
               Padding(
@@ -64,14 +64,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             Column(
               children: <Widget>[
-                if (globals.prismUser.premium == true)
+                if (app_state.prismUser.premium == true)
                   Container()
                 else
                   ListTile(
                     onTap: () {
-                      if (globals.prismUser.loggedIn == false) {
+                      if (app_state.prismUser.loggedIn == false) {
                         googleSignInPopUp(context, () {
-                          if (globals.prismUser.premium == true) {
+                          if (app_state.prismUser.premium == true) {
                             main.RestartWidget.restartApp(context);
                           } else {
                             PaywallOrchestrator.instance.present(
@@ -255,7 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            if (globals.prismUser.loggedIn == false)
+            if (app_state.prismUser.loggedIn == false)
               ListTile(
                 onTap: () async {
                   final Dialog loaderDialog = Dialog(
@@ -270,27 +270,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: const Center(child: CircularProgressIndicator()),
                     ),
                   );
-                  if (globals.prismUser.loggedIn == false) {
+                  if (app_state.prismUser.loggedIn == false) {
                     showDialog(
                       barrierDismissible: false,
                       context: context,
                       builder: (BuildContext context) => loaderDialog,
                     );
                     try {
-                      final String signInResult = await globals.gAuth.signInWithGoogle();
+                      final String signInResult = await app_state.gAuth.signInWithGoogle();
                       if (!mounted) {
                         return;
                       }
                       if (signInResult == GoogleAuth.signInCancelledResult) {
                         Navigator.pop(this.context);
-                        globals.prismUser.loggedIn = false;
-                        main.prefs.put(main.userHiveKey, globals.prismUser);
+                        app_state.prismUser.loggedIn = false;
+                        app_state.persistPrismUser();
                         toasts.codeSend("Sign in cancelled.");
                         return;
                       }
                       toasts.codeSend("Login Successful!");
-                      globals.prismUser.loggedIn = true;
-                      main.prefs.put(main.userHiveKey, globals.prismUser);
+                      app_state.prismUser.loggedIn = true;
+                      app_state.persistPrismUser();
                       Navigator.pop(this.context);
                       main.RestartWidget.restartApp(this.context);
                     } catch (e) {
@@ -299,8 +299,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }
                       logger.d(e);
                       Navigator.pop(this.context);
-                      globals.prismUser.loggedIn = false;
-                      main.prefs.put(main.userHiveKey, globals.prismUser);
+                      app_state.prismUser.loggedIn = false;
+                      app_state.persistPrismUser();
                       toasts.error("Something went wrong, please try again!");
                     }
                   } else {
@@ -321,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             else
               Column(
                 children: <Widget>[
-                  if (globals.prismUser.loggedIn == true)
+                  if (app_state.prismUser.loggedIn == true)
                     Column(
                       children: [
                         ListTile(
@@ -450,9 +450,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               fontFamily: "Proxima Nova",
                             ),
                           ),
-                          subtitle: Text(globals.prismUser.email, style: const TextStyle(fontSize: 12)),
+                          subtitle: Text(app_state.prismUser.email, style: const TextStyle(fontSize: 12)),
                           onTap: () {
-                            globals.gAuth.signOutGoogle();
+                            app_state.gAuth.signOutGoogle();
                             toasts.codeSend("Log out Successful!");
                             main.RestartWidget.restartApp(context);
                           },

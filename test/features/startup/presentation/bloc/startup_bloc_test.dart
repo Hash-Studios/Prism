@@ -20,7 +20,7 @@ void main() {
         const StartupConfigEntity(
           topImageLink: 'top',
           bannerText: 'banner',
-          bannerTextOn: 'true',
+          bannerTextOn: true,
           bannerUrl: 'url',
           obsoleteAppVersion: '2.6.9',
           verifiedUsers: <String>['a@b.com'],

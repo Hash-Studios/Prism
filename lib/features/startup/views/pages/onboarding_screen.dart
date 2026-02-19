@@ -3,7 +3,7 @@ import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/features/startup/views/pages/twitter_ig_popup.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -43,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     image3 = Image.asset('assets/images/third.png');
     super.initState();
     isLoading = false;
-    isSignedIn = globals.prismUser.loggedIn;
+    isSignedIn = app_state.prismUser.loggedIn;
     selectedTheme = 2;
     selectedAccentColor = const Color(0xFFE57697);
     _currentPage = 0;
@@ -482,15 +482,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   isLoading = true;
                                 });
                                 try {
-                                  final String signInResult = await globals.gAuth.signInWithGoogle();
+                                  final String signInResult = await app_state.gAuth.signInWithGoogle();
                                   if (signInResult == GoogleAuth.signInCancelledResult) {
-                                    globals.prismUser.loggedIn = false;
-                                    main.prefs.put(main.userHiveKey, globals.prismUser);
+                                    app_state.prismUser.loggedIn = false;
+                                    app_state.persistPrismUser();
                                     toasts.codeSend("Sign in cancelled.");
                                   } else {
                                     toasts.codeSend("Login Successful!");
-                                    globals.prismUser.loggedIn = true;
-                                    main.prefs.put(main.userHiveKey, globals.prismUser);
+                                    app_state.prismUser.loggedIn = true;
+                                    app_state.persistPrismUser();
                                     await Future.delayed(const Duration(milliseconds: 500));
                                     if (!context.mounted) {
                                       return;
@@ -511,13 +511,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   }
                                 } catch (e, st) {
                                   logger.e('Google sign-in failed', tag: 'Onboarding', error: e, stackTrace: st);
-                                  globals.prismUser.loggedIn = false;
-                                  main.prefs.put(main.userHiveKey, globals.prismUser);
+                                  app_state.prismUser.loggedIn = false;
+                                  app_state.persistPrismUser();
                                   toasts.error("Something went wrong, please try again!");
                                 }
                                 setState(() {
                                   isLoading = false;
-                                  isSignedIn = globals.prismUser.loggedIn;
+                                  isSignedIn = app_state.prismUser.loggedIn;
                                 });
                               },
                         style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),

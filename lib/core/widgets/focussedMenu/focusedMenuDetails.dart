@@ -10,7 +10,7 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/features/profile_walls/views/profile_walls_bloc_adapter.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -300,7 +300,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     children: <Widget>[
                                       Stack(
                                         alignment:
-                                            globals.verifiedUsers.contains(
+                                            app_state.verifiedUsers.contains(
                                               Data.subPrismWalls![widget.index]["email"].toString(),
                                             )
                                             ? Alignment.topRight
@@ -329,7 +329,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               );
                                             },
                                           ),
-                                          if (globals.verifiedUsers.contains(
+                                          if (app_state.verifiedUsers.contains(
                                             Data.subPrismWalls![widget.index]["email"].toString(),
                                           ))
                                             SizedBox(
@@ -1503,25 +1503,25 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                     ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["url"].toString()
                     : PData.wallsC[widget.index].src!["original"].toString(),
                 isPremiumContent: widget.provider == "Prism"
-                    ? globals.isPremiumWall(
-                        globals.premiumCollections,
+                    ? app_state.isPremiumWall(
+                        app_state.premiumCollections,
                         Data.subPrismWalls![widget.index]["collections"] as List? ?? [],
                       )
                     : widget.provider == "ProfileWall"
-                    ? globals.isPremiumWall(
-                        globals.premiumCollections,
+                    ? app_state.isPremiumWall(
+                        app_state.premiumCollections,
                         context.profileWallsSnapshots(listen: false)![widget.index].data()["collections"] as List? ??
                             [],
                       )
                     : widget.provider == "UserProfileWall"
-                    ? globals.isPremiumWall(
-                        globals.premiumCollections,
+                    ? app_state.isPremiumWall(
+                        app_state.premiumCollections,
                         context.publicProfileAdapter().userProfileWalls![widget.index].data()["collections"] as List? ??
                             [],
                       )
                     : widget.provider == "Liked" &&
-                          globals.isPremiumWall(
-                            globals.premiumCollections,
+                          app_state.isPremiumWall(
+                            app_state.premiumCollections,
                             context.favouriteWallsAdapter(listen: false).liked![widget.index]["collections"] as List? ??
                                 [],
                           ),

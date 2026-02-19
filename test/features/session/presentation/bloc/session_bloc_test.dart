@@ -3,6 +3,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/session/domain/usecases/session_usecases.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,15 +15,21 @@ class _MockRefreshPremiumUseCase extends Mock implements RefreshPremiumUseCase {
 
 class _MockSignOutUseCase extends Mock implements SignOutUseCase {}
 
+class _MockSessionRepository extends Mock implements SessionRepository {}
+
 void main() {
   late _MockGetSessionUseCase getSessionUseCase;
   late _MockRefreshPremiumUseCase refreshPremiumUseCase;
   late _MockSignOutUseCase signOutUseCase;
+  late _MockSessionRepository sessionRepository;
 
   setUp(() {
     getSessionUseCase = _MockGetSessionUseCase();
     refreshPremiumUseCase = _MockRefreshPremiumUseCase();
     signOutUseCase = _MockSignOutUseCase();
+    sessionRepository = _MockSessionRepository();
+
+    when(() => sessionRepository.watchCurrentUser()).thenAnswer((_) => const Stream.empty());
 
     when(() => getSessionUseCase(const NoParams())).thenAnswer(
       (_) async => Result.success(
@@ -30,10 +37,22 @@ void main() {
           userId: 'u1',
           email: 'user@test.com',
           name: 'User',
+          username: 'User',
           profilePhoto: '',
+          coverPhoto: '',
+          bio: '',
           loggedIn: true,
           premium: false,
           subscriptionTier: 'free',
+          coins: 0,
+          links: <String, dynamic>{},
+          followers: <dynamic>[],
+          following: <dynamic>[],
+          badges: <dynamic>[],
+          transactions: <dynamic>[],
+          subPrisms: <dynamic>[],
+          uploadsWeekStart: '',
+          uploadsThisWeek: 0,
         ),
       ),
     );
@@ -44,10 +63,22 @@ void main() {
           userId: 'u1',
           email: 'user@test.com',
           name: 'User',
+          username: 'User',
           profilePhoto: '',
+          coverPhoto: '',
+          bio: '',
           loggedIn: true,
           premium: true,
           subscriptionTier: 'pro',
+          coins: 100,
+          links: <String, dynamic>{},
+          followers: <dynamic>[],
+          following: <dynamic>[],
+          badges: <dynamic>[],
+          transactions: <dynamic>[],
+          subPrisms: <dynamic>[],
+          uploadsWeekStart: '',
+          uploadsThisWeek: 0,
         ),
       ),
     );
@@ -57,7 +88,8 @@ void main() {
 
   blocTest<SessionBloc, SessionState>(
     'loads session and refreshes premium flag',
-    build: () => SessionBloc(getSessionUseCase, refreshPremiumUseCase, signOutUseCase),
+    build: () =>
+        SessionBloc(getSessionUseCase, refreshPremiumUseCase, signOutUseCase, sessionRepository: sessionRepository),
     act: (bloc) => bloc
       ..add(const SessionEvent.started())
       ..add(const SessionEvent.premiumRefreshRequested()),

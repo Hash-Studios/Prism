@@ -1,6 +1,6 @@
 // import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
-import 'package:Prism/global/globals.dart';
+import 'package:Prism/core/state/app_state.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';

@@ -15,7 +15,7 @@ import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/palette/views/pages/custom_filters.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -195,12 +195,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   bool get _selectedFilterNeedsPremiumSpend => _filter != null && _filter is! NoFilter;
 
   Future<void> _runWithPremiumFilterGate(Future<void> Function() action, {required String sourceTag}) async {
-    if (!_selectedFilterNeedsPremiumSpend || globals.prismUser.premium || _premiumFilterUnlockedForSession) {
+    if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
       await action();
       return;
     }
 
-    if (!globals.prismUser.loggedIn) {
+    if (!app_state.prismUser.loggedIn) {
       toasts.codeSend('Sign in to use premium filters with coins.');
       googleSignInPopUp(context, () {
         unawaited(_runWithPremiumFilterGate(action, sourceTag: '$sourceTag.after_sign_in'));

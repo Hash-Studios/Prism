@@ -14,7 +14,7 @@ import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/clock_setup_overlay.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -367,7 +367,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                     },
                                                   ),
                                                 ),
-                                                if (globals.verifiedUsers.contains(
+                                                if (app_state.verifiedUsers.contains(
                                                   context
                                                       .setupsAdapter(listen: false)
                                                       .setups![index!]["email"]
@@ -1001,7 +1001,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                             padding: const EdgeInsets.all(17),
                             child: FavoriteIcon(
                               valueChanged: () {
-                                if (globals.prismUser.loggedIn == false) {
+                                if (app_state.prismUser.loggedIn == false) {
                                   googleSignInPopUp(context, () {
                                     onFavSetup(
                                       context.setupsAdapter(listen: false).setups![index!].data()["id"].toString(),
@@ -1113,7 +1113,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -1126,7 +1126,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
             Align(
               alignment: Alignment.topRight,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     Navigator.push(

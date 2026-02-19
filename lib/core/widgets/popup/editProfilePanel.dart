@@ -7,10 +7,9 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/env/env.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -219,16 +218,16 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   @override
   void initState() {
     linkIcons.sort((a, b) => a['name'].toString().compareTo(b['name'].toString()));
-    final links = globals.prismUser.links;
+    final links = app_state.prismUser.links;
     for (final element in linkIcons) {
       if (links[element['name']] != "" && links[element['name']] != null) {
         element['value'] = links[element['name']];
       }
     }
     _link = linkIcons[3];
-    bioController = TextEditingController(text: globals.prismUser.bio);
-    usernameController = TextEditingController(text: globals.prismUser.username);
-    nameController = TextEditingController(text: globals.prismUser.name);
+    bioController = TextEditingController(text: app_state.prismUser.bio);
+    usernameController = TextEditingController(text: app_state.prismUser.username);
+    nameController = TextEditingController(text: app_state.prismUser.name);
     super.initState();
   }
 
@@ -286,8 +285,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             }),
           );
       logger.d('File Uploaded');
-      globals.prismUser.profilePhoto = pfpUrl;
-      main.prefs.put(main.userHiveKey, globals.prismUser);
+      app_state.prismUser.profilePhoto = pfpUrl;
+      app_state.persistPrismUser();
       await _updateCurrentUser(<String, dynamic>{"profilePhoto": pfpUrl}, 'profile.edit.profilePhoto');
     } catch (e) {
       logger.d(e.toString());
@@ -312,8 +311,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             }),
           );
       logger.d('Cover File Uploaded');
-      globals.prismUser.coverPhoto = coverUrl;
-      main.prefs.put(main.userHiveKey, globals.prismUser);
+      app_state.prismUser.coverPhoto = coverUrl;
+      app_state.persistPrismUser();
       await _updateCurrentUser(<String, dynamic>{"coverPhoto": coverUrl}, 'profile.edit.coverPhoto');
     } catch (e) {
       logger.d(e.toString());
@@ -364,7 +363,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<void> _updateCurrentUser(Map<String, dynamic> data, String sourceTag) {
-    return firestoreClient.updateDoc(USER_NEW_COLLECTION, globals.prismUser.id, data, sourceTag: sourceTag);
+    return firestoreClient.updateDoc(USER_NEW_COLLECTION, app_state.prismUser.id, data, sourceTag: sourceTag);
   }
 
   Future<bool> _isUsernameAvailable(String username) async {
@@ -415,8 +414,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                       border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                     ),
                     child: (_cover == null)
-                        ? (globals.prismUser.coverPhoto != null)
-                              ? CachedNetworkImage(imageUrl: globals.prismUser.coverPhoto!, fit: BoxFit.cover)
+                        ? (app_state.prismUser.coverPhoto != null)
+                              ? CachedNetworkImage(imageUrl: app_state.prismUser.coverPhoto!, fit: BoxFit.cover)
                               : SvgPicture.string(
                                   defaultHeader
                                       .replaceAll(
@@ -453,8 +452,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                       onPressed: () async {
                         showRemoveAlertDialog(context, () async {
                           _cover = null;
-                          globals.prismUser.coverPhoto = null;
-                          main.prefs.put(main.userHiveKey, globals.prismUser);
+                          app_state.prismUser.coverPhoto = null;
+                          app_state.persistPrismUser();
                           await _updateCurrentUser(<String, dynamic>{
                             "coverPhoto": null,
                           }, 'profile.edit.removeCoverPhoto');
@@ -482,7 +481,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                           ),
                           child: (_pfp == null)
-                              ? CachedNetworkImage(imageUrl: globals.prismUser.profilePhoto, fit: BoxFit.cover)
+                              ? CachedNetworkImage(imageUrl: app_state.prismUser.profilePhoto, fit: BoxFit.cover)
                               : Image.file(_pfp!, fit: BoxFit.cover),
                         ),
                         Container(
@@ -543,7 +542,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           ),
                         ),
                         onChanged: (value) async {
-                          if (value == globals.prismUser.name || value == "") {
+                          if (value == app_state.prismUser.name || value == "") {
                             setState(() {
                               nameEdit = false;
                             });
@@ -646,7 +645,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               available = null;
                             });
                           }
-                          if (value == globals.prismUser.username || value == "") {
+                          if (value == app_state.prismUser.username || value == "") {
                             setState(() {
                               usernameEdit = false;
                               available = null;
@@ -701,8 +700,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             onPressed: () async {
                               showRemoveAlertDialog(context, () async {
                                 bioController.text = "";
-                                globals.prismUser.bio = "";
-                                main.prefs.put(main.userHiveKey, globals.prismUser);
+                                app_state.prismUser.bio = "";
+                                app_state.persistPrismUser();
                                 await _updateCurrentUser(<String, dynamic>{"bio": ""}, 'profile.edit.clearBio');
                               }, "bio");
                             },
@@ -710,7 +709,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           ),
                         ),
                         onChanged: (value) {
-                          if (value == globals.prismUser.bio || value == "") {
+                          if (value == app_state.prismUser.bio || value == "") {
                             setState(() {
                               bioEdit = false;
                             });
@@ -821,12 +820,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                     onPressed: () async {
                                       showRemoveAlertDialog(context, () async {
                                         linkController.text = "";
-                                        final links = globals.prismUser.links;
+                                        final links = app_state.prismUser.links;
                                         links.remove(_link?["name"].toString());
-                                        globals.prismUser.links = links;
-                                        main.prefs.put(main.userHiveKey, globals.prismUser);
+                                        app_state.prismUser.links = links;
+                                        app_state.persistPrismUser();
                                         await _updateCurrentUser(<String, dynamic>{
-                                          "links": globals.prismUser.links,
+                                          "links": app_state.prismUser.links,
                                         }, 'profile.edit.removeLink');
                                       }, "${_link?["name"].toString().inCaps}");
                                     },
@@ -911,24 +910,24 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             await processImageCover();
                           }
                           if (bioEdit && bioController.text != "") {
-                            globals.prismUser.bio = bioController.text;
-                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                            app_state.prismUser.bio = bioController.text;
+                            app_state.persistPrismUser();
                             await _updateCurrentUser(<String, dynamic>{"bio": bioController.text}, 'profile.edit.bio');
                           }
                           if (linkEdit) {
-                            final Map links = globals.prismUser.links;
+                            final Map links = app_state.prismUser.links;
                             for (int p = 0; p < linkIcons.length; p++) {
                               if (linkIcons[p]["value"] != "") {
                                 links[linkIcons[p]["name"]] = linkIcons[p]["value"];
                               }
                             }
-                            globals.prismUser.links = links;
-                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                            app_state.prismUser.links = links;
+                            app_state.persistPrismUser();
                             await _updateCurrentUser(<String, dynamic>{"links": links}, 'profile.edit.links');
                           }
                           if (nameEdit && nameController.text != "") {
-                            globals.prismUser.name = nameController.text;
-                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                            app_state.prismUser.name = nameController.text;
+                            app_state.persistPrismUser();
                             await _updateCurrentUser(<String, dynamic>{
                               "name": nameController.text,
                             }, 'profile.edit.name');
@@ -946,8 +945,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             isLoading = true;
                           });
                           if (usernameEdit && usernameController.text != "" && usernameController.text.length >= 8) {
-                            globals.prismUser.username = usernameController.text;
-                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                            app_state.prismUser.username = usernameController.text;
+                            app_state.persistPrismUser();
                             await _updateCurrentUser(<String, dynamic>{
                               "username": usernameController.text,
                             }, 'profile.edit.username');
@@ -959,21 +958,21 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             await processImageCover();
                           }
                           if (bioEdit && bioController.text != "") {
-                            globals.prismUser.bio = bioController.text;
-                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                            app_state.prismUser.bio = bioController.text;
+                            app_state.persistPrismUser();
                             await _updateCurrentUser(<String, dynamic>{
                               "bio": bioController.text,
                             }, 'profile.edit.bio.withUsername');
                           }
                           if (nameEdit && nameController.text != "") {
-                            globals.prismUser.name = nameController.text;
-                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                            app_state.prismUser.name = nameController.text;
+                            app_state.persistPrismUser();
                             await _updateCurrentUser(<String, dynamic>{
                               "name": nameController.text,
                             }, 'profile.edit.name.withUsername');
                           }
                           if (linkEdit) {
-                            final Map links = globals.prismUser.links;
+                            final Map links = app_state.prismUser.links;
                             for (int p = 0; p < linkIcons.length; p++) {
                               if (linkIcons[p]["value"] != "") {
                                 links[linkIcons[p]["name"]] = linkIcons[p]["value"];
@@ -985,28 +984,28 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 await processImageCover();
                               }
                               if (bioEdit && bioController.text != "") {
-                                globals.prismUser.bio = bioController.text;
-                                main.prefs.put(main.userHiveKey, globals.prismUser);
+                                app_state.prismUser.bio = bioController.text;
+                                app_state.persistPrismUser();
                                 await _updateCurrentUser(<String, dynamic>{
                                   "bio": bioController.text,
                                 }, 'profile.edit.bio.withUsername');
                               }
                               if (nameEdit && nameController.text != "") {
-                                globals.prismUser.name = nameController.text;
-                                main.prefs.put(main.userHiveKey, globals.prismUser);
+                                app_state.prismUser.name = nameController.text;
+                                app_state.persistPrismUser();
                                 await _updateCurrentUser(<String, dynamic>{
                                   "name": nameController.text,
                                 }, 'profile.edit.name.withUsername');
                               }
                               if (linkEdit) {
-                                final Map links = globals.prismUser.links;
+                                final Map links = app_state.prismUser.links;
                                 for (int p = 0; p < linkIcons.length; p++) {
                                   if (linkIcons[p]["value"] != "") {
                                     links[linkIcons[p]["name"]] = linkIcons[p]["value"];
                                   }
                                 }
-                                globals.prismUser.links = links;
-                                main.prefs.put(main.userHiveKey, globals.prismUser);
+                                app_state.prismUser.links = links;
+                                app_state.persistPrismUser();
                                 await _updateCurrentUser(<String, dynamic>{
                                   "links": links,
                                 }, 'profile.edit.links.withUsername');
@@ -1018,8 +1017,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                               Navigator.pop(context);
                               toasts.codeSend("Details updated!");
                             }
-                            globals.prismUser.links = links;
-                            main.prefs.put(main.userHiveKey, globals.prismUser);
+                            app_state.prismUser.links = links;
+                            app_state.persistPrismUser();
                             await _updateCurrentUser(<String, dynamic>{
                               "links": links,
                             }, 'profile.edit.links.withUsername');
