@@ -14,7 +14,7 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/profile_setups/views/profile_setups_bloc_adapter.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -375,7 +375,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                     },
                                                   ),
                                                 ),
-                                                if (globals.verifiedUsers.contains(
+                                                if (app_state.verifiedUsers.contains(
                                                   context
                                                       .profileSetupsAdapter(listen: false)
                                                       .profileSetups![index!]["email"]
@@ -1068,7 +1068,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                             padding: const EdgeInsets.all(17),
                             child: FavoriteIcon(
                               valueChanged: () {
-                                if (globals.prismUser.loggedIn == false) {
+                                if (app_state.prismUser.loggedIn == false) {
                                   googleSignInPopUp(context, () {
                                     onFavSetup(
                                       context
@@ -1191,7 +1191,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -1204,7 +1204,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
             Align(
               alignment: Alignment.topRight,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () async {
                     final status = await Permission.storage.status;

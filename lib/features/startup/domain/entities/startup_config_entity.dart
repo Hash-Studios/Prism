@@ -19,7 +19,7 @@ class StartupConfigEntity {
 
   final String topImageLink;
   final String bannerText;
-  final String bannerTextOn;
+  final bool bannerTextOn;
   final String bannerUrl;
   final String obsoleteAppVersion;
   final List<String> verifiedUsers;

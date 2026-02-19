@@ -3,7 +3,7 @@ import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -42,7 +42,7 @@ class FavouriteWallsAdapter {
       return;
     }
 
-    final userId = globals.prismUser.id;
+    final userId = app_state.prismUser.id;
     if (userId.isEmpty) {
       return;
     }
@@ -69,7 +69,7 @@ class FavouriteWallsAdapter {
   }
 
   Future<bool> deleteData() async {
-    final userId = globals.prismUser.id;
+    final userId = app_state.prismUser.id;
     if (userId.isEmpty) {
       return false;
     }
@@ -82,7 +82,7 @@ class FavouriteWallsAdapter {
   }
 
   Future<void> _ensureLoaded({bool forceRefresh = false}) async {
-    final userId = globals.prismUser.id;
+    final userId = app_state.prismUser.id;
     if (userId.isEmpty) {
       return;
     }

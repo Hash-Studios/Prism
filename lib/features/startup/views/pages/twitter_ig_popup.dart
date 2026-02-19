@@ -6,7 +6,7 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -306,7 +306,7 @@ class FollowHeaderCard extends StatelessWidget {
                           FirestoreFilter(
                             field: "email",
                             op: FirestoreFilterOp.isEqualTo,
-                            value: globals.prismUser.email,
+                            value: app_state.prismUser.email,
                           ),
                         ],
                         isStream: true,
@@ -363,7 +363,7 @@ class FollowHeaderCard extends StatelessWidget {
                                   final List<dynamic> followers = List<dynamic>.from(
                                     userData['followers'] as List? ?? [],
                                   );
-                                  followers.add(globals.prismUser.email);
+                                  followers.add(app_state.prismUser.email);
                                   await firestoreClient.updateDoc(
                                     USER_NEW_COLLECTION,
                                     users.first.id,
@@ -380,11 +380,11 @@ class FollowHeaderCard extends StatelessWidget {
                                   body: jsonEncode(<String, dynamic>{
                                     'notification': <String, dynamic>{
                                       'title': '🎉 New Follower!',
-                                      'body': '${globals.prismUser.username} is now following you.',
+                                      'body': '${app_state.prismUser.username} is now following you.',
                                       'color': "#e57697",
-                                      'image': globals.prismUser.profilePhoto,
+                                      'image': app_state.prismUser.profilePhoto,
                                       'android_channel_id': "followers",
-                                      'tag': '${globals.prismUser.username} Follow',
+                                      'tag': '${app_state.prismUser.username} Follow',
                                       'icon': '@drawable/ic_follow',
                                     },
                                     'priority': 'high',

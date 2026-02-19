@@ -10,7 +10,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -97,12 +97,12 @@ class _DownloadButtonState extends State<DownloadButton> {
       return;
     }
 
-    if (!globals.prismUser.loggedIn) {
+    if (!app_state.prismUser.loggedIn) {
       await _showGuestAdGatePopup();
       return;
     }
 
-    if (globals.prismUser.premium) {
+    if (app_state.prismUser.premium) {
       await _performDownload();
       return;
     }
@@ -183,7 +183,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                           shape: const StadiumBorder(),
                           color: Theme.of(context).colorScheme.error,
                           onPressed: () {
-                            if (globals.prismUser.loggedIn == false) {
+                            if (app_state.prismUser.loggedIn == false) {
                               googleSignInPopUp(context, () {
                                 Navigator.of(dialogContext).pop();
                                 PaywallOrchestrator.instance.present(

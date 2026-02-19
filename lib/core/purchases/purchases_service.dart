@@ -6,9 +6,8 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/env/env.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -112,8 +111,8 @@ class PurchasesService {
   }
 
   Future<void> _persistSubscriptionStateToFirestore({required bool isPremium, required SubscriptionTier tier}) async {
-    final String userId = globals.prismUser.id.trim();
-    if (userId.isEmpty || !globals.prismUser.loggedIn) {
+    final String userId = app_state.prismUser.id.trim();
+    if (userId.isEmpty || !app_state.prismUser.loggedIn) {
       return;
     }
     try {
@@ -129,16 +128,16 @@ class PurchasesService {
   /// Checks canonical + grandfathered paid entitlements; updates local user state and Hive.
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
   Future<bool> checkAndPersistPremium() async {
-    await ensureConfigured(globals.prismUser.id);
+    await ensureConfigured(app_state.prismUser.id);
 
     try {
       final info = await Purchases.getCustomerInfo();
       final SubscriptionTier tier = tierFromCustomerInfo(info);
       final bool isPremium = tier.isPaid;
 
-      globals.prismUser.premium = isPremium;
-      globals.prismUser.subscriptionTier = tier.value;
-      main.prefs.put(main.userHiveKey, globals.prismUser);
+      app_state.prismUser.premium = isPremium;
+      app_state.prismUser.subscriptionTier = tier.value;
+      app_state.persistPrismUser();
       await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier);
       analytics.logEvent(
         name: 'subscription_entitlement_refresh',
@@ -159,7 +158,7 @@ class PurchasesService {
         parameters: <String, Object>{'result': 'failure', 'error_code': e.code, 'error_message': e.message ?? ''},
       );
       logger.d('checkAndPersistPremium failed: $e');
-      return globals.prismUser.premium;
+      return app_state.prismUser.premium;
     }
   }
 

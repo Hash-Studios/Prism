@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -25,7 +25,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
   final picker2 = ImagePicker();
 
   Future getSetup() async {
-    if (!globals.prismUser.premium) {
+    if (!app_state.prismUser.premium) {
       await PaywallOrchestrator.instance.present(
         context,
         placement: PaywallPlacement.blockedSetupCreate,

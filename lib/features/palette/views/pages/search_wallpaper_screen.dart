@@ -12,7 +12,7 @@ import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -474,7 +474,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                   Align(
                     alignment: Alignment.topLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
                           Navigator.pop(context);
@@ -491,7 +491,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                   Align(
                     alignment: Alignment.topRight,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
                           final link = wdata.wallsS[index].path;
@@ -894,7 +894,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                   Align(
                     alignment: Alignment.topLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
                           Navigator.pop(context);
@@ -911,7 +911,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                   Align(
                     alignment: Alignment.topRight,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
                           final link = pdata.wallsPS[index].src!["original"];

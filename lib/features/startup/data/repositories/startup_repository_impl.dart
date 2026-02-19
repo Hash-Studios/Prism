@@ -1,12 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/categories/categories.dart' as category_data;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
@@ -17,6 +18,20 @@ class StartupRepositoryImpl implements StartupRepository {
 
   final FirebaseRemoteConfig _remoteConfig;
   final Box<dynamic> _prefsBox;
+  final StreamController<StartupConfigEntity> _configController = StreamController<StartupConfigEntity>.broadcast();
+
+  StartupConfigEntity? _currentConfig;
+
+  @override
+  StartupConfigEntity? get currentConfig => _currentConfig;
+
+  @override
+  Stream<StartupConfigEntity> watchConfig() async* {
+    if (_currentConfig != null) {
+      yield _currentConfig!;
+    }
+    yield* _configController.stream;
+  }
 
   List<String> _parseStringList(String raw) {
     var normalized = raw.replaceAll('"', '');
@@ -64,27 +79,27 @@ class StartupRepositoryImpl implements StartupRepository {
         RemoteConfigSettings(fetchTimeout: const Duration(seconds: 30), minimumFetchInterval: const Duration(hours: 6)),
       );
       await _remoteConfig.setDefaults(<String, dynamic>{
-        'topImageLink': globals.topImageLink,
-        'bannerText': globals.bannerText,
-        'bannerTextOn': globals.bannerTextOn,
-        'bannerURL': globals.bannerURL,
+        'topImageLink': defaultTopImageLink,
+        'bannerText': defaultBannerText,
+        'bannerTextOn': defaultBannerTextOn.toString(),
+        'bannerURL': defaultBannerUrl,
         'latestCategories': category_data.categories.toString(),
-        'currentVersion': globals.currentAppVersion,
-        'obsoleteVersion': globals.obsoleteAppVersion,
-        'topTitleText': globals.topTitleText.toString(),
-        'premiumCollections': globals.premiumCollections.toString(),
-        'verifiedUsers': globals.verifiedUsers.toString(),
-        'ai_enabled': globals.aiEnabled,
-        'ai_rollout_percent': globals.aiRolloutPercent,
-        'ai_submit_enabled': globals.aiSubmitEnabled,
-        'ai_variations_enabled': globals.aiVariationsEnabled,
-        'use_rc_paywalls': globals.useRcPaywalls,
+        'currentVersion': currentAppVersion,
+        'obsoleteVersion': defaultObsoleteAppVersion,
+        'topTitleText': defaultTopTitleText.toString(),
+        'premiumCollections': defaultPremiumCollections.toString(),
+        'verifiedUsers': defaultVerifiedUsers.toString(),
+        'ai_enabled': defaultAiEnabled,
+        'ai_rollout_percent': defaultAiRolloutPercent,
+        'ai_submit_enabled': defaultAiSubmitEnabled,
+        'ai_variations_enabled': defaultAiVariationsEnabled,
+        'use_rc_paywalls': defaultUseRcPaywalls,
       });
       await _remoteConfig.fetchAndActivate();
 
       final topImageLink = _remoteConfig.getString('topImageLink');
       final bannerText = _remoteConfig.getString('bannerText');
-      final bannerTextOn = _remoteConfig.getString('bannerTextOn');
+      final bannerTextOn = parseRemoteBool(_remoteConfig.getString('bannerTextOn'), fallback: defaultBannerTextOn);
       final bannerUrl = _remoteConfig.getString('bannerURL');
       final obsoleteVersion = _remoteConfig.getString('obsoleteVersion');
       final verifiedUsers = _parseStringList(_remoteConfig.getString('verifiedUsers'));
@@ -98,24 +113,9 @@ class StartupRepositoryImpl implements StartupRepository {
       topTitleText.shuffle();
       final categories = _parseCategories(_remoteConfig.getString('latestCategories'));
       categories.removeWhere((element) => element['name'] == 'Trending');
-
-      globals.topImageLink = topImageLink;
-      globals.bannerText = bannerText;
-      globals.bannerTextOn = bannerTextOn;
-      globals.bannerURL = bannerUrl;
-      globals.obsoleteAppVersion = obsoleteVersion;
-      globals.verifiedUsers = verifiedUsers;
-      globals.premiumCollections = premiumCollections;
-      globals.topTitleText = topTitleText;
-      globals.aiEnabled = aiEnabled;
-      globals.aiRolloutPercent = aiRolloutPercent;
-      globals.aiSubmitEnabled = aiSubmitEnabled;
-      globals.aiVariationsEnabled = aiVariationsEnabled;
-      globals.useRcPaywalls = useRcPaywalls;
       category_data.categories = categories;
 
       final followersTab = (_prefsBox.get('followersTab', defaultValue: true) as bool?) ?? true;
-      globals.followersTab = followersTab;
       await getNotifs();
 
       final entity = StartupConfigEntity(
@@ -135,6 +135,11 @@ class StartupRepositoryImpl implements StartupRepository {
         aiVariationsEnabled: aiVariationsEnabled,
         useRcPaywalls: useRcPaywalls,
       );
+
+      _currentConfig = entity;
+      if (!_configController.isClosed) {
+        _configController.add(entity);
+      }
 
       return Result.success(entity);
     } catch (error) {

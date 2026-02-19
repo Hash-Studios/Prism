@@ -1,7 +1,7 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_setups/biz/bloc/favourite_setups_bloc.j.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -40,7 +40,7 @@ class FavouriteSetupsAdapter {
       return;
     }
 
-    final userId = globals.prismUser.id;
+    final userId = app_state.prismUser.id;
     if (userId.isEmpty) {
       return;
     }
@@ -60,7 +60,7 @@ class FavouriteSetupsAdapter {
   }
 
   Future<bool> deleteData() async {
-    final userId = globals.prismUser.id;
+    final userId = app_state.prismUser.id;
     if (userId.isEmpty) {
       return false;
     }
@@ -73,7 +73,7 @@ class FavouriteSetupsAdapter {
   }
 
   Future<void> _ensureLoaded() async {
-    final userId = globals.prismUser.id;
+    final userId = app_state.prismUser.id;
     if (userId.isEmpty) {
       return;
     }

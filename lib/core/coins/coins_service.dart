@@ -12,7 +12,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/foundation.dart';
@@ -80,7 +80,7 @@ class CoinsService {
   static const Duration _premiumPreviewAccessDuration = Duration(hours: 24);
   static const Duration _shortLinkTimeout = Duration(seconds: 6);
 
-  final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(globals.prismUser.coins);
+  final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
 
   int _deltaVersion = 0;
@@ -104,12 +104,16 @@ class CoinsService {
     if (!_canMutateCoins()) {
       return;
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int coins = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
@@ -131,9 +135,9 @@ class CoinsService {
 
   Future<int> refreshBalance() async {
     if (!_canMutateCoins()) {
-      return globals.prismUser.coins;
+      return app_state.prismUser.coins;
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
       FirebaseCollections.usersV2,
       userId,
@@ -141,7 +145,7 @@ class CoinsService {
       sourceTag: 'coins.refresh_balance',
     );
     if (userData == null) {
-      return globals.prismUser.coins;
+      return app_state.prismUser.coins;
     }
     final int coins = _asInt(userData['coins']);
     _applyLocalBalance(coins, delta: 0);
@@ -152,7 +156,7 @@ class CoinsService {
     if (!_canMutateCoins()) {
       return const <CoinTransactionEntry>[];
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     try {
       final rows = await firestoreClient.query<CoinTransactionEntry>(
         FirestoreQuerySpec(
@@ -195,18 +199,22 @@ class CoinsService {
     String? reason,
   }) async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
     final int amount = amountOverride ?? action.defaultAmount();
     if (amount <= 0) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'invalid_amount');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'invalid_amount');
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int previous = _asInt(data['coins']);
         final int current = previous + amount;
@@ -256,19 +264,23 @@ class CoinsService {
     String? reason,
   }) async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
     final int amount = amountOverride ?? action.cost();
     if (amount <= 0) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'invalid_amount');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'invalid_amount');
     }
 
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final bool isPremium = _isPremiumUserData(data);
         final int previous = _asInt(data['coins']);
@@ -355,13 +367,13 @@ class CoinsService {
       return AiGenerationReservationResult(
         mode: AiChargeMode.insufficient,
         mutation: CoinMutationResult.noChange(
-          balance: globals.prismUser.coins,
+          balance: app_state.prismUser.coins,
           success: false,
           reason: 'not_logged_in',
         ),
       );
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final String today = _localDayKey(DateTime.now());
     final AiGenerationReservationResult result = await firestoreClient.runTransaction<AiGenerationReservationResult>(
       (tx) async {
@@ -370,7 +382,7 @@ class CoinsService {
           return AiGenerationReservationResult(
             mode: AiChargeMode.insufficient,
             mutation: CoinMutationResult.noChange(
-              balance: globals.prismUser.coins,
+              balance: app_state.prismUser.coins,
               success: false,
               reason: 'user_missing',
             ),
@@ -497,7 +509,7 @@ class CoinsService {
       parameters: <String, Object>{
         'mode': result.mode.value,
         'coinsSpent': result.coinsSpent,
-        'balance': globals.prismUser.coins,
+        'balance': app_state.prismUser.coins,
         'sourceTag': sourceTag,
       },
     );
@@ -510,7 +522,7 @@ class CoinsService {
     String? reservationTransactionId,
   }) async {
     if (mode == AiChargeMode.insufficient) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, reason: 'no_reservation_to_rollback');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
     }
 
     if (mode == AiChargeMode.coinSpend) {
@@ -525,7 +537,7 @@ class CoinsService {
         parameters: <String, Object>{
           'mode': mode.value,
           'coinsRefunded': CoinPolicy.aiGeneration,
-          'balance': globals.prismUser.coins,
+          'balance': app_state.prismUser.coins,
           'sourceTag': sourceTag,
         },
       );
@@ -533,15 +545,19 @@ class CoinsService {
     }
 
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final String today = _localDayKey(DateTime.now());
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
@@ -585,7 +601,7 @@ class CoinsService {
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     analytics.logEvent(
       name: 'ai_charge_rolled_back',
-      parameters: <String, Object>{'mode': mode.value, 'balance': globals.prismUser.coins, 'sourceTag': sourceTag},
+      parameters: <String, Object>{'mode': mode.value, 'balance': app_state.prismUser.coins, 'sourceTag': sourceTag},
     );
     return result;
   }
@@ -606,7 +622,7 @@ class CoinsService {
       parameters: <String, Object>{
         'mode': mode.value,
         'coinsSpent': coinsSpent,
-        'balance': globals.prismUser.coins,
+        'balance': app_state.prismUser.coins,
         'sourceTag': sourceTag,
       },
     );
@@ -645,13 +661,13 @@ class CoinsService {
     if (normalizedKey.isEmpty) {
       return false;
     }
-    if (globals.prismUser.premium) {
+    if (app_state.prismUser.premium) {
       return true;
     }
     if (!_canMutateCoins()) {
       return false;
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
       FirebaseCollections.usersV2,
       userId,
@@ -676,17 +692,17 @@ class CoinsService {
     String sourceTag = 'coins.preview.unlock',
   }) async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
     final String normalizedKey = _normalizeCollectionKey(collectionKey);
     if (normalizedKey.isEmpty) {
       return CoinMutationResult.noChange(
-        balance: globals.prismUser.coins,
+        balance: app_state.prismUser.coins,
         success: false,
         reason: 'invalid_collection_key',
       );
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final int nowMillis = DateTime.now().millisecondsSinceEpoch;
     final int expiryMillis = nowMillis + _premiumPreviewAccessDuration.inMilliseconds;
     const int previewCost = CoinPolicy.premiumPreview24h;
@@ -694,7 +710,11 @@ class CoinsService {
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final bool isPremium = _isPremiumUserData(data);
         final int previous = _asInt(data['coins']);
@@ -797,16 +817,20 @@ class CoinsService {
 
   Future<CoinMutationResult> claimDailyLoginAndStreakIfEligible() async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final String today = _localDayKey(DateTime.now());
 
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
@@ -892,15 +916,19 @@ class CoinsService {
 
   Future<CoinMutationResult> maybeAwardProDailyBonus() async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final String today = _localDayKey(DateTime.now());
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final bool isPremium = _isPremiumUserData(data);
         final int previous = _asInt(data['coins']);
@@ -958,17 +986,21 @@ class CoinsService {
 
   Future<CoinMutationResult> maybeAwardProfileCompletion() async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
     if (!_isProfileComplete()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, reason: 'profile_incomplete');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'profile_incomplete');
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
@@ -1020,14 +1052,18 @@ class CoinsService {
 
   Future<CoinMutationResult> maybeAwardFirstWallpaperUpload() async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
@@ -1082,23 +1118,27 @@ class CoinsService {
       await setPendingReferralInviterId(inviterUserId);
     }
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final String currentUserId = globals.prismUser.id;
+    final String currentUserId = app_state.prismUser.id;
     final String? pendingInviter = pendingReferralInviterId;
     if (pendingInviter == null || pendingInviter.isEmpty) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, reason: 'no_pending_referral');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_pending_referral');
     }
     if (pendingInviter == currentUserId) {
       await clearPendingReferralInviterId();
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, reason: 'self_referral');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'self_referral');
     }
 
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? currentData = await tx.getDoc(FirebaseCollections.usersV2, currentUserId);
         if (currentData == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int currentPrevious = _asInt(currentData['coins']);
         final Map<String, dynamic> currentState = _coinStateFromRaw(currentData[_coinStateField]);
@@ -1408,14 +1448,14 @@ class CoinsService {
   }
 
   bool _canMutateCoins() {
-    return globals.prismUser.loggedIn && globals.prismUser.id.trim().isNotEmpty;
+    return app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty;
   }
 
   bool _isProfileComplete() {
-    final bool hasName = globals.prismUser.name.trim().isNotEmpty;
-    final bool hasUsername = globals.prismUser.username.trim().isNotEmpty;
-    final bool hasBio = globals.prismUser.bio.trim().isNotEmpty;
-    final bool hasLink = globals.prismUser.links.values.any((value) => value.toString().trim().isNotEmpty);
+    final bool hasName = app_state.prismUser.name.trim().isNotEmpty;
+    final bool hasUsername = app_state.prismUser.username.trim().isNotEmpty;
+    final bool hasBio = app_state.prismUser.bio.trim().isNotEmpty;
+    final bool hasLink = app_state.prismUser.links.values.any((value) => value.toString().trim().isNotEmpty);
     return hasName && hasUsername && hasBio && hasLink;
   }
 
@@ -1438,8 +1478,8 @@ class CoinsService {
   }
 
   bool _isPremiumUserData(Map<String, dynamic> data) {
-    final bool premiumFlag = _asBool(data['premium']) || globals.prismUser.premium;
-    final SubscriptionTier tierFromGlobal = SubscriptionTier.fromValue(globals.prismUser.subscriptionTier);
+    final bool premiumFlag = _asBool(data['premium']) || app_state.prismUser.premium;
+    final SubscriptionTier tierFromGlobal = SubscriptionTier.fromValue(app_state.prismUser.subscriptionTier);
     if (tierFromGlobal.isPaid) {
       return true;
     }
@@ -1559,14 +1599,14 @@ class CoinsService {
   }
 
   void _applyLocalBalance(int newBalance, {required int delta}) {
-    final int previous = globals.prismUser.coins;
-    globals.prismUser.coins = newBalance;
+    final int previous = app_state.prismUser.coins;
+    app_state.prismUser.coins = newBalance;
     balanceNotifier.value = newBalance;
     if (delta == 0 && previous == newBalance) {
       return;
     }
     if (main.prefs.isOpen) {
-      unawaited(main.prefs.put(main.userHiveKey, globals.prismUser));
+      app_state.persistPrismUser();
     }
     _deltaVersion += 1;
     final int currentVersion = _deltaVersion;
@@ -1584,7 +1624,7 @@ class CoinsService {
       parameters: <String, Object>{
         'action': action.name,
         'amount': amount,
-        'balance': globals.prismUser.coins,
+        'balance': app_state.prismUser.coins,
         'sourceTag': sourceTag,
         if (reason != null && reason.isNotEmpty) 'reason': reason,
       },
@@ -1597,7 +1637,7 @@ class CoinsService {
       parameters: <String, Object>{
         'action': action.name,
         'amount': amount,
-        'balance': globals.prismUser.coins,
+        'balance': app_state.prismUser.coins,
         'sourceTag': sourceTag,
         if (reason != null && reason.isNotEmpty) 'reason': reason,
       },
@@ -1610,7 +1650,7 @@ class CoinsService {
       parameters: <String, Object>{
         'sourceTag': sourceTag,
         'requiredCoins': requiredCoins,
-        'balance': globals.prismUser.coins,
+        'balance': app_state.prismUser.coins,
       },
     );
   }

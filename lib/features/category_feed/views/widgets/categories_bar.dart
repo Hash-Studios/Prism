@@ -4,7 +4,7 @@ import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/popups/category_popup.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -88,13 +88,13 @@ class _CategoriesBarState extends State<CategoriesBar> {
 
   @override
   Widget build(BuildContext context) {
-    if (!globals.tooltipShown) {
+    if (!app_state.tooltipShown) {
       Future.delayed(const Duration(seconds: 2)).then((_) {
         try {
           final dynamic tooltip = key.currentState;
           if (!noNotification && notifications.isNotEmpty) {
             tooltip.ensureTooltipVisible();
-            globals.tooltipShown = true;
+            app_state.tooltipShown = true;
           }
           if (!noNotification && notifications.isNotEmpty) {
             Future.delayed(const Duration(seconds: 5)).then((_) {

@@ -11,7 +11,7 @@ import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -712,8 +712,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                   link: screenshotTaken
                                       ? _imageFile.path
                                       : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                                  isPremiumContent: globals.isPremiumWall(
-                                    globals.premiumCollections,
+                                  isPremiumContent: app_state.isPremiumWall(
+                                    app_state.premiumCollections,
                                     context.favouriteWallsAdapter(listen: false).liked![index]["collections"]
                                             as List? ??
                                         [],
@@ -836,7 +836,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                   Align(
                     alignment: Alignment.topLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
                           Navigator.pop(context);
@@ -853,7 +853,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                   Align(
                     alignment: Alignment.topRight,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
                           final link = context.favouriteWallsAdapter(listen: false).liked![index]["url"];
@@ -1152,8 +1152,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             DownloadButton(
                                               colorChanged: colorChanged,
                                               link: screenshotTaken ? _imageFile.path : downloadLinkBackwards,
-                                              isPremiumContent: globals.isPremiumWall(
-                                                globals.premiumCollections,
+                                              isPremiumContent: app_state.isPremiumWall(
+                                                app_state.premiumCollections,
                                                 context
                                                             .favouriteWallsAdapter(listen: false)
                                                             .liked![index]["collections"]
@@ -1219,8 +1219,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                   .favouriteWallsAdapter(listen: false)
                                                   .liked![index]["url"]
                                                   .toString(),
-                                        isPremiumContent: globals.isPremiumWall(
-                                          globals.premiumCollections,
+                                        isPremiumContent: app_state.isPremiumWall(
+                                          app_state.premiumCollections,
                                           context.favouriteWallsAdapter(listen: false).liked![index]["collections"]
                                                   as List? ??
                                               [],
@@ -1385,7 +1385,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                   Align(
                     alignment: Alignment.topLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
                           Navigator.pop(context);
@@ -1402,7 +1402,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                   Align(
                     alignment: Alignment.topRight,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                      padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
                           final link =

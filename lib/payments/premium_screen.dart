@@ -3,9 +3,8 @@ import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/cupertino.dart';
@@ -154,6 +153,14 @@ class _PremiumScreenState extends State<PremiumScreen> {
   Offerings? _offerings;
   bool _offeringsError = false;
 
+  Future<void> _syncPremiumState(CustomerInfo? info) async {
+    if (info == null) {
+      return;
+    }
+    final tier = _purchasesService.tierFromCustomerInfo(info);
+    await app_state.patchPrismUser(premium: tier.isPaid, subscriptionTier: tier.value);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -167,7 +174,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
       _offeringsError = false;
     });
 
-    await _purchasesService.ensureConfigured(globals.prismUser.id);
+    await _purchasesService.ensureConfigured(app_state.prismUser.id);
 
     CustomerInfo? customerInfo;
     try {
@@ -182,6 +189,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
     } on PlatformException catch (e) {
       logger.d('getOfferings failed: $e');
     }
+
+    await _syncPremiumState(customerInfo);
 
     if (!mounted) return;
     setState(() {
@@ -203,8 +212,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
     }
 
     final isPremium = _purchasesService.isPremiumFromCustomerInfo(_customerInfo!);
-    globals.prismUser.premium = isPremium;
-    main.prefs.put(main.userHiveKey, globals.prismUser);
 
     // Derive expiry / renewal date from active entitlement
     String? expiryDateLabel;

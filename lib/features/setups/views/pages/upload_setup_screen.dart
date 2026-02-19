@@ -8,7 +8,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/apps/appsData.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/env/env.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -111,7 +111,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   @override
   void initState() {
     super.initState();
-    if (!globals.prismUser.premium) {
+    if (!app_state.prismUser.premium) {
       _isPremiumBlocked = true;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
@@ -303,7 +303,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                 child: CircleAvatar(
                   backgroundColor: Theme.of(context).colorScheme.error,
                   radius: 20,
-                  child: ClipOval(child: Image.network(globals.prismUser.profilePhoto)),
+                  child: ClipOval(child: Image.network(app_state.prismUser.profilePhoto)),
                 ),
               ),
               const Spacer(),
@@ -1058,7 +1058,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           const Divider(height: 1),
           ListTile(
             title: Text(
-              globals.prismUser.premium == true
+              app_state.prismUser.premium == true
                   ? "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. Your setup will be visible in the setups section."
                   : "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your setup will be visible in the setups section.",
               style: TextStyle(

@@ -13,7 +13,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart'
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -128,7 +128,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     super.dispose();
   }
 
-  bool get _isLoggedIn => globals.prismUser.loggedIn && globals.prismUser.id.trim().isNotEmpty;
+  bool get _isLoggedIn => app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty;
 
   void _seedDefaultPromptIfEmpty() {
     if (_promptController.text.trim().isNotEmpty) {
@@ -162,17 +162,17 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   bool get _isRolloutEligible {
-    if (!globals.aiEnabled) {
+    if (!app_state.aiEnabled) {
       return false;
     }
-    final int percent = globals.aiRolloutPercent.clamp(0, 100);
+    final int percent = app_state.aiRolloutPercent.clamp(0, 100);
     if (percent >= 100) {
       return true;
     }
     if (!_isLoggedIn) {
       return false;
     }
-    final int hash = globals.prismUser.id.codeUnits.fold<int>(0, (prev, unit) => (prev + unit) % 100);
+    final int hash = app_state.prismUser.id.codeUnits.fold<int>(0, (prev, unit) => (prev + unit) % 100);
     return hash < percent;
   }
 
@@ -194,7 +194,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
     setState(() => _loadingHistory = true);
     try {
-      final result = await _repository.fetchHistory(userId: globals.prismUser.id);
+      final result = await _repository.fetchHistory(userId: app_state.prismUser.id);
       setState(() {
         _history = result;
         _latest = result.isEmpty ? null : result.first;
@@ -226,7 +226,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       _promptFocus.requestFocus();
       return;
     }
-    if (variation && (_latest == null || !globals.aiVariationsEnabled)) {
+    if (variation && (_latest == null || !app_state.aiVariationsEnabled)) {
       toasts.error('Variation is not available right now.');
       return;
     }
@@ -322,7 +322,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   Future<void> _setWallpaper(AiGenerationRecord record) async {
     try {
-      final file = await _downloadToTempFile(record.displayUrl(isPremium: globals.prismUser.premium));
+      final file = await _downloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
       if (!mounted) return;
       context.router.push(DownloadWallpaperRoute(arguments: <dynamic>['Prism', file]));
     } catch (_) {
@@ -331,14 +331,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _share(AiGenerationRecord record) async {
-    final link = record.displayUrl(isPremium: globals.prismUser.premium);
+    final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     await ShareService.shareText(text: link, subject: 'Made with Prism AI', context: context);
     analytics.logEvent(name: 'ai_share_tapped', parameters: <String, Object>{'generationId': record.id});
   }
 
   Future<void> _save(AiGenerationRecord record) async {
     try {
-      final file = await _downloadToTempFile(record.displayUrl(isPremium: globals.prismUser.premium));
+      final file = await _downloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
       if (!mounted) return;
       await ShareService.shareFilePaths(
         filePaths: <String>[file.path],
@@ -368,7 +368,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('Please sign in to submit wallpapers.');
       return;
     }
-    if (!globals.aiSubmitEnabled) {
+    if (!app_state.aiSubmitEnabled) {
       toasts.error('AI submit is currently disabled.');
       return;
     }
@@ -540,8 +540,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      globals.aiEnabled
-                          ? 'AI generation is rolling out (${globals.aiRolloutPercent}%).'
+                      app_state.aiEnabled
+                          ? 'AI generation is rolling out (${app_state.aiRolloutPercent}%).'
                           : 'AI generation is currently disabled.',
                     ),
                   ),
@@ -628,7 +628,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                   child: AspectRatio(
                     aspectRatio: 9 / 16,
                     child: Image.network(
-                      current.displayUrl(isPremium: globals.prismUser.premium),
+                      current.displayUrl(isPremium: app_state.prismUser.premium),
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black12),
                     ),
@@ -640,7 +640,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                   runSpacing: 8,
                   children: <Widget>[
                     OutlinedButton.icon(
-                      onPressed: _loadingGeneration || !globals.aiVariationsEnabled
+                      onPressed: _loadingGeneration || !app_state.aiVariationsEnabled
                           ? null
                           : () => _generate(variation: true),
                       icon: const Icon(Icons.auto_fix_high),
@@ -662,13 +662,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                       label: const Text('Set'),
                     ),
                     OutlinedButton.icon(
-                      onPressed: _submitting || !globals.aiSubmitEnabled ? null : () => _submitToCommunity(current),
+                      onPressed: _submitting || !app_state.aiSubmitEnabled ? null : () => _submitToCommunity(current),
                       icon: const Icon(Icons.upload_outlined),
                       label: Text(_submitting ? 'Submitting...' : 'Submit'),
                     ),
                   ],
                 ),
-                if (globals.aiVariationsEnabled) ...<Widget>[
+                if (app_state.aiVariationsEnabled) ...<Widget>[
                   const SizedBox(height: 8),
                   TextField(
                     controller: _variationController,
@@ -702,7 +702,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                           width: 42,
                           height: 72,
                           child: Image.network(
-                            item.displayUrl(isPremium: globals.prismUser.premium),
+                            item.displayUrl(isPremium: app_state.prismUser.premium),
                             fit: BoxFit.cover,
                             errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black12),
                           ),

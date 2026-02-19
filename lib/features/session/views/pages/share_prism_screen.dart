@@ -1,6 +1,6 @@
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -21,9 +21,9 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   }
 
   Future<void> getLink() async {
-    if (globals.prismUser.id == "") {
+    if (app_state.prismUser.id == "") {
     } else {
-      await createSharingPrismLink(globals.prismUser.id).then(
+      await createSharingPrismLink(app_state.prismUser.id).then(
         (value) => setState(() {
           link = value;
         }),

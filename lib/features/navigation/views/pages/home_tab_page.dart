@@ -7,7 +7,7 @@ import 'package:Prism/features/category_feed/views/pages/home_screen.dart';
 import 'package:Prism/features/category_feed/views/widgets/categories_bar.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -46,7 +46,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
   }
 
   Future<void> saveFavToLocal() async {
-    if (globals.prismUser.loggedIn) {
+    if (app_state.prismUser.loggedIn) {
       final value = await context.favouriteWallsAdapter(listen: false).getDataBase();
       if (value == null || value.isEmpty) {
         return;
@@ -61,7 +61,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: globals.followersTab ? 3 : 2, vsync: this);
+    tabController = TabController(length: app_state.followersTab ? 3 : 2, vsync: this);
     context.read<AdsBloc>().add(const AdsEvent.started());
     const QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
@@ -70,12 +70,12 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       });
       if (shortcutType == 'Follow_Feed') {
         logger.d('Follow_Feed');
-        if (globals.followersTab) {
+        if (app_state.followersTab) {
           tabController!.animateTo(1);
         }
       } else if (shortcutType == 'Collections') {
         logger.d('Collections');
-        if (globals.followersTab) {
+        if (app_state.followersTab) {
           tabController!.animateTo(2);
         } else {
           tabController!.animateTo(1);
@@ -129,7 +129,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
             controller: tabController,
             indicatorColor: Theme.of(context).colorScheme.secondary,
             indicatorSize: TabBarIndicatorSize.label,
-            tabs: globals.followersTab
+            tabs: app_state.followersTab
                 ? [
                     Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
                     Tab(icon: Icon(JamIcons.user_square, color: Theme.of(context).colorScheme.secondary)),
@@ -145,10 +145,10 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
           children: <Widget>[
             TabBarView(
               controller: tabController,
-              children: (globals.followersTab == true)
+              children: (app_state.followersTab == true)
                   ? <Widget>[
                       const HomeScreen(),
-                      if (globals.prismUser.loggedIn == true)
+                      if (app_state.prismUser.loggedIn == true)
                         const FollowingScreen()
                       else
                         Column(

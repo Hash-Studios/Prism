@@ -1,7 +1,7 @@
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -339,7 +339,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               ),
               subtitle: const Text("Get notifications for new followers.", style: TextStyle(fontSize: 12)),
               onChanged: (bool value) async {
-                if (globals.prismUser.loggedIn == true) {
+                if (app_state.prismUser.loggedIn == true) {
                   main.prefs.put("followersSubscriber", value);
                   setState(() {
                     followersSubscriber = value;
@@ -347,13 +347,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   if (value) {
                     await subscribeToTopicSafely(
                       home.f,
-                      globals.prismUser.email.split("@")[0],
+                      app_state.prismUser.email.split("@")[0],
                       sourceTag: 'notification.settings.followers.enable',
                     );
                   } else {
                     await unsubscribeFromTopicSafely(
                       home.f,
-                      globals.prismUser.email.split("@")[0],
+                      app_state.prismUser.email.split("@")[0],
                       sourceTag: 'notification.settings.followers.disable',
                     );
                     main.prefs.put("postsSubscriber", value);
@@ -389,7 +389,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               ),
               onChanged: followersSubscriber!
                   ? (bool value) async {
-                      if (globals.prismUser.loggedIn == true) {
+                      if (app_state.prismUser.loggedIn == true) {
                         main.prefs.put("postsSubscriber", value);
                         setState(() {
                           postsSubscriber = value;

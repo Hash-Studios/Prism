@@ -5,7 +5,7 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/ads/ads.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -26,7 +26,7 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
 
   @override
   Widget build(BuildContext context) {
-    if (!globals.prismUser.loggedIn) {
+    if (!app_state.prismUser.loggedIn) {
       return const SizedBox.shrink();
     }
     return ValueListenableBuilder<int>(
@@ -35,7 +35,7 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
         return ValueListenableBuilder<int>(
           valueListenable: CoinsService.instance.deltaNotifier,
           builder: (context, delta, _) {
-            final bool isLow = !globals.prismUser.premium && balance < CoinPolicy.lowBalanceNudgeThreshold;
+            final bool isLow = !app_state.prismUser.premium && balance < CoinPolicy.lowBalanceNudgeThreshold;
             final bool isEarn = delta > 0;
             final bool isSpend = delta < 0;
             final Color bgColor = isEarn

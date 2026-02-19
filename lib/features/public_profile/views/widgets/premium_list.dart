@@ -1,6 +1,6 @@
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
@@ -10,14 +10,14 @@ class PremiumList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        if (globals.prismUser.premium == true)
+        if (app_state.prismUser.premium == true)
           Container()
         else
           ListTile(
             onTap: () {
-              if (globals.prismUser.loggedIn == false) {
+              if (app_state.prismUser.loggedIn == false) {
                 googleSignInPopUp(context, () {
-                  if (globals.prismUser.premium == true) {
+                  if (app_state.prismUser.premium == true) {
                     main.RestartWidget.restartApp(context);
                   } else {
                     PaywallOrchestrator.instance.present(

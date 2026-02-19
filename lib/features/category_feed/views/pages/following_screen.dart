@@ -8,7 +8,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menuButton/favIconButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/followingFeed.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -51,11 +51,11 @@ class _FollowingScreenState extends State<FollowingScreen> {
   }
 
   Future<List<String>> _resolveFollowingEmails() async {
-    final List<String> fromGlobal = _normalizeEmails(globals.prismUser.following);
+    final List<String> fromGlobal = _normalizeEmails(app_state.prismUser.following);
     if (fromGlobal.isNotEmpty) {
       return fromGlobal;
     }
-    if (globals.prismUser.email.trim().isEmpty) {
+    if (app_state.prismUser.email.trim().isEmpty) {
       return <String>[];
     }
     final currentUserDocs = await firestoreClient.query<Map<String, dynamic>>(
@@ -63,7 +63,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         collection: USER_NEW_COLLECTION,
         sourceTag: 'following.currentUser',
         filters: <FirestoreFilter>[
-          FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email.trim()),
+          FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: app_state.prismUser.email.trim()),
         ],
         limit: 1,
         cachePolicy: FirestoreCachePolicy.memoryFirst,
@@ -75,7 +75,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
       return <String>[];
     }
     final List<String> remote = _normalizeEmails(currentUserDocs.first["following"] as List? ?? <dynamic>[]);
-    globals.prismUser.following = remote;
+    app_state.prismUser.following = remote;
     return remote;
   }
 
@@ -240,8 +240,8 @@ class _FollowingTileState extends State<FollowingTile> {
       child: Column(
         children: [
           PremiumBannerFollowingFeed(
-            comparator: !globals.isPremiumWall(
-              globals.premiumCollections,
+            comparator: !app_state.isPremiumWall(
+              app_state.premiumCollections,
               widget.finalDocs[widget.index]["collections"] as List? ?? [],
             ),
             child: Stack(
@@ -294,7 +294,7 @@ class _FollowingTileState extends State<FollowingTile> {
                               radius: 16,
                             ),
                           ),
-                          if (globals.verifiedUsers.contains(widget.finalDocs[widget.index]["email"].toString()))
+                          if (app_state.verifiedUsers.contains(widget.finalDocs[widget.index]["email"].toString()))
                             Container(
                               width: 15,
                               height: 15,
@@ -352,12 +352,12 @@ class _FollowingTileState extends State<FollowingTile> {
                   ),
                 ),
                 const Spacer(),
-                if (globals.isPremiumWall(
-                          globals.premiumCollections,
+                if (app_state.isPremiumWall(
+                          app_state.premiumCollections,
                           widget.finalDocs[widget.index]["collections"] as List? ?? [],
                         ) ==
                         true &&
-                    globals.prismUser.premium != true)
+                    app_state.prismUser.premium != true)
                   Container()
                 else
                   FavIconButton(

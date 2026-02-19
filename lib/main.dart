@@ -32,13 +32,15 @@ import 'package:Prism/features/palette/palette.dart';
 import 'package:Prism/features/profile_setups/profile_setups.dart';
 import 'package:Prism/features/profile_walls/profile_walls.dart';
 import 'package:Prism/features/public_profile/public_profile.dart';
+import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/setups/setups.dart';
+import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_dark/theme_dark.dart';
 import 'package:Prism/features/theme_light/theme_light.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/firebase_options.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -223,6 +225,11 @@ Future<void> main() async {
               BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
               BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
               BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
+              BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
+              BlocProvider<StartupBloc>(
+                create: (_) =>
+                    getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+              ),
               BlocProvider<ThemeLightBloc>(
                 create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
               ),
@@ -243,11 +250,11 @@ Future<void> main() async {
 
 SentryConfig _resolveSentryConfig() {
   const String fallbackEnvironment = kReleaseMode ? 'production' : 'staging';
-  final String fallbackRelease = 'Prism@${globals.currentAppVersion}+${globals.currentAppVersionCode}';
+  final String fallbackRelease = 'Prism@${app_state.currentAppVersion}+${app_state.currentAppVersionCode}';
   return SentryConfig.fromEnvironment(
     fallbackEnvironment: fallbackEnvironment,
     fallbackRelease: fallbackRelease,
-    fallbackDist: globals.currentAppVersionCode,
+    fallbackDist: app_state.currentAppVersionCode,
   );
 }
 
@@ -316,11 +323,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   bool _coinSyncInFlight = false;
 
   Future<bool> getLoginStatus() async {
-    bool value = await globals.gAuth.isSignedIn();
+    bool value = await app_state.gAuth.isSignedIn();
     if (value) {
       if (prefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
         try {
-          await globals.gAuth.signOutGoogle();
+          await app_state.gAuth.signOutGoogle();
         } catch (e, st) {
           logger.w(
             'Forced sign-out migration failed; continuing with signed-out state.',
@@ -336,7 +343,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     } else if (!value) {
       prefs.put("logouteveryoneaugust2021", true);
       // Ensure stale profile data from previous sessions cannot make the app behave as logged in.
-      globals.prismUser
+      app_state.prismUser
         ..loggedIn = false
         ..premium = false
         ..subscriptionTier = 'free'
@@ -345,7 +352,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ..username = ''
         ..name = ''
         ..bio = ''
-        ..profilePhoto = globals.defaultProfilePhotoUrl
+        ..profilePhoto = app_state.defaultProfilePhotoUrl
         ..coverPhoto = ''
         ..followers = <dynamic>[]
         ..following = <dynamic>[]
@@ -355,13 +362,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       await PurchasesService.instance.checkAndPersistPremium();
       unawaited(_syncCoinEconomy(sourceTag: 'startup_login_status'));
     }
-    globals.prismUser.loggedIn = value;
-    prefs.put(userHiveKey, globals.prismUser);
+    app_state.prismUser.loggedIn = value;
+    app_state.persistPrismUser();
     await syncSentryUserScope(
-      loggedIn: globals.prismUser.loggedIn,
-      id: globals.prismUser.id,
-      email: globals.prismUser.email,
-      username: globals.prismUser.username,
+      loggedIn: app_state.prismUser.loggedIn,
+      id: app_state.prismUser.id,
+      email: app_state.prismUser.email,
+      username: app_state.prismUser.username,
     );
     return value;
   }
@@ -370,7 +377,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (_coinSyncInFlight) {
       return;
     }
-    if (!globals.prismUser.loggedIn || globals.prismUser.id.trim().isEmpty) {
+    if (!app_state.prismUser.loggedIn || app_state.prismUser.id.trim().isEmpty) {
       return;
     }
     _coinSyncInFlight = true;
@@ -451,7 +458,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         return;
       }
       unawaited(CoinsService.instance.setPendingReferralInviterId(inviterUserId));
-      if (globals.prismUser.loggedIn) {
+      if (app_state.prismUser.loggedIn) {
         unawaited(CoinsService.instance.processPendingReferralIfEligible(inviterUserId: inviterUserId));
       } else {
         toasts.codeSend('Referral saved. Sign in to claim +100 coins.');

@@ -2,7 +2,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:hive_io/hive_io.dart';
@@ -34,12 +34,12 @@ DateTime? _asUtcDateTime(Object? raw) {
 }
 
 List<String> _notificationModifiers() {
-  final String audience = globals.prismUser.premium ? 'premium' : 'free';
+  final String audience = app_state.prismUser.premium ? 'premium' : 'free';
   return <String>[
     audience,
     'all',
-    globals.currentAppVersion.trim(),
-    globals.prismUser.email.trim(),
+    app_state.currentAppVersion.trim(),
+    app_state.prismUser.email.trim(),
   ].where((value) => value.isNotEmpty).toSet().toList(growable: false);
 }
 

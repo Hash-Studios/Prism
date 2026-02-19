@@ -1,7 +1,7 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -14,7 +14,7 @@ class UserList extends StatelessWidget {
   const UserList({required this.expanded});
   @override
   Widget build(BuildContext context) {
-    if (globals.prismUser.loggedIn == false) {
+    if (app_state.prismUser.loggedIn == false) {
       return ListTile(
         onTap: () {
           final Dialog loaderDialog = Dialog(
@@ -26,9 +26,9 @@ class UserList extends StatelessWidget {
               child: const Center(child: CircularProgressIndicator()),
             ),
           );
-          if (globals.prismUser.loggedIn == false) {
+          if (app_state.prismUser.loggedIn == false) {
             showDialog(barrierDismissible: false, context: context, builder: (BuildContext context) => loaderDialog);
-            globals.gAuth
+            app_state.gAuth
                 .signInWithGoogle()
                 .then((value) {
                   if (!context.mounted) {
@@ -36,14 +36,14 @@ class UserList extends StatelessWidget {
                   }
                   if (value == GoogleAuth.signInCancelledResult) {
                     Navigator.pop(context);
-                    globals.prismUser.loggedIn = false;
-                    main.prefs.put(main.userHiveKey, globals.prismUser);
+                    app_state.prismUser.loggedIn = false;
+                    app_state.persistPrismUser();
                     toasts.codeSend("Sign in cancelled.");
                     return;
                   }
                   toasts.codeSend("Login Successful!");
-                  globals.prismUser.loggedIn = true;
-                  main.prefs.put(main.userHiveKey, globals.prismUser);
+                  app_state.prismUser.loggedIn = true;
+                  app_state.persistPrismUser();
                   Navigator.pop(context);
                   main.RestartWidget.restartApp(context);
                 })
@@ -53,8 +53,8 @@ class UserList extends StatelessWidget {
                   }
                   logger.d(e.toString());
                   Navigator.pop(context);
-                  globals.prismUser.loggedIn = false;
-                  main.prefs.put(main.userHiveKey, globals.prismUser);
+                  app_state.prismUser.loggedIn = false;
+                  app_state.persistPrismUser();
                   toasts.error("Something went wrong, please try again!");
                 });
           } else {
@@ -85,11 +85,11 @@ class UserList extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          globals.prismUser.loggedIn == true ? "Clear favorites or logout" : "Login with Google",
+          app_state.prismUser.loggedIn == true ? "Clear favorites or logout" : "Login with Google",
           style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
         ),
         children: <Widget>[
-          if (globals.prismUser.loggedIn == true)
+          if (app_state.prismUser.loggedIn == true)
             Column(
               children: [
                 ListTile(
@@ -214,9 +214,9 @@ class UserList extends StatelessWidget {
                       fontFamily: "Proxima Nova",
                     ),
                   ),
-                  subtitle: Text(globals.prismUser.email, style: const TextStyle(fontSize: 12)),
+                  subtitle: Text(app_state.prismUser.email, style: const TextStyle(fontSize: 12)),
                   onTap: () {
-                    globals.gAuth.signOutGoogle();
+                    app_state.gAuth.signOutGoogle();
                     toasts.codeSend("Log out Successful!");
                     main.RestartWidget.restartApp(context);
                   },

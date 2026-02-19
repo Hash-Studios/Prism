@@ -11,7 +11,7 @@ import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/profile_walls/views/profile_walls_bloc_adapter.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -423,8 +423,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                       .profileWallsSnapshots(listen: false)![index]
                                       .data()["wallpaper_url"]
                                       .toString(),
-                            isPremiumContent: globals.isPremiumWall(
-                              globals.premiumCollections,
+                            isPremiumContent: app_state.isPremiumWall(
+                              app_state.premiumCollections,
                               context.profileWallsSnapshots(listen: false)![index].data()["collections"] as List? ?? [],
                             ),
                             contentId: context.profileWallsSnapshots(listen: false)![index].data()["id"]?.toString(),
@@ -551,7 +551,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -568,7 +568,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
             Align(
               alignment: Alignment.topRight,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     final link = context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_url"];

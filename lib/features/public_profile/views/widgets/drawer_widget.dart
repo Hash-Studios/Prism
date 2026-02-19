@@ -5,7 +5,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/enterCodePanel.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -41,7 +41,7 @@ class ProfileDrawer extends StatelessWidget {
                       SizedBox(
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
-                          globals.prismUser.premium == true ? "Prism Pro" : "Prism",
+                          app_state.prismUser.premium == true ? "Prism Pro" : "Prism",
                           style: Theme.of(
                             context,
                           ).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -50,7 +50,7 @@ class ProfileDrawer extends StatelessWidget {
                       SizedBox(
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
-                          globals.prismUser.premium == true
+                          app_state.prismUser.premium == true
                               ? "Exclusive premium walls & setups!"
                               : "Exclusive wallpapers & setups!",
                           style: Theme.of(
@@ -118,11 +118,11 @@ class ProfileDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: <Widget>[
             createDrawerHeader(context),
-            if (globals.prismUser.premium == true)
+            if (app_state.prismUser.premium == true)
               Container()
             else
               createDrawerBodyHeader(text: "PREMIUM", context: context),
-            if (globals.prismUser.premium == true)
+            if (app_state.prismUser.premium == true)
               Container()
             else
               createDrawerBodyItem(
@@ -138,7 +138,7 @@ class ProfileDrawer extends StatelessWidget {
                 },
                 context: context,
               ),
-            if (globals.prismUser.premium == true) Container() else const Divider(),
+            if (app_state.prismUser.premium == true) Container() else const Divider(),
             createDrawerBodyHeader(text: "FAVOURITES", context: context),
             createDrawerBodyItem(
               icon: JamIcons.picture,
@@ -263,7 +263,7 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
-            if (globals.isAdminUser())
+            if (app_state.isAdminUser())
               createDrawerBodyItem(
                 icon: JamIcons.shield_check,
                 text: 'Admin Moderation',
@@ -292,11 +292,11 @@ class ProfileDrawer extends StatelessWidget {
               context: context,
               onTap: () {
                 createUserDynamicLink(
-                  globals.prismUser.name,
-                  globals.prismUser.username,
-                  globals.prismUser.email,
-                  globals.prismUser.bio,
-                  globals.prismUser.profilePhoto,
+                  app_state.prismUser.name,
+                  app_state.prismUser.username,
+                  app_state.prismUser.email,
+                  app_state.prismUser.bio,
+                  app_state.prismUser.profilePhoto,
                   context: context,
                 );
               },
@@ -306,7 +306,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Log out',
               onTap: () {
                 Navigator.pop(context);
-                globals.gAuth.signOutGoogle();
+                app_state.gAuth.signOutGoogle();
                 toasts.codeSend("Log out Successful!");
                 main.RestartWidget.restartApp(context);
               },

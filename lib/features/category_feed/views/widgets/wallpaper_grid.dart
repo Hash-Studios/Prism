@@ -11,7 +11,7 @@ import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -137,7 +137,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                           margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
                           child: GestureDetector(
                             onTap: () {
-                              launch(globals.bannerURL);
+                              launch(app_state.bannerURL);
                             },
                             child: Container(
                               decoration: BoxDecoration(
@@ -146,20 +146,20 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                     : Colors.black.withValues(alpha: .1),
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
-                                  image: CachedNetworkImageProvider(globals.topImageLink),
+                                  image: CachedNetworkImageProvider(app_state.topImageLink),
                                   fit: BoxFit.cover,
                                 ),
                               ),
                               child: Center(
                                 child: Container(
                                   width: MediaQuery.of(context).size.width,
-                                  color: globals.bannerTextOn == "true"
+                                  color: app_state.bannerTextOn
                                       ? Colors.black.withValues(alpha: 0.4)
                                       : Colors.transparent,
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
-                                      globals.bannerTextOn == "true" ? globals.bannerText.toUpperCase() : "",
+                                      app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
                                       textAlign: TextAlign.center,
                                       maxLines: 1,
                                       style: Theme.of(context).textTheme.displayMedium!.copyWith(
@@ -198,8 +198,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                   ),
                                 )
                               : PremiumBannerWallsCarousel(
-                                  comparator: !globals.isPremiumWall(
-                                    globals.premiumCollections,
+                                  comparator: !app_state.isPremiumWall(
+                                    app_state.premiumCollections,
                                     wall["collections"] as List? ?? [],
                                   ),
                                   child: Container(
@@ -294,15 +294,15 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     },
                   );
                 }
-                return globals.prismUser.premium == true
+                return app_state.prismUser.premium == true
                     ? FocusedMenuHolder(
                         provider: widget.provider,
                         index: index,
                         child: WallpaperTile(widget: widget, index: index),
                       )
                     : PremiumBannerWalls(
-                        comparator: !globals.isPremiumWall(
-                          globals.premiumCollections,
+                        comparator: !app_state.isPremiumWall(
+                          app_state.premiumCollections,
                           wallAt(index)?["collections"] as List? ?? [],
                         ),
                         defaultChild: FocusedMenuHolder(
