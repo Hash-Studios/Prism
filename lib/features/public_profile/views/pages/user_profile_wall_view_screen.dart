@@ -11,7 +11,7 @@ import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -433,8 +433,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                       .userProfileWalls![index]
                                       .data()["wallpaper_url"]
                                       .toString(),
-                            isPremiumContent: globals.isPremiumWall(
-                              globals.premiumCollections,
+                            isPremiumContent: app_state.isPremiumWall(
+                              app_state.premiumCollections,
                               context.publicProfileAdapter().userProfileWalls![index].data()["collections"] as List? ??
                                   [],
                             ),
@@ -572,7 +572,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -589,7 +589,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
             Align(
               alignment: Alignment.topRight,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     final link = context

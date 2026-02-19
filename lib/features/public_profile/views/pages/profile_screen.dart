@@ -18,7 +18,7 @@ import 'package:Prism/features/public_profile/views/widgets/premium_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -45,14 +45,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (identifier.isEmpty) {
       return true;
     }
-    return identifier == globals.prismUser.email || identifier == globals.prismUser.username;
+    return identifier == app_state.prismUser.email || identifier == app_state.prismUser.username;
   }
 
   @override
   void initState() {
     profileIdentifier = (widget.arguments != null && widget.arguments!.isNotEmpty)
         ? widget.arguments![0].toString()
-        : globals.prismUser.email;
+        : app_state.prismUser.email;
     super.initState();
   }
 
@@ -69,20 +69,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: ProfileChild(
                   ownProfile: true,
                   parentScaffoldKey: _scaffoldKey,
-                  id: globals.prismUser.id,
-                  bio: globals.prismUser.bio,
-                  coverPhoto: globals.prismUser.coverPhoto,
-                  email: globals.prismUser.email,
-                  links: globals.prismUser.links,
-                  name: globals.prismUser.name,
-                  premium: globals.prismUser.premium,
-                  userPhoto: globals.prismUser.profilePhoto,
-                  username: globals.prismUser.username,
-                  followers: globals.prismUser.followers,
-                  following: globals.prismUser.following,
+                  id: app_state.prismUser.id,
+                  bio: app_state.prismUser.bio,
+                  coverPhoto: app_state.prismUser.coverPhoto,
+                  email: app_state.prismUser.email,
+                  links: app_state.prismUser.links,
+                  name: app_state.prismUser.name,
+                  premium: app_state.prismUser.premium,
+                  userPhoto: app_state.prismUser.profilePhoto,
+                  username: app_state.prismUser.username,
+                  followers: app_state.prismUser.followers,
+                  following: app_state.prismUser.following,
                 ),
               ),
-              endDrawer: globals.prismUser.loggedIn
+              endDrawer: app_state.prismUser.loggedIn
                   ? SizedBox(width: MediaQuery.of(context).size.width * 0.68, child: ProfileDrawer())
                   : null,
             )
@@ -193,7 +193,7 @@ class _ProfileChildState extends State<ProfileChild> {
         ? InheritedDataProvider.of(context)!.scrollController
         : ScrollController();
 
-    return !widget.ownProfile! || globals.prismUser.loggedIn
+    return !widget.ownProfile! || app_state.prismUser.loggedIn
         ? DefaultTabController(
             length: 2,
             child: Stack(
@@ -208,7 +208,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         primary: false,
                         floating: true,
                         elevation: 0,
-                        leading: !widget.ownProfile! || globals.prismUser.loggedIn == false
+                        leading: !widget.ownProfile! || app_state.prismUser.loggedIn == false
                             ? Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
@@ -244,16 +244,16 @@ class _ProfileChildState extends State<ProfileChild> {
                                 ),
                               ),
                         actions: [
-                          if (globals.prismUser.loggedIn)
+                          if (app_state.prismUser.loggedIn)
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 12),
                               child: CoinBalanceChip(sourceTag: 'coins.chip.profile_screen'),
                             ),
-                          if (!widget.ownProfile! || globals.prismUser.loggedIn == false)
-                            if (globals.prismUser.loggedIn)
+                          if (!widget.ownProfile! || app_state.prismUser.loggedIn == false)
+                            if (app_state.prismUser.loggedIn)
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: ((widget.followers ?? []).contains(globals.prismUser.email))
+                                child: ((widget.followers ?? []).contains(app_state.prismUser.email))
                                     ? IconButton(
                                         alignment: Alignment.centerRight,
                                         padding: const EdgeInsets.all(2),
@@ -298,10 +298,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                             body: jsonEncode(<String, dynamic>{
                                               'notification': <String, dynamic>{
                                                 'title': '🎉 New Follower!',
-                                                'body': '${globals.prismUser.username} is now following you.',
+                                                'body': '${app_state.prismUser.username} is now following you.',
                                                 'color': "#e57697",
-                                                'tag': '${globals.prismUser.username} Follow',
-                                                'image': globals.prismUser.profilePhoto,
+                                                'tag': '${app_state.prismUser.username} Follow',
+                                                'image': app_state.prismUser.profilePhoto,
                                                 'android_channel_id': "followers",
                                                 'icon': '@drawable/ic_follow',
                                               },
@@ -318,7 +318,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                         },
                                       ),
                               ),
-                          if (widget.ownProfile! && globals.prismUser.loggedIn)
+                          if (widget.ownProfile! && app_state.prismUser.loggedIn)
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: IconButton(
@@ -620,7 +620,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         automaticallyImplyLeading: false,
                         pinned: true,
                         titleSpacing: 0,
-                        expandedHeight: !widget.ownProfile! || globals.prismUser.loggedIn ? 50 : 0,
+                        expandedHeight: !widget.ownProfile! || app_state.prismUser.loggedIn ? 50 : 0,
                         title: SizedBox(
                           width: MediaQuery.of(context).size.width,
                           height: 57,

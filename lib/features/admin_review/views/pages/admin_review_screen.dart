@@ -1,6 +1,6 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -33,7 +33,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    if (!globals.isAdminUser()) {
+    if (!app_state.isAdminUser()) {
       return Scaffold(
         appBar: AppBar(title: const Text('Admin Moderation')),
         body: const Center(child: Text('You are not authorized to access this page.')),

@@ -4,7 +4,7 @@ import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:flutter/material.dart';
 import 'package:hive_io/hive_io.dart';
 
@@ -32,7 +32,7 @@ class _FavIconButtonState extends State<FavIconButton> {
       children: [
         FavoriteIcon(
           valueChanged: () {
-            if (globals.prismUser.loggedIn == false) {
+            if (app_state.prismUser.loggedIn == false) {
               googleSignInPopUp(context, () {
                 onFav(widget.id, "Prism", null, null, widget.prism);
               });

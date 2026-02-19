@@ -7,7 +7,7 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -111,7 +111,7 @@ class _WallReviewState extends State<WallReview> {
                 collection: FirebaseCollections.rejectedWalls,
                 sourceTag: 'review.rejectedWalls',
                 filters: <FirestoreFilter>[
-                  FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email),
+                  FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: app_state.prismUser.email),
                 ],
                 orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
                 isStream: true,
@@ -137,7 +137,7 @@ class _WallReviewState extends State<WallReview> {
                 collection: FirebaseCollections.walls,
                 sourceTag: 'review.pendingWalls',
                 filters: <FirestoreFilter>[
-                  FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email),
+                  FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: app_state.prismUser.email),
                   const FirestoreFilter(field: "review", op: FirestoreFilterOp.isEqualTo, value: false),
                 ],
                 orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
@@ -687,7 +687,7 @@ class _SetupReviewState extends State<SetupReview> {
                 collection: FirebaseCollections.rejectedSetups,
                 sourceTag: 'review.rejectedSetups',
                 filters: <FirestoreFilter>[
-                  FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email),
+                  FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: app_state.prismUser.email),
                 ],
                 orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at', descending: true)],
                 isStream: true,
@@ -713,7 +713,7 @@ class _SetupReviewState extends State<SetupReview> {
                 collection: FirebaseCollections.setups,
                 sourceTag: 'review.pendingSetups',
                 filters: <FirestoreFilter>[
-                  FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: globals.prismUser.email),
+                  FirestoreFilter(field: "email", op: FirestoreFilterOp.isEqualTo, value: app_state.prismUser.email),
                   const FirestoreFilter(field: "review", op: FirestoreFilterOp.isEqualTo, value: false),
                 ],
                 orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at', descending: true)],

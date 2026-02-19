@@ -7,9 +7,8 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -66,8 +65,8 @@ class GoogleAuth {
       logger.d("USERDATA1 ${usersData[1]}");
       if (usersData[0] != null && usersData[1] != null) {
         final doc = usersData[1]!;
-        globals.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
-        firestoreClient.updateDoc(USER_NEW_COLLECTION, globals.prismUser.id, {
+        app_state.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
+        firestoreClient.updateDoc(USER_NEW_COLLECTION, app_state.prismUser.id, {
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         }, sourceTag: 'auth.signin.update_last_login');
@@ -76,11 +75,11 @@ class GoogleAuth {
       // User exists in old database. Copy/create him in the new db.
       else if (usersData[0] != null && usersData[1] == null) {
         final doc = usersData[0]!;
-        globals.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
+        app_state.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
         firestoreClient.setDoc(
           USER_NEW_COLLECTION,
-          globals.prismUser.id,
-          globals.prismUser.toJson(),
+          app_state.prismUser.id,
+          app_state.prismUser.toJson(),
           sourceTag: 'auth.signin.copy_legacy_user',
         );
         logger.d("USERDATA CASE2");
@@ -88,8 +87,8 @@ class GoogleAuth {
       // User exists in new database. Simply sign him in.
       else if (usersData[0] == null && usersData[1] != null) {
         final doc = usersData[1]!;
-        globals.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
-        firestoreClient.updateDoc(USER_NEW_COLLECTION, globals.prismUser.id, {
+        app_state.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
+        firestoreClient.updateDoc(USER_NEW_COLLECTION, app_state.prismUser.id, {
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         }, sourceTag: 'auth.signin.update_last_login_existing');
@@ -97,7 +96,7 @@ class GoogleAuth {
       }
       // User exists in none. Create new data in new db and sign him in.
       else {
-        globals.prismUser = PrismUsersV2(
+        app_state.prismUser = PrismUsersV2(
           name: user.displayName!,
           bio: "",
           createdAt: DateTime.now().toUtc().toIso8601String(),
@@ -120,14 +119,14 @@ class GoogleAuth {
         );
         firestoreClient.setDoc(
           USER_NEW_COLLECTION,
-          globals.prismUser.id,
-          globals.prismUser.toJson(),
+          app_state.prismUser.id,
+          app_state.prismUser.toJson(),
           sourceTag: 'auth.signin.create_user',
         );
         logger.d("USERDATA CASE4");
       }
 
-      await prefs.put(main.userHiveKey, globals.prismUser);
+      await app_state.persistPrismUser();
       await subscribeToTopicSafely(home.f, user.email!.split("@")[0], sourceTag: 'auth.signin.followers_topic');
       assert(!user.isAnonymous);
       final User? currentUser = _auth.currentUser;
@@ -140,10 +139,10 @@ class GoogleAuth {
       await CoinsService.instance.maybeAwardProDailyBonus();
       await CoinsService.instance.processPendingReferralIfEligible();
       await syncSentryUserScope(
-        loggedIn: globals.prismUser.loggedIn,
-        id: globals.prismUser.id,
-        email: globals.prismUser.email,
-        username: globals.prismUser.username,
+        loggedIn: app_state.prismUser.loggedIn,
+        id: app_state.prismUser.id,
+        email: app_state.prismUser.email,
+        username: app_state.prismUser.username,
       );
       return 'signInWithGoogle succeeded: $user';
     } catch (e, st) {
@@ -167,7 +166,7 @@ class GoogleAuth {
   }
 
   Future<bool> signOutGoogle() async {
-    final String existingUserId = globals.prismUser.id;
+    final String existingUserId = app_state.prismUser.id;
     await _ensureGoogleSignInInitialized();
     try {
       await googleSignIn.signOut();
@@ -179,7 +178,7 @@ class GoogleAuth {
         stackTrace: st,
       );
     }
-    globals.prismUser = PrismUsersV2(
+    app_state.prismUser = PrismUsersV2(
       name: "",
       bio: "",
       createdAt: DateTime.now().toUtc().toIso8601String(),
@@ -193,7 +192,7 @@ class GoogleAuth {
       premium: false,
       subscriptionTier: 'free',
       loggedIn: false,
-      profilePhoto: globals.defaultProfilePhotoUrl,
+      profilePhoto: app_state.defaultProfilePhotoUrl,
       badges: [],
       coins: 0,
       subPrisms: [],
@@ -202,7 +201,7 @@ class GoogleAuth {
     );
     await syncSentryUserScope(loggedIn: false, id: "", email: "");
     Hive.openBox('prefs').then((value) {
-      value.put(main.userHiveKey, globals.prismUser);
+      app_state.persistPrismUser();
     });
     try {
       await PurchasesService.instance.logOut();

@@ -2,7 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/main.dart' as main;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/widgets.dart';
@@ -28,7 +28,7 @@ class PaywallOrchestrator {
   static const String _adWatchCountKey = 'paywall_ad_watch_count';
   static const String _adWatchPromptedKey = 'paywall_ad_watch_prompted';
 
-  bool get _rcPaywallsEnabled => globals.useRcPaywalls;
+  bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
 
   Future<void> present(BuildContext context, {required String placement, required String source}) async {
     final String normalizedPlacement = placement.trim().isEmpty ? PaywallPlacement.mainUpsell : placement.trim();
@@ -61,7 +61,7 @@ class PaywallOrchestrator {
   }
 
   Future<void> recordRewardedAdWatchAndMaybeUpsell(BuildContext context, {required String source}) async {
-    if (globals.prismUser.premium) {
+    if (app_state.prismUser.premium) {
       _resetAdWatchCounter();
       return;
     }
@@ -114,7 +114,7 @@ class PaywallOrchestrator {
 
   Future<bool> _presentRevenueCatPaywall({required String placement, required String source}) async {
     try {
-      await PurchasesService.instance.ensureConfigured(globals.prismUser.id);
+      await PurchasesService.instance.ensureConfigured(app_state.prismUser.id);
       final Offering? placementOffering = await PurchasesService.instance.getCurrentOfferingForPlacement(placement);
       final Offerings? offerings = await PurchasesService.instance.getOfferings();
       final Offering? v3Offering = offerings?.all[PurchaseConstants.offeringV3Default];

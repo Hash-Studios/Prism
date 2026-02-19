@@ -5,7 +5,7 @@ import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -159,7 +159,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
 
   Future<void> checkSignIn() async {
     setState(() {
-      isLoggedin = globals.prismUser.loggedIn;
+      isLoggedin = app_state.prismUser.loggedIn;
     });
   }
 
@@ -397,7 +397,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(height: isProfile ? 9 : 0),
-                    if (globals.prismUser.loggedIn == true)
+                    if (app_state.prismUser.loggedIn == true)
                       imageNotFound
                           ? Icon(JamIcons.user_circle, color: Theme.of(context).primaryColor)
                           : Container(
@@ -409,7 +409,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                               child: CircleAvatar(
                                 backgroundColor: Theme.of(context).colorScheme.secondary,
                                 radius: 11,
-                                backgroundImage: NetworkImage(globals.prismUser.profilePhoto),
+                                backgroundImage: NetworkImage(app_state.prismUser.profilePhoto),
                                 onBackgroundImageError: (_, st) {
                                   setState(() {
                                     imageNotFound = true;
@@ -522,7 +522,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
                       onTap: () async {
-                        if (globals.prismUser.premium != true && !UploadQuota.hasFreeUploadQuotaRemaining()) {
+                        if (app_state.prismUser.premium != true && !UploadQuota.hasFreeUploadQuotaRemaining()) {
                           toasts.codeSend(
                             "Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.",
                           );
@@ -600,7 +600,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
                       onTap: () async {
-                        if (!globals.prismUser.premium) {
+                        if (!app_state.prismUser.premium) {
                           Navigator.pop(context);
                           await PaywallOrchestrator.instance.present(
                             context,

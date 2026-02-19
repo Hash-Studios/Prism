@@ -14,7 +14,7 @@ import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart'
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -84,11 +84,11 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       _openCollection(normalizedCollectionName);
       return;
     }
-    if (globals.prismUser.premium) {
+    if (app_state.prismUser.premium) {
       _openCollection(normalizedCollectionName);
       return;
     }
-    if (!globals.prismUser.loggedIn) {
+    if (!app_state.prismUser.loggedIn) {
       googleSignInPopUp(context, () {
         unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: normalizedCollectionName));
       });
