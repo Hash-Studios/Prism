@@ -1,14 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 class CoinMutationResult {
   const CoinMutationResult({
@@ -43,15 +50,34 @@ class CoinMutationResult {
   }
 }
 
+class AiGenerationReservationResult {
+  const AiGenerationReservationResult({required this.mode, required this.mutation, this.transactionId});
+
+  final AiChargeMode mode;
+  final CoinMutationResult mutation;
+  final String? transactionId;
+
+  bool get success => mode != AiChargeMode.insufficient && mutation.success;
+
+  int get coinsSpent => mode == AiChargeMode.coinSpend && mutation.changed ? -mutation.delta : 0;
+}
+
 class CoinsService {
   CoinsService._();
 
   static final CoinsService instance = CoinsService._();
 
   static const String _coinStateField = 'coinState';
+  static const String _txCollection = FirebaseCollections.coinTransactions;
+  static const String _txStatusReserved = 'reserved';
+  static const String _txStatusCompleted = 'completed';
+  static const String _txStatusRolledBack = 'rolled_back';
+  static const String _shareDomain = 'prismwalls.com';
+  static const String _shortLinkApiUrl = 'https://prismwalls.com/api/links';
   static const String _pendingReferralInviterPrefKey = 'pendingReferralInviterId';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
   static const Duration _premiumPreviewAccessDuration = Duration(hours: 24);
+  static const Duration _shortLinkTimeout = Duration(seconds: 6);
 
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(globals.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
@@ -121,6 +147,46 @@ class CoinsService {
     return coins;
   }
 
+  Future<List<CoinTransactionEntry>> fetchTransactions({int limit = 100}) async {
+    if (!_canMutateCoins()) {
+      return const <CoinTransactionEntry>[];
+    }
+    final String userId = globals.prismUser.id;
+    try {
+      final rows = await firestoreClient.query<CoinTransactionEntry>(
+        FirestoreQuerySpec(
+          collection: _txCollection,
+          sourceTag: 'coins.transactions.fetch',
+          filters: <FirestoreFilter>[FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId)],
+          orderBy: <FirestoreOrderBy>[const FirestoreOrderBy(field: 'createdAt', descending: true)],
+          limit: limit,
+          dedupeWindowMs: 1500,
+        ),
+        (data, docId) => CoinTransactionEntry.fromJson(data, fallbackId: docId),
+      );
+      return rows;
+    } on FirestoreError catch (error, stackTrace) {
+      if (error.code != 'failed-precondition') {
+        rethrow;
+      }
+      logCoinError(sourceTag: 'coins.transactions.fetch.missing_index_fallback', error: error, stackTrace: stackTrace);
+      final fallbackRows = await firestoreClient.query<CoinTransactionEntry>(
+        FirestoreQuerySpec(
+          collection: _txCollection,
+          sourceTag: 'coins.transactions.fetch.missing_index_fallback',
+          filters: <FirestoreFilter>[FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId)],
+          dedupeWindowMs: 1500,
+        ),
+        (data, docId) => CoinTransactionEntry.fromJson(data, fallbackId: docId),
+      );
+      fallbackRows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      if (limit <= 0 || fallbackRows.length <= limit) {
+        return fallbackRows;
+      }
+      return fallbackRows.sublist(0, limit);
+    }
+  }
+
   Future<CoinMutationResult> award(
     CoinEarnAction action, {
     String sourceTag = 'coins.award',
@@ -164,6 +230,20 @@ class CoinsService {
     );
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     _logEarn(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
+    if (result.changed) {
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(action.name),
+        delta: amount,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: action.name,
+        description: _earnDescription(action, amount, reason: reason),
+        sourceTag: sourceTag,
+        reason: reason,
+        status: _txStatusCompleted,
+      );
+    }
     return result;
   }
 
@@ -237,6 +317,18 @@ class CoinsService {
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (result.changed) {
       _logSpend(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(action.name),
+        delta: -amount,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: action.name,
+        description: _spendDescription(action, amount, reason: reason),
+        sourceTag: sourceTag,
+        reason: reason,
+        status: _txStatusCompleted,
+      );
     }
     return result;
   }
@@ -253,6 +345,283 @@ class CoinsService {
       sourceTag: sourceTag,
       reason: reason ?? 'refund_${action.name}',
     );
+  }
+
+  Future<AiGenerationReservationResult> reserveForAiGeneration({
+    String sourceTag = 'coins.reserve.ai_generation',
+  }) async {
+    if (!_canMutateCoins()) {
+      return AiGenerationReservationResult(
+        mode: AiChargeMode.insufficient,
+        mutation: CoinMutationResult.noChange(
+          balance: globals.prismUser.coins,
+          success: false,
+          reason: 'not_logged_in',
+        ),
+      );
+    }
+    final String userId = globals.prismUser.id;
+    final String today = _localDayKey(DateTime.now());
+    final AiGenerationReservationResult result = await firestoreClient.runTransaction<AiGenerationReservationResult>(
+      (tx) async {
+        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
+        if (data == null) {
+          return AiGenerationReservationResult(
+            mode: AiChargeMode.insufficient,
+            mutation: CoinMutationResult.noChange(
+              balance: globals.prismUser.coins,
+              success: false,
+              reason: 'user_missing',
+            ),
+          );
+        }
+        final int previous = _asInt(data['coins']);
+        final bool isPremium = _asBool(data['premium']) || globals.prismUser.premium;
+        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
+        _ensureCoinStateDefaults(coinState);
+
+        if (!isPremium) {
+          final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
+          if (freeUsed < 3) {
+            coinState['aiFreeUsedTotal'] = freeUsed + 1;
+            tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+              'coins': previous,
+              _coinStateField: coinState,
+            });
+            return AiGenerationReservationResult(
+              mode: AiChargeMode.freeTrial,
+              mutation: CoinMutationResult(
+                success: true,
+                changed: true,
+                previousBalance: previous,
+                currentBalance: previous,
+                delta: 0,
+                reason: 'ai_free_trial_reserved',
+              ),
+            );
+          }
+        } else {
+          final String includedDate = (coinState['aiIncludedUsageDate'] as String? ?? '').trim();
+          int includedUsed = _asInt(coinState['aiIncludedUsedToday']);
+          if (includedDate != today) {
+            includedUsed = 0;
+          }
+          if (includedUsed < 30) {
+            coinState['aiIncludedUsageDate'] = today;
+            coinState['aiIncludedUsedToday'] = includedUsed + 1;
+            tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+              'coins': previous,
+              _coinStateField: coinState,
+            });
+            return AiGenerationReservationResult(
+              mode: AiChargeMode.proIncluded,
+              mutation: CoinMutationResult(
+                success: true,
+                changed: true,
+                previousBalance: previous,
+                currentBalance: previous,
+                delta: 0,
+                reason: 'ai_pro_included_reserved',
+              ),
+            );
+          }
+        }
+
+        if (previous < CoinPolicy.aiGeneration) {
+          return AiGenerationReservationResult(
+            mode: AiChargeMode.insufficient,
+            mutation: CoinMutationResult(
+              success: false,
+              changed: false,
+              previousBalance: previous,
+              currentBalance: previous,
+              delta: 0,
+              insufficientBalance: true,
+              reason: 'ai_generation_insufficient_balance',
+            ),
+          );
+        }
+
+        final int current = previous - CoinPolicy.aiGeneration;
+        final String txId = _newTransactionId('ai_generation');
+        tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+          'coins': current,
+          _coinStateField: coinState,
+        });
+        tx.setDoc(_txCollection, txId, <String, dynamic>{
+          'id': txId,
+          'userId': userId,
+          'createdAt': DateTime.now().toUtc(),
+          'updatedAt': DateTime.now().toUtc(),
+          'delta': -CoinPolicy.aiGeneration,
+          'balanceBefore': previous,
+          'balanceAfter': current,
+          'action': CoinSpendAction.aiGeneration.name,
+          'description': 'AI wallpaper generation (-${CoinPolicy.aiGeneration})',
+          'sourceTag': sourceTag,
+          'reason': 'ai_generation_reserved',
+          'status': _txStatusReserved,
+          'type': 'debit',
+          'referenceType': 'ai_generation',
+        });
+        return AiGenerationReservationResult(
+          mode: AiChargeMode.coinSpend,
+          mutation: CoinMutationResult(
+            success: true,
+            changed: true,
+            previousBalance: previous,
+            currentBalance: current,
+            delta: -CoinPolicy.aiGeneration,
+            reason: 'ai_coin_spend_reserved',
+          ),
+          transactionId: txId,
+        );
+      },
+      sourceTag: sourceTag,
+      collection: FirebaseCollections.usersV2,
+      docId: userId,
+    );
+
+    _applyLocalBalance(result.mutation.currentBalance, delta: result.mutation.delta);
+    if (result.mode == AiChargeMode.coinSpend && result.mutation.changed) {
+      _logSpend(
+        action: CoinSpendAction.aiGeneration,
+        amount: CoinPolicy.aiGeneration,
+        sourceTag: sourceTag,
+        reason: 'ai_generation',
+      );
+    }
+    analytics.logEvent(
+      name: 'ai_charge_reserved',
+      parameters: <String, Object>{
+        'mode': result.mode.value,
+        'coinsSpent': result.coinsSpent,
+        'balance': globals.prismUser.coins,
+        'sourceTag': sourceTag,
+      },
+    );
+    return result;
+  }
+
+  Future<CoinMutationResult> rollbackAiGenerationReservation(
+    AiChargeMode mode, {
+    String sourceTag = 'coins.rollback.ai_generation',
+    String? reservationTransactionId,
+  }) async {
+    if (mode == AiChargeMode.insufficient) {
+      return CoinMutationResult.noChange(balance: globals.prismUser.coins, reason: 'no_reservation_to_rollback');
+    }
+
+    if (mode == AiChargeMode.coinSpend) {
+      await _markTransactionRolledBack(reservationTransactionId, sourceTag: sourceTag, reason: 'ai_generation_failed');
+      final CoinMutationResult refund = await refundSpend(
+        CoinSpendAction.aiGeneration,
+        sourceTag: sourceTag,
+        reason: 'ai_generation_failed_refund',
+      );
+      analytics.logEvent(
+        name: 'ai_charge_rolled_back',
+        parameters: <String, Object>{
+          'mode': mode.value,
+          'coinsRefunded': CoinPolicy.aiGeneration,
+          'balance': globals.prismUser.coins,
+          'sourceTag': sourceTag,
+        },
+      );
+      return refund;
+    }
+
+    if (!_canMutateCoins()) {
+      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+    }
+    final String userId = globals.prismUser.id;
+    final String today = _localDayKey(DateTime.now());
+    final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
+      (tx) async {
+        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
+        if (data == null) {
+          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+        }
+        final int previous = _asInt(data['coins']);
+        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
+        _ensureCoinStateDefaults(coinState);
+        bool changed = false;
+
+        if (mode == AiChargeMode.freeTrial) {
+          final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
+          if (freeUsed > 0) {
+            coinState['aiFreeUsedTotal'] = freeUsed - 1;
+            changed = true;
+          }
+        } else if (mode == AiChargeMode.proIncluded) {
+          final String includedDate = (coinState['aiIncludedUsageDate'] as String? ?? '').trim();
+          final int includedUsed = _asInt(coinState['aiIncludedUsedToday']);
+          if (includedDate == today && includedUsed > 0) {
+            coinState['aiIncludedUsedToday'] = includedUsed - 1;
+            changed = true;
+          }
+        }
+
+        if (changed) {
+          tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+            'coins': previous,
+            _coinStateField: coinState,
+          });
+        }
+        return CoinMutationResult(
+          success: true,
+          changed: changed,
+          previousBalance: previous,
+          currentBalance: previous,
+          delta: 0,
+          reason: changed ? 'ai_${mode.value}_rollback' : 'ai_${mode.value}_rollback_noop',
+        );
+      },
+      sourceTag: sourceTag,
+      collection: FirebaseCollections.usersV2,
+      docId: userId,
+    );
+    _applyLocalBalance(result.currentBalance, delta: result.delta);
+    analytics.logEvent(
+      name: 'ai_charge_rolled_back',
+      parameters: <String, Object>{'mode': mode.value, 'balance': globals.prismUser.coins, 'sourceTag': sourceTag},
+    );
+    return result;
+  }
+
+  void commitAiGenerationReservation({
+    required AiChargeMode mode,
+    required int coinsSpent,
+    String sourceTag = 'coins.commit.ai_generation',
+    String? reservationTransactionId,
+    String? generationId,
+    String? imageUrl,
+    String? thumbUrl,
+    String? prompt,
+    String? stylePreset,
+  }) {
+    analytics.logEvent(
+      name: 'ai_charge_committed',
+      parameters: <String, Object>{
+        'mode': mode.value,
+        'coinsSpent': coinsSpent,
+        'balance': globals.prismUser.coins,
+        'sourceTag': sourceTag,
+      },
+    );
+    if (mode == AiChargeMode.coinSpend) {
+      unawaited(
+        _completeAiGenerationTransaction(
+          reservationTransactionId: reservationTransactionId,
+          generationId: generationId,
+          imageUrl: imageUrl,
+          thumbUrl: thumbUrl,
+          prompt: prompt,
+          stylePreset: stylePreset,
+          sourceTag: sourceTag,
+        ),
+      );
+    }
   }
 
   Future<CoinMutationResult> spendForAIGeneration({String sourceTag = 'coins.spend.ai_generation', String? reason}) {
@@ -407,6 +776,20 @@ class CoinsService {
         sourceTag: sourceTag,
         reason: 'collection_$normalizedKey',
       );
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(CoinSpendAction.premiumPreview24h.name),
+        delta: -previewCost,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: CoinSpendAction.premiumPreview24h.name,
+        description: 'Premium collection preview unlock (-$previewCost)',
+        sourceTag: sourceTag,
+        reason: 'collection_$normalizedKey',
+        status: _txStatusCompleted,
+        referenceType: 'collection',
+        referenceId: normalizedKey,
+      );
     }
     return result;
   }
@@ -474,11 +857,32 @@ class CoinsService {
         amount: CoinPolicy.dailyLogin,
         sourceTag: 'coins.claim_daily_and_streak',
       );
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(CoinEarnAction.dailyLogin.name),
+        delta: CoinPolicy.dailyLogin,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.previousBalance + CoinPolicy.dailyLogin,
+        action: CoinEarnAction.dailyLogin.name,
+        description: 'Daily login reward (+${CoinPolicy.dailyLogin})',
+        sourceTag: 'coins.claim_daily_and_streak',
+        reason: 'daily_login',
+        status: _txStatusCompleted,
+      );
       if (result.delta > CoinPolicy.dailyLogin) {
-        _logEarn(
-          action: CoinEarnAction.streakBonus,
-          amount: result.delta - CoinPolicy.dailyLogin,
+        final int streakAmount = result.delta - CoinPolicy.dailyLogin;
+        _logEarn(action: CoinEarnAction.streakBonus, amount: streakAmount, sourceTag: 'coins.claim_daily_and_streak');
+        await _recordCoinTransaction(
+          userId: userId,
+          id: _newTransactionId(CoinEarnAction.streakBonus.name),
+          delta: streakAmount,
+          balanceBefore: result.previousBalance + CoinPolicy.dailyLogin,
+          balanceAfter: result.currentBalance,
+          action: CoinEarnAction.streakBonus.name,
+          description: '7-day streak bonus (+$streakAmount)',
           sourceTag: 'coins.claim_daily_and_streak',
+          reason: 'streak_bonus',
+          status: _txStatusCompleted,
         );
       }
     }
@@ -535,6 +939,18 @@ class CoinsService {
         amount: CoinPolicy.proDailyBonus,
         sourceTag: 'coins.claim_pro_daily_bonus',
       );
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(CoinEarnAction.proDailyBonus.name),
+        delta: CoinPolicy.proDailyBonus,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: CoinEarnAction.proDailyBonus.name,
+        description: 'Pro daily bonus (+${CoinPolicy.proDailyBonus})',
+        sourceTag: 'coins.claim_pro_daily_bonus',
+        reason: 'pro_daily_bonus',
+        status: _txStatusCompleted,
+      );
     }
     return result;
   }
@@ -585,6 +1001,18 @@ class CoinsService {
         amount: CoinPolicy.profileCompletion,
         sourceTag: 'coins.profile_completion',
       );
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(CoinEarnAction.profileCompletion.name),
+        delta: CoinPolicy.profileCompletion,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: CoinEarnAction.profileCompletion.name,
+        description: 'Profile completion reward (+${CoinPolicy.profileCompletion})',
+        sourceTag: 'coins.profile_completion',
+        reason: 'profile_completion',
+        status: _txStatusCompleted,
+      );
     }
     return result;
   }
@@ -631,6 +1059,18 @@ class CoinsService {
         action: CoinEarnAction.firstWallpaperUpload,
         amount: CoinPolicy.firstWallpaperUpload,
         sourceTag: 'coins.first_wallpaper_upload',
+      );
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(CoinEarnAction.firstWallpaperUpload.name),
+        delta: CoinPolicy.firstWallpaperUpload,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: CoinEarnAction.firstWallpaperUpload.name,
+        description: 'First wallpaper upload reward (+${CoinPolicy.firstWallpaperUpload})',
+        sourceTag: 'coins.first_wallpaper_upload',
+        reason: 'first_wallpaper_upload',
+        status: _txStatusCompleted,
       );
     }
     return result;
@@ -695,6 +1135,24 @@ class CoinsService {
           'coins': inviterAfter,
           _coinStateField: inviterState,
         });
+        final String inviterTxId = _newTransactionId('referral');
+        tx.setDoc(_txCollection, inviterTxId, <String, dynamic>{
+          'id': inviterTxId,
+          'userId': effectiveInviter,
+          'createdAt': DateTime.now().toUtc(),
+          'updatedAt': DateTime.now().toUtc(),
+          'delta': CoinPolicy.referral,
+          'balanceBefore': inviterPrevious,
+          'balanceAfter': inviterAfter,
+          'action': CoinEarnAction.referral.name,
+          'description': 'Referral reward (+${CoinPolicy.referral})',
+          'sourceTag': 'coins.process_referral',
+          'reason': 'inviter_reward',
+          'status': _txStatusCompleted,
+          'type': 'credit',
+          'referenceType': 'referral',
+          'referenceId': currentUserId,
+        });
 
         return CoinMutationResult(
           success: true,
@@ -722,8 +1180,230 @@ class CoinsService {
         sourceTag: 'coins.process_referral',
         reason: 'referee_reward',
       );
+      await _recordCoinTransaction(
+        userId: currentUserId,
+        id: _newTransactionId(CoinEarnAction.referral.name),
+        delta: CoinPolicy.referral,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: CoinEarnAction.referral.name,
+        description: 'Referral reward (+${CoinPolicy.referral})',
+        sourceTag: 'coins.process_referral',
+        reason: 'referee_reward',
+        status: _txStatusCompleted,
+        referenceType: 'referral',
+      );
     }
     return result;
+  }
+
+  Future<void> _recordCoinTransaction({
+    required String userId,
+    required String id,
+    required int delta,
+    required int balanceBefore,
+    required int balanceAfter,
+    required String action,
+    required String description,
+    required String sourceTag,
+    required String status,
+    String? reason,
+    String? referenceType,
+    String? referenceId,
+    String? deepLinkUrl,
+    String? shortLinkUrl,
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      final now = DateTime.now().toUtc();
+      final entry = CoinTransactionEntry(
+        id: id,
+        userId: userId,
+        createdAt: now,
+        updatedAt: now,
+        delta: delta,
+        balanceBefore: balanceBefore,
+        balanceAfter: balanceAfter,
+        action: action,
+        description: description,
+        sourceTag: sourceTag,
+        status: status,
+        type: delta >= 0 ? 'credit' : 'debit',
+        reason: reason,
+        referenceType: referenceType,
+        referenceId: referenceId,
+        deepLinkUrl: deepLinkUrl,
+        shortLinkUrl: shortLinkUrl,
+        metadata: metadata,
+      );
+      await firestoreClient.setDoc(_txCollection, id, entry.toJson(), merge: true, sourceTag: '$sourceTag.tx_write');
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: '$sourceTag.tx_write', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  String _newTransactionId(String key) {
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final int random = Random().nextInt(1 << 31);
+    return 'ctx_${key}_${now}_${random.toRadixString(16)}';
+  }
+
+  String _earnDescription(CoinEarnAction action, int amount, {String? reason}) {
+    switch (action) {
+      case CoinEarnAction.rewardedAd:
+        return 'Rewarded ad credit (+$amount)';
+      case CoinEarnAction.dailyLogin:
+        return 'Daily login reward (+$amount)';
+      case CoinEarnAction.streakBonus:
+        return 'Streak bonus (+$amount)';
+      case CoinEarnAction.firstWallpaperUpload:
+        return 'First wallpaper upload reward (+$amount)';
+      case CoinEarnAction.referral:
+        return 'Referral reward (+$amount)';
+      case CoinEarnAction.profileCompletion:
+        return 'Profile completion reward (+$amount)';
+      case CoinEarnAction.proDailyBonus:
+        return 'Pro daily bonus (+$amount)';
+      case CoinEarnAction.refund:
+        if ((reason ?? '').contains('ai_generation_failed_refund')) {
+          return 'AI generation refund (+$amount)';
+        }
+        return 'Coins refunded (+$amount)';
+    }
+  }
+
+  String _spendDescription(CoinSpendAction action, int amount, {String? reason}) {
+    switch (action) {
+      case CoinSpendAction.wallpaperDownload:
+        return 'Wallpaper download (-$amount)';
+      case CoinSpendAction.premiumWallpaperDownload:
+        return 'Premium wallpaper download (-$amount)';
+      case CoinSpendAction.aiGeneration:
+        return 'AI wallpaper generation (-$amount)';
+      case CoinSpendAction.premiumFilter:
+        return 'Premium filter use (-$amount)';
+      case CoinSpendAction.premiumPreview24h:
+        if ((reason ?? '').startsWith('collection_')) {
+          return 'Premium collection preview unlock (-$amount)';
+        }
+        return 'Premium preview unlock (-$amount)';
+    }
+  }
+
+  Future<void> _markTransactionRolledBack(String? transactionId, {required String sourceTag, String? reason}) async {
+    if (transactionId == null || transactionId.trim().isEmpty) {
+      return;
+    }
+    try {
+      await firestoreClient.updateDoc(_txCollection, transactionId, <String, dynamic>{
+        'status': _txStatusRolledBack,
+        'reason': reason ?? 'rolled_back',
+        'updatedAt': DateTime.now().toUtc(),
+      }, sourceTag: '$sourceTag.tx_mark_rollback');
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: '$sourceTag.tx_mark_rollback', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _completeAiGenerationTransaction({
+    required String? reservationTransactionId,
+    required String? generationId,
+    required String? imageUrl,
+    required String? thumbUrl,
+    required String? prompt,
+    required String? stylePreset,
+    required String sourceTag,
+  }) async {
+    final String txId = reservationTransactionId?.trim() ?? '';
+    final String genId = generationId?.trim() ?? '';
+    if (txId.isEmpty || genId.isEmpty) {
+      return;
+    }
+
+    final Uri canonical = _buildAiCanonicalShareUri(generationId: genId, imageUrl: imageUrl, thumbUrl: thumbUrl);
+    final String shortUrl = await _createShortLinkForAiGeneration(
+      generationId: genId,
+      canonicalUri: canonical,
+      imageSourceUrl: thumbUrl,
+      prompt: prompt,
+      stylePreset: stylePreset,
+    );
+    try {
+      await firestoreClient.updateDoc(_txCollection, txId, <String, dynamic>{
+        'status': _txStatusCompleted,
+        'updatedAt': DateTime.now().toUtc(),
+        'referenceType': 'ai_generation',
+        'referenceId': genId,
+        'deepLinkUrl': canonical.toString(),
+        'shortLinkUrl': shortUrl,
+        'description': 'AI wallpaper generation (-${CoinPolicy.aiGeneration})',
+        'metadata': <String, dynamic>{
+          if (prompt != null && prompt.trim().isNotEmpty) 'prompt': prompt.trim(),
+          if (stylePreset != null && stylePreset.trim().isNotEmpty) 'stylePreset': stylePreset.trim(),
+        },
+      }, sourceTag: '$sourceTag.tx_complete');
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: '$sourceTag.tx_complete', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Uri _buildAiCanonicalShareUri({required String generationId, required String? imageUrl, required String? thumbUrl}) {
+    final String resolvedImage = (imageUrl ?? '').trim();
+    final String resolvedThumb = (thumbUrl ?? resolvedImage).trim();
+    return Uri.https(_shareDomain, '/share', <String, String>{
+      'id': generationId,
+      'provider': 'Prism',
+      if (resolvedImage.isNotEmpty) 'url': resolvedImage,
+      if (resolvedThumb.isNotEmpty) 'thumb': resolvedThumb,
+    });
+  }
+
+  Future<String> _createShortLinkForAiGeneration({
+    required String generationId,
+    required Uri canonicalUri,
+    required String? imageSourceUrl,
+    required String? prompt,
+    required String? stylePreset,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(_shortLinkApiUrl),
+            headers: const <String, String>{'Content-Type': 'application/json', 'Accept': 'application/json'},
+            body: jsonEncode(<String, dynamic>{
+              'type': 'share',
+              'payload': <String, dynamic>{
+                'id': generationId,
+                'provider': 'Prism',
+                'url': canonicalUri.queryParameters['url'],
+                'thumb': canonicalUri.queryParameters['thumb'],
+              },
+              'canonical_url': canonicalUri.toString(),
+              'preview': <String, dynamic>{
+                'title': 'AI $generationId - Prism',
+                'description': 'Generated with Prism AI${(stylePreset ?? '').trim().isEmpty ? '' : ' ($stylePreset)'}',
+                if ((imageSourceUrl ?? '').trim().isNotEmpty) 'image_source_url': imageSourceUrl!.trim(),
+                if ((prompt ?? '').trim().isNotEmpty) 'prompt': prompt!.trim(),
+                'provider': 'Prism',
+                'wall_id': generationId,
+              },
+            }),
+          )
+          .timeout(_shortLinkTimeout);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return canonicalUri.toString();
+      }
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final dynamic shortUrl = decoded['short_url'];
+        if (shortUrl is String && shortUrl.trim().isNotEmpty) {
+          return shortUrl.trim();
+        }
+      }
+    } catch (_) {
+      return canonicalUri.toString();
+    }
+    return canonicalUri.toString();
   }
 
   bool _canMutateCoins() {
@@ -776,6 +1456,9 @@ class CoinsService {
     changed |= _putDefaultIfMissing(coinState, 'referredByUserId', '');
     changed |= _putDefaultIfMissing(coinState, 'referralRewarded', false);
     changed |= _putDefaultIfMissing(coinState, 'premiumPreviewUnlocks', <String, int>{});
+    changed |= _putDefaultIfMissing(coinState, 'aiFreeUsedTotal', 0);
+    changed |= _putDefaultIfMissing(coinState, 'aiIncludedUsageDate', '');
+    changed |= _putDefaultIfMissing(coinState, 'aiIncludedUsedToday', 0);
     final Map<String, int> normalizedPreviewUnlocks = _previewUnlocksFromState(coinState);
     if (!_previewUnlockStateEquals(coinState['premiumPreviewUnlocks'], normalizedPreviewUnlocks)) {
       coinState['premiumPreviewUnlocks'] = normalizedPreviewUnlocks;

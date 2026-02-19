@@ -2,27 +2,69 @@ name = "prismwalls-links"
 main = "src/index.ts"
 compatibility_date = "2026-02-18"
 
-routes = [
-  { pattern = "prismwalls.com/api/*", zone_name = "prismwalls.com" },
-  { pattern = "prismwalls.com/l/*", zone_name = "prismwalls.com" },
-  { pattern = "prismwalls.com/og/*", zone_name = "prismwalls.com" },
-  { pattern = "prismwalls.com/share*", zone_name = "prismwalls.com" },
-  { pattern = "prismwalls.com/user*", zone_name = "prismwalls.com" },
-  { pattern = "prismwalls.com/setup*", zone_name = "prismwalls.com" },
-  { pattern = "prismwalls.com/refer*", zone_name = "prismwalls.com" }
-]
+[[routes]]
+pattern = "prismwalls.com/api/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/l/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/og/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/share*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/user*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/setup*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/refer*"
+zone_name = "prismwalls.com"
 
 [vars]
 PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.hash.prism"
 APP_STORE_URL = "https://apps.apple.com/app/id1405860595"
 OG_FALLBACK_IMAGE = "https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"
 BROWSER_RENDERING_ACCOUNT_ID = "bc455bbb5c1264123e8565e360dd6da9"
+FIREBASE_PROJECT_ID = "prism-wallpapers"
+FIREBASE_AUTH_DEBUG = "false"
 
 [[kv_namespaces]]
 binding = "LINKS_KV"
 id = "c05f625aeba84fa7a6299894c3004775"
 preview_id = "7937369ebc9d450f863783300c08a0ab"
 
+[[kv_namespaces]]
+binding = "AI_STATE_KV"
+id = "8157a18000dc4db28e629f9bcdd9f560"
+preview_id = "c551131a369e4c6a8210161bf6ad01ae"
+
+[[durable_objects.bindings]]
+name = "AI_QUOTA_DO"
+class_name = "AiQuotaCoordinator"
+
+[[migrations]]
+tag = "v1_ai_quota_coordinator"
+new_sqlite_classes = ["AiQuotaCoordinator"]
+
 [[r2_buckets]]
 binding = "OG_IMAGES"
 bucket_name = "prismwalls-og-images"
+
+[[r2_buckets]]
+binding = "AI_IMAGES"
+bucket_name = "prismwalls-ai-images"
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true

@@ -1,10 +1,10 @@
+import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 
 @RoutePage()
 class SharePrismScreen extends StatefulWidget {
@@ -103,10 +103,8 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                   ? () {
                       toasts.error("Sign in to generate unique referral link!");
                     }
-                  : () {
-                      SharePlus.instance.share(
-                        ShareParams(text: link, sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
-                      );
+                  : () async {
+                      await ShareService.shareText(text: link, context: context);
                     },
               child: const Text('SHARE INVITE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
             ),

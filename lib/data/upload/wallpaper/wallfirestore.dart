@@ -17,10 +17,19 @@ Future<void> createRecord(
   String? wallpaperUrl,
   String? wallpaperResolution,
   String? wallpaperSize,
+  String? wallpaperTitle,
   String? wallpaperCategory,
   String? wallpaperDesc,
-  dynamic review,
-) async {
+  dynamic review, {
+  List<String>? wallpaperTags,
+  bool isAiGenerated = false,
+  String? aiGenerationId,
+  String? aiProvider,
+  String? aiModel,
+  String? aiOriginalImageUrl,
+  String? aiPrompt,
+  String? aiStylePreset,
+}) async {
   int dailyWallUpload = main.prefs.get("dailyWallUpload", defaultValue: 0) as int;
   if (main.prefs.get('date') != DateFormat("yy-MM-dd").format(DateTime.now())) {
     dailyWallUpload = 0;
@@ -41,11 +50,20 @@ Future<void> createRecord(
     'wallpaper_url': wallpaperUrl,
     'resolution': wallpaperResolution,
     'size': wallpaperSize,
+    if (wallpaperTitle != null && wallpaperTitle.trim().isNotEmpty) 'title': wallpaperTitle.trim(),
     'category': wallpaperCategory,
     'desc': wallpaperDesc,
     'review': review,
     'createdAt': DateTime.now().toUtc(),
     'collections': ["community"],
+    if (wallpaperTags != null) 'tags': wallpaperTags.map((tag) => tag.trim()).where((tag) => tag.isNotEmpty).toList(),
+    'isAiGenerated': isAiGenerated,
+    if (aiGenerationId != null && aiGenerationId.trim().isNotEmpty) 'aiGenerationId': aiGenerationId,
+    if (aiProvider != null && aiProvider.trim().isNotEmpty) 'aiProvider': aiProvider,
+    if (aiModel != null && aiModel.trim().isNotEmpty) 'aiModel': aiModel,
+    if (aiOriginalImageUrl != null && aiOriginalImageUrl.trim().isNotEmpty) 'aiOriginalImageUrl': aiOriginalImageUrl,
+    if (aiPrompt != null && aiPrompt.trim().isNotEmpty) 'aiPrompt': aiPrompt,
+    if (aiStylePreset != null && aiStylePreset.trim().isNotEmpty) 'aiStylePreset': aiStylePreset,
   }, sourceTag: 'upload.createWall');
   await CoinsService.instance.maybeAwardFirstWallpaperUpload();
   if (globals.prismUser.premium == true) {

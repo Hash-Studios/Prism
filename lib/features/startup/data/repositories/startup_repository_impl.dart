@@ -74,6 +74,10 @@ class StartupRepositoryImpl implements StartupRepository {
         'topTitleText': globals.topTitleText.toString(),
         'premiumCollections': globals.premiumCollections.toString(),
         'verifiedUsers': globals.verifiedUsers.toString(),
+        'ai_enabled': globals.aiEnabled,
+        'ai_rollout_percent': globals.aiRolloutPercent,
+        'ai_submit_enabled': globals.aiSubmitEnabled,
+        'ai_variations_enabled': globals.aiVariationsEnabled,
       });
       await _remoteConfig.fetchAndActivate();
 
@@ -85,6 +89,10 @@ class StartupRepositoryImpl implements StartupRepository {
       final verifiedUsers = _parseStringList(_remoteConfig.getString('verifiedUsers'));
       final premiumCollections = _parseStringList(_remoteConfig.getString('premiumCollections'));
       final topTitleText = _parseStringList(_remoteConfig.getString('topTitleText'));
+      final aiEnabled = _remoteConfig.getBool('ai_enabled');
+      final aiRolloutPercent = _remoteConfig.getInt('ai_rollout_percent').clamp(0, 100);
+      final aiSubmitEnabled = _remoteConfig.getBool('ai_submit_enabled');
+      final aiVariationsEnabled = _remoteConfig.getBool('ai_variations_enabled');
       topTitleText.shuffle();
       final categories = _parseCategories(_remoteConfig.getString('latestCategories'));
       categories.removeWhere((element) => element['name'] == 'Trending');
@@ -97,6 +105,10 @@ class StartupRepositoryImpl implements StartupRepository {
       globals.verifiedUsers = verifiedUsers;
       globals.premiumCollections = premiumCollections;
       globals.topTitleText = topTitleText;
+      globals.aiEnabled = aiEnabled;
+      globals.aiRolloutPercent = aiRolloutPercent;
+      globals.aiSubmitEnabled = aiSubmitEnabled;
+      globals.aiVariationsEnabled = aiVariationsEnabled;
       category_data.categories = categories;
 
       final followersTab = (_prefsBox.get('followersTab', defaultValue: true) as bool?) ?? true;
@@ -114,6 +126,10 @@ class StartupRepositoryImpl implements StartupRepository {
         topTitleText: topTitleText,
         categories: categories,
         followersTab: followersTab,
+        aiEnabled: aiEnabled,
+        aiRolloutPercent: aiRolloutPercent,
+        aiSubmitEnabled: aiSubmitEnabled,
+        aiVariationsEnabled: aiVariationsEnabled,
       );
 
       return Result.success(entity);

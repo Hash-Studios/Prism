@@ -1,10 +1,10 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
 
 class ShareButton extends StatefulWidget {
   final String? id;
@@ -65,9 +65,8 @@ class _ShareButtonState extends State<ShareButton> {
     try {
       final String link = await createDynamicLink(widget.id!, widget.provider!, widget.url, widget.thumbUrl);
       await Clipboard.setData(ClipboardData(text: link));
-      SharePlus.instance.share(
-        ShareParams(text: '🔥Check this out ➜ $link', sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
-      );
+      if (!mounted) return;
+      await ShareService.shareText(text: '🔥Check this out ➜ $link', context: context);
       analytics.logShare(contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
     } catch (error, stackTrace) {
       logger.e('Failed to share wallpaper link', error: error, stackTrace: stackTrace);

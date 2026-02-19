@@ -21,8 +21,8 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
         return const QuickActionEntity(type: QuickActionType.followFeed, rawValue: 'Follow_Feed');
       case 'Collections':
         return const QuickActionEntity(type: QuickActionType.collections, rawValue: 'Collections');
-      case 'Setups':
-        return const QuickActionEntity(type: QuickActionType.setups, rawValue: 'Setups');
+      case 'AI_Wallpapers':
+        return QuickActionEntity(type: QuickActionType.setups, rawValue: action);
       case 'Downloads':
         return const QuickActionEntity(type: QuickActionType.downloads, rawValue: 'Downloads');
       default:
@@ -52,7 +52,7 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
       await _quickActions.setShortcutItems(const <ShortcutItem>[
         ShortcutItem(type: 'Follow_Feed', localizedTitle: 'Feed', icon: '@drawable/ic_feed'),
         ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
-        ShortcutItem(type: 'Setups', localizedTitle: 'Setups', icon: '@drawable/ic_setups'),
+        ShortcutItem(type: 'AI_Wallpapers', localizedTitle: 'AI', icon: '@drawable/ic_setups'),
         ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
       ]);
       return Result.success(null);

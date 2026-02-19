@@ -10,6 +10,10 @@ class StartupConfigEntity {
     required this.topTitleText,
     required this.categories,
     required this.followersTab,
+    required this.aiEnabled,
+    required this.aiRolloutPercent,
+    required this.aiSubmitEnabled,
+    required this.aiVariationsEnabled,
   });
 
   final String topImageLink;
@@ -22,4 +26,8 @@ class StartupConfigEntity {
   final List<String> topTitleText;
   final List<Map<String, dynamic>> categories;
   final bool followersTab;
+  final bool aiEnabled;
+  final int aiRolloutPercent;
+  final bool aiSubmitEnabled;
+  final bool aiVariationsEnabled;
 }

@@ -41,6 +41,10 @@ bool hasNotch = false;
 double? notchSize;
 bool tooltipShown = false;
 bool followersTab = true;
+bool aiEnabled = true;
+int aiRolloutPercent = 100;
+bool aiSubmitEnabled = true;
+bool aiVariationsEnabled = true;
 
 List topTitleText = ["TOP-RATED", "BEST OF COMMUNITY", "FAN-FAVOURITE", "TRENDING"];
 

@@ -5,6 +5,10 @@ This folder contains the Cloudflare implementation for:
 - `GET /api/links/{code}` short-link resolution for app deep-link handler
 - `GET /l/{code}` short-link resolution
 - `GET /og/{code}.png` social preview image endpoint
+- `POST /api/ai/generations` AI wallpaper generation
+- `POST /api/ai/generations/{id}/variations` AI variation generation
+- `POST /api/ai/metadata/prefill` AI-assisted submit metadata prefill
+- `GET /api/ai/health` AI provider health + routing version
 - hosted association files for Android App Links and iOS Universal Links
 
 ## Worker setup
@@ -47,5 +51,40 @@ Check that all return `200`, JSON content-type, and no redirect chain.
 
 - Replace `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` before release.
 - Replace `REPLACE_WITH_CLOUDFLARE_ACCOUNT_ID` in `wrangler.toml`.
+- Replace `REPLACE_WITH_AI_STATE_KV_ID` and `REPLACE_WITH_AI_STATE_KV_PREVIEW_ID` in `wrangler.toml`.
+- Set AI provider secrets before enabling AI routes:
+  - `wrangler secret put FAL_API_KEY`
+  - `wrangler secret put GEMINI_API_KEY`
+- Set Firebase auth verification vars:
+  - `FIREBASE_PROJECT_ID` (for Prism this is `prism-wallpapers`)
+  - Optional debug logs: `FIREBASE_AUTH_DEBUG=true` in non-prod only
 - Worker only accepts canonical URLs on `https://prismwalls.com/{share|user|setup|refer}`.
 - If Browser Rendering is unavailable, `og:image` falls back to source image URL.
+
+## AI routing config
+
+The active AI routing config is read from KV key `ai:routing:active` (JSON).  
+If missing/invalid, a safe default config is used.
+
+Config supports:
+- provider enablement (`fal`, `gemini`)
+- provider weights (weighted primary routing)
+- quality tier model mapping (`fast`, `balanced`, `quality`)
+- per-provider daily/monthly budget caps
+- timeout + fallback order
+- hard user daily cap
+- automatic cost guardrails:
+  - `70%` usage: route fallbacks to cheaper providers first
+  - `85%` usage: pick cheapest provider as primary, downgrade `quality -> balanced`
+  - `95%` usage: aggressively downgrade `balanced -> fast` and avoid near-exhausted provider when alternatives exist
+
+## AI watermark backfill
+
+To migrate existing AI community walls to watermarked publish URLs:
+
+```bash
+node tool/backfill_ai_watermarked_walls.mjs --dry-run
+node tool/backfill_ai_watermarked_walls.mjs
+```
+
+The script is idempotent and marks migrated records with `aiWatermarkMigratedAt`.
