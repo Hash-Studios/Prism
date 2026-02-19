@@ -35,6 +35,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   late bool isProcessing;
   late bool isSaved;
   late File image;
+  bool _isPremiumBlocked = false;
   String? imageURL;
   TextEditingController setupName = TextEditingController();
   TextEditingController setupDesc = TextEditingController();
@@ -111,6 +112,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   void initState() {
     super.initState();
     if (!globals.prismUser.premium) {
+      _isPremiumBlocked = true;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         await PaywallOrchestrator.instance.present(
@@ -191,6 +193,12 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isPremiumBlocked) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).primaryColor,
+        body: const SizedBox.shrink(),
+      );
+    }
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(

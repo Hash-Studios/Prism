@@ -22,6 +22,11 @@ class PurchasesService {
 
   bool _configured = false;
   String _configuredUserId = '';
+  static const Set<String> _legacyGrandfatheredEntitlementKeys = <String>{
+    PurchaseConstants.entitlementPremium,
+    PurchaseConstants.entitlementPro,
+    PurchaseConstants.entitlementCollections,
+  };
 
   static String _resolveApiKey() {
     const String fallbackApiKey = Env.rcApiKey;
@@ -56,15 +61,30 @@ class PurchasesService {
     }
   }
 
+  bool _hasLegacyGrandfatheredAccess(String key, EntitlementInfo entitlement) {
+    if (!_legacyGrandfatheredEntitlementKeys.contains(key)) {
+      return false;
+    }
+    if (entitlement.latestPurchaseDate.isEmpty) {
+      return false;
+    }
+    final String? expiration = entitlement.expirationDate;
+    return expiration == null || expiration.isEmpty;
+  }
+
+  bool _hasPaidAccessForEntitlement(String key, EntitlementInfo entitlement) {
+    if (entitlement.isActive) {
+      return true;
+    }
+    return _hasLegacyGrandfatheredAccess(key, entitlement);
+  }
+
   bool _hasPaidAccessForKey(CustomerInfo info, String key) {
     final entitlement = info.entitlements.all[key];
     if (entitlement == null) {
       return false;
     }
-    if (entitlement.isActive) {
-      return true;
-    }
-    return entitlement.latestPurchaseDate.isNotEmpty;
+    return _hasPaidAccessForEntitlement(key, entitlement);
   }
 
   SubscriptionTier tierFromCustomerInfo(CustomerInfo info) {
@@ -75,7 +95,7 @@ class PurchasesService {
       if (entitlement == null) {
         continue;
       }
-      final bool hasAccess = entitlement.isActive || entitlement.latestPurchaseDate.isNotEmpty;
+      final bool hasAccess = _hasPaidAccessForEntitlement(key, entitlement);
       if (!hasAccess) {
         continue;
       }
