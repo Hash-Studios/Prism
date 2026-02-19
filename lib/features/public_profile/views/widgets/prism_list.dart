@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 
+import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/logger/logger.dart';
@@ -10,7 +11,6 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
-import 'package:share_plus/share_plus.dart';
 
 class PrismList extends StatelessWidget {
   @override
@@ -43,13 +43,11 @@ class PrismList extends StatelessWidget {
             ),
           ),
           subtitle: const Text("Quick link to pass on to your friends and enemies", style: TextStyle(fontSize: 12)),
-          onTap: () {
-            SharePlus.instance.share(
-              ShareParams(
-                text:
-                    "Fall in love with Android customisation again! Check out Prism -\nhttps://play.google.com/store/apps/details?id=com.hash.prism",
-                sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
-              ),
+          onTap: () async {
+            await ShareService.shareText(
+              text:
+                  "Fall in love with Android customisation again! Check out Prism -\nhttps://play.google.com/store/apps/details?id=com.hash.prism",
+              context: context,
             );
           },
         ),

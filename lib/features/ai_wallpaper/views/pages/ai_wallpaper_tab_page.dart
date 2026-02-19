@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
@@ -18,7 +19,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 class AiWallpaperTabPage extends StatefulWidget {
   const AiWallpaperTabPage({super.key});
@@ -223,36 +223,23 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   Future<void> _share(AiGenerationRecord record) async {
     final link = record.displayUrl(isPremium: globals.prismUser.premium);
-    await Share.share(
-      link,
-      subject: 'Made with Prism AI',
-      sharePositionOrigin: _sharePositionOrigin(),
-    );
+    await ShareService.shareText(text: link, subject: 'Made with Prism AI', context: context);
     analytics.logEvent(name: 'ai_share_tapped', parameters: <String, Object>{'generationId': record.id});
   }
 
   Future<void> _save(AiGenerationRecord record) async {
     try {
       final file = await _downloadToTempFile(record.displayUrl(isPremium: globals.prismUser.premium));
-      await Share.shareXFiles(
-        <XFile>[XFile(file.path)],
+      if (!mounted) return;
+      await ShareService.shareFilePaths(
+        filePaths: <String>[file.path],
         text: 'Generated with Prism AI',
-        sharePositionOrigin: _sharePositionOrigin(),
+        context: context,
       );
       toasts.codeSend('Use the share sheet to save this wallpaper.');
     } catch (_) {
       toasts.error('Unable to prepare image for saving.');
     }
-  }
-
-  Rect _sharePositionOrigin() {
-    final RenderObject? renderObject = context.findRenderObject();
-    if (renderObject is RenderBox && renderObject.hasSize) {
-      final Offset origin = renderObject.localToGlobal(Offset.zero);
-      return origin & renderObject.size;
-    }
-    // Fallback rect to satisfy iOS popover requirements.
-    return const Rect.fromLTWH(1, 1, 1, 1);
   }
 
   Future<File> _downloadToTempFile(String url) async {

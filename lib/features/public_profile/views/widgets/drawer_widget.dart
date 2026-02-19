@@ -292,6 +292,7 @@ class ProfileDrawer extends StatelessWidget {
                   globals.prismUser.email,
                   globals.prismUser.bio,
                   globals.prismUser.profilePhoto,
+                  context: context,
                 );
               },
             ),
