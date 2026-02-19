@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
@@ -8,7 +9,6 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 
 Future<void> createRecord(
   String? id,
@@ -30,15 +30,22 @@ Future<void> createRecord(
   String? aiPrompt,
   String? aiStylePreset,
 }) async {
-  int dailyWallUpload = main.prefs.get("dailyWallUpload", defaultValue: 0) as int;
-  if (main.prefs.get('date') != DateFormat("yy-MM-dd").format(DateTime.now())) {
-    dailyWallUpload = 0;
+  if (!globals.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
+    toasts.codeSend("Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.");
+    return;
   }
-  main.prefs.put('date', DateFormat("yy-MM-dd").format(DateTime.now()));
-  dailyWallUpload++;
-  main.prefs.put("dailyWallUpload", dailyWallUpload);
-  if (dailyWallUpload > 5) {
-    toasts.codeSend("Please try to upload less than 5 walls a day.");
+  if (!globals.prismUser.premium) {
+    UploadQuota.incrementWeeklyUploads();
+    globals.prismUser.uploadsWeekStart =
+        (main.prefs.get('uploadsWeekStart', defaultValue: '') as String?)?.trim() ?? '';
+    globals.prismUser.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
+    main.prefs.put(main.userHiveKey, globals.prismUser);
+    if (globals.prismUser.id.trim().isNotEmpty) {
+      firestoreClient.updateDoc(FirebaseCollections.usersV2, globals.prismUser.id, {
+        'uploadsWeekStart': globals.prismUser.uploadsWeekStart,
+        'uploadsThisWeek': globals.prismUser.uploadsThisWeek,
+      }, sourceTag: 'upload.weekly_quota_sync');
+    }
   }
   await firestoreClient.addDoc(FirebaseCollections.walls, {
     'by': globals.prismUser.name,

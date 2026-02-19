@@ -1,6 +1,10 @@
 import 'dart:io';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
+import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
@@ -18,6 +22,11 @@ class PurchasesService {
 
   bool _configured = false;
   String _configuredUserId = '';
+  static const Set<String> _legacyGrandfatheredEntitlementKeys = <String>{
+    PurchaseConstants.entitlementPremium,
+    PurchaseConstants.entitlementPro,
+    PurchaseConstants.entitlementCollections,
+  };
 
   static String _resolveApiKey() {
     const String fallbackApiKey = Env.rcApiKey;
@@ -52,25 +61,103 @@ class PurchasesService {
     }
   }
 
-  bool _isActive(CustomerInfo info, String key) => info.entitlements.all[key]?.isActive ?? false;
+  bool _hasLegacyGrandfatheredAccess(String key, EntitlementInfo entitlement) {
+    if (!_legacyGrandfatheredEntitlementKeys.contains(key)) {
+      return false;
+    }
+    if (entitlement.latestPurchaseDate.isEmpty) {
+      return false;
+    }
+    final String? expiration = entitlement.expirationDate;
+    return expiration == null || expiration.isEmpty;
+  }
 
-  /// Checks [prism_premium] or [prism_ultra]; updates [globals.prismUser.premium] and Hive.
+  bool _hasPaidAccessForEntitlement(String key, EntitlementInfo entitlement) {
+    if (entitlement.isActive) {
+      return true;
+    }
+    return _hasLegacyGrandfatheredAccess(key, entitlement);
+  }
+
+  bool _hasPaidAccessForKey(CustomerInfo info, String key) {
+    final entitlement = info.entitlements.all[key];
+    if (entitlement == null) {
+      return false;
+    }
+    return _hasPaidAccessForEntitlement(key, entitlement);
+  }
+
+  SubscriptionTier tierFromCustomerInfo(CustomerInfo info) {
+    bool paid = false;
+    bool lifetime = false;
+    for (final key in PurchaseConstants.paidEntitlementKeys) {
+      final entitlement = info.entitlements.all[key];
+      if (entitlement == null) {
+        continue;
+      }
+      final bool hasAccess = _hasPaidAccessForEntitlement(key, entitlement);
+      if (!hasAccess) {
+        continue;
+      }
+      paid = true;
+      final String? expiry = entitlement.expirationDate;
+      if (expiry == null || expiry.isEmpty) {
+        lifetime = true;
+      }
+    }
+    if (!paid) {
+      return SubscriptionTier.free;
+    }
+    return lifetime ? SubscriptionTier.lifetime : SubscriptionTier.pro;
+  }
+
+  Future<void> _persistSubscriptionStateToFirestore({required bool isPremium, required SubscriptionTier tier}) async {
+    final String userId = globals.prismUser.id.trim();
+    if (userId.isEmpty || !globals.prismUser.loggedIn) {
+      return;
+    }
+    try {
+      await firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+        'premium': isPremium,
+        'subscriptionTier': tier.value,
+      }, sourceTag: 'purchases.sync_subscription_state');
+    } catch (error, stackTrace) {
+      logger.w('Unable to persist subscription state to Firestore.', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  /// Checks canonical + grandfathered paid entitlements; updates local user state and Hive.
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
   Future<bool> checkAndPersistPremium() async {
     await ensureConfigured(globals.prismUser.id);
 
     try {
       final info = await Purchases.getCustomerInfo();
-      final isPremium =
-          _isActive(info, PurchaseConstants.entitlementPremium) || _isActive(info, PurchaseConstants.entitlementUltra);
+      final SubscriptionTier tier = tierFromCustomerInfo(info);
+      final bool isPremium = tier.isPaid;
 
       globals.prismUser.premium = isPremium;
+      globals.prismUser.subscriptionTier = tier.value;
       main.prefs.put(main.userHiveKey, globals.prismUser);
+      await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier);
+      analytics.logEvent(
+        name: 'subscription_entitlement_refresh',
+        parameters: <String, Object>{
+          'result': 'success',
+          'subscription_tier': tier.value,
+          'is_premium': isPremium ? 1 : 0,
+          'active_entitlements': info.entitlements.active.keys.join(','),
+        },
+      );
       if (kDebugMode) {
         logger.d('Premium status: $isPremium');
       }
       return isPremium;
     } on PlatformException catch (e) {
+      analytics.logEvent(
+        name: 'subscription_entitlement_refresh',
+        parameters: <String, Object>{'result': 'failure', 'error_code': e.code, 'error_message': e.message ?? ''},
+      );
       logger.d('checkAndPersistPremium failed: $e');
       return globals.prismUser.premium;
     }
@@ -81,13 +168,26 @@ class PurchasesService {
     return result.customerInfo;
   }
 
-  Future<CustomerInfo> restore() async => Purchases.restorePurchases();
+  Future<CustomerInfo> restore() => Purchases.restorePurchases();
 
   Future<Offerings?> getOfferings() async {
     try {
       return await Purchases.getOfferings();
     } on PlatformException catch (e) {
       logger.d('getOfferings failed: $e');
+      return null;
+    }
+  }
+
+  Future<Offering?> getCurrentOfferingForPlacement(String placementIdentifier) async {
+    final String placement = placementIdentifier.trim();
+    if (placement.isEmpty) {
+      return null;
+    }
+    try {
+      return await Purchases.getCurrentOfferingForPlacement(placement);
+    } on PlatformException catch (e) {
+      logger.d('getCurrentOfferingForPlacement failed: $e');
       return null;
     }
   }
@@ -111,6 +211,7 @@ class PurchasesService {
   }
 
   /// Returns true if [info] grants premium access (prism_premium or prism_ultra).
-  bool isPremiumFromCustomerInfo(CustomerInfo info) =>
-      _isActive(info, PurchaseConstants.entitlementPremium) || _isActive(info, PurchaseConstants.entitlementUltra);
+  bool isPremiumFromCustomerInfo(CustomerInfo info) => tierFromCustomerInfo(info).isPaid;
+
+  bool hasPaidEntitlement(CustomerInfo info, String key) => _hasPaidAccessForKey(info, key);
 }

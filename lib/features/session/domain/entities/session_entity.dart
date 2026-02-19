@@ -6,6 +6,7 @@ class SessionEntity {
     required this.profilePhoto,
     required this.loggedIn,
     required this.premium,
+    required this.subscriptionTier,
   });
 
   final String userId;
@@ -14,6 +15,7 @@ class SessionEntity {
   final String profilePhoto;
   final bool loggedIn;
   final bool premium;
+  final String subscriptionTier;
 
   static const SessionEntity guest = SessionEntity(
     userId: '',
@@ -22,5 +24,6 @@ class SessionEntity {
     profilePhoto: '',
     loggedIn: false,
     premium: false,
+    subscriptionTier: 'free',
   );
 }

@@ -20,6 +20,7 @@ PrismUsersV2 prismUser =
             lastLoginAt: DateTime.now().toUtc().toIso8601String(),
             links: {},
             premium: false,
+            subscriptionTier: 'free',
             loggedIn: false,
             profilePhoto: defaultProfilePhotoUrl,
             badges: [],
@@ -45,6 +46,7 @@ bool aiEnabled = true;
 int aiRolloutPercent = 100;
 bool aiSubmitEnabled = true;
 bool aiVariationsEnabled = true;
+bool useRcPaywalls = true;
 
 List topTitleText = ["TOP-RATED", "BEST OF COMMUNITY", "FAN-FAVOURITE", "TRENDING"];
 

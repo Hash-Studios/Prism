@@ -1,9 +1,8 @@
-import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 class PremiumList extends StatelessWidget {
@@ -21,11 +20,19 @@ class PremiumList extends StatelessWidget {
                   if (globals.prismUser.premium == true) {
                     main.RestartWidget.restartApp(context);
                   } else {
-                    context.router.push(const UpgradeRoute());
+                    PaywallOrchestrator.instance.present(
+                      context,
+                      placement: PaywallPlacement.mainUpsell,
+                      source: 'profile_premium_list',
+                    );
                   }
                 });
               } else {
-                context.router.push(const UpgradeRoute());
+                PaywallOrchestrator.instance.present(
+                  context,
+                  placement: PaywallPlacement.mainUpsell,
+                  source: 'profile_premium_list',
+                );
               }
             },
             leading: const Icon(JamIcons.instant_picture_f),

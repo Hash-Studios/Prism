@@ -4,8 +4,8 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
@@ -15,7 +15,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -187,11 +186,19 @@ class _DownloadButtonState extends State<DownloadButton> {
                             if (globals.prismUser.loggedIn == false) {
                               googleSignInPopUp(context, () {
                                 Navigator.of(dialogContext).pop();
-                                this.context.router.push(const UpgradeRoute());
+                                PaywallOrchestrator.instance.present(
+                                  this.context,
+                                  placement: PaywallPlacement.mainUpsell,
+                                  source: 'download_guest_buy_premium',
+                                );
                               });
                             } else {
                               Navigator.of(dialogContext).pop();
-                              this.context.router.push(const UpgradeRoute());
+                              PaywallOrchestrator.instance.present(
+                                this.context,
+                                placement: PaywallPlacement.mainUpsell,
+                                source: 'download_guest_buy_premium',
+                              );
                             }
                           },
                           child: Text(
@@ -212,6 +219,9 @@ class _DownloadButtonState extends State<DownloadButton> {
                                   }
                                   if (!watched) {
                                     toasts.error('Ad was not completed.');
+                                    return;
+                                  }
+                                  if (!dialogContext.mounted) {
                                     return;
                                   }
                                   if (Navigator.of(dialogContext).canPop()) {
@@ -329,7 +339,11 @@ class _DownloadButtonState extends State<DownloadButton> {
         return true;
       case _LowBalanceAction.upgrade:
         if (mounted) {
-          context.router.push(const UpgradeRoute());
+          await PaywallOrchestrator.instance.present(
+            context,
+            placement: PaywallPlacement.lowBalance,
+            source: 'download_low_balance_upgrade',
+          );
         }
         return true;
       case _LowBalanceAction.none:
@@ -349,6 +363,12 @@ class _DownloadButtonState extends State<DownloadButton> {
         CoinEarnAction.rewardedAd,
         sourceTag: 'coins.download.watch_and_download.rewarded_ad',
       );
+      if (mounted) {
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
+          context,
+          source: 'download_watch_and_download_rewarded_ad',
+        );
+      }
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(
         sourceTag: 'coins.download.watch_and_download.rewarded_ad',

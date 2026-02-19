@@ -10,6 +10,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
@@ -269,7 +270,7 @@ class CoinsService {
         if (data == null) {
           return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
         }
-        final bool isPremium = _asBool(data['premium']) || globals.prismUser.premium;
+        final bool isPremium = _isPremiumUserData(data);
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
         _ensureCoinStateDefaults(coinState);
@@ -376,7 +377,7 @@ class CoinsService {
           );
         }
         final int previous = _asInt(data['coins']);
-        final bool isPremium = _asBool(data['premium']) || globals.prismUser.premium;
+        final bool isPremium = _isPremiumUserData(data);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
         _ensureCoinStateDefaults(coinState);
 
@@ -660,7 +661,7 @@ class CoinsService {
     if (userData == null) {
       return false;
     }
-    final bool isPremium = _asBool(userData['premium']) || globals.prismUser.premium;
+    final bool isPremium = _isPremiumUserData(userData);
     if (isPremium) {
       return true;
     }
@@ -695,7 +696,7 @@ class CoinsService {
         if (data == null) {
           return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
         }
-        final bool isPremium = _asBool(data['premium']) || globals.prismUser.premium;
+        final bool isPremium = _isPremiumUserData(data);
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
         _ensureCoinStateDefaults(coinState);
@@ -901,7 +902,7 @@ class CoinsService {
         if (data == null) {
           return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
         }
-        final bool isPremium = _asBool(data['premium']) || globals.prismUser.premium;
+        final bool isPremium = _isPremiumUserData(data);
         final int previous = _asInt(data['coins']);
         if (!isPremium) {
           return CoinMutationResult.noChange(balance: previous, reason: 'not_premium');
@@ -1434,6 +1435,16 @@ class CoinsService {
     }
     final String normalized = (value?.toString() ?? '').toLowerCase().trim();
     return normalized == 'true' || normalized == '1';
+  }
+
+  bool _isPremiumUserData(Map<String, dynamic> data) {
+    final bool premiumFlag = _asBool(data['premium']) || globals.prismUser.premium;
+    final SubscriptionTier tierFromGlobal = SubscriptionTier.fromValue(globals.prismUser.subscriptionTier);
+    if (tierFromGlobal.isPaid) {
+      return true;
+    }
+    final SubscriptionTier tierFromDoc = SubscriptionTier.fromValue(data['subscriptionTier']?.toString());
+    return premiumFlag || tierFromDoc.isPaid;
   }
 
   Map<String, dynamic> _coinStateFromRaw(Object? raw) {

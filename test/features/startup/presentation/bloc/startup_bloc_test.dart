@@ -32,6 +32,7 @@ void main() {
           aiRolloutPercent: 100,
           aiSubmitEnabled: true,
           aiVariationsEnabled: true,
+          useRcPaywalls: true,
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -260,9 +261,30 @@ class _PremiumUpsellScreen extends StatefulWidget {
 class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
   int _selectedIndex = 0;
 
+  void _onPackageSelected(int index, List<Package> packages) {
+    if (index < 0 || index >= packages.length) {
+      return;
+    }
+    final Package selectedPackage = packages[index];
+    setState(() => _selectedIndex = index);
+    analytics.logEvent(
+      name: 'subscription_package_selected',
+      parameters: <String, Object>{
+        'source': 'premium_screen',
+        'product_id': selectedPackage.storeProduct.identifier,
+        'package_type': selectedPackage.packageType.name,
+        'price': selectedPackage.storeProduct.price,
+        'currency': selectedPackage.storeProduct.currencyCode,
+      },
+    );
+  }
+
   List<Package> _packages() {
     if (widget.offerings == null) return const [];
-    final offering = widget.offerings!.all[PurchaseConstants.offeringUltra] ?? widget.offerings!.current;
+    final offering =
+        widget.offerings!.all[PurchaseConstants.offeringV3Default] ??
+        widget.offerings!.all[PurchaseConstants.offeringUltra] ??
+        widget.offerings!.current;
     return offering?.availablePackages ?? const [];
   }
 
@@ -310,7 +332,7 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
                   child: _PackagePillRow(
                     packages: packages,
                     selectedIndex: _selectedIndex,
-                    onTap: (i) => setState(() => _selectedIndex = i),
+                    onTap: (i) => _onPackageSelected(i, packages),
                   ),
                 ),
                 if (selectedPackage != null && _perMonthEquivalent(selectedPackage) != null)
@@ -682,12 +704,23 @@ class _StickyBottomSheet extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       ),
                       onPressed: () async {
+                        analytics.logEvent(
+                          name: 'subscription_restore_started',
+                          parameters: <String, Object>{'source': 'premium_screen'},
+                        );
                         try {
                           logger.d('Restoring purchases');
                           final info = await _purchasesService.restore();
                           if (!context.mounted) return;
                           final ok = _purchasesService.isPremiumFromCustomerInfo(info);
                           await _purchasesService.checkAndPersistPremium();
+                          analytics.logEvent(
+                            name: 'subscription_restore_result',
+                            parameters: <String, Object>{
+                              'source': 'premium_screen',
+                              'result': ok ? 'success' : 'not_entitled',
+                            },
+                          );
                           if (ok) {
                             toasts.codeSend('You are now a premium member.');
                             onPremiumUnlocked();
@@ -695,6 +728,15 @@ class _StickyBottomSheet extends StatelessWidget {
                             toasts.error('There was an error. Please try again later.');
                           }
                         } on PlatformException catch (e) {
+                          analytics.logEvent(
+                            name: 'subscription_restore_result',
+                            parameters: <String, Object>{
+                              'source': 'premium_screen',
+                              'result': 'failure',
+                              'error_code': e.code,
+                              'error_message': e.message ?? '',
+                            },
+                          );
                           final code = PurchasesErrorHelper.getErrorCode(e);
                           if (code == PurchasesErrorCode.purchaseCancelledError) {
                             toasts.error('User cancelled.');
@@ -740,11 +782,30 @@ class _PurchaseCTAButtonState extends State<_PurchaseCTAButton> {
   Future<void> _purchase() async {
     if (_isPurchasing) return;
     setState(() => _isPurchasing = true);
+    analytics.logEvent(
+      name: 'subscription_purchase_started',
+      parameters: <String, Object>{
+        'source': 'premium_screen',
+        'product_id': widget.package.storeProduct.identifier,
+        'package_type': widget.package.packageType.name,
+        'price': widget.package.storeProduct.price,
+        'currency': widget.package.storeProduct.currencyCode,
+      },
+    );
     try {
       final customerInfo = await _purchasesService.purchase(widget.package);
       if (!mounted) return;
       final isPremium = _purchasesService.isPremiumFromCustomerInfo(customerInfo);
       await _purchasesService.checkAndPersistPremium();
+      analytics.logEvent(
+        name: 'subscription_purchase_result',
+        parameters: <String, Object>{
+          'source': 'premium_screen',
+          'product_id': widget.package.storeProduct.identifier,
+          'package_type': widget.package.packageType.name,
+          'result': isPremium ? 'success' : 'not_entitled',
+        },
+      );
       if (isPremium) {
         toasts.codeSend('You are now a premium member.');
         widget.onPremiumUnlocked();
@@ -753,6 +814,17 @@ class _PurchaseCTAButtonState extends State<_PurchaseCTAButton> {
       }
     } on PlatformException catch (e) {
       if (!mounted) return;
+      analytics.logEvent(
+        name: 'subscription_purchase_result',
+        parameters: <String, Object>{
+          'source': 'premium_screen',
+          'product_id': widget.package.storeProduct.identifier,
+          'package_type': widget.package.packageType.name,
+          'result': 'failure',
+          'error_code': e.code,
+          'error_message': e.message ?? '',
+        },
+      );
       final code = PurchasesErrorHelper.getErrorCode(e);
       if (code == PurchasesErrorCode.purchaseCancelledError) {
         toasts.error('User cancelled purchase.');

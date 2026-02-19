@@ -14,6 +14,7 @@ class StartupConfigEntity {
     required this.aiRolloutPercent,
     required this.aiSubmitEnabled,
     required this.aiVariationsEnabled,
+    required this.useRcPaywalls,
   });
 
   final String topImageLink;
@@ -30,4 +31,5 @@ class StartupConfigEntity {
   final int aiRolloutPercent;
   final bool aiSubmitEnabled;
   final bool aiVariationsEnabled;
+  final bool useRcPaywalls;
 }
