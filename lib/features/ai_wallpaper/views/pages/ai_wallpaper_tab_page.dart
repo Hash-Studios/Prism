@@ -260,7 +260,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
               chargeMode: reservation.mode,
               coinsSpent: reservation.coinsSpent,
               variationPrompt: prompt,
-              strength: 0.45,
             )
           : await _repository.generate(
               prompt: prompt,
@@ -396,7 +395,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         edited['category']?.toString(),
         edited['description']?.toString(),
         false,
-        wallpaperTags: ((edited['tags'] as List<dynamic>? ?? <dynamic>[]).map((tag) => tag.toString()).toList()),
+        wallpaperTags: (edited['tags'] as List<dynamic>? ?? <dynamic>[]).map((tag) => tag.toString()).toList(),
         isAiGenerated: true,
         aiGenerationId: record.id,
         aiProvider: record.provider,
@@ -589,7 +588,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<AiQualityTier>(
-                        value: _selectedQuality,
+                        initialValue: _selectedQuality,
                         decoration: const InputDecoration(labelText: 'Quality'),
                         items: AiQualityTier.values
                             .map((tier) => DropdownMenuItem(value: tier, child: Text(tier.label)))
@@ -631,7 +630,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     child: Image.network(
                       current.displayUrl(isPremium: globals.prismUser.premium),
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const ColoredBox(color: Colors.black12),
+                      errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black12),
                     ),
                   ),
                 ),
@@ -705,7 +704,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                           child: Image.network(
                             item.displayUrl(isPremium: globals.prismUser.premium),
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const ColoredBox(color: Colors.black12),
+                            errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black12),
                           ),
                         ),
                       ),

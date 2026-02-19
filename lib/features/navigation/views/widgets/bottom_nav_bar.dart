@@ -136,10 +136,12 @@ class BottomNavBar extends StatefulWidget {
 class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderStateMixin {
   late AnimationController _controller2;
   late Animation<double> _paddingAnimation;
+  bool? isLoggedin = false;
   bool imageNotFound = false;
   @override
   void initState() {
     super.initState();
+    checkSignIn();
     _controller2 = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
     _paddingAnimation =
         Tween(begin: 14.0, end: 20.0).animate(CurvedAnimation(parent: _controller2, curve: Curves.easeOutCubic))
@@ -155,6 +157,21 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
     super.dispose();
   }
 
+  Future<void> checkSignIn() async {
+    setState(() {
+      isLoggedin = globals.prismUser.loggedIn;
+    });
+  }
+
+  void showGooglePopUp(VoidCallback func) {
+    logger.d(isLoggedin.toString());
+    if (isLoggedin == false) {
+      googleSignInPopUp(context, func);
+    } else {
+      func();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tabsRouter = AutoTabsRouter.of(context);
@@ -162,7 +179,8 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
     final isHome = activeIndex == 0;
     final isSearch = activeIndex == 1;
     final isSetups = activeIndex == 2;
-    final isProfile = activeIndex == 3;
+    final isAI = activeIndex == 3;
+    final isProfile = activeIndex == 4;
 
     return Container(
       decoration: BoxDecoration(
@@ -270,7 +288,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                     ),
                   ),
                   IconButton(
-                    tooltip: 'AI',
+                    tooltip: 'Upload',
                     padding: EdgeInsets.zero,
                     icon: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -278,33 +296,95 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                       children: <Widget>[
                         Container(height: 0),
                         Icon(
-                          Icons.auto_awesome,
+                          JamIcons.plus,
                           color: Theme.of(context).colorScheme.error == Colors.black
                               ? Colors.white
                               : Theme.of(context).colorScheme.secondary,
                         ),
-                        Container(
-                          margin: isSetups ? const EdgeInsets.only(top: 3) : EdgeInsets.zero,
-                          width: isSetups ? _paddingAnimation.value : 0,
-                          height: isSetups ? 3 : 0,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(500),
-                            color: Theme.of(context).colorScheme.error == Colors.black
-                                ? Colors.white24
-                                : Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
+                        Container(height: 0),
                       ],
                     ),
                     onPressed: () {
-                      if (isSetups) {
-                        logger.d("Currently on AI");
-                        return;
-                      }
-                      tabsRouter.setActiveIndex(2);
+                      showGooglePopUp(() {
+                        showModalBottomSheet(
+                          isScrollControlled: true,
+                          context: context,
+                          builder: (context) => const UploadBottomPanel(),
+                        );
+                      });
                     },
                   ),
                 ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
+              child: IconButton(
+                tooltip: 'Setups',
+                padding: EdgeInsets.zero,
+                icon: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(height: isSetups ? 9 : 0),
+                    Icon(JamIcons.instant_picture_f, color: Theme.of(context).colorScheme.secondary),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(500),
+                        color: isSetups
+                            ? Theme.of(context).colorScheme.error == Colors.black
+                                  ? Colors.white24
+                                  : Theme.of(context).colorScheme.error
+                            : Theme.of(context).colorScheme.secondary,
+                      ),
+                      margin: isSetups ? const EdgeInsets.all(3) : EdgeInsets.zero,
+                      width: isSetups ? _paddingAnimation.value : 0,
+                      height: isSetups ? 3 : 0,
+                    ),
+                  ],
+                ),
+                onPressed: () {
+                  if (isSetups) {
+                    logger.d("Currently on Setups");
+                  } else {
+                    tabsRouter.setActiveIndex(2);
+                  }
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
+              child: IconButton(
+                tooltip: 'AI',
+                padding: EdgeInsets.zero,
+                icon: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(height: isAI ? 9 : 0),
+                    Icon(JamIcons.star, color: Theme.of(context).colorScheme.secondary),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(500),
+                        color: isAI
+                            ? Theme.of(context).colorScheme.error == Colors.black
+                                  ? Colors.white24
+                                  : Theme.of(context).colorScheme.error
+                            : Theme.of(context).colorScheme.secondary,
+                      ),
+                      margin: isAI ? const EdgeInsets.all(3) : EdgeInsets.zero,
+                      width: isAI ? _paddingAnimation.value : 0,
+                      height: isAI ? 3 : 0,
+                    ),
+                  ],
+                ),
+                onPressed: () {
+                  if (isAI) {
+                    logger.d("Currently on AI");
+                  } else {
+                    tabsRouter.setActiveIndex(3);
+                  }
+                },
               ),
             ),
             Padding(
@@ -358,7 +438,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   if (isProfile) {
                     logger.d("Currently on Profile");
                   } else {
-                    tabsRouter.setActiveIndex(3);
+                    tabsRouter.setActiveIndex(4);
                   }
                 },
               ),

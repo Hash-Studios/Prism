@@ -937,6 +937,22 @@ class SetupViewRouteArgs {
 }
 
 /// generated route for
+/// [SetupsTabPage]
+class SetupsTabRoute extends PageRouteInfo<void> {
+  const SetupsTabRoute({List<PageRouteInfo>? children})
+    : super(SetupsTabRoute.name, initialChildren: children);
+
+  static const String name = 'SetupsTabRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const SetupsTabPage();
+    },
+  );
+}
+
+/// generated route for
 /// [SharePrismScreen]
 class SharePrismRoute extends PageRouteInfo<void> {
   const SharePrismRoute({List<PageRouteInfo>? children})

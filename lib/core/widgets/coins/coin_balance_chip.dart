@@ -33,7 +33,7 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
       builder: (context, balance, _) {
         return ValueListenableBuilder<int>(
           valueListenable: CoinsService.instance.deltaNotifier,
-          builder: (context, delta, __) {
+          builder: (context, delta, _) {
             final bool isLow = !globals.prismUser.premium && balance < CoinPolicy.lowBalanceNudgeThreshold;
             final bool isEarn = delta > 0;
             final bool isSpend = delta < 0;

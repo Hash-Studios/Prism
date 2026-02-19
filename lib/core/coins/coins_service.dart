@@ -4,8 +4,8 @@ import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/coins/coin_action.dart';
-import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';

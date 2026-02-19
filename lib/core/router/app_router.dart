@@ -8,11 +8,12 @@ import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_view
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_view_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
+import 'package:Prism/features/navigation/views/pages/ai_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
-import 'package:Prism/features/navigation/views/pages/ai_tab_page.dart';
+import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';
 import 'package:Prism/features/palette/views/pages/download_screen.dart';
 import 'package:Prism/features/palette/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/palette/views/pages/search_wallpaper_screen.dart';
@@ -74,6 +75,12 @@ class AppRouter extends RootStackRouter {
             AutoRoute(path: '', page: SearchRoute.page),
             AutoRoute(path: 'users', page: UserSearchRoute.page),
           ],
+        ),
+        // Setups tab
+        AutoRoute(
+          path: 'setups',
+          page: SetupsTabRoute.page,
+          children: [AutoRoute(path: '', page: SetupRoute.page)],
         ),
         // AI tab
         AutoRoute(path: 'ai', page: AiTabRoute.page),
