@@ -1,8 +1,12 @@
+import { verifyFirebaseIdTokenFromRequest } from './firebase_auth';
+
 export interface AiEnvBindings {
   AI_STATE_KV: KVNamespace;
   AI_IMAGES?: R2Bucket;
   FAL_API_KEY?: string;
   GEMINI_API_KEY?: string;
+  FIREBASE_PROJECT_ID?: string;
+  FIREBASE_AUTH_DEBUG?: string;
 }
 
 type AiProviderName = 'fal' | 'gemini';
@@ -140,7 +144,7 @@ const AI_DEFAULT_CONFIG: AiRoutingConfig = {
       enabled: true,
       weight: 60,
       modelByQuality: {
-        fast: 'fal-ai/fast-sdxl',
+        fast: 'fal-ai/flux/schnell',
         balanced: 'fal-ai/flux/schnell',
         quality: 'fal-ai/flux/dev',
       },
@@ -153,9 +157,9 @@ const AI_DEFAULT_CONFIG: AiRoutingConfig = {
       enabled: true,
       weight: 40,
       modelByQuality: {
-        fast: 'imagen-3.0-fast-generate-001',
-        balanced: 'imagen-3.0-generate-002',
-        quality: 'imagen-3.0-generate-002',
+        fast: 'gemini-2.5-flash-image',
+        balanced: 'gemini-2.5-flash-image',
+        quality: 'gemini-2.5-flash-image',
       },
       estimatedCostByQualityUsd: { fast: 0.02, balanced: 0.04, quality: 0.07 },
       dailyBudgetUsd: 30,
@@ -286,7 +290,7 @@ async function handleAiHealth(env: AiEnvBindings): Promise<Response> {
 }
 
 async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Response> {
-  const auth = parseAuth(request);
+  const auth = await parseAuth(request, env);
   if (auth == null) {
     return aiError('unauthorized', 401, 'Missing or invalid bearer token');
   }
@@ -317,7 +321,7 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
 }
 
 async function handleVariation(request: Request, env: AiEnvBindings, parentGenerationId: string): Promise<Response> {
-  const auth = parseAuth(request);
+  const auth = await parseAuth(request, env);
   if (auth == null) {
     return aiError('unauthorized', 401, 'Missing or invalid bearer token');
   }
@@ -336,10 +340,10 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
   }
 
   const variationPrompt = clipText(sanitizeText(body.variationPrompt ?? ''), 160);
-  const strength = clampNumber(body.strength ?? 0.45, 0.1, 1.0);
-  const mergedPrompt = variationPrompt.isEmpty
+  const strength = clampNumber(asNumber(body.strength, 0.45), 0.1, 1.0);
+  const mergedPrompt = variationPrompt.length === 0
     ? original.prompt
-    : `${original.prompt}. Variation request (${strength.toStringAsFixed(2)}): ${variationPrompt}`;
+    : `${original.prompt}. Variation request (${strength.toFixed(2)}): ${variationPrompt}`;
   if (!isPromptSafe(mergedPrompt)) {
     return aiError('unsafe_prompt', 422, 'Variation prompt rejected by safety policy');
   }
@@ -350,14 +354,14 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
     prompt: mergedPrompt,
     stylePreset: original.stylePreset,
     qualityTier: original.qualityTier,
-    targetSize: '${original.width}x${original.height}',
+    targetSize: `${original.width}x${original.height}`,
     seed: randomSeed(),
     parentGenerationId: parentGenerationId,
   });
 }
 
 async function handlePrefill(request: Request, env: AiEnvBindings): Promise<Response> {
-  const auth = parseAuth(request);
+  const auth = await parseAuth(request, env);
   if (auth == null) {
     return aiError('unauthorized', 401, 'Missing or invalid bearer token');
   }
@@ -595,35 +599,15 @@ function normalizeTargetSize(value: unknown): string {
   return `${width.toFixed(0)}x${height.toFixed(0)}`;
 }
 
-function parseAuth(request: Request): AuthContext | null {
-  const header = request.headers.get('authorization') ?? '';
-  const match = /^Bearer\s+(.+)$/.exec(header);
-  if (match == null) {
+async function parseAuth(request: Request, env: AiEnvBindings): Promise<AuthContext | null> {
+  const verified = await verifyFirebaseIdTokenFromRequest(request, env);
+  if (verified == null) {
     return null;
   }
-  const token = match[1].trim();
-  if (!isNonEmptyString(token)) {
-    return null;
-  }
-  const userId = tryExtractUserIdFromJwt(token);
-  if (!isNonEmptyString(userId)) {
-    return null;
-  }
-  return { token, userId };
-}
-
-function tryExtractUserIdFromJwt(token: string): string {
-  const parts = token.split('.');
-  if (parts.length < 2) {
-    return '';
-  }
-  try {
-    const payload = JSON.parse(decodeBase64Url(parts[1])) as Record<string, unknown>;
-    const subject = asString(payload['sub']) || asString(payload['user_id']) || asString(payload['uid']);
-    return clipText(subject, 128);
-  } catch {
-    return '';
-  }
+  return {
+    token: verified.token,
+    userId: clipText(verified.userId, 128),
+  };
 }
 
 async function readRoutingConfig(env: AiEnvBindings): Promise<AiRoutingConfig> {
@@ -647,13 +631,14 @@ function mergeRoutingConfig(raw: Partial<AiRoutingConfig>): AiRoutingConfig {
     hardUserDailyCap: Math.round(clampNumber(raw.hardUserDailyCap ?? AI_DEFAULT_CONFIG.hardUserDailyCap, 1, 500)),
     fallbackOrder: normalizeFallbackOrder(raw.fallbackOrder),
     providers: {
-      fal: mergeProviderConfig(providers.fal, AI_DEFAULT_CONFIG.providers.fal),
-      gemini: mergeProviderConfig(providers.gemini, AI_DEFAULT_CONFIG.providers.gemini),
+      fal: mergeProviderConfig('fal', providers.fal, AI_DEFAULT_CONFIG.providers.fal),
+      gemini: mergeProviderConfig('gemini', providers.gemini, AI_DEFAULT_CONFIG.providers.gemini),
     },
   };
 }
 
 function mergeProviderConfig(
+  provider: AiProviderName,
   raw: Partial<AiRoutingProviderConfig> | undefined,
   fallback: AiRoutingProviderConfig,
 ): AiRoutingProviderConfig {
@@ -662,9 +647,9 @@ function mergeProviderConfig(
     enabled: typeof source.enabled === 'boolean' ? source.enabled : fallback.enabled,
     weight: clampNumber(source.weight ?? fallback.weight, 0, 1000),
     modelByQuality: {
-      fast: asString(source.modelByQuality?.fast) || fallback.modelByQuality.fast,
-      balanced: asString(source.modelByQuality?.balanced) || fallback.modelByQuality.balanced,
-      quality: asString(source.modelByQuality?.quality) || fallback.modelByQuality.quality,
+      fast: normalizeProviderModel(provider, source.modelByQuality?.fast, fallback.modelByQuality.fast),
+      balanced: normalizeProviderModel(provider, source.modelByQuality?.balanced, fallback.modelByQuality.balanced),
+      quality: normalizeProviderModel(provider, source.modelByQuality?.quality, fallback.modelByQuality.quality),
     },
     estimatedCostByQualityUsd: {
       fast: clampNumber(source.estimatedCostByQualityUsd?.fast ?? fallback.estimatedCostByQualityUsd.fast, 0, 10),
@@ -675,6 +660,18 @@ function mergeProviderConfig(
     monthlyBudgetUsd: clampNumber(source.monthlyBudgetUsd ?? fallback.monthlyBudgetUsd, 0, 1000000),
     timeoutMs: clampNumber(source.timeoutMs ?? fallback.timeoutMs, 1000, 60000),
   };
+}
+
+function normalizeProviderModel(provider: AiProviderName, value: unknown, fallback: string): string {
+  const model = asString(value) || fallback;
+  if (provider === 'gemini' && isDeprecatedGeminiModel(model)) {
+    return fallback;
+  }
+  return model;
+}
+
+function isDeprecatedGeminiModel(model: string): boolean {
+  return model === 'imagen-3.0-fast-generate-001' || model === 'imagen-3.0-generate-002';
 }
 
 function normalizeFallbackOrder(raw: unknown): AiProviderName[] {
@@ -945,36 +942,48 @@ async function persistGenerationArtifacts(
   contentType: string,
   env: AiEnvBindings,
 ): Promise<{ imageUrl: string; watermarkedImageUrl: string }> {
-  const objectKey = `ai/${generationId}.png`;
-  const watermarkedKey = `ai/${generationId}-wm.png`;
+  const originalKey = `ai/original/${generationId}.png`;
+  const publicKey = `ai/public/${generationId}.png`;
   const cacheControl = 'public, max-age=31536000, immutable';
+  const watermarkedBytes = await renderPublicWatermarkedBytes(imageBytes, contentType);
+  if (watermarkedBytes.length < 1024) {
+    throw new Error('watermark_generation_failed');
+  }
 
   if (env.AI_IMAGES != null) {
-    await env.AI_IMAGES.put(objectKey, imageBytes, {
+    await env.AI_IMAGES.put(originalKey, imageBytes, {
       httpMetadata: {
         contentType,
         cacheControl,
       },
     });
-    // Watermark generation can be upgraded independently. For now persist same bytes with separate URL.
-    await env.AI_IMAGES.put(watermarkedKey, imageBytes, {
+    await env.AI_IMAGES.put(publicKey, watermarkedBytes, {
       httpMetadata: {
         contentType,
         cacheControl,
       },
     });
     return {
-      imageUrl: `https://prismwalls.com/api/ai/assets/${objectKey}`,
-      watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/${watermarkedKey}`,
+      imageUrl: `https://prismwalls.com/api/ai/assets/${originalKey}`,
+      watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/${publicKey}`,
     };
   }
 
-  await env.AI_STATE_KV.put(`ai:asset:${objectKey}`, toBase64(imageBytes), { expirationTtl: 60 * 60 * 24 * 30 });
-  await env.AI_STATE_KV.put(`ai:asset:${watermarkedKey}`, toBase64(imageBytes), { expirationTtl: 60 * 60 * 24 * 30 });
+  await env.AI_STATE_KV.put(`ai:asset:${originalKey}`, toBase64(imageBytes), { expirationTtl: 60 * 60 * 24 * 30 });
+  await env.AI_STATE_KV.put(`ai:asset:${publicKey}`, toBase64(watermarkedBytes), { expirationTtl: 60 * 60 * 24 * 30 });
   return {
-    imageUrl: `https://prismwalls.com/api/ai/assets/${objectKey}`,
-    watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/${watermarkedKey}`,
+    imageUrl: `https://prismwalls.com/api/ai/assets/${originalKey}`,
+    watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/${publicKey}`,
   };
+}
+
+async function renderPublicWatermarkedBytes(imageBytes: Uint8Array, contentType: string): Promise<Uint8Array> {
+  if (!contentType.startsWith('image/')) {
+    throw new Error('watermark_invalid_content_type');
+  }
+  // Placeholder serving-layer watermark hook: keep a separate public artifact path.
+  // This can be upgraded to true raster compositing without changing API contracts.
+  return imageBytes;
 }
 
 async function saveGenerationRecord(record: AiGenerationRecord, env: AiEnvBindings): Promise<void> {
@@ -1075,7 +1084,8 @@ class FalProviderAdapter implements AiProviderAdapter {
     }, params.timeoutMs);
 
     if (!response.ok) {
-      throw new Error(`fal_failed_${response.status}`);
+      const details = await readErrorDetails(response);
+      throw new Error(`fal_failed_${response.status}${details}`);
     }
     const payload = await response.json() as {
       images?: Array<{ url?: string }>;
@@ -1121,30 +1131,43 @@ class GeminiProviderAdapter implements AiProviderAdapter {
       throw new Error('GEMINI_API_KEY missing');
     }
     const endpoint =
-      `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:predict?key=${params.env.GEMINI_API_KEY}`;
+      `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:generateContent`;
     const { width, height } = parseSize(params.targetSize);
     const response = await fetchWithTimeout(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': params.env.GEMINI_API_KEY,
+      },
       body: JSON.stringify({
-        instances: [{ prompt: `${params.prompt}, ${params.stylePreset} style` }],
-        parameters: {
-          sampleCount: 1,
-          seed: params.seed,
-          width,
-          height,
+        contents: [{
+          parts: [{ text: `${params.prompt}, ${params.stylePreset} style` }],
+        }],
+        generationConfig: {
+          responseModalities: ['TEXT', 'IMAGE'],
         },
       }),
     }, params.timeoutMs);
 
     if (!response.ok) {
-      throw new Error(`gemini_failed_${response.status}`);
+      const details = await readErrorDetails(response);
+      throw new Error(`gemini_failed_${response.status}${details}`);
     }
     const payload = await response.json() as {
-      predictions?: Array<{ bytesBase64Encoded?: string; mimeType?: string; image?: { bytesBase64Encoded?: string } }>;
+      candidates?: Array<{
+        content?: {
+          parts?: Array<{
+            inlineData?: {
+              data?: string;
+              mimeType?: string;
+            };
+          }>;
+        };
+      }>;
     };
-    const prediction = payload.predictions?.[0];
-    const encoded = prediction?.bytesBase64Encoded ?? prediction?.image?.bytesBase64Encoded ?? '';
+    const parts = payload.candidates?.[0]?.content?.parts ?? [];
+    const imagePart = parts.find((part) => isNonEmptyString(part.inlineData?.data));
+    const encoded = imagePart?.inlineData?.data ?? '';
     if (!isNonEmptyString(encoded)) {
       throw new Error('gemini_missing_image');
     }
@@ -1154,7 +1177,7 @@ class GeminiProviderAdapter implements AiProviderAdapter {
       seed: params.seed,
       width,
       height,
-      contentType: prediction?.mimeType ?? 'image/png',
+      contentType: imagePart?.inlineData?.mimeType ?? 'image/png',
       imageBytes,
       estimatedCostUsd: params.estimatedCostUsd,
     };
@@ -1187,6 +1210,18 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 function isTimeoutError(error: unknown): boolean {
   const message = `${error ?? ''}`.toLowerCase();
   return message.includes('timeout') || message.includes('aborted');
+}
+
+async function readErrorDetails(response: Response): Promise<string> {
+  try {
+    const text = await response.text();
+    if (!isNonEmptyString(text)) {
+      return '';
+    }
+    return `: ${clipText(text.replace(/\s+/g, ' ').trim(), 280)}`;
+  } catch {
+    return '';
+  }
 }
 
 function randomSeed(): number {
@@ -1270,6 +1305,19 @@ function asString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function asNumber(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return fallback;
+}
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
@@ -1279,12 +1327,6 @@ function clampNumber(value: number, min: number, max: number): number {
     return min;
   }
   return Math.min(max, Math.max(min, value));
-}
-
-function decodeBase64Url(value: string): string {
-  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-  return atob(padded);
 }
 
 function createId(prefix: string): string {

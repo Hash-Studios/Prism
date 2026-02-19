@@ -223,18 +223,36 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   Future<void> _share(AiGenerationRecord record) async {
     final link = record.displayUrl(isPremium: globals.prismUser.premium);
-    await Share.share(link, subject: 'Made with Prism AI');
+    await Share.share(
+      link,
+      subject: 'Made with Prism AI',
+      sharePositionOrigin: _sharePositionOrigin(),
+    );
     analytics.logEvent(name: 'ai_share_tapped', parameters: <String, Object>{'generationId': record.id});
   }
 
   Future<void> _save(AiGenerationRecord record) async {
     try {
       final file = await _downloadToTempFile(record.displayUrl(isPremium: globals.prismUser.premium));
-      await Share.shareXFiles(<XFile>[XFile(file.path)], text: 'Generated with Prism AI');
+      await Share.shareXFiles(
+        <XFile>[XFile(file.path)],
+        text: 'Generated with Prism AI',
+        sharePositionOrigin: _sharePositionOrigin(),
+      );
       toasts.codeSend('Use the share sheet to save this wallpaper.');
     } catch (_) {
       toasts.error('Unable to prepare image for saving.');
     }
+  }
+
+  Rect _sharePositionOrigin() {
+    final RenderObject? renderObject = context.findRenderObject();
+    if (renderObject is RenderBox && renderObject.hasSize) {
+      final Offset origin = renderObject.localToGlobal(Offset.zero);
+      return origin & renderObject.size;
+    }
+    // Fallback rect to satisfy iOS popover requirements.
+    return const Rect.fromLTWH(1, 1, 1, 1);
   }
 
   Future<File> _downloadToTempFile(String url) async {
@@ -273,8 +291,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       await WallStore.createRecord(
         communityId,
         'Prism',
-        record.imageUrl,
-        record.imageUrl,
+        record.watermarkedImageUrl,
+        record.watermarkedImageUrl,
         '${record.width}x${record.height}',
         'AI',
         edited['title']?.toString(),
@@ -286,6 +304,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         aiGenerationId: record.id,
         aiProvider: record.provider,
         aiModel: record.model,
+        aiOriginalImageUrl: record.imageUrl,
         aiPrompt: record.prompt,
         aiStylePreset: record.stylePreset.apiValue,
       );

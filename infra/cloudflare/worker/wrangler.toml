@@ -35,6 +35,8 @@ PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.hash.prism"
 APP_STORE_URL = "https://apps.apple.com/app/id1405860595"
 OG_FALLBACK_IMAGE = "https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"
 BROWSER_RENDERING_ACCOUNT_ID = "bc455bbb5c1264123e8565e360dd6da9"
+FIREBASE_PROJECT_ID = "prism-wallpapers"
+FIREBASE_AUTH_DEBUG = "false"
 
 [[kv_namespaces]]
 binding = "LINKS_KV"
@@ -53,3 +55,8 @@ bucket_name = "prismwalls-og-images"
 [[r2_buckets]]
 binding = "AI_IMAGES"
 bucket_name = "prismwalls-ai-images"
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true

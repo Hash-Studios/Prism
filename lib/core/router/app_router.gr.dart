@@ -59,6 +59,22 @@ class AdsNotLoadingRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [AiTabPage]
+class AiTabRoute extends PageRouteInfo<void> {
+  const AiTabRoute({List<PageRouteInfo>? children})
+    : super(AiTabRoute.name, initialChildren: children);
+
+  static const String name = 'AiTabRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AiTabPage();
+    },
+  );
+}
+
+/// generated route for
 /// [CollectionViewScreen]
 class CollectionViewRoute extends PageRouteInfo<CollectionViewRouteArgs> {
   CollectionViewRoute({
@@ -902,22 +918,6 @@ class SetupViewRouteArgs {
 
   @override
   int get hashCode => const ListEquality<dynamic>().hash(arguments);
-}
-
-/// generated route for
-/// [SetupsTabPage]
-class SetupsTabRoute extends PageRouteInfo<void> {
-  const SetupsTabRoute({List<PageRouteInfo>? children})
-    : super(SetupsTabRoute.name, initialChildren: children);
-
-  static const String name = 'SetupsTabRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const SetupsTabPage();
-    },
-  );
 }
 
 /// generated route for

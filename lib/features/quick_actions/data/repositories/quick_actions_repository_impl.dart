@@ -21,7 +21,6 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
         return const QuickActionEntity(type: QuickActionType.followFeed, rawValue: 'Follow_Feed');
       case 'Collections':
         return const QuickActionEntity(type: QuickActionType.collections, rawValue: 'Collections');
-      case 'Setups':
       case 'AI_Wallpapers':
         return QuickActionEntity(type: QuickActionType.setups, rawValue: action);
       case 'Downloads':

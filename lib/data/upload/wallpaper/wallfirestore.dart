@@ -26,6 +26,7 @@ Future<void> createRecord(
   String? aiGenerationId,
   String? aiProvider,
   String? aiModel,
+  String? aiOriginalImageUrl,
   String? aiPrompt,
   String? aiStylePreset,
 }) async {
@@ -60,6 +61,7 @@ Future<void> createRecord(
     if (aiGenerationId != null && aiGenerationId.trim().isNotEmpty) 'aiGenerationId': aiGenerationId,
     if (aiProvider != null && aiProvider.trim().isNotEmpty) 'aiProvider': aiProvider,
     if (aiModel != null && aiModel.trim().isNotEmpty) 'aiModel': aiModel,
+    if (aiOriginalImageUrl != null && aiOriginalImageUrl.trim().isNotEmpty) 'aiOriginalImageUrl': aiOriginalImageUrl,
     if (aiPrompt != null && aiPrompt.trim().isNotEmpty) 'aiPrompt': aiPrompt,
     if (aiStylePreset != null && aiStylePreset.trim().isNotEmpty) 'aiStylePreset': aiStylePreset,
   }, sourceTag: 'upload.createWall');

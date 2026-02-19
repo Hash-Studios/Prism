@@ -55,6 +55,9 @@ Check that all return `200`, JSON content-type, and no redirect chain.
 - Set AI provider secrets before enabling AI routes:
   - `wrangler secret put FAL_API_KEY`
   - `wrangler secret put GEMINI_API_KEY`
+- Set Firebase auth verification vars:
+  - `FIREBASE_PROJECT_ID` (for Prism this is `prism-wallpapers`)
+  - Optional debug logs: `FIREBASE_AUTH_DEBUG=true` in non-prod only
 - Worker only accepts canonical URLs on `https://prismwalls.com/{share|user|setup|refer}`.
 - If Browser Rendering is unavailable, `og:image` falls back to source image URL.
 
@@ -74,3 +77,14 @@ Config supports:
   - `70%` usage: route fallbacks to cheaper providers first
   - `85%` usage: pick cheapest provider as primary, downgrade `quality -> balanced`
   - `95%` usage: aggressively downgrade `balanced -> fast` and avoid near-exhausted provider when alternatives exist
+
+## AI watermark backfill
+
+To migrate existing AI community walls to watermarked publish URLs:
+
+```bash
+node tool/backfill_ai_watermarked_walls.mjs --dry-run
+node tool/backfill_ai_watermarked_walls.mjs
+```
+
+The script is idempotent and marks migrated records with `aiWatermarkMigratedAt`.

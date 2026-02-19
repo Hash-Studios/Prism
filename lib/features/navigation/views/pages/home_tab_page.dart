@@ -80,7 +80,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
         } else {
           tabController!.animateTo(1);
         }
-      } else if (shortcutType == 'Setups' || shortcutType == 'AI_Wallpapers') {
+      } else if (shortcutType == 'AI_Wallpapers') {
         logger.d('AI_Wallpapers');
         final tabsRouter = AutoTabsRouter.of(context);
         tabsRouter.setActiveIndex(2);
