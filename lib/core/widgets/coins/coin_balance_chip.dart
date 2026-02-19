@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -159,7 +160,11 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                   child: OutlinedButton(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      context.router.push(const UpgradeRoute());
+                      PaywallOrchestrator.instance.present(
+                        context,
+                        placement: PaywallPlacement.lowBalance,
+                        source: 'coin_chip_low_balance',
+                      );
                     },
                     child: const Text('Upgrade to Pro'),
                   ),
@@ -219,6 +224,12 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
       final AdsState result = await completion;
       if (result.shouldUnlockDownload) {
         await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: 'coins.coin_chip.rewarded_ad');
+        if (mounted) {
+          await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
+            context,
+            source: 'coin_chip_rewarded_ad',
+          );
+        }
         toasts.codeSend('+${CoinPolicy.rewardedAd} coins');
         return;
       }

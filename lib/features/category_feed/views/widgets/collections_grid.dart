@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
@@ -202,7 +203,11 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         return;
       case _PremiumPreviewAction.upgrade:
         if (mounted) {
-          context.router.push(const UpgradeRoute());
+          await PaywallOrchestrator.instance.present(
+            context,
+            placement: PaywallPlacement.lowBalance,
+            source: 'premium_preview_upgrade',
+          );
         }
         return;
       case _PremiumPreviewAction.none:
@@ -276,6 +281,12 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         CoinEarnAction.rewardedAd,
         sourceTag: 'coins.preview.watch_and_unlock.rewarded_ad',
       );
+      if (mounted) {
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
+          context,
+          source: 'premium_preview_watch_ad',
+        );
+      }
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(
         sourceTag: 'coins.preview.watch_and_unlock.rewarded_ad',

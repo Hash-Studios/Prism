@@ -1,7 +1,6 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/setupOld.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
@@ -59,23 +58,6 @@ class SetupPage extends StatefulWidget {
 
 class _SetupPageState extends State<SetupPage> {
   int pageNumber = 0;
-  void showPremiumPopUp(Function func) {
-    if (globals.prismUser.loggedIn == false) {
-      googleSignInPopUp(context, () {
-        if (globals.prismUser.premium == false) {
-          context.router.push(const UpgradeRoute());
-        } else {
-          func();
-        }
-      });
-    } else {
-      if (globals.prismUser.premium == false) {
-        context.router.push(const UpgradeRoute());
-      } else {
-        func();
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,13 +132,7 @@ class _SetupPageState extends State<SetupPage> {
                         ? Loader()
                         : GestureDetector(
                             onTap: () {
-                              if (index >= 5) {
-                                showPremiumPopUp(() {
-                                  context.router.push(SetupViewRoute(arguments: [index]));
-                                });
-                              } else {
-                                context.router.push(SetupViewRoute(arguments: [index]));
-                              }
+                              context.router.push(SetupViewRoute(arguments: [index]));
                             },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),

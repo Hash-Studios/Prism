@@ -1,11 +1,12 @@
 import 'dart:io';
 
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -14,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 
 class BottomBar extends StatefulWidget {
   final Widget? child;
@@ -522,31 +522,21 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
                       onTap: () async {
-                        int dailyWallUpload = main.prefs.get("dailyWallUpload", defaultValue: 0) as int;
-                        if (main.prefs.get('date') != DateFormat("yy-MM-dd").format(DateTime.now())) {
-                          dailyWallUpload = 0;
-                        }
-                        main.prefs.put('date', DateFormat("yy-MM-dd").format(DateTime.now()));
-                        if (globals.prismUser.premium == false) {
-                          if (dailyWallUpload < 5) {
-                            await getImage();
-                          } else {
-                            toasts.codeSend("Free users can only upload 5 walls a day.");
-                            if (globals.prismUser.loggedIn == false) {
-                              googleSignInPopUp(context, () {
-                                final router = context.router;
-                                Navigator.of(context).pop();
-                                router.push(const UpgradeRoute());
-                              });
-                            } else {
-                              final router = context.router;
-                              Navigator.of(context).pop();
-                              router.push(const UpgradeRoute());
-                            }
+                        if (globals.prismUser.premium != true && !UploadQuota.hasFreeUploadQuotaRemaining()) {
+                          toasts.codeSend(
+                            "Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.",
+                          );
+                          if (mounted) {
+                            Navigator.of(context).pop();
+                            await PaywallOrchestrator.instance.present(
+                              context,
+                              placement: PaywallPlacement.uploadLimitReached,
+                              source: 'upload_wallpaper_limit_reached',
+                            );
                           }
-                        } else {
-                          await getImage();
+                          return;
                         }
+                        await getImage();
                       },
                       child: SizedBox(
                         width: width / 2 - 20,
@@ -609,7 +599,16 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
-                      onTap: () {
+                      onTap: () async {
+                        if (!globals.prismUser.premium) {
+                          Navigator.pop(context);
+                          await PaywallOrchestrator.instance.present(
+                            context,
+                            placement: PaywallPlacement.blockedSetupCreate,
+                            source: 'upload_setup_blocked',
+                          );
+                          return;
+                        }
                         final router = context.router;
                         Navigator.pop(context);
                         router.push(const SetupGuidelinesRoute());

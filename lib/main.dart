@@ -319,6 +319,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       globals.prismUser
         ..loggedIn = false
         ..premium = false
+        ..subscriptionTier = 'free'
         ..id = ''
         ..email = ''
         ..username = ''

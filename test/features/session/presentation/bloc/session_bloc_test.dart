@@ -33,6 +33,7 @@ void main() {
           profilePhoto: '',
           loggedIn: true,
           premium: false,
+          subscriptionTier: 'free',
         ),
       ),
     );
@@ -46,6 +47,7 @@ void main() {
           profilePhoto: '',
           loggedIn: true,
           premium: true,
+          subscriptionTier: 'pro',
         ),
       ),
     );

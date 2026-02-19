@@ -78,6 +78,7 @@ class StartupRepositoryImpl implements StartupRepository {
         'ai_rollout_percent': globals.aiRolloutPercent,
         'ai_submit_enabled': globals.aiSubmitEnabled,
         'ai_variations_enabled': globals.aiVariationsEnabled,
+        'use_rc_paywalls': globals.useRcPaywalls,
       });
       await _remoteConfig.fetchAndActivate();
 
@@ -93,6 +94,7 @@ class StartupRepositoryImpl implements StartupRepository {
       final aiRolloutPercent = _remoteConfig.getInt('ai_rollout_percent').clamp(0, 100);
       final aiSubmitEnabled = _remoteConfig.getBool('ai_submit_enabled');
       final aiVariationsEnabled = _remoteConfig.getBool('ai_variations_enabled');
+      final useRcPaywalls = _remoteConfig.getBool('use_rc_paywalls');
       topTitleText.shuffle();
       final categories = _parseCategories(_remoteConfig.getString('latestCategories'));
       categories.removeWhere((element) => element['name'] == 'Trending');
@@ -109,6 +111,7 @@ class StartupRepositoryImpl implements StartupRepository {
       globals.aiRolloutPercent = aiRolloutPercent;
       globals.aiSubmitEnabled = aiSubmitEnabled;
       globals.aiVariationsEnabled = aiVariationsEnabled;
+      globals.useRcPaywalls = useRcPaywalls;
       category_data.categories = categories;
 
       final followersTab = (_prefsBox.get('followersTab', defaultValue: true) as bool?) ?? true;
@@ -130,6 +133,7 @@ class StartupRepositoryImpl implements StartupRepository {
         aiRolloutPercent: aiRolloutPercent,
         aiSubmitEnabled: aiSubmitEnabled,
         aiVariationsEnabled: aiVariationsEnabled,
+        useRcPaywalls: useRcPaywalls,
       );
 
       return Result.success(entity);

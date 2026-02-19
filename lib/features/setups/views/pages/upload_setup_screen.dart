@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/apps/appsData.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
@@ -34,6 +35,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   late bool isProcessing;
   late bool isSaved;
   late File image;
+  bool _isPremiumBlocked = false;
   String? imageURL;
   TextEditingController setupName = TextEditingController();
   TextEditingController setupDesc = TextEditingController();
@@ -109,6 +111,21 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   @override
   void initState() {
     super.initState();
+    if (!globals.prismUser.premium) {
+      _isPremiumBlocked = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await PaywallOrchestrator.instance.present(
+          context,
+          placement: PaywallPlacement.blockedSetupCreate,
+          source: 'upload_setup_blocked_create',
+        );
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      });
+      return;
+    }
     image = widget.arguments![0] as File;
     isUploading = false;
     isProcessing = true;
@@ -176,6 +193,9 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isPremiumBlocked) {
+      return Scaffold(backgroundColor: Theme.of(context).primaryColor, body: const SizedBox.shrink());
+    }
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(

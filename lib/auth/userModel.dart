@@ -1,5 +1,6 @@
 import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
+import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_io/hive_io.dart';
@@ -15,6 +16,14 @@ Map<String, dynamic> _mapData(Object? data) {
     return data.map((key, value) => MapEntry(key.toString(), value));
   }
   return <String, dynamic>{};
+}
+
+String _resolveTierValue({required bool premium, required Object? raw}) {
+  final SubscriptionTier parsed = SubscriptionTier.fromValue(raw?.toString());
+  if (parsed != SubscriptionTier.free) {
+    return parsed.value;
+  }
+  return premium ? SubscriptionTier.pro.value : SubscriptionTier.free.value;
 }
 
 @HiveType(typeId: 15)
@@ -56,6 +65,12 @@ class PrismUsersV2 {
   String name;
   @HiveField(17)
   String? coverPhoto;
+  @HiveField(18)
+  String subscriptionTier;
+  @HiveField(19)
+  String uploadsWeekStart;
+  @HiveField(20)
+  int uploadsThisWeek;
 
   PrismUsersV2({
     required this.username,
@@ -76,6 +91,9 @@ class PrismUsersV2 {
     required this.transactions,
     required this.name,
     this.coverPhoto,
+    this.subscriptionTier = 'free',
+    this.uploadsWeekStart = '',
+    this.uploadsThisWeek = 0,
   }) {
     logger.d("Default constructor !!!!");
   }
@@ -83,13 +101,16 @@ class PrismUsersV2 {
   factory PrismUsersV2.fromJson(Map<String, dynamic> json) => _$PrismUsersV2FromJson(json);
   factory PrismUsersV2.fromMapWithUser(Map<String, dynamic> raw, User user) {
     final data = _mapData(raw);
+    final bool rawPremium = data["premium"] as bool? ?? false;
+    final String tierValue = _resolveTierValue(premium: rawPremium, raw: data['subscriptionTier']);
+    final bool premium = SubscriptionTier.fromValue(tierValue).isPaid || rawPremium;
     return PrismUsersV2(
       name: (data["name"] ?? user.displayName).toString(),
       username: (data["username"] ?? user.displayName).toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
       email: (data["email"] ?? user.email).toString(),
       id: data["id"].toString(),
       createdAt: data["createdAt"].toString(),
-      premium: data["premium"] as bool? ?? false,
+      premium: premium,
       lastLoginAt: data["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
       links: data["links"] as Map<String, dynamic>? ?? <String, dynamic>{},
       followers: data["followers"] as List? ?? <dynamic>[],
@@ -106,11 +127,17 @@ class PrismUsersV2 {
           .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
           .toList(),
       coverPhoto: data["coverPhoto"]?.toString(),
+      subscriptionTier: tierValue,
+      uploadsWeekStart: data['uploadsWeekStart']?.toString() ?? '',
+      uploadsThisWeek: data['uploadsThisWeek'] as int? ?? 0,
     );
   }
 
   factory PrismUsersV2.fromMapWithoutUser(Map<String, dynamic> raw) {
     final data = _mapData(raw);
+    final bool rawPremium = data["premium"] as bool? ?? false;
+    final String tierValue = _resolveTierValue(premium: rawPremium, raw: data['subscriptionTier']);
+    final bool premium = SubscriptionTier.fromValue(tierValue).isPaid || rawPremium;
     return PrismUsersV2(
       name: (data["name"] ?? "").toString(),
       username: (data["username"] ?? "").toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
@@ -119,7 +146,7 @@ class PrismUsersV2 {
       createdAt: DateTime.parse(
         (data["createdAt"] ?? DateTime.now().toUtc().toIso8601String()).toString(),
       ).toUtc().toIso8601String(),
-      premium: data["premium"] as bool? ?? false,
+      premium: premium,
       lastLoginAt: data["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
       links: data["links"] as Map<String, dynamic>? ?? <String, dynamic>{},
       followers: data["followers"] as List? ?? <dynamic>[],
@@ -136,6 +163,9 @@ class PrismUsersV2 {
           .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
           .toList(),
       coverPhoto: data["coverPhoto"]?.toString(),
+      subscriptionTier: tierValue,
+      uploadsWeekStart: data['uploadsWeekStart']?.toString() ?? '',
+      uploadsThisWeek: data['uploadsThisWeek'] as int? ?? 0,
     );
   }
   Map<String, dynamic> toJson() => _$PrismUsersV2ToJson(this);
