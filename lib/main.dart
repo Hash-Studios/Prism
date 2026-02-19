@@ -6,6 +6,12 @@ import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/app_analytics.dart';
+import 'package:Prism/core/analytics/providers/analytics_provider.dart';
+import 'package:Prism/core/analytics/providers/composite_analytics_provider.dart';
+import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart';
+import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
@@ -36,7 +42,6 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -133,9 +138,11 @@ Future<void> main() async {
       localNotification = LocalNotification();
 
       const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
+      bool firebaseInitialized = false;
       if (!skipFirebaseInit) {
         try {
           await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+          firebaseInitialized = true;
           FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
         } catch (error, stackTrace) {
           logger.w(
@@ -147,6 +154,8 @@ Future<void> main() async {
       } else {
         logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
       }
+
+      _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
 
       final dir = await getApplicationDocumentsDirectory();
       Hive.init(dir.path);
@@ -284,6 +293,17 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       stackTrace: stackTrace,
     );
   }
+}
+
+void _configureAnalyticsRuntime({required bool firebaseInitialized}) {
+  final AnalyticsProvider provider;
+  if (firebaseInitialized) {
+    provider = CompositeAnalyticsProvider(<AnalyticsProvider>[FirebaseAnalyticsProvider()]);
+  } else {
+    provider = CompositeAnalyticsProvider(<AnalyticsProvider>[const NoopAnalyticsProvider()]);
+  }
+
+  AnalyticsRuntime.instance = ProviderBackedAppAnalytics(provider: provider);
 }
 
 class MyApp extends StatefulWidget {
@@ -578,7 +598,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       child: MaterialApp.router(
         routerConfig: _appRouter.config(
           navigatorObservers: () => [
-            FirebaseAnalyticsObserver(analytics: analytics),
+            ...analytics.buildNavigatorObservers(),
             if (MonitoringRuntime.reporter.isEnabled)
               SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
           ],
@@ -601,7 +621,6 @@ class RestartWidget extends StatefulWidget {
         systemNavigationBarColor: Color(_colorValueFromPrefs(prefs.get('systemOverlayColor'), fallback: 0xFFE57697)),
       ),
     );
-    observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
   }
 
