@@ -1,4 +1,4 @@
-import { type AiEnvBindings, handleAiApiRequest } from './ai';
+import { AiQuotaCoordinator, type AiEnvBindings, handleAiApiRequest } from './ai';
 
 export interface Env extends AiEnvBindings {
   LINKS_KV: KVNamespace;
@@ -106,6 +106,8 @@ export default {
     return new Response('Not found', { status: 404 });
   },
 };
+
+export { AiQuotaCoordinator };
 
 async function createLink(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const ip = getClientIp(request);

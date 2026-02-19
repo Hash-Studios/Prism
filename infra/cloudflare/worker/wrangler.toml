@@ -48,6 +48,14 @@ binding = "AI_STATE_KV"
 id = "8157a18000dc4db28e629f9bcdd9f560"
 preview_id = "c551131a369e4c6a8210161bf6ad01ae"
 
+[[durable_objects.bindings]]
+name = "AI_QUOTA_DO"
+class_name = "AiQuotaCoordinator"
+
+[[migrations]]
+tag = "v1_ai_quota_coordinator"
+new_sqlite_classes = ["AiQuotaCoordinator"]
+
 [[r2_buckets]]
 binding = "OG_IMAGES"
 bucket_name = "prismwalls-og-images"

@@ -2,6 +2,7 @@ import { verifyFirebaseIdTokenFromRequest } from './firebase_auth';
 
 export interface AiEnvBindings {
   AI_STATE_KV: KVNamespace;
+  AI_QUOTA_DO: DurableObjectNamespace;
   AI_IMAGES?: R2Bucket;
   FAL_API_KEY?: string;
   GEMINI_API_KEY?: string;
@@ -178,6 +179,300 @@ const BLOCKED_PROMPT_TERMS = [
   'gore kill',
 ];
 
+const AI_QUOTA_OBJECT_NAME = 'global';
+const AI_QUOTA_RPC_URL = 'https://quota.internal/rpc';
+
+type AiQuotaRpcOp =
+  | 'user_daily_cap_try_increment'
+  | 'provider_budget_read'
+  | 'provider_budget_reserve'
+  | 'provider_budget_release'
+  | 'provider_budget_commit';
+
+interface AiQuotaRpcBaseRequest {
+  op: AiQuotaRpcOp;
+}
+
+interface AiQuotaUserDailyCapRequest extends AiQuotaRpcBaseRequest {
+  op: 'user_daily_cap_try_increment';
+  userId: string;
+  dayKey: string;
+  cap: number;
+}
+
+interface AiQuotaProviderBudgetReadRequest extends AiQuotaRpcBaseRequest {
+  op: 'provider_budget_read';
+  provider: AiProviderName;
+  dayKey: string;
+  monthKey: string;
+}
+
+interface AiQuotaProviderBudgetReserveRequest extends AiQuotaRpcBaseRequest {
+  op: 'provider_budget_reserve';
+  provider: AiProviderName;
+  dayKey: string;
+  monthKey: string;
+  estimatedCostUsd: number;
+  dailyBudgetUsd: number;
+  monthlyBudgetUsd: number;
+}
+
+interface AiQuotaProviderBudgetMutationRequest extends AiQuotaRpcBaseRequest {
+  op: 'provider_budget_release' | 'provider_budget_commit';
+  reservationId: string;
+  actualCostUsd?: number;
+}
+
+type AiQuotaRpcRequest =
+  | AiQuotaUserDailyCapRequest
+  | AiQuotaProviderBudgetReadRequest
+  | AiQuotaProviderBudgetReserveRequest
+  | AiQuotaProviderBudgetMutationRequest;
+
+interface AiQuotaRpcErrorResponse {
+  ok: false;
+  error: string;
+}
+
+interface AiQuotaUserDailyCapResponse {
+  ok: true;
+  allowed: boolean;
+  current: number;
+}
+
+interface AiQuotaProviderBudgetReadResponse {
+  ok: true;
+  dailySpentUsd: number;
+  monthlySpentUsd: number;
+}
+
+interface AiQuotaProviderBudgetReserveResponse {
+  ok: true;
+  allowed: boolean;
+  reservationId?: string;
+  dailySpentUsd: number;
+  monthlySpentUsd: number;
+}
+
+interface AiQuotaProviderBudgetReleaseResponse {
+  ok: true;
+  released: boolean;
+}
+
+interface AiQuotaProviderBudgetCommitResponse {
+  ok: true;
+  committed: boolean;
+}
+
+type AiQuotaRpcResponse =
+  | AiQuotaRpcErrorResponse
+  | AiQuotaUserDailyCapResponse
+  | AiQuotaProviderBudgetReadResponse
+  | AiQuotaProviderBudgetReserveResponse
+  | AiQuotaProviderBudgetReleaseResponse
+  | AiQuotaProviderBudgetCommitResponse;
+
+interface AiQuotaReservationRecord {
+  provider: AiProviderName;
+  dayKey: string;
+  monthKey: string;
+  costUsd: number;
+  createdAt: string;
+}
+
+interface ProviderBudgetReservationResult {
+  allowed: boolean;
+  reservationId?: string;
+  status: BudgetStatus;
+}
+
+export class AiQuotaCoordinator {
+  private readonly state: DurableObjectState;
+
+  constructor(state: DurableObjectState) {
+    this.state = state;
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    if (request.method !== 'POST') {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'method_not_allowed' }, 405);
+    }
+    const body = await readJson<AiQuotaRpcRequest>(request);
+    if (body == null || !isNonEmptyString(body.op)) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    try {
+      switch (body.op) {
+        case 'user_daily_cap_try_increment':
+          return this.handleUserDailyCapTryIncrement(body);
+        case 'provider_budget_read':
+          return this.handleProviderBudgetRead(body);
+        case 'provider_budget_reserve':
+          return this.handleProviderBudgetReserve(body);
+        case 'provider_budget_release':
+          return this.handleProviderBudgetRelease(body);
+        case 'provider_budget_commit':
+          return this.handleProviderBudgetCommit(body);
+      }
+    } catch (error) {
+      console.error('[ai] quota_coordinator_error', { error: `${error ?? ''}` });
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'internal_error' }, 500);
+    }
+  }
+
+  private async handleUserDailyCapTryIncrement(request: AiQuotaUserDailyCapRequest): Promise<Response> {
+    const userId = clipText(asString(request.userId), 128);
+    const dayKey = clipText(asString(request.dayKey), 16);
+    const cap = Math.max(1, Math.round(asNumber(request.cap, 1)));
+    if (!isNonEmptyString(userId) || !isNonEmptyString(dayKey)) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const key = this.userDailyCapKey(userId, dayKey);
+    const current = this.readStoredNumber(await this.state.storage.get<number | string>(key), 0);
+    if (current >= cap) {
+      return quotaJson<AiQuotaUserDailyCapResponse>({ ok: true, allowed: false, current });
+    }
+    const next = current + 1;
+    await this.state.storage.put(key, next);
+    return quotaJson<AiQuotaUserDailyCapResponse>({ ok: true, allowed: true, current: next });
+  }
+
+  private async handleProviderBudgetRead(request: AiQuotaProviderBudgetReadRequest): Promise<Response> {
+    const status = await this.readProviderBudgetStatus(request.provider, request.dayKey, request.monthKey);
+    return quotaJson<AiQuotaProviderBudgetReadResponse>({
+      ok: true,
+      dailySpentUsd: roundFloat(status.dailySpentUsd, 6),
+      monthlySpentUsd: roundFloat(status.monthlySpentUsd, 6),
+    });
+  }
+
+  private async handleProviderBudgetReserve(request: AiQuotaProviderBudgetReserveRequest): Promise<Response> {
+    const provider = request.provider;
+    const dayKey = clipText(asString(request.dayKey), 16);
+    const monthKey = clipText(asString(request.monthKey), 16);
+    if (!isNonEmptyString(dayKey) || !isNonEmptyString(monthKey) || (provider !== 'fal' && provider !== 'gemini')) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const estimatedCostUsd = Math.max(0, asNumber(request.estimatedCostUsd, 0));
+    const dailyBudgetUsd = Math.max(0, asNumber(request.dailyBudgetUsd, 0));
+    const monthlyBudgetUsd = Math.max(0, asNumber(request.monthlyBudgetUsd, 0));
+
+    const current = await this.readProviderBudgetStatus(provider, dayKey, monthKey);
+    const nextDaily = roundFloat(current.dailySpentUsd + estimatedCostUsd, 6);
+    const nextMonthly = roundFloat(current.monthlySpentUsd + estimatedCostUsd, 6);
+    const allowed = (nextDaily <= dailyBudgetUsd) && (nextMonthly <= monthlyBudgetUsd);
+    if (!allowed) {
+      return quotaJson<AiQuotaProviderBudgetReserveResponse>({
+        ok: true,
+        allowed: false,
+        dailySpentUsd: roundFloat(current.dailySpentUsd, 6),
+        monthlySpentUsd: roundFloat(current.monthlySpentUsd, 6),
+      });
+    }
+
+    const reservationId = crypto.randomUUID();
+    const reservation: AiQuotaReservationRecord = {
+      provider,
+      dayKey,
+      monthKey,
+      costUsd: roundFloat(estimatedCostUsd, 6),
+      createdAt: new Date().toISOString(),
+    };
+    await this.state.storage.put(this.providerDailyBudgetKey(provider, dayKey), nextDaily);
+    await this.state.storage.put(this.providerMonthlyBudgetKey(provider, monthKey), nextMonthly);
+    await this.state.storage.put(this.providerBudgetReservationKey(reservationId), reservation);
+    return quotaJson<AiQuotaProviderBudgetReserveResponse>({
+      ok: true,
+      allowed: true,
+      reservationId,
+      dailySpentUsd: nextDaily,
+      monthlySpentUsd: nextMonthly,
+    });
+  }
+
+  private async handleProviderBudgetRelease(request: AiQuotaProviderBudgetMutationRequest): Promise<Response> {
+    const reservationId = clipText(asString(request.reservationId), 128);
+    if (!isNonEmptyString(reservationId)) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const reservationKey = this.providerBudgetReservationKey(reservationId);
+    const reservation = await this.state.storage.get<AiQuotaReservationRecord>(reservationKey);
+    if (reservation == null) {
+      return quotaJson<AiQuotaProviderBudgetReleaseResponse>({ ok: true, released: false });
+    }
+
+    const current = await this.readProviderBudgetStatus(reservation.provider, reservation.dayKey, reservation.monthKey);
+    const nextDaily = roundFloat(Math.max(0, current.dailySpentUsd - reservation.costUsd), 6);
+    const nextMonthly = roundFloat(Math.max(0, current.monthlySpentUsd - reservation.costUsd), 6);
+    await this.state.storage.put(this.providerDailyBudgetKey(reservation.provider, reservation.dayKey), nextDaily);
+    await this.state.storage.put(this.providerMonthlyBudgetKey(reservation.provider, reservation.monthKey), nextMonthly);
+    await this.state.storage.delete(reservationKey);
+    return quotaJson<AiQuotaProviderBudgetReleaseResponse>({ ok: true, released: true });
+  }
+
+  private async handleProviderBudgetCommit(request: AiQuotaProviderBudgetMutationRequest): Promise<Response> {
+    const reservationId = clipText(asString(request.reservationId), 128);
+    if (!isNonEmptyString(reservationId)) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const reservationKey = this.providerBudgetReservationKey(reservationId);
+    const reservation = await this.state.storage.get<AiQuotaReservationRecord>(reservationKey);
+    if (reservation == null) {
+      return quotaJson<AiQuotaProviderBudgetCommitResponse>({ ok: true, committed: false });
+    }
+
+    const actualCostUsd = Math.max(0, asNumber(request.actualCostUsd, reservation.costUsd));
+    const adjustment = roundFloat(actualCostUsd - reservation.costUsd, 6);
+    if (adjustment !== 0) {
+      const current = await this.readProviderBudgetStatus(reservation.provider, reservation.dayKey, reservation.monthKey);
+      const nextDaily = roundFloat(Math.max(0, current.dailySpentUsd + adjustment), 6);
+      const nextMonthly = roundFloat(Math.max(0, current.monthlySpentUsd + adjustment), 6);
+      await this.state.storage.put(this.providerDailyBudgetKey(reservation.provider, reservation.dayKey), nextDaily);
+      await this.state.storage.put(this.providerMonthlyBudgetKey(reservation.provider, reservation.monthKey), nextMonthly);
+    }
+    await this.state.storage.delete(reservationKey);
+    const committed = true;
+    return quotaJson<AiQuotaProviderBudgetCommitResponse>({ ok: true, committed });
+  }
+
+  private async readProviderBudgetStatus(provider: AiProviderName, dayKey: string, monthKey: string): Promise<BudgetStatus> {
+    const [daily, monthly] = await Promise.all([
+      this.state.storage.get<number | string>(this.providerDailyBudgetKey(provider, dayKey)),
+      this.state.storage.get<number | string>(this.providerMonthlyBudgetKey(provider, monthKey)),
+    ]);
+    return {
+      dailySpentUsd: this.readStoredNumber(daily, 0),
+      monthlySpentUsd: this.readStoredNumber(monthly, 0),
+    };
+  }
+
+  private readStoredNumber(raw: number | string | undefined, fallback: number): number {
+    if (typeof raw === 'number' && Number.isFinite(raw)) {
+      return raw;
+    }
+    if (typeof raw === 'string') {
+      return parseNumber(raw);
+    }
+    return fallback;
+  }
+
+  private userDailyCapKey(userId: string, dayKey: string): string {
+    return `user:${userId}:daily:${dayKey}`;
+  }
+
+  private providerDailyBudgetKey(provider: AiProviderName, dayKey: string): string {
+    return `provider:${provider}:daily:${dayKey}`;
+  }
+
+  private providerMonthlyBudgetKey(provider: AiProviderName, monthKey: string): string {
+    return `provider:${provider}:monthly:${monthKey}`;
+  }
+
+  private providerBudgetReservationKey(reservationId: string): string {
+    return `budget-reservation:${reservationId}`;
+  }
+}
+
 export async function handleAiApiRequest(
   request: Request,
   url: URL,
@@ -265,7 +560,13 @@ async function handleAssetRead(pathname: string, method: string, env: AiEnvBindi
 
 async function handleAiHealth(env: AiEnvBindings): Promise<Response> {
   const config = await readRoutingConfig(env);
-  const snapshots = await readProviderBudgetSnapshots(config, 'balanced', env);
+  let snapshots: Record<AiProviderName, ProviderBudgetSnapshot>;
+  try {
+    snapshots = await readProviderBudgetSnapshots(config, 'balanced', env);
+  } catch (error) {
+    console.error('[ai] health_budget_snapshot_failed', { error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
   return aiJson({
     ok: true,
     version: config.version,
@@ -406,12 +707,30 @@ async function executeGeneration(params: {
     return aiError('service_disabled', 503, 'AI generation is disabled');
   }
 
-  const dailyCapStatus = await checkAndIncrementUserDailyCap(params.auth.userId, config.hardUserDailyCap, params.env);
+  let dailyCapStatus: { allowed: boolean; current: number };
+  try {
+    dailyCapStatus = await checkAndIncrementUserDailyCap(params.auth.userId, config.hardUserDailyCap, params.env);
+  } catch (error) {
+    console.error('[ai] quota_cap_check_failed', {
+      userId: params.auth.userId,
+      error: `${error ?? ''}`,
+    });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
   if (!dailyCapStatus.allowed) {
     return aiError('rate_limited', 429, 'User daily generation limit reached');
   }
 
-  const routingPlan = await buildProviderAttemptOrder(config, params.qualityTier, params.env);
+  let routingPlan: RoutingPlan;
+  try {
+    routingPlan = await buildProviderAttemptOrder(config, params.qualityTier, params.env);
+  } catch (error) {
+    console.error('[ai] quota_budget_snapshot_failed', {
+      userId: params.auth.userId,
+      error: `${error ?? ''}`,
+    });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
   if (routingPlan.order.length === 0) {
     return aiError('service_disabled', 503, 'No AI providers are enabled');
   }
@@ -438,8 +757,22 @@ async function executeGeneration(params: {
     }
 
     const estimatedCost = providerConfig.estimatedCostByQualityUsd[effectiveQualityTier];
-    const budgetCheck = await canSpendForProvider(providerName, estimatedCost, providerConfig, params.env);
-    if (!budgetCheck.allowed) {
+    let budgetReservation: ProviderBudgetReservationResult;
+    try {
+      budgetReservation = await reserveProviderBudget(providerName, estimatedCost, providerConfig, params.env);
+    } catch (error) {
+      lastErrorCode = 'provider_error';
+      lastErrorMessage = 'Quota coordinator unavailable';
+      console.error('[ai] budget_reservation_failed', {
+        provider: providerName,
+        requestedQualityTier: params.qualityTier,
+        effectiveQualityTier,
+        estimatedCostUsd: estimatedCost,
+        error: `${error ?? ''}`,
+      });
+      continue;
+    }
+    if (!budgetReservation.allowed) {
       lastErrorCode = 'budget_exhausted';
       lastErrorMessage = `Budget exhausted for ${providerName}`;
       console.warn('[ai] budget_exhausted', {
@@ -450,10 +783,12 @@ async function executeGeneration(params: {
       });
       continue;
     }
+    const reservationId = budgetReservation.reservationId;
 
     const adapter = providerName === 'fal' ? new FalProviderAdapter() : new GeminiProviderAdapter();
     const model = providerConfig.modelByQuality[effectiveQualityTier];
     const startedAt = Date.now();
+    let shouldReleaseReservation = true;
     try {
       const result = await adapter.generate({
         prompt: params.prompt,
@@ -507,7 +842,18 @@ async function executeGeneration(params: {
       };
 
       await saveGenerationRecord(record, params.env);
-      await spendProviderBudget(providerName, billedCost, params.env);
+      if (isNonEmptyString(reservationId)) {
+        try {
+          await commitProviderBudgetReservation(reservationId, billedCost, params.env);
+        } catch (commitError) {
+          console.error('[ai] budget_reservation_commit_failed', {
+            provider: providerName,
+            reservationId,
+            error: `${commitError ?? ''}`,
+          });
+        }
+      }
+      shouldReleaseReservation = false;
 
       console.info('[ai] generation_success', {
         generationId: record.generationId,
@@ -549,6 +895,18 @@ async function executeGeneration(params: {
         effectiveQualityTier,
         error: `${error ?? ''}`,
       });
+    } finally {
+      if (shouldReleaseReservation && isNonEmptyString(reservationId)) {
+        try {
+          await releaseProviderBudgetReservation(reservationId, params.env);
+        } catch (releaseError) {
+          console.error('[ai] budget_reservation_release_failed', {
+            provider: providerName,
+            reservationId,
+            error: `${releaseError ?? ''}`,
+          });
+        }
+      }
     }
   }
 
@@ -885,40 +1243,62 @@ function serializeBudgetSnapshot(snapshot: ProviderBudgetSnapshot, config: AiRou
 }
 
 async function readBudgetStatus(provider: AiProviderName, env: AiEnvBindings): Promise<BudgetStatus> {
-  const dayKey = dailyBudgetKey(provider);
-  const monthKey = monthlyBudgetKey(provider);
-  const [dailyRaw, monthlyRaw] = await Promise.all([env.AI_STATE_KV.get(dayKey), env.AI_STATE_KV.get(monthKey)]);
+  const dayKey = utcDayKey();
+  const monthKey = utcMonthKey();
+  const response = await sendQuotaRequest<AiQuotaProviderBudgetReadResponse>(env, {
+    op: 'provider_budget_read',
+    provider,
+    dayKey,
+    monthKey,
+  });
   return {
-    dailySpentUsd: parseNumber(dailyRaw),
-    monthlySpentUsd: parseNumber(monthlyRaw),
+    dailySpentUsd: roundFloat(asNumber(response.dailySpentUsd, 0), 6),
+    monthlySpentUsd: roundFloat(asNumber(response.monthlySpentUsd, 0), 6),
   };
 }
 
-async function canSpendForProvider(
+async function reserveProviderBudget(
   provider: AiProviderName,
   estimatedCostUsd: number,
   config: AiRoutingProviderConfig,
   env: AiEnvBindings,
-): Promise<{ allowed: boolean; status: BudgetStatus }> {
-  const status = await readBudgetStatus(provider, env);
-  const allowed = (status.dailySpentUsd + estimatedCostUsd <= config.dailyBudgetUsd) &&
-    (status.monthlySpentUsd + estimatedCostUsd <= config.monthlyBudgetUsd);
-  return { allowed, status };
+): Promise<ProviderBudgetReservationResult> {
+  const response = await sendQuotaRequest<AiQuotaProviderBudgetReserveResponse>(env, {
+    op: 'provider_budget_reserve',
+    provider,
+    dayKey: utcDayKey(),
+    monthKey: utcMonthKey(),
+    estimatedCostUsd,
+    dailyBudgetUsd: config.dailyBudgetUsd,
+    monthlyBudgetUsd: config.monthlyBudgetUsd,
+  });
+  return {
+    allowed: response.allowed,
+    reservationId: isNonEmptyString(response.reservationId) ? response.reservationId : undefined,
+    status: {
+      dailySpentUsd: roundFloat(asNumber(response.dailySpentUsd, 0), 6),
+      monthlySpentUsd: roundFloat(asNumber(response.monthlySpentUsd, 0), 6),
+    },
+  };
 }
 
-async function spendProviderBudget(provider: AiProviderName, costUsd: number, env: AiEnvBindings): Promise<void> {
-  const dayKey = dailyBudgetKey(provider);
-  const monthKey = monthlyBudgetKey(provider);
-  await bumpFloatCounter(env.AI_STATE_KV, dayKey, costUsd, secondsUntilNextUtcDay());
-  await bumpFloatCounter(env.AI_STATE_KV, monthKey, costUsd, secondsUntilNextUtcMonth());
+async function commitProviderBudgetReservation(
+  reservationId: string,
+  actualCostUsd: number,
+  env: AiEnvBindings,
+): Promise<void> {
+  await sendQuotaRequest<AiQuotaProviderBudgetCommitResponse>(env, {
+    op: 'provider_budget_commit',
+    reservationId,
+    actualCostUsd,
+  });
 }
 
-function dailyBudgetKey(provider: AiProviderName): string {
-  return `ai:budget:${provider}:daily:${utcDayKey()}`;
-}
-
-function monthlyBudgetKey(provider: AiProviderName): string {
-  return `ai:budget:${provider}:monthly:${utcMonthKey()}`;
+async function releaseProviderBudgetReservation(reservationId: string, env: AiEnvBindings): Promise<void> {
+  await sendQuotaRequest<AiQuotaProviderBudgetReleaseResponse>(env, {
+    op: 'provider_budget_release',
+    reservationId,
+  });
 }
 
 async function checkAndIncrementUserDailyCap(
@@ -926,14 +1306,42 @@ async function checkAndIncrementUserDailyCap(
   cap: number,
   env: AiEnvBindings,
 ): Promise<{ allowed: boolean; current: number }> {
-  const key = `ai:user:${userId}:daily:${utcDayKey()}`;
-  const raw = await env.AI_STATE_KV.get(key);
-  const current = Number.parseInt(raw ?? '0', 10);
-  if (current >= cap) {
-    return { allowed: false, current };
+  const response = await sendQuotaRequest<AiQuotaUserDailyCapResponse>(env, {
+    op: 'user_daily_cap_try_increment',
+    userId,
+    dayKey: utcDayKey(),
+    cap,
+  });
+  return {
+    allowed: response.allowed,
+    current: Math.max(0, Math.round(asNumber(response.current, 0))),
+  };
+}
+
+async function sendQuotaRequest<T extends AiQuotaRpcResponse>(env: AiEnvBindings, body: AiQuotaRpcRequest): Promise<T> {
+  const stub = quotaCoordinatorStub(env);
+  const response = await stub.fetch(AI_QUOTA_RPC_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'accept': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(`quota_rpc_http_${response.status}`);
   }
-  await env.AI_STATE_KV.put(key, String(current + 1), { expirationTtl: secondsUntilNextUtcDay() });
-  return { allowed: true, current: current + 1 };
+  const parsed = await readJson<AiQuotaRpcResponse>(response);
+  if (parsed == null || parsed.ok !== true) {
+    const errorCode = parsed != null && parsed.ok === false ? parsed.error : 'invalid_response';
+    throw new Error(`quota_rpc_error_${errorCode}`);
+  }
+  return parsed as T;
+}
+
+function quotaCoordinatorStub(env: AiEnvBindings): DurableObjectStub {
+  const id = env.AI_QUOTA_DO.idFromName(AI_QUOTA_OBJECT_NAME);
+  return env.AI_QUOTA_DO.get(id);
 }
 
 async function persistGenerationArtifacts(
@@ -1249,24 +1657,6 @@ function utcMonthKey(): string {
   return `${now.getUTCFullYear()}-${month}`;
 }
 
-function secondsUntilNextUtcDay(): number {
-  const now = new Date();
-  const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0);
-  return Math.max(1, Math.floor((next - now.getTime()) / 1000));
-}
-
-function secondsUntilNextUtcMonth(): number {
-  const now = new Date();
-  const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0);
-  return Math.max(1, Math.floor((next - now.getTime()) / 1000));
-}
-
-async function bumpFloatCounter(kv: KVNamespace, key: string, delta: number, ttlSeconds: number): Promise<void> {
-  const existing = parseNumber(await kv.get(key));
-  const next = existing + delta;
-  await kv.put(key, next.toFixed(6), { expirationTtl: ttlSeconds });
-}
-
 function parseNumber(raw: string | null): number {
   if (!isNonEmptyString(raw)) {
     return 0;
@@ -1355,12 +1745,22 @@ function fromBase64(value: string): Uint8Array {
   return bytes;
 }
 
-async function readJson<T>(request: Request): Promise<T | null> {
+async function readJson<T>(request: Request | Response): Promise<T | null> {
   try {
     return await request.json() as T;
   } catch {
     return null;
   }
+}
+
+function quotaJson<T extends AiQuotaRpcResponse>(payload: T, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+    },
+  });
 }
 
 function aiError(code: AiErrorCode, status: number, message: string): Response {
