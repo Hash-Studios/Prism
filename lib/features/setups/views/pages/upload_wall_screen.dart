@@ -306,6 +306,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                     wallpaperUrl,
                     wallpaperResolution,
                     wallpaperSize,
+                    null,
                     wallpaperCategory,
                     wallpaperDesc,
                     fromSetupRoute ? "setup" : review,

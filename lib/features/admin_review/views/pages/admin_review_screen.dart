@@ -320,7 +320,7 @@ class _PortraitPreview extends StatelessWidget {
                 fit: BoxFit.cover,
                 placeholder: (BuildContext context, String _) =>
                     const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                errorWidget: (BuildContext context, String _, Object __) =>
+                errorWidget: (BuildContext context, String _, Object _) =>
                     const Center(child: Icon(Icons.broken_image)),
               ),
             ),
@@ -351,7 +351,7 @@ class _FullScreenImageView extends StatelessWidget {
             imageUrl: imageUrl,
             fit: BoxFit.contain,
             placeholder: (BuildContext context, String _) => const Center(child: CircularProgressIndicator()),
-            errorWidget: (BuildContext context, String _, Object __) =>
+            errorWidget: (BuildContext context, String _, Object _) =>
                 const Center(child: Icon(Icons.broken_image, color: Colors.white)),
           ),
         ),

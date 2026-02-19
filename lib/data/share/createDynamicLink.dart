@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/widgets/popup/copyrightPopUp.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -8,7 +9,6 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:share_plus/share_plus.dart';
 
 const String _shareDomain = 'prismwalls.com';
 const String _shortLinkApiUrl = 'https://prismwalls.com/api/links';
@@ -137,7 +137,14 @@ Future<String> createDynamicLink(String id, String provider, String? url, String
   return link;
 }
 
-Future<void> createUserDynamicLink(String name, String username, String email, String bio, String userPhoto) async {
+Future<void> createUserDynamicLink(
+  String name,
+  String username,
+  String email,
+  String bio,
+  String userPhoto, {
+  BuildContext? context,
+}) async {
   final String userIdentifier = username.isNotEmpty ? username : email;
   final Uri canonical = _canonicalLinkBuilder.user(username: userIdentifier);
   final String link = await _buildShareableLink(
@@ -153,16 +160,14 @@ Future<void> createUserDynamicLink(String name, String username, String email, S
   );
 
   await Clipboard.setData(ClipboardData(text: link));
-  SharePlus.instance.share(
-    ShareParams(
-      text: 'Hey check out my profile on Prism ➜ $link',
-      sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1),
-    ),
-  );
+  if (context != null && !context.mounted) {
+    return;
+  }
+  await ShareService.shareText(text: 'Hey check out my profile on Prism ➜ $link', context: context);
   analytics.logShare(contentType: 'userShare', itemId: userIdentifier, method: 'link');
 }
 
-Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) async {
+Future<void> createSetupDynamicLink(String index, String name, String thumbUrl, {BuildContext? context}) async {
   final Uri canonical = _canonicalLinkBuilder.setup(index: index, name: name, thumbUrl: thumbUrl);
   final String link = await _buildShareableLink(
     type: 'setup',
@@ -177,9 +182,10 @@ Future<void> createSetupDynamicLink(String index, String name, String thumbUrl) 
   );
 
   await Clipboard.setData(ClipboardData(text: link));
-  SharePlus.instance.share(
-    ShareParams(text: 'Hey check this out ➜ $link', sharePositionOrigin: const Rect.fromLTWH(1, 1, 1, 1)),
-  );
+  if (context != null && !context.mounted) {
+    return;
+  }
+  await ShareService.shareText(text: 'Hey check this out ➜ $link', context: context);
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
 }
 

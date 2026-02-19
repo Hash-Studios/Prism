@@ -1206,6 +1206,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                     .userProfileSetups![index!]
                                     .data()["image"]
                                     .toString(),
+                                context: context,
                               );
                             },
                             child: Container(

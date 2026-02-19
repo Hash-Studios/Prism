@@ -1109,6 +1109,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                 index.toString(),
                                 context.profileSetupsAdapter(listen: false).profileSetups![index!]["name"].toString(),
                                 context.profileSetupsAdapter(listen: false).profileSetups![index!]["image"].toString(),
+                                context: context,
                               );
                             },
                             child: Container(

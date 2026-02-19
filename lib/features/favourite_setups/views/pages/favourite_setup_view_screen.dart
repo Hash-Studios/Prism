@@ -1082,6 +1082,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                 index.toString(),
                                 context.favouriteSetupsAdapter(listen: false).liked![index!]["name"].toString(),
                                 context.favouriteSetupsAdapter(listen: false).liked![index!]["image"].toString(),
+                                context: context,
                               );
                             },
                             child: Container(

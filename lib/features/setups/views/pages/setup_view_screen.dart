@@ -1031,6 +1031,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                 index.toString(),
                                 context.setupsAdapter(listen: false).setups![index!]["name"].toString(),
                                 context.setupsAdapter(listen: false).setups![index!]["image"].toString(),
+                                context: context,
                               );
                             },
                             child: Container(

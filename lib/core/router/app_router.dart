@@ -8,6 +8,7 @@ import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_view
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_view_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
+import 'package:Prism/features/navigation/views/pages/ai_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
@@ -26,6 +27,7 @@ import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/user_profile_setup_view_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/user_profile_wall_view_screen.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
+import 'package:Prism/features/session/views/pages/coin_transactions_screen.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
 import 'package:Prism/features/setups/views/pages/draft_setup_screen.dart';
@@ -80,6 +82,8 @@ class AppRouter extends RootStackRouter {
           page: SetupsTabRoute.page,
           children: [AutoRoute(path: '', page: SetupRoute.page)],
         ),
+        // AI tab
+        AutoRoute(path: 'ai', page: AiTabRoute.page),
         // Profile tab
         AutoRoute(
           path: 'profile',
@@ -121,6 +125,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/draft-setup', page: DraftSetupRoute.page),
     AutoRoute(path: '/review', page: ReviewRoute.page),
     AutoRoute(path: '/premium', page: UpgradeRoute.page),
+    AutoRoute(path: '/coin-transactions', page: CoinTransactionsRoute.page),
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),
     AutoRoute(path: '/notifications', page: NotificationRoute.page),
     AutoRoute(path: '/color', page: ColorRoute.page),
