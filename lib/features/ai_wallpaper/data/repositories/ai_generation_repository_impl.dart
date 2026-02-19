@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
@@ -133,18 +134,38 @@ class AiGenerationRepositoryImpl implements AiGenerationRepository {
 
   @override
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async {
-    final rows = await firestoreClient.query<AiGenerationRecord>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.aiGenerations,
-        sourceTag: 'ai.history.fetch',
-        filters: <FirestoreFilter>[FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId)],
-        orderBy: <FirestoreOrderBy>[const FirestoreOrderBy(field: 'createdAt', descending: true)],
-        limit: limit,
-        dedupeWindowMs: 2000,
-      ),
-      (data, docId) => AiGenerationRecord.fromJson(data, fallbackId: docId),
-    );
-    return rows;
+    try {
+      final rows = await firestoreClient.query<AiGenerationRecord>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.aiGenerations,
+          sourceTag: 'ai.history.fetch',
+          filters: <FirestoreFilter>[FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId)],
+          orderBy: <FirestoreOrderBy>[const FirestoreOrderBy(field: 'createdAt', descending: true)],
+          limit: limit,
+          dedupeWindowMs: 2000,
+        ),
+        (data, docId) => AiGenerationRecord.fromJson(data, fallbackId: docId),
+      );
+      return rows;
+    } on FirestoreError catch (error) {
+      if (error.code != 'failed-precondition') {
+        rethrow;
+      }
+      final fallbackRows = await firestoreClient.query<AiGenerationRecord>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.aiGenerations,
+          sourceTag: 'ai.history.fetch.missing_index_fallback',
+          filters: <FirestoreFilter>[FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId)],
+          dedupeWindowMs: 2000,
+        ),
+        (data, docId) => AiGenerationRecord.fromJson(data, fallbackId: docId),
+      );
+      fallbackRows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      if (limit <= 0 || fallbackRows.length <= limit) {
+        return fallbackRows;
+      }
+      return fallbackRows.sublist(0, limit);
+    }
   }
 
   Future<AiGenerationRecord?> _fetchById(String generationId) async {

@@ -26,6 +26,7 @@ import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/user_profile_setup_view_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/user_profile_wall_view_screen.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
+import 'package:Prism/features/session/views/pages/coin_transactions_screen.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
 import 'package:Prism/features/setups/views/pages/draft_setup_screen.dart';
@@ -117,6 +118,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/draft-setup', page: DraftSetupRoute.page),
     AutoRoute(path: '/review', page: ReviewRoute.page),
     AutoRoute(path: '/premium', page: UpgradeRoute.page),
+    AutoRoute(path: '/coin-transactions', page: CoinTransactionsRoute.page),
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),
     AutoRoute(path: '/notifications', page: NotificationRoute.page),
     AutoRoute(path: '/color', page: ColorRoute.page),

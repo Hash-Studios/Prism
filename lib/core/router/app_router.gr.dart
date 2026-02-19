@@ -75,6 +75,22 @@ class AiTabRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [CoinTransactionsScreen]
+class CoinTransactionsRoute extends PageRouteInfo<void> {
+  const CoinTransactionsRoute({List<PageRouteInfo>? children})
+    : super(CoinTransactionsRoute.name, initialChildren: children);
+
+  static const String name = 'CoinTransactionsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const CoinTransactionsScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [CollectionViewScreen]
 class CollectionViewRoute extends PageRouteInfo<CollectionViewRouteArgs> {
   CollectionViewRoute({

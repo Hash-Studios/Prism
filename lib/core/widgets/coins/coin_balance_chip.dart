@@ -109,7 +109,7 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (sheetContext) {
         return StatefulBuilder(
-          builder: (context, setState) => Padding(
+          builder: (context, setSheetState) => Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -139,10 +139,13 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                     onPressed: _loadingReward
                         ? null
                         : () async {
-                            setState(() => _loadingReward = true);
+                            if (!mounted || !sheetContext.mounted) {
+                              return;
+                            }
+                            setSheetState(() => _loadingReward = true);
                             await _watchRewardedAdAndCreditCoins();
-                            if (mounted) {
-                              setState(() => _loadingReward = false);
+                            if (mounted && sheetContext.mounted) {
+                              setSheetState(() => _loadingReward = false);
                             }
                           },
                     child: _loadingReward
@@ -159,6 +162,18 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                       context.router.push(const UpgradeRoute());
                     },
                     child: const Text('Upgrade to Pro'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      context.router.push(const CoinTransactionsRoute());
+                    },
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    label: const Text('View Transactions'),
                   ),
                 ),
               ],
