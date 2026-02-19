@@ -6,6 +6,8 @@ export interface AiEnvBindings {
   AI_IMAGES?: R2Bucket;
   FAL_API_KEY?: string;
   GEMINI_API_KEY?: string;
+  BROWSER_RENDERING_ACCOUNT_ID?: string;
+  BROWSER_RENDERING_API_TOKEN?: string;
   FIREBASE_PROJECT_ID?: string;
   FIREBASE_AUTH_DEBUG?: string;
 }
@@ -814,7 +816,14 @@ async function executeGeneration(params: {
       }
 
       const generationId = createId('gen');
-      const persisted = await persistGenerationArtifacts(generationId, result.imageBytes, result.contentType, params.env);
+      const persisted = await persistGenerationArtifacts(
+        generationId,
+        result.imageBytes,
+        result.contentType,
+        result.width,
+        result.height,
+        params.env,
+      );
       const latencyMs = Date.now() - startedAt;
       const billedCost = result.estimatedCostUsd > 0 ? result.estimatedCostUsd : estimatedCost;
 
@@ -1348,13 +1357,15 @@ async function persistGenerationArtifacts(
   generationId: string,
   imageBytes: Uint8Array,
   contentType: string,
+  width: number,
+  height: number,
   env: AiEnvBindings,
 ): Promise<{ imageUrl: string; watermarkedImageUrl: string }> {
   const originalKey = `ai/original/${generationId}.png`;
   const publicKey = `ai/public/${generationId}.png`;
   const cacheControl = 'public, max-age=31536000, immutable';
-  const watermarkedBytes = await renderPublicWatermarkedBytes(imageBytes, contentType);
-  if (watermarkedBytes.length < 1024) {
+  const watermarked = await renderPublicWatermarkedBytes(imageBytes, contentType, width, height, env);
+  if (watermarked.bytes.length < 1024) {
     throw new Error('watermark_generation_failed');
   }
 
@@ -1365,9 +1376,9 @@ async function persistGenerationArtifacts(
         cacheControl,
       },
     });
-    await env.AI_IMAGES.put(publicKey, watermarkedBytes, {
+    await env.AI_IMAGES.put(publicKey, watermarked.bytes, {
       httpMetadata: {
-        contentType,
+        contentType: watermarked.contentType,
         cacheControl,
       },
     });
@@ -1378,20 +1389,270 @@ async function persistGenerationArtifacts(
   }
 
   await env.AI_STATE_KV.put(`ai:asset:${originalKey}`, toBase64(imageBytes), { expirationTtl: 60 * 60 * 24 * 30 });
-  await env.AI_STATE_KV.put(`ai:asset:${publicKey}`, toBase64(watermarkedBytes), { expirationTtl: 60 * 60 * 24 * 30 });
+  await env.AI_STATE_KV.put(`ai:asset:${publicKey}`, toBase64(watermarked.bytes), {
+    expirationTtl: 60 * 60 * 24 * 30,
+  });
   return {
     imageUrl: `https://prismwalls.com/api/ai/assets/${originalKey}`,
     watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/${publicKey}`,
   };
 }
 
-async function renderPublicWatermarkedBytes(imageBytes: Uint8Array, contentType: string): Promise<Uint8Array> {
+async function renderPublicWatermarkedBytes(
+  imageBytes: Uint8Array,
+  contentType: string,
+  width: number,
+  height: number,
+  env: AiEnvBindings,
+): Promise<{ bytes: Uint8Array; contentType: string }> {
   if (!contentType.startsWith('image/')) {
     throw new Error('watermark_invalid_content_type');
   }
-  // Placeholder serving-layer watermark hook: keep a separate public artifact path.
-  // This can be upgraded to true raster compositing without changing API contracts.
-  return imageBytes;
+  const normalizedWidth = Math.round(clampNumber(width, 256, 4096));
+  const normalizedHeight = Math.round(clampNumber(height, 256, 4096));
+
+  const canvasResult = await tryRenderWatermarkWithCanvas(imageBytes, contentType, normalizedWidth, normalizedHeight);
+  if (canvasResult != null) {
+    return canvasResult;
+  }
+
+  const browserRenderingResult = await tryRenderWatermarkWithBrowserRendering(
+    imageBytes,
+    contentType,
+    normalizedWidth,
+    normalizedHeight,
+    env,
+  );
+  if (browserRenderingResult != null) {
+    return browserRenderingResult;
+  }
+
+  throw new Error('watermark_renderer_unavailable');
+}
+
+async function tryRenderWatermarkWithCanvas(
+  imageBytes: Uint8Array,
+  contentType: string,
+  width: number,
+  height: number,
+): Promise<{ bytes: Uint8Array; contentType: string } | null> {
+  try {
+    const globalValue = globalThis as unknown as {
+      OffscreenCanvas?: new (width: number, height: number) => {
+        getContext: (id: string) => unknown;
+        convertToBlob: (options?: { type?: string; quality?: number }) => Promise<Blob>;
+      };
+      createImageBitmap?: (source: Blob) => Promise<{ close?: () => void }>;
+    };
+    if (typeof globalValue.OffscreenCanvas !== 'function' || typeof globalValue.createImageBitmap !== 'function') {
+      return null;
+    }
+    const sourceBlob = new Blob([imageBytes], { type: contentType });
+    const bitmap = await globalValue.createImageBitmap(sourceBlob);
+    try {
+      const canvas = new globalValue.OffscreenCanvas(width, height);
+      const ctx = canvas.getContext('2d') as {
+        drawImage: (...args: unknown[]) => void;
+        font: string;
+        fillStyle: string;
+        shadowColor: string;
+        shadowBlur: number;
+        shadowOffsetX: number;
+        shadowOffsetY: number;
+        textBaseline: string;
+        beginPath: () => void;
+        moveTo: (x: number, y: number) => void;
+        lineTo: (x: number, y: number) => void;
+        quadraticCurveTo: (cpx: number, cpy: number, x: number, y: number) => void;
+        closePath: () => void;
+        fill: () => void;
+        fillText: (text: string, x: number, y: number) => void;
+        measureText: (text: string) => { width: number };
+      } | null;
+      if (ctx == null) {
+        return null;
+      }
+      ctx.drawImage(bitmap, 0, 0, width, height);
+      drawPrismWatermarkBadge(ctx, width, height);
+      const preferredType = preferredWatermarkMimeType(contentType);
+      const outputBlob = await canvas.convertToBlob({
+        type: preferredType,
+        quality: preferredType === 'image/jpeg' ? 0.95 : 0.98,
+      });
+      const outputType = isNonEmptyString(outputBlob.type) ? outputBlob.type : preferredType;
+      return {
+        bytes: new Uint8Array(await outputBlob.arrayBuffer()),
+        contentType: outputType,
+      };
+    } finally {
+      if (typeof bitmap.close === 'function') {
+        bitmap.close();
+      }
+    }
+  } catch (error) {
+    console.warn('[ai] watermark_canvas_failed', { error: `${error ?? ''}` });
+    return null;
+  }
+}
+
+async function tryRenderWatermarkWithBrowserRendering(
+  imageBytes: Uint8Array,
+  contentType: string,
+  width: number,
+  height: number,
+  env: AiEnvBindings,
+): Promise<{ bytes: Uint8Array; contentType: string } | null> {
+  if (!isNonEmptyString(env.BROWSER_RENDERING_ACCOUNT_ID) || !isNonEmptyString(env.BROWSER_RENDERING_API_TOKEN)) {
+    return null;
+  }
+  try {
+    const endpoint =
+      `https://api.cloudflare.com/client/v4/accounts/${env.BROWSER_RENDERING_ACCOUNT_ID}/browser-rendering/screenshot`;
+    const imageDataUrl = `data:${contentType};base64,${toBase64(imageBytes)}`;
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.BROWSER_RENDERING_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        html: renderAiWatermarkHtml(imageDataUrl, width, height),
+        viewport: {
+          width,
+          height,
+        },
+        screenshotOptions: {
+          type: 'png',
+        },
+      }),
+    });
+    if (!response.ok) {
+      console.warn('[ai] watermark_browser_rendering_failed', {
+        status: response.status,
+        body: await readErrorDetails(response),
+      });
+      return null;
+    }
+    return {
+      bytes: new Uint8Array(await response.arrayBuffer()),
+      contentType: 'image/png',
+    };
+  } catch (error) {
+    console.warn('[ai] watermark_browser_rendering_failed', { error: `${error ?? ''}` });
+    return null;
+  }
+}
+
+function preferredWatermarkMimeType(contentType: string): string {
+  const normalized = contentType.trim().toLowerCase();
+  if (normalized === 'image/png') {
+    return 'image/png';
+  }
+  if (normalized === 'image/webp') {
+    return 'image/webp';
+  }
+  if (normalized === 'image/jpeg' || normalized === 'image/jpg') {
+    return 'image/jpeg';
+  }
+  return 'image/png';
+}
+
+function drawPrismWatermarkBadge(
+  ctx: {
+    font: string;
+    fillStyle: string;
+    shadowColor: string;
+    shadowBlur: number;
+    shadowOffsetX: number;
+    shadowOffsetY: number;
+    textBaseline: string;
+    beginPath: () => void;
+    moveTo: (x: number, y: number) => void;
+    lineTo: (x: number, y: number) => void;
+    quadraticCurveTo: (cpx: number, cpy: number, x: number, y: number) => void;
+    closePath: () => void;
+    fill: () => void;
+    fillText: (text: string, x: number, y: number) => void;
+    measureText: (text: string) => { width: number };
+  },
+  width: number,
+  height: number,
+): void {
+  const label = 'Made with Prism AI';
+  const minEdge = Math.min(width, height);
+  const paddingY = Math.max(8, Math.round(minEdge * 0.012));
+  const paddingX = Math.max(12, Math.round(minEdge * 0.018));
+  const margin = Math.max(10, Math.round(minEdge * 0.018));
+  const fontSize = Math.max(14, Math.round(minEdge * 0.032));
+  const radius = Math.max(8, Math.round(minEdge * 0.018));
+  ctx.font = `700 ${fontSize}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif`;
+  const textWidth = Math.ceil(ctx.measureText(label).width);
+  const badgeWidth = textWidth + paddingX * 2;
+  const badgeHeight = fontSize + paddingY * 2;
+  const x = width - badgeWidth - margin;
+  const y = height - badgeHeight - margin;
+  drawRoundedRect(ctx, x, y, badgeWidth, badgeHeight, radius);
+  ctx.fillStyle = 'rgba(9, 12, 18, 0.52)';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.38)';
+  ctx.shadowBlur = Math.max(8, Math.round(minEdge * 0.02));
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = Math.max(2, Math.round(minEdge * 0.004));
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.textBaseline = 'top';
+  ctx.fillText(label, x + paddingX, y + paddingY);
+}
+
+function drawRoundedRect(
+  ctx: {
+    beginPath: () => void;
+    moveTo: (x: number, y: number) => void;
+    lineTo: (x: number, y: number) => void;
+    quadraticCurveTo: (cpx: number, cpy: number, x: number, y: number) => void;
+    closePath: () => void;
+  },
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+): void {
+  const r = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function renderAiWatermarkHtml(imageDataUrl: string, width: number, height: number): string {
+  return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: ${width}px; height: ${height}px; overflow: hidden; background: #000; }
+  body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+  <img src="${imageDataUrl}" alt="wallpaper" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" />
+  <div style="position:absolute;right:${Math.max(10, Math.round(Math.min(width, height) * 0.018))}px;bottom:${Math.max(10, Math.round(Math.min(width, height) * 0.018))}px;padding:${Math.max(8, Math.round(Math.min(width, height) * 0.012))}px ${Math.max(12, Math.round(Math.min(width, height) * 0.018))}px;border-radius:${Math.max(8, Math.round(Math.min(width, height) * 0.018))}px;background:rgba(9,12,18,.52);color:rgba(255,255,255,.92);font-size:${Math.max(14, Math.round(Math.min(width, height) * 0.032))}px;font-weight:700;line-height:1;letter-spacing:.1px;box-shadow:0 6px 18px rgba(0,0,0,.38);">
+    Made with Prism AI
+  </div>
+</body>
+</html>`;
 }
 
 async function saveGenerationRecord(record: AiGenerationRecord, env: AiEnvBindings): Promise<void> {
