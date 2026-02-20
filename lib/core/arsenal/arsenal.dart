@@ -2,7 +2,9 @@
 // import 'package:Prism/core/arsenal/arsenal.dart'
 
 export 'colors.dart';
+export 'components/ar_app_bar.dart';
 export 'components/ar_avatar.dart';
+export 'components/ar_bottom_nav.dart';
 export 'components/ar_bottom_sheet.dart';
 export 'components/ar_button.dart';
 export 'components/ar_chip.dart';
