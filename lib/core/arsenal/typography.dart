@@ -24,28 +24,48 @@ abstract final class ArsenalTypography {
   );
 
   /// 32px BigShouldersDisplay w800 — Section headers
-  static const TextStyle displayMedium =
-      TextStyle(fontFamily: 'BigShouldersDisplay', fontSize: 32, fontWeight: FontWeight.w800, color: ArsenalColors.onBackground);
+  static const TextStyle displayMedium = TextStyle(
+    fontFamily: 'BigShouldersDisplay',
+    fontSize: 32,
+    fontWeight: FontWeight.w800,
+    color: ArsenalColors.onBackground,
+  );
 
   // ── Subheadings ─────────────────────────────────────────────────────────────
 
   /// 24px Rajdhani w600 — Subheadings
-  static const TextStyle subheadingLarge =
-      TextStyle(fontFamily: 'Rajdhani', fontSize: 24, fontWeight: FontWeight.w600, color: ArsenalColors.onBackground);
+  static const TextStyle subheadingLarge = TextStyle(
+    fontFamily: 'Rajdhani',
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    color: ArsenalColors.onBackground,
+  );
 
   /// 18px Rajdhani w600 — Card titles
-  static const TextStyle subheadingMedium =
-      TextStyle(fontFamily: 'Rajdhani', fontSize: 18, fontWeight: FontWeight.w600, color: ArsenalColors.onBackground);
+  static const TextStyle subheadingMedium = TextStyle(
+    fontFamily: 'Rajdhani',
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    color: ArsenalColors.onBackground,
+  );
 
   // ── Body ────────────────────────────────────────────────────────────────────
 
   /// 16px Rajdhani w500 — Body copy
-  static const TextStyle body =
-      TextStyle(fontFamily: 'Rajdhani', fontSize: 16, fontWeight: FontWeight.w500, color: ArsenalColors.onBackground);
+  static const TextStyle body = TextStyle(
+    fontFamily: 'Rajdhani',
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: ArsenalColors.onBackground,
+  );
 
   /// 14px Rajdhani w500 — Secondary body
-  static const TextStyle bodySmall =
-      TextStyle(fontFamily: 'Rajdhani', fontSize: 14, fontWeight: FontWeight.w500, color: ArsenalColors.onBackground);
+  static const TextStyle bodySmall = TextStyle(
+    fontFamily: 'Rajdhani',
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: ArsenalColors.onBackground,
+  );
 
   // ── Buttons / Labels ────────────────────────────────────────────────────────
 
@@ -59,12 +79,20 @@ abstract final class ArsenalTypography {
   );
 
   /// 13px Rajdhani w700 — UI emphasis labels
-  static const TextStyle labelEmphasis =
-      TextStyle(fontFamily: 'Rajdhani', fontSize: 13, fontWeight: FontWeight.w700, color: ArsenalColors.onBackground);
+  static const TextStyle labelEmphasis = TextStyle(
+    fontFamily: 'Rajdhani',
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+    color: ArsenalColors.onBackground,
+  );
 
   /// 12px Rajdhani w600 — Standard UI labels
-  static const TextStyle label =
-      TextStyle(fontFamily: 'Rajdhani', fontSize: 12, fontWeight: FontWeight.w600, color: ArsenalColors.onBackground);
+  static const TextStyle label = TextStyle(
+    fontFamily: 'Rajdhani',
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: ArsenalColors.onBackground,
+  );
 
   // ── Mono ─────────────────────────────────────────────────────────────────────
 
@@ -78,6 +106,10 @@ abstract final class ArsenalTypography {
   );
 
   /// 12px JetBrainsMono w400 — Timestamps, secondary technical text
-  static const TextStyle mono =
-      TextStyle(fontFamily: 'JetBrainsMono', fontSize: 12, fontWeight: FontWeight.w400, color: ArsenalColors.onBackground);
+  static const TextStyle mono = TextStyle(
+    fontFamily: 'JetBrainsMono',
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    color: ArsenalColors.onBackground,
+  );
 }
