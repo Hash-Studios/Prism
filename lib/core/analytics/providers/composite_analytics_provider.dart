@@ -21,6 +21,19 @@ class CompositeAnalyticsProvider implements AnalyticsProvider {
   }
 
   @override
+  Future<void> setUserId(String? userId) {
+    return _fanOut((AnalyticsProvider provider) => provider.setUserId(userId), operation: 'setUserId');
+  }
+
+  @override
+  Future<void> setUserProperty({required String name, String? value}) {
+    return _fanOut(
+      (AnalyticsProvider provider) => provider.setUserProperty(name: name, value: value),
+      operation: 'setUserProperty',
+    );
+  }
+
+  @override
   Future<void> logScreenView({
     required String screenName,
     String? screenClass,

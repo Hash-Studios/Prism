@@ -47,5 +47,11 @@ void main() {
       expect(normalizer.normalizeScreenName('/User/Profile'), 'user_profile');
       expect(normalizer.normalizeScreenName('homeFeed'), 'home_feed');
     });
+
+    test('normalizes property names', () {
+      expect(normalizer.normalizePropertyName('subscriptionTier'), 'subscription_tier');
+      expect(normalizer.normalizePropertyName('is-premium'), 'is_premium');
+      expect(normalizer.normalizePropertyName('   '), 'unknown_property');
+    });
   });
 }

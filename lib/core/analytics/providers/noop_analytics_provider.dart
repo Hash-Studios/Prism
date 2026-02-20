@@ -10,6 +10,12 @@ class NoopAnalyticsProvider implements AnalyticsProvider {
   Future<void> logLogin({String? loginMethod}) async {}
 
   @override
+  Future<void> setUserId(String? userId) async {}
+
+  @override
+  Future<void> setUserProperty({required String name, String? value}) async {}
+
+  @override
   Future<void> logScreenView({
     required String screenName,
     String? screenClass,

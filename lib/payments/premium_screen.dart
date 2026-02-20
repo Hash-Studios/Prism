@@ -720,7 +720,15 @@ class _StickyBottomSheet extends StatelessWidget {
                           final info = await _purchasesService.restore();
                           if (!context.mounted) return;
                           final ok = _purchasesService.isPremiumFromCustomerInfo(info);
-                          await _purchasesService.checkAndPersistPremium();
+                          await _purchasesService.checkAndPersistPremium(
+                            conversionContext: const SubscriptionConversionContext(
+                              source: 'premium_screen_restore',
+                              productId: 'unknown_product',
+                              packageType: 'restore',
+                              currency: 'unknown_currency',
+                              price: 0,
+                            ),
+                          );
                           analytics.logEvent(
                             name: 'subscription_restore_result',
                             parameters: <String, Object>{
@@ -803,7 +811,15 @@ class _PurchaseCTAButtonState extends State<_PurchaseCTAButton> {
       final customerInfo = await _purchasesService.purchase(widget.package);
       if (!mounted) return;
       final isPremium = _purchasesService.isPremiumFromCustomerInfo(customerInfo);
-      await _purchasesService.checkAndPersistPremium();
+      await _purchasesService.checkAndPersistPremium(
+        conversionContext: SubscriptionConversionContext(
+          source: 'premium_screen',
+          productId: widget.package.storeProduct.identifier,
+          packageType: widget.package.packageType.name,
+          price: widget.package.storeProduct.price,
+          currency: widget.package.storeProduct.currencyCode,
+        ),
+      );
       analytics.logEvent(
         name: 'subscription_purchase_result',
         parameters: <String, Object>{

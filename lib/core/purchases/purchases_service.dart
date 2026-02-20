@@ -12,6 +12,24 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+class SubscriptionConversionContext {
+  const SubscriptionConversionContext({
+    required this.source,
+    this.productId,
+    this.packageType,
+    this.subscriptionTier,
+    this.price,
+    this.currency,
+  });
+
+  final String source;
+  final String? productId;
+  final String? packageType;
+  final String? subscriptionTier;
+  final num? price;
+  final String? currency;
+}
+
 /// Singleton service that owns all RevenueCat SDK interactions.
 /// Use [checkAndPersistPremium] to sync premium status; use [prismUser.premium] as the single source of truth.
 class PurchasesService {
@@ -125,12 +143,45 @@ class PurchasesService {
     }
   }
 
+  Future<void> _syncAnalyticsSubscriptionState({required bool isPremium, required SubscriptionTier tier}) async {
+    await analytics.setUserProperty(name: 'subscription_tier', value: tier.value);
+    await analytics.setUserProperty(name: 'is_premium', value: isPremium ? '1' : '0');
+  }
+
+  Future<void> _logSubscriptionConversion({
+    required SubscriptionTier tier,
+    SubscriptionConversionContext? conversionContext,
+  }) async {
+    final SubscriptionConversionContext context =
+        conversionContext ??
+        const SubscriptionConversionContext(
+          source: 'entitlement_refresh',
+          productId: 'unknown_product',
+          packageType: 'unknown_package',
+          currency: 'unknown_currency',
+          price: 0,
+        );
+
+    await analytics.logEvent(
+      name: 'subscription_conversion',
+      parameters: <String, Object>{
+        'source': context.source,
+        'product_id': context.productId ?? 'unknown_product',
+        'package_type': context.packageType ?? 'unknown_package',
+        'subscription_tier': context.subscriptionTier ?? tier.value,
+        'price': context.price ?? 0,
+        'currency': context.currency ?? 'unknown_currency',
+      },
+    );
+  }
+
   /// Checks canonical + grandfathered paid entitlements; updates local user state and Hive.
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
-  Future<bool> checkAndPersistPremium() async {
+  Future<bool> checkAndPersistPremium({SubscriptionConversionContext? conversionContext}) async {
     await ensureConfigured(app_state.prismUser.id);
 
     try {
+      final bool wasPremium = app_state.prismUser.premium;
       final info = await Purchases.getCustomerInfo();
       final SubscriptionTier tier = tierFromCustomerInfo(info);
       final bool isPremium = tier.isPaid;
@@ -139,6 +190,10 @@ class PurchasesService {
       app_state.prismUser.subscriptionTier = tier.value;
       app_state.persistPrismUser();
       await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier);
+      await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
+      if (!wasPremium && isPremium) {
+        await _logSubscriptionConversion(tier: tier, conversionContext: conversionContext);
+      }
       analytics.logEvent(
         name: 'subscription_entitlement_refresh',
         parameters: <String, Object>{

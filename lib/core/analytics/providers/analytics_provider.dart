@@ -5,6 +5,10 @@ abstract class AnalyticsProvider {
 
   Future<void> logLogin({String? loginMethod});
 
+  Future<void> setUserId(String? userId);
+
+  Future<void> setUserProperty({required String name, String? value});
+
   Future<void> logScreenView({
     required String screenName,
     String? screenClass,
