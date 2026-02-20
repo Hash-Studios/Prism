@@ -31,7 +31,9 @@ class ArBottomNav extends StatelessWidget {
               child: Row(
                 children: [
                   for (int i = 0; i < items.length; i++)
-                    Expanded(child: _ArNavItemWidget(item: items[i], isActive: i == activeIndex)),
+                    Expanded(
+                      child: _ArNavItemWidget(item: items[i], isActive: i == activeIndex),
+                    ),
                 ],
               ),
             ),
@@ -59,10 +61,7 @@ class _ArNavItemWidget extends StatelessWidget {
         children: [
           Icon(item.icon, size: 24, color: color),
           const SizedBox(height: 4),
-          Text(
-            item.label.toUpperCase(),
-            style: ArsenalTypography.label.copyWith(color: color),
-          ),
+          Text(item.label.toUpperCase(), style: ArsenalTypography.label.copyWith(color: color)),
         ],
       ),
     );

@@ -15,24 +15,12 @@ void main() {
   setUpAll(loadArsenalFonts);
 
   testWidgets('ar_bottom_nav_index_0 golden', (tester) async {
-    await pumpArsenalWidget(
-      tester,
-      SizedBox(
-        width: 390,
-        child: ArBottomNav(items: _items, activeIndex: 0),
-      ),
-    );
+    await pumpArsenalWidget(tester, SizedBox(width: 390, child: ArBottomNav(items: _items, activeIndex: 0)));
     await expectLater(find.byType(ArBottomNav), matchesGoldenFile('goldens/ar_bottom_nav_index_0.png'));
   });
 
   testWidgets('ar_bottom_nav_index_2 golden', (tester) async {
-    await pumpArsenalWidget(
-      tester,
-      SizedBox(
-        width: 390,
-        child: ArBottomNav(items: _items, activeIndex: 2),
-      ),
-    );
+    await pumpArsenalWidget(tester, SizedBox(width: 390, child: ArBottomNav(items: _items, activeIndex: 2)));
     await expectLater(find.byType(ArBottomNav), matchesGoldenFile('goldens/ar_bottom_nav_index_2.png'));
   });
 }

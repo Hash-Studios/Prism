@@ -68,11 +68,7 @@ class ArScaffold extends StatelessWidget {
                         ),
                         if (bottomBar != null)
                           Padding(
-                            padding: EdgeInsets.only(
-                              left: padding.left,
-                              right: padding.right,
-                              bottom: padding.bottom,
-                            ),
+                            padding: EdgeInsets.only(left: padding.left, right: padding.right, bottom: padding.bottom),
                             child: bottomBar,
                           ),
                       ],

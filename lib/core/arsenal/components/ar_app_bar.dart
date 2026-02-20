@@ -64,10 +64,7 @@ class ArAppBar extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                if (action != null) ...[
-                  const Spacer(),
-                  action!,
-                ],
+                if (action != null) ...[const Spacer(), action!],
               ],
             ),
           ),

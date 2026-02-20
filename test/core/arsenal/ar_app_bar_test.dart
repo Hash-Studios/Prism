@@ -10,11 +10,7 @@ void main() {
   testWidgets('ar_app_bar_title_only golden', (tester) async {
     await pumpArsenalWidget(
       tester,
-      const SizedBox(
-        width: 390,
-        height: 120,
-        child: ArAppBar(title: 'Arsenal', showBackButton: false),
-      ),
+      const SizedBox(width: 390, height: 120, child: ArAppBar(title: 'Arsenal', showBackButton: false)),
     );
     await expectLater(find.byType(ArAppBar), matchesGoldenFile('goldens/ar_app_bar_title_only.png'));
   });
