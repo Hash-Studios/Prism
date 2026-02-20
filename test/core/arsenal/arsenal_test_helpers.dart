@@ -19,10 +19,7 @@ Future<ByteData> _fontFile(String path) async {
 /// Call once in [setUpAll] of each test file.
 Future<void> loadArsenalFonts() async {
   final bigShoulders = FontLoader('BigShouldersDisplay');
-  for (final v in [
-    'Thin', 'ExtraLight', 'Light', 'Regular', 'Medium',
-    'SemiBold', 'Bold', 'ExtraBold', 'Black',
-  ]) {
+  for (final v in ['Thin', 'ExtraLight', 'Light', 'Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold', 'Black']) {
     bigShoulders.addFont(_fontFile('lib/core/arsenal/fonts/BigShouldersDisplay-$v.ttf'));
   }
   await bigShoulders.load();
@@ -34,15 +31,18 @@ Future<void> loadArsenalFonts() async {
   await rajdhani.load();
 
   final jetBrains = FontLoader('JetBrainsMono');
-  for (final v in [
-    'Thin', 'ExtraLight', 'Light', 'Regular', 'Medium',
-    'SemiBold', 'Bold', 'ExtraBold',
-  ]) {
+  for (final v in ['Thin', 'ExtraLight', 'Light', 'Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
     jetBrains.addFont(_fontFile('lib/core/arsenal/fonts/JetBrainsMono-$v.ttf'));
   }
   for (final v in [
-    'ThinItalic', 'ExtraLightItalic', 'LightItalic', 'Italic',
-    'MediumItalic', 'SemiBoldItalic', 'BoldItalic', 'ExtraBoldItalic',
+    'ThinItalic',
+    'ExtraLightItalic',
+    'LightItalic',
+    'Italic',
+    'MediumItalic',
+    'SemiBoldItalic',
+    'BoldItalic',
+    'ExtraBoldItalic',
   ]) {
     jetBrains.addFont(_fontFile('lib/core/arsenal/fonts/JetBrainsMono-$v.ttf'));
   }
