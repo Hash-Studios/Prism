@@ -1,4 +1,6 @@
 import 'package:Prism/core/arsenal/colors.dart';
+import 'package:Prism/core/arsenal/components/ar_app_bar.dart';
+import 'package:Prism/core/arsenal/components/ar_bottom_nav.dart';
 import 'package:Prism/core/arsenal/spacing.dart';
 import 'package:Prism/core/arsenal/theme.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +9,8 @@ class ArScaffold extends StatelessWidget {
   const ArScaffold({
     super.key,
     required this.child,
+    this.appBar,
+    this.navBar,
     this.bottomBar,
     this.padding = const EdgeInsets.all(ArsenalSpacing.md),
     this.gradient = true,
@@ -15,6 +19,12 @@ class ArScaffold extends StatelessWidget {
 
   /// Main scrollable / flexible body content.
   final Widget child;
+
+  /// Optional transparent app bar rendered above [child].
+  final ArAppBar? appBar;
+
+  /// Optional bottom navigation bar rendered below [child], outside SafeArea.
+  final ArBottomNav? navBar;
 
   /// Pinned above the bottom safe-area edge. Receives the same horizontal
   /// padding as [child]. Typical use: primary + ghost buttons.
@@ -43,20 +53,34 @@ class ArScaffold extends StatelessWidget {
             if (gradient) const _ArGradientBackground(),
 
             // ── Content + bottom bar ───────────────────────────────────────
-            SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: Padding(padding: padding, child: child),
-                  ),
-                  if (bottomBar != null)
-                    Padding(
-                      padding: EdgeInsets.only(left: padding.left, right: padding.right, bottom: padding.bottom),
-                      child: bottomBar,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SafeArea(
+                    bottom: navBar == null,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (appBar != null) appBar!,
+                        Expanded(
+                          child: Padding(padding: padding, child: child),
+                        ),
+                        if (bottomBar != null)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: padding.left,
+                              right: padding.right,
+                              bottom: padding.bottom,
+                            ),
+                            child: bottomBar,
+                          ),
+                      ],
                     ),
-                ],
-              ),
+                  ),
+                ),
+                if (navBar != null) navBar!,
+              ],
             ),
 
             // ── Corner brackets ────────────────────────────────────────────

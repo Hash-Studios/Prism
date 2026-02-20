@@ -24,6 +24,8 @@ ALL_TEST_FILES=(
   "$TEST_DIR/ar_chip_test.dart"
   "$TEST_DIR/ar_avatar_test.dart"
   "$TEST_DIR/ar_tag_test.dart"
+  "$TEST_DIR/ar_app_bar_test.dart"
+  "$TEST_DIR/ar_bottom_nav_test.dart"
 )
 
 # Returns the test file for a given component path, or empty string.
@@ -36,6 +38,8 @@ component_test_file() {
     lib/core/arsenal/components/ar_avatar.dart)         echo "$TEST_DIR/ar_avatar_test.dart" ;;
     lib/core/arsenal/components/ar_tag.dart)            echo "$TEST_DIR/ar_tag_test.dart" ;;
     lib/core/arsenal/components/ar_bottom_sheet.dart)   echo "$TEST_DIR/ar_scaffold_test.dart" ;;
+    lib/core/arsenal/components/ar_app_bar.dart)        echo "$TEST_DIR/ar_app_bar_test.dart" ;;
+    lib/core/arsenal/components/ar_bottom_nav.dart)     echo "$TEST_DIR/ar_bottom_nav_test.dart" ;;
     *) echo "" ;;
   esac
 }
