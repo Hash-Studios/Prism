@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -311,7 +312,7 @@ class WallTile extends StatelessWidget {
                                         );
                                         final result = await _prismMediaApi.saveMedia(request);
                                         if (result.success) {
-                                          analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
+                                          analytics.track(DownloadOwnWallEvent(link: link));
                                           toasts.codeSend("Wall Downloaded in Pictures/Prism!");
                                         } else {
                                           toasts.codeSend("Couldn't download! Please Retry!");
@@ -558,7 +559,7 @@ class RejectedWallTile extends StatelessWidget {
                                         );
                                         final result = await _prismMediaApi.saveMedia(request);
                                         if (result.success) {
-                                          analytics.logEvent(name: 'download_own_wall', parameters: {'link': link});
+                                          analytics.track(DownloadOwnWallEvent(link: link));
                                           toasts.codeSend("Wall Downloaded in Pictures/Prism!");
                                         } else {
                                           toasts.codeSend("Couldn't download! Please Retry!");
@@ -1064,7 +1065,7 @@ class SetupTile extends StatelessWidget {
                                         );
                                         final result = await _prismMediaApi.saveMedia(request);
                                         if (result.success) {
-                                          analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                                          analytics.track(DownloadOwnSetupEvent(link: link));
                                           toasts.codeSend("Setup Downloaded in Pictures/Prism Setup!");
                                         } else {
                                           toasts.codeSend("Couldn't download! Please Retry!");
@@ -1460,7 +1461,7 @@ class RejectedSetupTile extends StatelessWidget {
                                         );
                                         final result = await _prismMediaApi.saveMedia(request);
                                         if (result.success) {
-                                          analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                                          analytics.track(DownloadOwnSetupEvent(link: link));
                                           toasts.codeSend("Setup Downloaded in Pictures/Prism Setups!");
                                         } else {
                                           toasts.codeSend("Couldn't download! Please Retry!");

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/apps/appsData.dart';
@@ -223,7 +224,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                       toasts.error("Please fill all required fields!");
                     } else {
                       Navigator.pop(context);
-                      analytics.logEvent(name: 'edit_setup', parameters: {'id': id ?? '', 'link': imageURL ?? ''});
+                      analytics.track(EditSetupEvent(setupId: id ?? '', link: imageURL ?? ''));
                       WallStore.updateSetup(
                         setupDoc.id,
                         id,

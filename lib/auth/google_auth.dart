@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -128,8 +129,14 @@ class GoogleAuth {
 
       await app_state.persistPrismUser();
       await analytics.setUserId(user.uid);
-      await analytics.setUserProperty(name: 'subscription_tier', value: app_state.prismUser.subscriptionTier);
-      await analytics.setUserProperty(name: 'is_premium', value: app_state.prismUser.premium ? '1' : '0');
+      await analytics.setUserProperty(
+        name: AnalyticsUserProperty.subscriptionTier.wireName,
+        value: app_state.prismUser.subscriptionTier,
+      );
+      await analytics.setUserProperty(
+        name: AnalyticsUserProperty.isPremium.wireName,
+        value: app_state.prismUser.premium ? '1' : '0',
+      );
       await subscribeToTopicSafely(home.f, user.email!.split("@")[0], sourceTag: 'auth.signin.followers_topic');
       assert(!user.isAnonymous);
       final User? currentUser = _auth.currentUser;
@@ -226,8 +233,8 @@ class GoogleAuth {
       logger.e('Failed to mark user logged out', error: e, stackTrace: st);
     }
     await analytics.setUserId(null);
-    await analytics.setUserProperty(name: 'subscription_tier', value: 'free');
-    await analytics.setUserProperty(name: 'is_premium', value: '0');
+    await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
+    await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
     logger.d("User Sign Out");
     return true;
   }

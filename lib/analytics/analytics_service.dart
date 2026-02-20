@@ -1,11 +1,12 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:flutter/widgets.dart';
 
 class AnalyticsFacade {
   const AnalyticsFacade();
 
-  Future<void> logEvent({required String name, Map<String, Object?>? parameters}) {
-    return AnalyticsRuntime.instance.logEvent(name: name, parameters: parameters);
+  Future<void> track(AnalyticsEvent event) {
+    return AnalyticsRuntime.instance.track(event);
   }
 
   Future<void> logShare({required String contentType, required String itemId, required String method}) {

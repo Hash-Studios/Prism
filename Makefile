@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios ci test
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios ci test
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -54,6 +54,18 @@ format-check: ensure-fvm
 
 analyze: ensure-fvm env-guard
 	@$(FLUTTER) analyze --no-pub $(ANALYZE_FLAGS)
+
+analytics-gen: ensure-fvm
+	@$(DART) run tool/generate_analytics_schema.dart
+	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) lib/core/analytics/events/generated/analytics_events.g.dart
+
+analytics-guard:
+	@./tool/analytics_raw_usage_guard.sh
+
+analytics-check: ensure-fvm analytics-guard
+	@$(DART) run tool/generate_analytics_schema.dart
+	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) lib/core/analytics/events/generated/analytics_events.g.dart
+	@git diff --exit-code -- lib/core/analytics/events/generated/analytics_events.g.dart
 
 firestore-guard:
 	@./tool/firestore_guard.sh
@@ -138,7 +150,7 @@ update-flutter: ensure-fvm
 	@$(FLUTTER) pub get
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
 
-ci: get format-check env-guard analyze
+ci: get format-check env-guard analytics-check analyze
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \

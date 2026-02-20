@@ -12,6 +12,7 @@ import 'package:Prism/core/analytics/providers/analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/composite_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
@@ -363,14 +364,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       if (currentUserId.isNotEmpty) {
         await analytics.setUserId(currentUserId);
       }
-      await analytics.setUserProperty(name: 'subscription_tier', value: app_state.prismUser.subscriptionTier);
-      await analytics.setUserProperty(name: 'is_premium', value: app_state.prismUser.premium ? '1' : '0');
+      await analytics.setUserProperty(
+        name: AnalyticsUserProperty.subscriptionTier.wireName,
+        value: app_state.prismUser.subscriptionTier,
+      );
+      await analytics.setUserProperty(
+        name: AnalyticsUserProperty.isPremium.wireName,
+        value: app_state.prismUser.premium ? '1' : '0',
+      );
       await PurchasesService.instance.checkAndPersistPremium();
       unawaited(_syncCoinEconomy(sourceTag: 'startup_login_status'));
     } else {
       await analytics.setUserId(null);
-      await analytics.setUserProperty(name: 'subscription_tier', value: 'free');
-      await analytics.setUserProperty(name: 'is_premium', value: '0');
+      await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
+      await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
     }
     app_state.prismUser.loggedIn = value;
     app_state.persistPrismUser();

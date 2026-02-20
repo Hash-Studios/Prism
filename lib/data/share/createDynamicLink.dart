@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/widgets/popup/copyrightPopUp.dart';
 import 'package:Prism/logger/logger.dart';
@@ -230,7 +231,7 @@ Future<String> createCopyrightLink(
       'image_source_url': thumbUrl,
       'setup_name': name,
     };
-    analytics.logEvent(name: 'reportSetup');
+    analytics.track(const ReportSetupEvent());
   } else {
     type = 'share';
     canonical = _canonicalLinkBuilder.wallpaper(id: id!, provider: provider!, url: url, thumbUrl: thumbUrl!);
@@ -242,7 +243,7 @@ Future<String> createCopyrightLink(
       'provider': provider,
       'wall_id': id,
     };
-    analytics.logEvent(name: 'reportWall');
+    analytics.track(const ReportWallEvent());
   }
 
   final String link = await _buildShareableLink(

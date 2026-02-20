@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/platform/share_service.dart';
@@ -158,7 +159,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       _promptController.text = prompt;
       _promptController.selection = TextSelection.fromPosition(TextPosition(offset: prompt.length));
     });
-    analytics.logEvent(name: 'ai_prompt_shuffled', parameters: <String, Object>{'style': _selectedStyle.apiValue});
+    analytics.track(AiPromptShuffledEvent(style: _selectedStyle.apiValue));
   }
 
   bool get _isRolloutEligible {
@@ -199,7 +200,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         _history = result;
         _latest = result.isEmpty ? null : result.first;
       });
-      analytics.logEvent(name: 'ai_history_opened', parameters: <String, Object>{'count': result.length});
+      analytics.track(AiHistoryOpenedEvent(count: result.length));
     } catch (_) {
       toasts.error('Unable to load AI history right now.');
     } finally {
@@ -244,13 +245,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return;
     }
 
-    analytics.logEvent(
-      name: 'ai_generate_started',
-      parameters: <String, Object>{
-        'style': _selectedStyle.apiValue,
-        'quality': _selectedQuality.apiValue,
-        'mode': reservation.mode.value,
-      },
+    analytics.track(
+      AiGenerateStartedEvent(
+        style: _selectedStyle.apiValue,
+        quality: _selectedQuality.apiValue,
+        mode: aiChargeModeValueFromDomain(reservation.mode),
+      ),
     );
 
     try {
@@ -287,14 +287,23 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         _history = <AiGenerationRecord>[generated, ..._history.where((item) => item.id != generated.id)];
       });
 
-      analytics.logEvent(
-        name: variation ? 'ai_variation_used' : 'ai_generate_success',
-        parameters: <String, Object>{
-          'provider': generated.provider,
-          'mode': reservation.mode.value,
-          'coinsSpent': reservation.coinsSpent,
-        },
-      );
+      if (variation) {
+        analytics.track(
+          AiVariationUsedEvent(
+            provider: generated.provider,
+            mode: aiChargeModeValueFromDomain(reservation.mode),
+            coinsSpent: reservation.coinsSpent,
+          ),
+        );
+      } else {
+        analytics.track(
+          AiGenerateSuccessEvent(
+            provider: generated.provider,
+            mode: aiChargeModeValueFromDomain(reservation.mode),
+            coinsSpent: reservation.coinsSpent,
+          ),
+        );
+      }
       if (variation) {
         _variationController.clear();
       }
@@ -304,9 +313,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         sourceTag: 'coins.rollback.ai_screen',
         reservationTransactionId: reservation.transactionId,
       );
-      analytics.logEvent(
-        name: 'ai_generate_failed',
-        parameters: <String, Object>{'error': error.toString(), 'mode': reservation.mode.value},
+      analytics.track(
+        AiGenerateFailedEvent(error: error.toString(), mode: aiChargeModeValueFromDomain(reservation.mode)),
       );
       if (error is AiGenerationApiException) {
         toasts.error(error.message);
@@ -333,7 +341,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Future<void> _share(AiGenerationRecord record) async {
     final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     await ShareService.shareText(text: link, subject: 'Made with Prism AI', context: context);
-    analytics.logEvent(name: 'ai_share_tapped', parameters: <String, Object>{'generationId': record.id});
+    analytics.track(AiShareTappedEvent(generationId: record.id));
   }
 
   Future<void> _save(AiGenerationRecord record) async {
@@ -375,7 +383,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     if (_submitting) return;
     setState(() => _submitting = true);
 
-    analytics.logEvent(name: 'ai_submit_started', parameters: <String, Object>{'generationId': record.id});
+    analytics.track(AiSubmitStartedEvent(generationId: record.id));
     try {
       final metadata = await _repository.prefillSubmissionMetadata(generationId: record.id);
       final edited = await _showSubmissionEditor(metadata);
@@ -416,7 +424,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           _latest = updated;
         }
       });
-      analytics.logEvent(name: 'ai_submit_success', parameters: <String, Object>{'generationId': record.id});
+      analytics.track(AiSubmitSuccessEvent(generationId: record.id));
       toasts.codeSend('AI wallpaper submitted for review.');
     } catch (error) {
       toasts.error('Unable to submit wallpaper right now.');

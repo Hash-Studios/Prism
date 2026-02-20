@@ -1,0 +1,583 @@
+version: 1
+
+enums:
+  - name: wallpaper_target
+    dart_type: WallpaperTargetValue
+    values:
+      - both
+      - lock
+      - home
+  - name: binary_result
+    dart_type: BinaryResultValue
+    values:
+      - success
+      - failure
+  - name: subscription_result
+    dart_type: SubscriptionResultValue
+    values:
+      - success
+      - not_entitled
+      - failure
+  - name: rc_or_fallback
+    dart_type: RcOrFallbackValue
+    values:
+      - rc_attempt
+      - fallback_only
+      - fallback
+      - rc
+  - name: paywall_result
+    dart_type: PaywallResultValue
+    values:
+      - placement_overridden_to_v3
+      - no_offering
+      - not_presented
+      - error
+      - cancelled
+      - purchased
+      - restored
+      - rc_error
+      - unknown
+  - name: subscription_entitlement_refresh_result
+    dart_type: SubscriptionEntitlementRefreshResultValue
+    values:
+      - success
+      - failure
+  - name: coin_earn_action
+    dart_type: CoinEarnActionValue
+    values:
+      - rewarded_ad
+      - daily_login
+      - streak_bonus
+      - first_wallpaper_upload
+      - referral
+      - profile_completion
+      - pro_daily_bonus
+      - refund
+  - name: coin_spend_action
+    dart_type: CoinSpendActionValue
+    values:
+      - wallpaper_download
+      - premium_wallpaper_download
+      - ai_generation
+      - premium_filter
+      - premium_preview_24h
+  - name: ai_charge_mode
+    dart_type: AiChargeModeValue
+    values:
+      - free_trial
+      - pro_included
+      - coin_spend
+      - insufficient
+
+events:
+  - id: report_setup
+  - id: report_wall
+  - id: setup_fav_status_changed
+    fields:
+      - name: setup_id
+        key: id
+        type: string
+  - id: download_own_setup
+    fields:
+      - name: link
+        key: link
+        type: string
+  - id: download_own_wall
+    fields:
+      - name: link
+        key: link
+        type: string
+  - id: set_wall
+    fields:
+      - name: wallpaper_target
+        key: wallpaper_target
+        type: enum
+        enum: WallpaperTargetValue
+      - name: result
+        key: result
+        type: enum
+        enum: BinaryResultValue
+  - id: coin_premium_filter_spend_attempt
+    fields:
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: filter
+        key: filter
+        type: string
+  - id: coin_premium_filter_spend_success
+    fields:
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: coins_spent
+        key: coins_spent
+        type: int
+      - name: filter
+        key: filter
+        type: string
+  - id: coin_filter_watch_and_retry_used
+    fields:
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: filter
+        key: filter
+        type: string
+  - id: download_wallpaper
+    fields:
+      - name: link
+        key: link
+        type: string
+      - name: source_context
+        key: source_context
+        type: string
+        required: false
+      - name: premium_content
+        key: premium_content
+        type: bool
+        required: false
+  - id: upload_wallpaper
+    fields:
+      - name: asset_id
+        key: id
+        type: string
+      - name: link
+        key: link
+        type: string
+  - id: accent_changed
+    fields:
+      - name: color
+        key: color
+        type: string
+  - id: paywall_impression
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+      - name: rc_or_fallback
+        key: rc_or_fallback
+        type: enum
+        enum: RcOrFallbackValue
+  - id: paywall_result
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: PaywallResultValue
+      - name: rc_or_fallback
+        key: rc_or_fallback
+        type: enum
+        enum: RcOrFallbackValue
+      - name: placement_offering
+        key: placement_offering
+        type: string
+        required: false
+      - name: selected_offering
+        key: selected_offering
+        type: string
+        required: false
+      - name: entitlement_synced
+        key: entitlement_synced
+        type: int
+        required: false
+      - name: entitlement
+        key: entitlement
+        type: string
+        required: false
+      - name: error
+        key: error
+        type: string
+        required: false
+  - id: subscription_trigger_low_balance
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+  - id: subscription_trigger_after_ad_watch_3
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+  - id: subscription_trigger_setup_create_block
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+  - id: subscription_trigger_upload_limit_block
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+  - id: subscription_package_selected
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: product_id
+        key: product_id
+        type: string
+      - name: package_type
+        key: package_type
+        type: string
+      - name: price
+        key: price
+        type: num
+      - name: currency
+        key: currency
+        type: string
+  - id: subscription_restore_started
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: subscription_restore_result
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: SubscriptionResultValue
+      - name: error_code
+        key: error_code
+        type: string
+        required: false
+      - name: error_message
+        key: error_message
+        type: string
+        required: false
+  - id: subscription_purchase_started
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: product_id
+        key: product_id
+        type: string
+      - name: package_type
+        key: package_type
+        type: string
+      - name: price
+        key: price
+        type: num
+      - name: currency
+        key: currency
+        type: string
+  - id: subscription_purchase_result
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: product_id
+        key: product_id
+        type: string
+      - name: package_type
+        key: package_type
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: SubscriptionResultValue
+      - name: error_code
+        key: error_code
+        type: string
+        required: false
+      - name: error_message
+        key: error_message
+        type: string
+        required: false
+  - id: subscription_entitlement_refresh
+    fields:
+      - name: result
+        key: result
+        type: enum
+        enum: SubscriptionEntitlementRefreshResultValue
+      - name: subscription_tier
+        key: subscription_tier
+        type: string
+        required: false
+      - name: is_premium
+        key: is_premium
+        type: int
+        required: false
+      - name: active_entitlements
+        key: active_entitlements
+        type: string
+        required: false
+      - name: error_code
+        key: error_code
+        type: string
+        required: false
+      - name: error_message
+        key: error_message
+        type: string
+        required: false
+  - id: subscription_conversion
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: product_id
+        key: product_id
+        type: string
+      - name: package_type
+        key: package_type
+        type: string
+      - name: subscription_tier
+        key: subscription_tier
+        type: string
+      - name: price
+        key: price
+        type: num
+      - name: currency
+        key: currency
+        type: string
+  - id: ai_charge_reserved
+    fields:
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+      - name: coins_spent
+        key: coins_spent
+        type: int
+      - name: balance
+        key: balance
+        type: int
+      - name: source_tag
+        key: source_tag
+        type: string
+  - id: ai_charge_rolled_back
+    fields:
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+      - name: balance
+        key: balance
+        type: int
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: coins_refunded
+        key: coins_refunded
+        type: int
+        required: false
+  - id: ai_charge_committed
+    fields:
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+      - name: coins_spent
+        key: coins_spent
+        type: int
+      - name: balance
+        key: balance
+        type: int
+      - name: source_tag
+        key: source_tag
+        type: string
+  - id: coin_earned
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: CoinEarnActionValue
+      - name: amount
+        key: amount
+        type: int
+      - name: balance
+        key: balance
+        type: int
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: reason
+        key: reason
+        type: string
+        required: false
+  - id: coin_spent
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: CoinSpendActionValue
+      - name: amount
+        key: amount
+        type: int
+      - name: balance
+        key: balance
+        type: int
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: reason
+        key: reason
+        type: string
+        required: false
+  - id: coin_low_balance_nudge_shown
+    fields:
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: required_coins
+        key: required_coins
+        type: int
+      - name: balance
+        key: balance
+        type: int
+  - id: coin_watch_and_download_used
+    fields:
+      - name: is_premium_content
+        key: is_premium_content
+        type: bool
+      - name: source_tag
+        key: source_tag
+        type: string
+  - id: ai_prompt_shuffled
+    fields:
+      - name: style
+        key: style
+        type: string
+  - id: ai_history_opened
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: ai_generate_started
+    fields:
+      - name: style
+        key: style
+        type: string
+      - name: quality
+        key: quality
+        type: string
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+  - id: ai_generate_success
+    fields:
+      - name: provider
+        key: provider
+        type: string
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+      - name: coins_spent
+        key: coins_spent
+        type: int
+  - id: ai_variation_used
+    fields:
+      - name: provider
+        key: provider
+        type: string
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+      - name: coins_spent
+        key: coins_spent
+        type: int
+  - id: ai_generate_failed
+    fields:
+      - name: error
+        key: error
+        type: string
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+  - id: ai_share_tapped
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+  - id: ai_submit_started
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+  - id: ai_submit_success
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+  - id: coin_preview_unlock_attempt
+    fields:
+      - name: collection
+        key: collection
+        type: string
+      - name: source_tag
+        key: source_tag
+        type: string
+  - id: coin_preview_unlock_success
+    fields:
+      - name: collection
+        key: collection
+        type: string
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: coins_spent
+        key: coins_spent
+        type: int
+  - id: coin_preview_watch_and_unlock_used
+    fields:
+      - name: collection
+        key: collection
+        type: string
+      - name: source_tag
+        key: source_tag
+        type: string
+  - id: categories_checked
+  - id: collections_checked
+  - id: edit_setup
+    fields:
+      - name: setup_id
+        key: id
+        type: string
+      - name: link
+        key: link
+        type: string
+  - id: upload_setup
+    fields:
+      - name: setup_id
+        key: id
+        type: string
+      - name: link
+        key: link
+        type: string
+  - id: fav_status_changed
+    fields:
+      - name: wall_id
+        key: id
+        type: string
+      - name: provider
+        key: provider
+        type: string

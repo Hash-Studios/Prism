@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
@@ -51,7 +52,7 @@ class _FavIconButtonState extends State<FavIconButton> {
   Future<void> onFav(String? id, String provider, WallPaper? wallhaven, WallPaperP? pexels, Map? prism) async {
     setState(() {});
     context.favouriteWallsAdapter(listen: false).favCheck(id, provider, wallhaven, pexels, prism).then((value) {
-      analytics.logEvent(name: 'fav_status_changed', parameters: {'id': id ?? '', 'provider': provider});
+      analytics.track(FavStatusChangedEvent(wallId: id ?? '', provider: provider));
       setState(() {});
     });
   }
