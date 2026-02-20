@@ -1,16 +1,52 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:Prism/core/arsenal/colors.dart';
 import 'package:Prism/core/arsenal/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-/// Disables google_fonts HTTP fetching so tests are deterministic.
-/// Fonts are loaded from test/core/arsenal/fonts/ via the asset bundle
-/// (declared in pubspec.yaml under flutter.assets).
+/// Loads a .ttf file from disk as [ByteData] for [FontLoader.addFont].
+Future<ByteData> _fontFile(String path) async {
+  final bytes = File(path).readAsBytesSync();
+  return ByteData.view(Uint8List.fromList(bytes).buffer);
+}
+
+/// Loads all Arsenal design-system fonts so golden screenshots render
+/// actual glyphs instead of Ahem blocks.
 ///
 /// Call once in [setUpAll] of each test file.
 Future<void> loadArsenalFonts() async {
-  GoogleFonts.config.allowRuntimeFetching = false;
+  final bigShoulders = FontLoader('BigShouldersDisplay');
+  for (final v in [
+    'Thin', 'ExtraLight', 'Light', 'Regular', 'Medium',
+    'SemiBold', 'Bold', 'ExtraBold', 'Black',
+  ]) {
+    bigShoulders.addFont(_fontFile('lib/core/arsenal/fonts/BigShouldersDisplay-$v.ttf'));
+  }
+  await bigShoulders.load();
+
+  final rajdhani = FontLoader('Rajdhani');
+  for (final v in ['Light', 'Regular', 'Medium', 'SemiBold', 'Bold']) {
+    rajdhani.addFont(_fontFile('lib/core/arsenal/fonts/Rajdhani-$v.ttf'));
+  }
+  await rajdhani.load();
+
+  final jetBrains = FontLoader('JetBrainsMono');
+  for (final v in [
+    'Thin', 'ExtraLight', 'Light', 'Regular', 'Medium',
+    'SemiBold', 'Bold', 'ExtraBold',
+  ]) {
+    jetBrains.addFont(_fontFile('lib/core/arsenal/fonts/JetBrainsMono-$v.ttf'));
+  }
+  for (final v in [
+    'ThinItalic', 'ExtraLightItalic', 'LightItalic', 'Italic',
+    'MediumItalic', 'SemiBoldItalic', 'BoldItalic', 'ExtraBoldItalic',
+  ]) {
+    jetBrains.addFont(_fontFile('lib/core/arsenal/fonts/JetBrainsMono-$v.ttf'));
+  }
+  await jetBrains.load();
 }
 
 /// Pumps [widget] inside a fixed 390×844 logical-pixel surface with
