@@ -6,6 +6,8 @@ class _RecordingProvider implements AnalyticsProvider {
   final List<String> calls = <String>[];
   final List<String> eventNames = <String>[];
   final List<Map<String, Object>> eventParameters = <Map<String, Object>>[];
+  final List<String?> userIds = <String?>[];
+  final Map<String, String?> userProperties = <String, String?>{};
 
   @override
   Future<void> logEvent({required String name, Map<String, Object> parameters = const <String, Object>{}}) async {
@@ -17,6 +19,18 @@ class _RecordingProvider implements AnalyticsProvider {
   @override
   Future<void> logLogin({String? loginMethod}) async {
     calls.add('log_login');
+  }
+
+  @override
+  Future<void> setUserId(String? userId) async {
+    calls.add('set_user_id');
+    userIds.add(userId);
+  }
+
+  @override
+  Future<void> setUserProperty({required String name, String? value}) async {
+    calls.add('set_user_property');
+    userProperties[name] = value;
   }
 
   @override
@@ -41,6 +55,12 @@ class _ThrowingProvider implements AnalyticsProvider {
 
   @override
   Future<void> logLogin({String? loginMethod}) => Future<void>.error(StateError('boom'));
+
+  @override
+  Future<void> setUserId(String? userId) => Future<void>.error(StateError('boom'));
+
+  @override
+  Future<void> setUserProperty({required String name, String? value}) => Future<void>.error(StateError('boom'));
 
   @override
   Future<void> logScreenView({
@@ -76,13 +96,31 @@ void main() {
     await provider.logEvent(name: 'paywall_result', parameters: <String, Object>{'result': 'success'});
     await provider.logShare(contentType: 'setup', itemId: 'item_1', method: 'link');
     await provider.logLogin(loginMethod: 'google');
+    await provider.setUserId('u_1');
+    await provider.setUserProperty(name: 'subscription_tier', value: 'pro');
     await provider.logScreenView(
       screenName: 'home',
       screenClass: 'HomeRoute',
       parameters: <String, Object>{'from_push': 1},
     );
 
-    expect(first.calls, <String>['log_event', 'log_share', 'log_login', 'log_screen_view']);
-    expect(second.calls, <String>['log_event', 'log_share', 'log_login', 'log_screen_view']);
+    expect(first.calls, <String>[
+      'log_event',
+      'log_share',
+      'log_login',
+      'set_user_id',
+      'set_user_property',
+      'log_screen_view',
+    ]);
+    expect(second.calls, <String>[
+      'log_event',
+      'log_share',
+      'log_login',
+      'set_user_id',
+      'set_user_property',
+      'log_screen_view',
+    ]);
+    expect(first.userIds.single, 'u_1');
+    expect(first.userProperties['subscription_tier'], 'pro');
   });
 }

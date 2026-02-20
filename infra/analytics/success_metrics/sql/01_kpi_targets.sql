@@ -1,0 +1,40 @@
+CREATE OR REPLACE TABLE `YOUR_GCP_PROJECT.prism_dash.kpi_targets` AS
+SELECT *
+FROM UNNEST([
+  STRUCT(
+    'dau' AS metric_key,
+    'DAU' AS metric_label,
+    'users' AS unit,
+    CAST(NULL AS STRING) AS launch_direction,
+    CAST(NULL AS FLOAT64) AS launch_green_threshold,
+    CAST(NULL AS FLOAT64) AS launch_amber_threshold,
+    30000.0 AS month_6_target,
+    60000.0 AS month_12_target,
+    'Drive acquisition and activation loops to increase daily active users.' AS recommended_action,
+    10 AS display_order
+  ),
+  STRUCT('mau', 'MAU', 'users', NULL, NULL, NULL, NULL, NULL,
+    'Monitor MAU as denominator for stickiness and ARPU trend health.', 20),
+  STRUCT('day_1_retention_pct', 'Day 1 retention %', 'percent', 'higher_is_better', 30.0, 25.0, 35.0, NULL,
+    'Improve onboarding completion, first-value time, and push reactivation.', 30),
+  STRUCT('day_7_retention_pct', 'Day 7 retention %', 'percent', 'higher_is_better', 12.0, 10.0, NULL, NULL,
+    'Strengthen week-1 habit loops: notifications, collections, and creator follow prompts.', 40),
+  STRUCT('dau_mau_pct', 'DAU/MAU %', 'percent', 'higher_is_better', 15.0, 12.0, NULL, NULL,
+    'Increase repeat sessions through daily content freshness and lightweight streak nudges.', 50),
+  STRUCT('pro_conversion_pct', 'Pro conversion %', 'percent', 'higher_is_better', 2.0, 1.5, NULL, NULL,
+    'Optimize paywall offer mix, timing, and checkout friction.', 60),
+  STRUCT('ad_watches_per_free_user_per_day', 'Ad watches per free user per day', 'ratio', 'higher_is_better', 3.0, 2.0, NULL, NULL,
+    'Tune rewarded-ad placement and value exchange moments in low-balance flows.', 70),
+  STRUCT('ai_generations_per_day', 'AI generations per day', 'count', 'higher_is_better', 1000.0, 700.0, NULL, NULL,
+    'Increase AI usage by reducing failure rate and improving prompt/style discoverability.', 80),
+  STRUCT('western_user_pct', 'Western users %', 'percent', NULL, NULL, NULL, 30.0, NULL,
+    'Increase Western-market acquisition channels and localized creator partnerships.', 90),
+  STRUCT('monthly_revenue_usd', 'Monthly revenue (USD)', 'usd', NULL, NULL, NULL, 5000.0, 10000.0,
+    'Improve blended monetization across subscription, rewarded ads, and non-RC revenue.', 100),
+  STRUCT('arpu_usd', 'ARPU (USD)', 'usd', NULL, NULL, NULL, NULL, NULL,
+    'Increase payer conversion and monetization depth per active user.', 110),
+  STRUCT('crash_free_users_pct', 'Crash-free users %', 'percent', 'custom', 99.5, 99.0, NULL, NULL,
+    'Resolve top crash regressions and enforce release gates for stability.', 120),
+  STRUCT('fatal_crash_count', 'Fatal crash count', 'count', 'lower_is_better', 0.0, 1.0, NULL, NULL,
+    'Prioritize and fix fatal issues before shipping growth/monetization experiments.', 130)
+]) AS t;

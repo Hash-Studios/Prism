@@ -127,11 +127,14 @@ class GoogleAuth {
       }
 
       await app_state.persistPrismUser();
+      await analytics.setUserId(user.uid);
+      await analytics.setUserProperty(name: 'subscription_tier', value: app_state.prismUser.subscriptionTier);
+      await analytics.setUserProperty(name: 'is_premium', value: app_state.prismUser.premium ? '1' : '0');
       await subscribeToTopicSafely(home.f, user.email!.split("@")[0], sourceTag: 'auth.signin.followers_topic');
       assert(!user.isAnonymous);
       final User? currentUser = _auth.currentUser;
       assert(user.uid == currentUser!.uid);
-      analytics.logLogin();
+      analytics.logLogin(loginMethod: 'google');
       await PurchasesService.instance.checkAndPersistPremium();
       await CoinsService.instance.bootstrapForCurrentUser();
       await CoinsService.instance.refreshBalance();
@@ -222,6 +225,9 @@ class GoogleAuth {
     } catch (e, st) {
       logger.e('Failed to mark user logged out', error: e, stackTrace: st);
     }
+    await analytics.setUserId(null);
+    await analytics.setUserProperty(name: 'subscription_tier', value: 'free');
+    await analytics.setUserProperty(name: 'is_premium', value: '0');
     logger.d("User Sign Out");
     return true;
   }
