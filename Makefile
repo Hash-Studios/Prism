@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios ci test
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios ci test update-goldens verify-goldens install-hooks
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -39,6 +39,7 @@ setup: ensure-fvm
 	@$(FLUTTER) --version
 	@$(FLUTTER) pub get
 	@if [ "$$(uname -s)" = "Darwin" ]; then $(MAKE) ios-setup; fi
+	@$(MAKE) install-hooks
 	@echo "Setup complete. Use 'fvm flutter <command>' for project commands."
 
 get: ensure-fvm
@@ -142,7 +143,18 @@ ci: get format-check env-guard analyze
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
-		$(FLUTTER) test; \
+		$(FLUTTER) test $$(find test -name '*_test.dart' -not -path 'test/core/arsenal/*' | tr '\n' ' '); \
 	else \
 		echo "No test files found, skipping."; \
 	fi
+
+update-goldens: ensure-fvm  ## Regenerate goldens only for changed Arsenal components
+	@./tool/update_goldens.sh
+
+verify-goldens: ensure-fvm  ## Fail if goldens don't match current renders
+	@$(FLUTTER) test test/core/arsenal/
+
+install-hooks:  ## Install git hooks (run once after cloning)
+	@cp tool/pre_commit_goldens.sh .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "Git pre-commit hook installed."
