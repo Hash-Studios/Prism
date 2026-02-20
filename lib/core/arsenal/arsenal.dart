@@ -11,6 +11,8 @@ export 'components/ar_chip.dart';
 export 'components/ar_progress_steps.dart';
 export 'components/ar_scaffold.dart';
 export 'components/ar_tag.dart';
+export 'examples/ar_example_mission_control.dart';
+export 'examples/ar_example_operator_profile.dart';
 export 'spacing.dart';
 export 'theme.dart';
 export 'typography.dart';
