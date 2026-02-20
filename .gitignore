@@ -63,3 +63,4 @@ ios/Runner/GoogleService-Info.plist
 docs/**
 sentry.properties
 infra/cloudflare/worker/.wrangler/**
+AuthKey.p8
