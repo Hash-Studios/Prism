@@ -8,11 +8,12 @@ import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/app_analytics.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/providers/analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/composite_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart';
+import 'package:Prism/core/analytics/providers/mixpanel_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
-import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
@@ -21,8 +22,10 @@ import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/deep_link/deep_link.dart';
@@ -41,7 +44,6 @@ import 'package:Prism/features/theme_light/theme_light.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/firebase_options.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -158,7 +160,7 @@ Future<void> main() async {
         logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
       }
 
-      _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
+      await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
 
       final dir = await getApplicationDocumentsDirectory();
       Hive.init(dir.path);
@@ -303,15 +305,65 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
   }
 }
 
-void _configureAnalyticsRuntime({required bool firebaseInitialized}) {
-  final AnalyticsProvider provider;
-  if (firebaseInitialized) {
-    provider = CompositeAnalyticsProvider(<AnalyticsProvider>[FirebaseAnalyticsProvider()]);
-  } else {
-    provider = CompositeAnalyticsProvider(<AnalyticsProvider>[const NoopAnalyticsProvider()]);
+Future<void> _configureAnalyticsRuntime({required bool firebaseInitialized}) async {
+  final List<AnalyticsProvider> providers = <AnalyticsProvider>[];
+
+  final AnalyticsProvider? mixpanelProvider = await _buildMixpanelProvider();
+  if (mixpanelProvider != null) {
+    providers.add(mixpanelProvider);
   }
 
-  AnalyticsRuntime.instance = ProviderBackedAppAnalytics(provider: provider);
+  if (firebaseInitialized) {
+    providers.add(FirebaseAnalyticsProvider());
+  }
+
+  if (providers.isEmpty) {
+    providers.add(const NoopAnalyticsProvider());
+  }
+
+  AnalyticsRuntime.instance = ProviderBackedAppAnalytics(provider: CompositeAnalyticsProvider(providers));
+}
+
+Future<AnalyticsProvider?> _buildMixpanelProvider() async {
+  if (!_isMixpanelEnabled()) {
+    logger.i('Mixpanel analytics disabled by configuration.', tag: 'Analytics');
+    return null;
+  }
+
+  final String token = Env.mixpanelToken.trim();
+  if (token.isEmpty) {
+    logger.w('MIXPANEL_ENABLED is on but MIXPANEL_TOKEN is empty. Skipping Mixpanel provider.', tag: 'Analytics');
+    return null;
+  }
+
+  try {
+    return await MixpanelAnalyticsProvider.create(token: token);
+  } catch (error, stackTrace) {
+    logger.w(
+      'Mixpanel initialization failed; continuing with available analytics providers.',
+      tag: 'Analytics',
+      error: error,
+      stackTrace: stackTrace,
+    );
+    return null;
+  }
+}
+
+bool _isMixpanelEnabled() {
+  final String rawValue = Env.mixpanelEnabled.trim().toLowerCase();
+  if (rawValue.isEmpty || rawValue == 'auto') {
+    return Env.mixpanelToken.trim().isNotEmpty;
+  }
+
+  if (rawValue == '1' || rawValue == 'true' || rawValue == 'yes' || rawValue == 'on') {
+    return true;
+  }
+
+  if (rawValue == '0' || rawValue == 'false' || rawValue == 'no' || rawValue == 'off') {
+    return false;
+  }
+
+  return false;
 }
 
 class MyApp extends StatefulWidget {

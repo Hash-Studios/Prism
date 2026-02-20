@@ -23,6 +23,10 @@ class Env {
   static const String sentryDist = String.fromEnvironment('SENTRY_DIST');
   static const String sentryEnabled = String.fromEnvironment('SENTRY_ENABLED', defaultValue: 'auto');
 
+  // Mixpanel
+  static const String mixpanelToken = String.fromEnvironment('MIXPANEL_TOKEN');
+  static const String mixpanelEnabled = String.fromEnvironment('MIXPANEL_ENABLED', defaultValue: 'auto');
+
   // FCM
   static const String fcmServerKey = String.fromEnvironment('FCM_SERVER_KEY');
 
