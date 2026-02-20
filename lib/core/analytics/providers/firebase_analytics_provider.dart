@@ -17,6 +17,16 @@ class FirebaseAnalyticsProvider implements AnalyticsProvider {
   }
 
   @override
+  Future<void> setUserId(String? userId) {
+    return _analytics.setUserId(id: userId);
+  }
+
+  @override
+  Future<void> setUserProperty({required String name, String? value}) {
+    return _analytics.setUserProperty(name: name, value: value);
+  }
+
+  @override
   Future<void> logScreenView({
     required String screenName,
     String? screenClass,

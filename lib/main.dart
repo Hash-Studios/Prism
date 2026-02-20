@@ -359,8 +359,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ..links = <String, dynamic>{};
     }
     if (value) {
+      final String currentUserId = app_state.prismUser.id.trim();
+      if (currentUserId.isNotEmpty) {
+        await analytics.setUserId(currentUserId);
+      }
+      await analytics.setUserProperty(name: 'subscription_tier', value: app_state.prismUser.subscriptionTier);
+      await analytics.setUserProperty(name: 'is_premium', value: app_state.prismUser.premium ? '1' : '0');
       await PurchasesService.instance.checkAndPersistPremium();
       unawaited(_syncCoinEconomy(sourceTag: 'startup_login_status'));
+    } else {
+      await analytics.setUserId(null);
+      await analytics.setUserProperty(name: 'subscription_tier', value: 'free');
+      await analytics.setUserProperty(name: 'is_premium', value: '0');
     }
     app_state.prismUser.loggedIn = value;
     app_state.persistPrismUser();

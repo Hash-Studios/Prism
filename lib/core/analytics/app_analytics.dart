@@ -10,6 +10,10 @@ abstract class AppAnalytics {
 
   Future<void> logLogin({String? loginMethod});
 
+  Future<void> setUserId(String? userId);
+
+  Future<void> setUserProperty({required String name, String? value});
+
   Future<void> logScreenView({required String screenName, String? screenClass, Map<String, Object?>? parameters});
 
   List<NavigatorObserver> buildNavigatorObservers();
@@ -45,6 +49,20 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
   @override
   Future<void> logLogin({String? loginMethod}) {
     return _provider.logLogin(loginMethod: _nonEmptyOrNull(loginMethod));
+  }
+
+  @override
+  Future<void> setUserId(String? userId) {
+    return _provider.setUserId(_nonEmptyOrNull(userId));
+  }
+
+  @override
+  Future<void> setUserProperty({required String name, String? value}) {
+    final String propertyName = _normalizer.normalizePropertyName(name);
+    if (propertyName == 'unknown_property') {
+      return Future<void>.value();
+    }
+    return _provider.setUserProperty(name: propertyName, value: _nonEmptyOrNull(value));
   }
 
   @override
@@ -92,6 +110,12 @@ class NoopAppAnalytics implements AppAnalytics {
 
   @override
   Future<void> logLogin({String? loginMethod}) async {}
+
+  @override
+  Future<void> setUserId(String? userId) async {}
+
+  @override
+  Future<void> setUserProperty({required String name, String? value}) async {}
 
   @override
   Future<void> logScreenView({

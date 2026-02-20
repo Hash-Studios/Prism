@@ -16,6 +16,14 @@ class AnalyticsFacade {
     return AnalyticsRuntime.instance.logLogin(loginMethod: loginMethod);
   }
 
+  Future<void> setUserId(String? userId) {
+    return AnalyticsRuntime.instance.setUserId(userId);
+  }
+
+  Future<void> setUserProperty({required String name, String? value}) {
+    return AnalyticsRuntime.instance.setUserProperty(name: name, value: value);
+  }
+
   Future<void> logScreenView({required String screenName, String? screenClass, Map<String, Object?>? parameters}) {
     return AnalyticsRuntime.instance.logScreenView(
       screenName: screenName,

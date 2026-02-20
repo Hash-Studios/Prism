@@ -175,7 +175,9 @@ class PaywallOrchestrator {
         return false;
       }
 
-      final bool isPremium = await PurchasesService.instance.checkAndPersistPremium();
+      final bool isPremium = await PurchasesService.instance.checkAndPersistPremium(
+        conversionContext: SubscriptionConversionContext(source: source, packageType: placement),
+      );
       if (isPremium) {
         _resetAdWatchCounter();
       }
