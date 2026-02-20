@@ -1,0 +1,145 @@
+name: TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: Build number (e.g. 304)
+        required: true
+        type: string
+      test_notes:
+        description: What to test (shown to testers)
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  build-and-upload:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
+      - name: Install dependencies
+        run: make get CI=true
+
+      - name: Setup Ruby & CocoaPods
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+
+      - name: Install CocoaPods
+        run: sudo gem install cocoapods --no-document
+
+      - name: Install iOS pods
+        run: cd ios && pod install --repo-update
+        env:
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+
+      - name: Import signing certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          echo "$CERTIFICATE_BASE64" | base64 --decode -o $RUNNER_TEMP/certificate.p12
+          security import $RUNNER_TEMP/certificate.p12 \
+            -P "$CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+      - name: Install provisioning profile
+        env:
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          PP_PATH=$RUNNER_TEMP/profile.mobileprovision
+          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$PP_PATH"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Strip alpha from app icon
+        run: |
+          ICON="ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png"
+          ffmpeg -y -i "$ICON" -vf "format=rgb24" -update 1 /tmp/icon_no_alpha.png
+          cp /tmp/icon_no_alpha.png "$ICON"
+
+      - name: Build IPA
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_USERNAME: ${{ secrets.GH_USERNAME }}
+          GH_REPO_WALLS: ${{ secrets.GH_REPO_WALLS }}
+          GH_REPO_SETUPS: ${{ secrets.GH_REPO_SETUPS }}
+          GH_REPO_DATA: ${{ secrets.GH_REPO_DATA }}
+          RC_IOS_API_KEY: ${{ secrets.RC_IOS_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_ENV: production
+          SENTRY_ENABLED: "true"
+          FCM_SERVER_KEY: ${{ secrets.FCM_SERVER_KEY }}
+        run: |
+          DART_DEFINES=""
+          for var in GH_TOKEN GH_USERNAME GH_REPO_WALLS GH_REPO_SETUPS GH_REPO_DATA \
+                     RC_IOS_API_KEY PEXELS_API_KEY SENTRY_DSN SENTRY_ENV SENTRY_ENABLED \
+                     FCM_SERVER_KEY; do
+            val="${!var:-}"
+            [ -n "$val" ] && DART_DEFINES="$DART_DEFINES --dart-define=$var=$val"
+          done
+          flutter build ipa --release \
+            --build-number=${{ github.event.inputs.build_number }} \
+            $DART_DEFINES \
+            --dart-define=SKIP_FIREBASE_INIT=true
+
+      - name: Install asc CLI
+        run: brew install rudrankriyam/tap/asc
+
+      - name: Upload to TestFlight (Prism Alpha)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY_B64: ${{ secrets.ASC_PRIVATE_KEY_B64 }}
+          ASC_BYPASS_KEYCHAIN: "true"
+        run: |
+          echo "$ASC_PRIVATE_KEY_B64" | base64 --decode > /tmp/AuthKey.p8
+          chmod 600 /tmp/AuthKey.p8
+          asc auth login \
+            --skip-validation \
+            --bypass-keychain \
+            --name "Prism CI" \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --private-key /tmp/AuthKey.p8
+
+          PUBLISH_ARGS="--app 6670200846 --ipa build/ios/ipa/Prism.ipa --group \"Prism Alpha\" --wait"
+          if [ -n "${{ github.event.inputs.test_notes }}" ]; then
+            PUBLISH_ARGS="$PUBLISH_ARGS --test-notes \"${{ github.event.inputs.test_notes }}\" --locale en-US"
+          fi
+          eval asc publish testflight $PUBLISH_ARGS
+
+      - name: Cleanup keychain & keys
+        if: always()
+        run: |
+          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
+          rm -f /tmp/AuthKey.p8 $RUNNER_TEMP/certificate.p12 $RUNNER_TEMP/profile.mobileprovision
