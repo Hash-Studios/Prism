@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios ci test
+.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios build-ipa ci test
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -114,6 +114,13 @@ ios-setup: ensure-fvm
 
 build-ios: ensure-fvm
 	@$(FLUTTER) build ios $(ENV_DART_DEFINES) $(IOS_BUILD_ARGS)
+
+build-ipa: ensure-fvm
+	@if [ -z "$(BUILD_NUMBER)" ]; then \
+		echo "Usage: make build-ipa BUILD_NUMBER=303"; \
+		exit 1; \
+	fi
+	@$(FLUTTER) build ipa --release --build-number=$(BUILD_NUMBER) $(ENV_DART_DEFINES) $(IOS_BUILD_ARGS)
 
 ifeq ($(CI),true)
 ensure-fvm:
