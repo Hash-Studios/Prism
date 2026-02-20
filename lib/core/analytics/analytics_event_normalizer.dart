@@ -61,6 +61,14 @@ class AnalyticsEventNormalizer {
     return normalized;
   }
 
+  String normalizePropertyName(String name) {
+    final String normalized = _toSnakeCase(name);
+    if (normalized.isEmpty) {
+      return 'unknown_property';
+    }
+    return normalized;
+  }
+
   Map<String, Object> normalizeParameters(Map<String, Object?>? parameters) {
     if (parameters == null || parameters.isEmpty) {
       return const <String, Object>{};
