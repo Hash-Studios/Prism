@@ -1,6 +1,5 @@
 import 'package:Prism/core/arsenal/colors.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 @immutable
 class ArsenalTheme extends ThemeExtension<ArsenalTheme> {
@@ -32,6 +31,6 @@ final ThemeData arsenalDarkTheme = ThemeData(
     onSurface: ArsenalColors.onSurface,
     onError: Colors.white,
   ),
-  textTheme: GoogleFonts.rajdhaniTextTheme(ThemeData.dark().textTheme),
+  textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Rajdhani'),
   extensions: const [ArsenalTheme()],
 );
