@@ -1,4 +1,4 @@
-.PHONY: setup ensure-fvm get update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard env-guard file-gen pigeon-gen run build attach ios-setup build-ios build-ipa ci test
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard env-guard secrets-guard file-gen pigeon-gen run build attach ios-setup build-ios build-ipa ci test
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -7,7 +7,11 @@ RUN_ARGS ?=
 BUILD_ARGS ?=
 IOS_BUILD_ARGS ?=
 FIREBASE_RUN_ARG ?= $(shell [ -f android/app/google-services.json ] && echo "" || echo "--dart-define=SKIP_FIREBASE_INIT=true")
-ENV_DART_DEFINES ?= $(shell ./tool/dart_defines_from_env.sh)
+DOPPLER_PROJECT ?= prism
+DOPPLER_CONFIG ?= dev
+DOPPLER_REQUIRED ?= true
+DOPPLER_ARGS = --project $(DOPPLER_PROJECT) --config $(DOPPLER_CONFIG)
+ENV_DART_DEFINES ?= $(shell DOPPLER_PROJECT=$(DOPPLER_PROJECT) DOPPLER_CONFIG=$(DOPPLER_CONFIG) ./tool/dart_defines_from_doppler.sh)
 SENTRY_ENV ?=
 SENTRY_RELEASE ?=
 SENTRY_DIST ?=
@@ -39,10 +43,24 @@ setup: ensure-fvm
 	@$(FLUTTER) --version
 	@$(FLUTTER) pub get
 	@if [ "$$(uname -s)" = "Darwin" ]; then $(MAKE) ios-setup; fi
-	@echo "Setup complete. Use 'fvm flutter <command>' for project commands."
+	@echo "Setup complete. For full local setup with secrets, run: make setup-dev"
+
+setup-dev: ensure-fvm doppler-check
+	@$(MAKE) get
+	@if [ "$$(uname -s)" = "Darwin" ]; then $(MAKE) ios-setup; fi
+	@echo "Developer setup complete. Next step: make run"
 
 get: ensure-fvm
 	@$(FLUTTER) pub get
+
+doppler-check:
+	@DOPPLER_PROJECT=$(DOPPLER_PROJECT) DOPPLER_CONFIG=$(DOPPLER_CONFIG) DOPPLER_REQUIRED=$(DOPPLER_REQUIRED) ./tool/doppler_check.sh
+
+doppler-login:
+	@DOPPLER_PROJECT=$(DOPPLER_PROJECT) DOPPLER_CONFIG=$(DOPPLER_CONFIG) ./tool/doppler_setup_local.sh
+
+secrets-print: doppler-check
+	@doppler secrets download --no-file --format env $(DOPPLER_ARGS) | sed -E 's/=.*/=***MASKED***/'
 
 format: ensure-fvm
 	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) $(DART_FORMAT_PATHS)
@@ -73,6 +91,9 @@ firestore-guard:
 env-guard:
 	@./tool/env_define_guard.sh
 
+secrets-guard:
+	@./tool/doppler_guard.sh
+
 file-gen: ensure-fvm
 	@$(DART) run build_runner build --delete-conflicting-outputs
 	make format
@@ -80,7 +101,7 @@ file-gen: ensure-fvm
 pigeon-gen: ensure-fvm
 	@./tool/generate_pigeon.sh
 
-run: ensure-fvm
+run: ensure-fvm doppler-check
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
 		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
 		export PATH="$$JAVA_HOME/bin:$$PATH"; \
@@ -94,7 +115,7 @@ run: ensure-fvm
 		$(FLUTTER) run $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
 	fi
 
-build: ensure-fvm
+build: ensure-fvm doppler-check
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
 		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
 		export PATH="$$JAVA_HOME/bin:$$PATH"; \
@@ -124,10 +145,10 @@ ios-setup: ensure-fvm
 	@cd ios && export LANG=en_US.UTF-8 && export LC_ALL=en_US.UTF-8 && pod deintegrate && pod install --repo-update
 	@echo "iOS pods setup complete."
 
-build-ios: ensure-fvm
+build-ios: ensure-fvm doppler-check
 	@$(FLUTTER) build ios $(ENV_DART_DEFINES) $(IOS_BUILD_ARGS)
 
-build-ipa: ensure-fvm
+build-ipa: ensure-fvm doppler-check
 	@if [ -z "$(BUILD_NUMBER)" ]; then \
 		echo "Usage: make build-ipa BUILD_NUMBER=303"; \
 		exit 1; \
@@ -157,7 +178,7 @@ update-flutter: ensure-fvm
 	@$(FLUTTER) pub get
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
 
-ci: get format-check env-guard analytics-check analyze
+ci: get format-check env-guard secrets-guard analytics-check analyze
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \

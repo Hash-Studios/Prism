@@ -52,6 +52,9 @@ jobs:
           LANG: en_US.UTF-8
           LC_ALL: en_US.UTF-8
 
+      - name: Install Doppler CLI
+        run: brew install dopplerhq/cli/doppler
+
       - name: Import signing certificate
         env:
           CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
@@ -88,25 +91,11 @@ jobs:
 
       - name: Build IPA
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          GH_USERNAME: ${{ secrets.GH_USERNAME }}
-          GH_REPO_WALLS: ${{ secrets.GH_REPO_WALLS }}
-          GH_REPO_SETUPS: ${{ secrets.GH_REPO_SETUPS }}
-          GH_REPO_DATA: ${{ secrets.GH_REPO_DATA }}
-          RC_IOS_API_KEY: ${{ secrets.RC_IOS_API_KEY }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          SENTRY_ENV: production
-          SENTRY_ENABLED: "true"
-          FCM_SERVER_KEY: ${{ secrets.FCM_SERVER_KEY }}
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRODUCTION }}
+          DOPPLER_PROJECT: prism
+          DOPPLER_CONFIG: production
         run: |
-          DART_DEFINES=""
-          for var in GH_TOKEN GH_USERNAME GH_REPO_WALLS GH_REPO_SETUPS GH_REPO_DATA \
-                     RC_IOS_API_KEY PEXELS_API_KEY SENTRY_DSN SENTRY_ENV SENTRY_ENABLED \
-                     FCM_SERVER_KEY; do
-            val="${!var:-}"
-            [ -n "$val" ] && DART_DEFINES="$DART_DEFINES --dart-define=$var=$val"
-          done
+          DART_DEFINES="$(./tool/dart_defines_from_doppler.sh)"
           flutter build ipa --release \
             --build-number=${{ github.event.inputs.build_number }} \
             $DART_DEFINES \
