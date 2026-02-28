@@ -326,11 +326,18 @@ Future<void> _configureAnalyticsRuntime({required bool firebaseInitialized}) asy
 
 Future<AnalyticsProvider?> _buildMixpanelProvider() async {
   if (!_isMixpanelEnabled()) {
-    logger.i('Mixpanel analytics disabled by configuration.', tag: 'Analytics');
+    logger.i(
+      'Mixpanel analytics disabled by configuration.',
+      tag: 'Analytics',
+      fields: <String, Object?>{
+        'mixpanel_enabled': _normalizeDefineValue(Env.mixpanelEnabled).toLowerCase(),
+        'mixpanel_token_present': _normalizeDefineValue(Env.mixpanelToken).isNotEmpty,
+      },
+    );
     return null;
   }
 
-  final String token = Env.mixpanelToken.trim();
+  final String token = _normalizeDefineValue(Env.mixpanelToken);
   if (token.isEmpty) {
     logger.w('MIXPANEL_ENABLED is on but MIXPANEL_TOKEN is empty. Skipping Mixpanel provider.', tag: 'Analytics');
     return null;
@@ -350,9 +357,9 @@ Future<AnalyticsProvider?> _buildMixpanelProvider() async {
 }
 
 bool _isMixpanelEnabled() {
-  final String rawValue = Env.mixpanelEnabled.trim().toLowerCase();
+  final String rawValue = _normalizeDefineValue(Env.mixpanelEnabled).toLowerCase();
   if (rawValue.isEmpty || rawValue == 'auto') {
-    return Env.mixpanelToken.trim().isNotEmpty;
+    return _normalizeDefineValue(Env.mixpanelToken).isNotEmpty;
   }
 
   if (rawValue == '1' || rawValue == 'true' || rawValue == 'yes' || rawValue == 'on') {
@@ -364,6 +371,15 @@ bool _isMixpanelEnabled() {
   }
 
   return false;
+}
+
+String _normalizeDefineValue(String rawValue) {
+  String value = rawValue.trim();
+  while (value.length >= 2 &&
+      ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+    value = value.substring(1, value.length - 1).trim();
+  }
+  return value;
 }
 
 class MyApp extends StatefulWidget {
